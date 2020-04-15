@@ -1,3 +1,4 @@
 */*.cm*
 */*.byte
 */camlp5.*
+tests/_build
