@@ -62,20 +62,20 @@ value extract_printer (attrs : MLast.attributes_no_anti) =
 
 value fmt_expression arg param_map ty0 =
   let rec fmtrec = fun [
-  <:ctyp:< _ >> -> <:expr< Fmt.(const string "_") >>
-| <:ctyp:< unit >> -> <:expr< fun ofmt arg -> Fmt.(pf ofmt "()") >>
-| <:ctyp:< int >> -> <:expr< fun ofmt arg -> Fmt.(pf ofmt "%d" arg) >>
+  <:ctyp:< _ >> -> <:expr< let open Fmt in (const string "_") >>
+| <:ctyp:< unit >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "()") >>
+| <:ctyp:< int >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%d" arg) >>
 | <:ctyp:< bool >> -> <:expr<  Fmt.bool >>
-| <:ctyp:< int32 >> -> <:expr< fun ofmt arg -> Fmt.(pf ofmt "%ldl" arg) >>
-| <:ctyp:< int64 >> -> <:expr< fun ofmt arg -> Fmt.(pf ofmt "%LdL" arg) >>
+| <:ctyp:< int32 >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%ldl" arg) >>
+| <:ctyp:< int64 >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%LdL" arg) >>
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  <:expr< fun ofmt arg -> Fmt.(pf ofmt "%S" arg) >>
-| <:ctyp:< bytes >> -> <:expr< fun ofmt arg -> Fmt.(pf ofmt "%S" (Bytes.to_string arg)) >>
-| <:ctyp:< char >> -> <:expr< fun ofmt arg -> Fmt.(pf ofmt "%C" arg) >>
-| <:ctyp:< nativeint >> -> <:expr< fun ofmt arg -> Fmt.(pf ofmt "%an" nativeint arg) >>
-| <:ctyp:< float >> -> <:expr< fun ofmt arg -> Fmt.(pf ofmt "%F" arg) >>
+  <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" arg) >>
+| <:ctyp:< bytes >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" (Bytes.to_string arg)) >>
+| <:ctyp:< char >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%C" arg) >>
+| <:ctyp:< nativeint >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%an" nativeint arg) >>
+| <:ctyp:< float >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%F" arg) >>
 
-| <:ctyp:< $t$ [@opaque] >> -> <:expr< Fmt.(const string "<opaque>") >>
+| <:ctyp:< $t$ [@opaque] >> -> <:expr< let open Fmt in (const string "<opaque>") >>
 | <:ctyp:< $t$ [@printer $exp:e$ ;] >> -> e
 | <:ctyp:< $t$ [@polyprinter $exp:e$ ;] >> ->
   let (t0, argtys) = Ctyp.unapplist t in
@@ -84,34 +84,34 @@ value fmt_expression arg param_map ty0 =
 
 | <:ctyp:< list $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun (ofmt : Format.formatter) arg -> Fmt.(pf ofmt $str:"@[<2>[%a@,]@]"$ (list ~{sep=semi} $fmt1$) arg) >>
+  <:expr< fun (ofmt : Format.formatter) arg -> let open Fmt in (pf ofmt $str:"@[<2>[%a@,]@]"$ (list ~{sep=semi} $fmt1$) arg) >>
 
 | <:ctyp:< array $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun (ofmt : Format.formatter) arg -> Fmt.(pf ofmt $str:"@[<2>[|%a@,|]@]"$ (array ~{sep=semi} $fmt1$) arg) >>
+  <:expr< fun (ofmt : Format.formatter) arg -> let open Fmt in (pf ofmt $str:"@[<2>[|%a@,|]@]"$ (array ~{sep=semi} $fmt1$) arg) >>
 
 | (<:ctyp:< ref $ty$ >> | <:ctyp:< Pervasives.ref $ty$ >>) ->
   let fmt1 = fmtrec ty in
-  <:expr< fun (ofmt : Format.formatter) arg -> Fmt.(pf ofmt $str:"ref (%a)"$ $fmt1$ arg.val) >>
+  <:expr< fun (ofmt : Format.formatter) arg -> let open Fmt in (pf ofmt $str:"ref (%a)"$ $fmt1$ arg.val) >>
 
 | <:ctyp:< lazy_t $ty$ >> ->
   let fmt1 = fmtrec ty in
   <:expr< fun (ofmt : Format.formatter) arg ->
     if Lazy.is_val arg then
       $fmt1$ ofmt (Lazy.force arg)
-    else Fmt.(const string "<not evaluated>") ofmt () >>
+    else let open Fmt in (const string "<not evaluated>") ofmt () >>
 
 | <:ctyp:< option $ty$ >> ->
   let fmt1 = fmtrec ty in
   <:expr< fun ofmt -> fun [
-          None -> Fmt.(const string "None") ofmt ()
-        | Some arg -> Fmt.(pf ofmt "(Some %a)" $fmt1$ arg)
+          None -> let open Fmt in (const string "None") ofmt ()
+        | Some arg -> let open Fmt in (pf ofmt "(Some %a)" $fmt1$ arg)
       ] >>
 
 | (<:ctyp:< result $ty1$ $ty2$ >> | <:ctyp:< Result.result $ty1$ $ty2$ >>) ->
   <:expr< fun ofmt -> fun [
-          Result.Ok ok -> Fmt.(pf ofmt "(Ok %a)" $(fmtrec ty1)$ ok)
-        | Result.Error e -> Fmt.(pf ofmt "(Error %a)" $(fmtrec ty2)$ e)
+          Result.Ok ok -> let open Fmt in (pf ofmt "(Ok %a)" $(fmtrec ty1)$ ok)
+        | Result.Error e -> let open Fmt in (pf ofmt "(Error %a)" $(fmtrec ty2)$ e)
       ] >>
 
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
@@ -133,7 +133,7 @@ value fmt_expression arg param_map ty0 =
   let fname = pp_fname arg lid in
   Expr.prepend_longident li <:expr< $lid:fname$ >>
 
-| <:ctyp:< $_$ -> $_$ >> -> <:expr< Fmt.(const string "<fun>") >>
+| <:ctyp:< $_$ -> $_$ >> -> <:expr< let open Fmt in (const string "<fun>") >>
 
 | <:ctyp:< ( $list:tyl$ ) >> ->
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
@@ -143,7 +143,7 @@ value fmt_expression arg param_map ty0 =
     let e = List.fold_left2 (fun e f v -> <:expr< $e$ $f$ $lid:v$ >>)
         <:expr< pf ofmt $str:fmtstring$ >> fmts vars in
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
-    <:expr< fun (ofmt : Format.formatter) ($list:varpats$) -> Fmt.($e$) >>
+    <:expr< fun (ofmt : Format.formatter) ($list:varpats$) -> let open Fmt in ($e$) >>
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
@@ -165,7 +165,11 @@ value fmt_expression arg param_map ty0 =
     match extract_printer (Pcaml.unvala attrs) with [
       Some printerf -> 
       let varexprs = List.map (fun v -> <:expr< $lid:v$ >>) vars in
-      let tupleexpr = if varexprs <> [] then <:expr< ( $list:varexprs$ ) >> else <:expr< () >> in
+      let tupleexpr = match varexprs with [
+        [] ->  <:expr< () >>
+      | [e] -> e
+      | l ->  <:expr< ( $list:varexprs$ ) >>
+      ] in
       (conspat, <:vala< None >>, <:expr< $printerf$ ofmt $tupleexpr$ >>)
     | None ->
     let fmts = List.map fmtrec tyl in
@@ -181,7 +185,7 @@ value fmt_expression arg param_map ty0 =
     in
     let e = List.fold_left2 (fun e f v -> <:expr< $e$ $f$ $lid:v$ >>)
         <:expr< pf ofmt $str:fmtstring$ >> fmts vars in
-    (conspat, <:vala< None >>, <:expr< Fmt.($e$) >>)
+    (conspat, <:vala< None >>, <:expr< let open Fmt in ($e$) >>)
     ]
   | (_, _, _, Some _, _) -> assert False
   ]) l in
@@ -209,7 +213,7 @@ value fmt_expression arg param_map ty0 =
         <:patt< ` $cid$ >> varpats in
     let e = List.fold_left2 (fun e f v -> <:expr< $e$ $f$ $lid:v$ >>)
         <:expr< pf ofmt $str:fmtstring$ >> fmts vars in
-    (conspat, <:vala< None >>, <:expr< Fmt.($e$) >>)
+    (conspat, <:vala< None >>, <:expr< let open Fmt in ($e$) >>)
 
   | PvInh _ ty ->
     let lili = match ty with [
@@ -227,7 +231,7 @@ value fmt_expression arg param_map ty0 =
         Expr.prepend_longident li <:expr< $lid:f$ >>
     | [%unmatched_vala] -> failwith "fmt_expression-PvInh-2"
     ] in
-    (conspat, <:vala< None >>, <:expr< Fmt.($fmtf$ ofmt z) >>)
+    (conspat, <:vala< None >>, <:expr< let open Fmt in ($fmtf$ ofmt z) >>)
   ]) l in
   <:expr< fun ofmt -> fun [ $list:branches$ ] >>
 
@@ -255,7 +259,7 @@ and fmt_record ~{without_path} ~{prefix_txt} ~{bracket_space} loc arg fields =
       <:expr< $e$ $fmtf$ $lid:v$ >>)
       <:expr< pf ofmt $str:fmt$ >> labels_vars_fmts in
   let pl = List.map (fun (f, v, _) -> (<:patt< $lid:f$ >>, <:patt< $lid:v$ >>)) labels_vars_fmts in
-  (<:patt< { $list:pl$ } >>, <:expr< Fmt.($e$) >>)
+  (<:patt< { $list:pl$ } >>, <:expr< let open Fmt in ($e$) >>)
 in fmtrec ty0
 ;
 
