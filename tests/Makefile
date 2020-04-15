@@ -18,9 +18,13 @@ CMI=$(CMO:.cmo=.cmi)
 
 TESTS= \
 	test_deriving_show.byte \
+	test_deriving_show.ppx.byte \
 	test_deriving_eq.byte \
+	test_deriving_eq.ppx.byte \
 	test_deriving_ord.byte \
+	test_deriving_ord.ppx.byte \
 	test_deriving_enum.byte \
+	test_deriving_enum.ppx.byte \
 
 all: $(CMO) $(TESTS)
 
@@ -35,6 +39,9 @@ test_deriving_%.byte: test_deriving_%.ml
 test_deriving_show.byte: test_deriving_show.ml testutil.cmo testutil2.cmo
 	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),pa_ppx_pa_deriving_plugins.show.syntax \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
+
+test_deriving_show.ppx.byte: test_deriving_show.ml testutil.cmo testutil2.cmo
+	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),ounit2,ppx_deriving.eq,ppx_deriving.show -linkall -linkpkg testutil.cmo testutil2.cmo test_deriving_show.ml -o test_deriving_show.ppx.byte
 
 testutil2.cmo: testutil2.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES) -syntax camlp5o -c $<
