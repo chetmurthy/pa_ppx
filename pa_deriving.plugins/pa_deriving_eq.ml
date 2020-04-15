@@ -38,7 +38,7 @@ value fmt_expression arg param_map ty0 =
   let fmt1 = fmtrec ty in
   <:expr< let rec loop x y =
         match (x, y) with [
-          ([], []) -> true
+          ([], []) -> True
         | ([a::x], [b::y]) ->
             ($fmt1$ a b) && (loop x y)
         | _ -> False ] in
@@ -67,7 +67,7 @@ value fmt_expression arg param_map ty0 =
     <:expr< fun x ->
         fun y ->
           match (x, y) with [
-            (None, None) -> true
+            (None, None) -> True
           | (Some a, Some b) -> $fmt1$ a b
           | _ -> False ] >>
 
@@ -314,7 +314,7 @@ Pa_deriving.(add_plugin{
   name = "eq"
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
-; alg_attributes = ["equal"; "nobuiltin"]
+; alg_attributes = ["equal"]
 ; extensions = ["eq"]
 ; expr = expr_eq
 ; str_item = str_item_gen_eq

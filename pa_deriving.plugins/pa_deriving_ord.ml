@@ -372,7 +372,7 @@ Pa_deriving.(add_plugin {
   name = "ord"
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
-; alg_attributes = ["compare"; "nobuiltin"]
+; alg_attributes = ["compare"]
 ; extensions = ["ord"]
 ; expr = expr_ord
 ; str_item = str_item_gen_ord

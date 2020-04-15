@@ -377,7 +377,7 @@ Pa_deriving.(add_plugin {
   name = "show"
 ; options = ["with_path"; "optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ; ("with_path", <:expr< True >>) ]
-; alg_attributes = ["opaque"; "printer"; "polyprinter"; "nobuiltin"]
+; alg_attributes = ["opaque"; "printer"; "polyprinter"]
 ; extensions = ["show"]
 ; expr = expr_show
 ; str_item = str_item_gen_show
