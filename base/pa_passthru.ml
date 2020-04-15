@@ -55,7 +55,8 @@ module rec EF : sig
     class_sig_item : extension_point class_sig_item ;
     class_expr : extension_point class_expr ;
     class_str_item : extension_point class_str_item ;
-    attribute_body : extension_point attribute_body 
+    attribute_body : extension_point attribute_body ;
+    implem : extension_point (list (MLast.str_item * MLast.loc) * Pcaml.status)
   } ;
   value mk : unit -> t ;
 end = struct
@@ -78,7 +79,8 @@ end = struct
     class_sig_item : extension_point class_sig_item ;
     class_expr : extension_point class_expr ;
     class_str_item : extension_point class_str_item ;
-    attribute_body : extension_point attribute_body 
+    attribute_body : extension_point attribute_body ;
+    implem : extension_point (list (MLast.str_item * MLast.loc) * Pcaml.status)
   } ;
   value mk () = {
     ctyp = Extfun.empty ;
@@ -98,7 +100,8 @@ end = struct
     class_sig_item = Extfun.empty ;
     class_expr = Extfun.empty ;
     class_str_item = Extfun.empty ;
-    attribute_body = Extfun.empty 
+    attribute_body = Extfun.empty ;
+    implem = Extfun.empty 
   } ;
 end
 
@@ -829,6 +832,14 @@ and attribute_body0 arg x1 =
         (s, p)) x1
 and attributes_no_anti arg x1 = List.map (attribute_body arg) x1
 and attributes arg x1 = vala_map (attributes_no_anti arg) x1
+and implem arg x =
+  match Extfun.apply arg.Ctxt.ef.EF.implem x arg with [
+    Some x -> x
+  | None -> implem0 arg x
+  | exception Extfun.Failure -> implem0 arg x
+  ]
+and implem0 arg (l, status) =
+    (List.map (fun (si, loc) -> (str_item arg si, loc)) l, status)
 ;
 
 value passthru pa_before arg = do {
@@ -837,7 +848,7 @@ value passthru pa_before arg = do {
   assert (l <> []) ;
   let (_, loc) = List.hd l in
   let ctxt = Ctxt.mk ef.val loc in
-  (List.map (fun (si, loc) -> (str_item ctxt si, loc)) l, status)
+  implem ctxt (l, status)
 }
 ;
 Pcaml.parse_implem.val := passthru Pcaml.parse_implem.val;

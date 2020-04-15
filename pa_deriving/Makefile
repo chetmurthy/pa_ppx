@@ -13,7 +13,7 @@ OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
 PACKAGES := $(PACKAGES),pa_ppx_base
 
-CMO=pa_deriving.cmo	
+CMO=surveil.cmo pa_deriving.cmo
 CMI=$(CMO:.cmo=.cmi)
 
 all: $(CMO) camlp5.pa_ppx_pa_deriving local-install
@@ -38,3 +38,5 @@ local-install::
 
 clean::
 	rm -rf META camlp5.pa_ppx_pa_deriving
+
+surveil.cmo: pa_deriving.cmo

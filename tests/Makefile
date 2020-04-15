@@ -42,3 +42,5 @@ test_deriving_%.ppx.byte: test_deriving_%.ml testutil.cmo testutil2.cmo
 
 testutil2.cmo: testutil2.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES) -syntax camlp5o -c $<
+
+testutil2.cmo: testutil.cmo
