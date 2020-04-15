@@ -24,6 +24,11 @@ TESTS= \
 
 all: $(CMO) $(TESTS)
 
+test: $(TESTS:.byte=)
+
+% : %.byte
+	./$<
+
 test_deriving_%.byte: test_deriving_%.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),pa_ppx_pa_deriving_plugins -syntax camlp5r $< -o $@
 
