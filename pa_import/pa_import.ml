@@ -41,15 +41,6 @@ value report () =
   Fmt.(pf stderr "[import_type: packages: %s]\n%!" path)
 ;
 
-value longid_to_string_list li =
-  let rec lirec = fun [
-    <:longident< $uid:uid$ >> -> [uid]
-  | <:longident< $longid:li$ . $uid:uid$ >> -> (lirec li) @ [uid]
-  | <:extended_longident< $longid:_$ ( $longid:_$ ) >> -> failwith "longid_to_string_list: LiApp not allowed here"
-  ] in
-  lirec li
-;
-
 value lookup1 fname d =
   let f = Fpath.add_seg (Fpath.v d) fname in
   let r = Bos.OS.File.exists f in
@@ -315,6 +306,21 @@ value unpack_imported_type full_t =
     lid = lid ; sl = sl ; loc = loc_of_ctyp full_t }
 ;
 
+value rec is_poly_variant t =
+  let (t,_) = Ctyp.unwrap_attrs t in
+  match t with [
+    <:ctyp< [= $list:_$ ] >> -> True
+  | _ -> False ] 
+;
+
+value rec is_generative_type t =
+  let (t,_) = Ctyp.unwrap_attrs t in
+  match t with [
+    <:ctyp< [ $list:_$ ] >> -> True
+  | <:ctyp< { $list:_$ } >> -> True
+  | _ -> False ] 
+;
+
 value rec import_type arg (newtname,new_formals) t renmap =
   let unp = unpack_imported_type t in
   let (with_attrs, rest_attrs) = extract_with_attributes unp.attrs in
@@ -341,7 +347,9 @@ value rec import_type arg (newtname,new_formals) t renmap =
       else [ (<:ctyp< $lid:oldtname$ >>, <:ctyp< $lid:newtname$ >>) :: renmap ] in
     let ct = if renmap = [] then td.tdDef
     else Ctyp.wrap_attrs (substitute_ctyp renmap td.tdDef) unp.attrs in
-    ct
+    if is_generative_type ct then
+      <:ctyp< $unp.bare_t$ == $ct$ >>
+    else ct
 ;
 
 value rec import_module_type arg t =

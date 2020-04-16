@@ -27,13 +27,7 @@ value prefixed_name ctxt id =
 ;
 
 value module_path ctxt li =
-  let rec li2string = fun [
-    <:longident< $uid:uid$ >> -> uid
-  | <:longident< $longid:li$ . $uid:uid$ >> ->
-    Printf.sprintf "%s.%s" (li2string li) uid
-  | [%unmatched_vala] -> failwith "module_path"
-  ] in
-  Ctxt.set_module_path ctxt (li2string li)
+  Ctxt.set_module_path ctxt (longid_to_string_list li)
 ;
 
 end ;

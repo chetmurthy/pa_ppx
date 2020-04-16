@@ -76,3 +76,12 @@ value unapplist e =
   ] in unrec [] e
 ;
 end ;
+
+value longid_to_string_list li =
+  let rec lirec = fun [
+    <:longident< $uid:uid$ >> -> [uid]
+  | <:longident< $longid:li$ . $uid:uid$ >> -> (lirec li) @ [uid]
+  | <:extended_longident< $longid:_$ ( $longid:_$ ) >> -> failwith "longid_to_string_list: LiApp not allowed here"
+  ] in
+  lirec li
+;
