@@ -1,3 +1,5 @@
+(* camlp5o *)
+
 open OUnit2
 
 type a = [%import: Stuff.a]

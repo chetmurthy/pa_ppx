@@ -84,7 +84,7 @@ value find1lid lid = fun [
 
 value find_lid lid sil =
   match try_find (find1lid lid) sil with [
-    (td,_) -> td.tdDef
+    x -> x
   | exception Failure _ -> failwith (Printf.sprintf "find_lid: %s" lid)
   ]
 ;
@@ -116,7 +116,7 @@ value find_type modpath lid sil =
   | [m :: t] ->
     findrec t lid (find_mod m sil)
   ] in do {
-  Fmt.(pf stderr "[find_type: %a]\n%!" (list ~sep:(const string ".") string) (modpath@[lid])) ;
+  Fmt.(pf stderr "[find_type: %a]\n%!" (list ~{sep=(const string ".")} string) (modpath@[lid])) ;
   match findrec modpath lid sil with [
     x -> x
   | exception Failure _ -> failwith (Printf.sprintf "find_type: %s" (String.concat "." (modpath@[lid])))
@@ -124,29 +124,64 @@ value find_type modpath lid sil =
   }
 ;
 
-value lookup_ctyp (fmod, modpath, lid) = do {
+value lookup_typedecl (fmod, modpath, lid) = do {
   let f = lookup_cmi fmod in
   let sil = reparse_cmi f in
-  Fmt.(pf stderr "[pa_import: type %a -> %s]\n%!" (list ~sep:(const string ".") string) ([fmod]@modpath@[lid]) f) ;
+  Fmt.(pf stderr "[pa_import: type %a -> %s]\n%!" (list ~{sep=(const string ".")} string) ([fmod]@modpath@[lid]) f) ;
   find_type modpath lid sil
 }
 ;
 
-value import_type loc arg t = do {
+value import_typedecl arg t = do {
   report() ;
-  match t with [
+  match fst (Ctyp.unapplist t)  with [
     <:ctyp< $lid:lid$ >> -> failwith "self-type-lookup not implemented"
   | <:ctyp< $longid:modname$ . $lid:lid$ >> ->
     let sl = longid_to_string_list modname in
     let (fmod, modpath) = match sl with [ [] -> failwith "import_type: internal error" | [h::t] -> (h,t) ] in
-    lookup_ctyp (fmod, modpath, lid)
+    lookup_typedecl (fmod, modpath, lid)
   ]
 }
 ;
 
+value substitute_ctyp renmap t =
+  let rec subrec = fun [
+    <:ctyp:< ' $id$ >> when List.mem_assoc id renmap ->
+      <:ctyp< ' $(List.assoc id renmap)$ >>
+  | <:ctyp:< [ $list:l$ ] >> ->
+    let l = List.map (fun (loc, cid, tyl, tyo, attrs) ->
+        (loc, cid, Pcaml.vala_map (List.map subrec) tyl, option_map subrec tyo, attrs)
+      ) l in
+      <:ctyp< [ $list:l$ ] >>
+  | <:ctyp< $lid:_$ >> | <:ctyp< $longid:_$ . $lid:_$ >> as z -> z
+  ] in
+  subrec t
+;
+
+value rec import_type arg t =
+  match t with [
+    <:ctyp< $t$ [@ $_attribute:attr$ ] >> ->
+      import_type arg t
+  | t ->
+    let (t, actuals) = Ctyp.unapplist t in
+    let (td, tdl) = import_typedecl arg t in
+    let formals = Pcaml.unvala td.tdPrm in
+    if List.length formals <> List.length actuals then
+      failwith "import_type: type-param formal/actual list-length mismatch"
+    else let renmap = List.fold_left2 (fun renmap f a ->
+        match (Pcaml.unvala (fst f), a) with [
+          (None, _) -> renmap
+        | (Some fid, <:ctyp< ' $id$ >>) when fid <> id -> [ (fid, id) :: renmap ]
+        | _ -> renmap
+        ]) [] formals actuals in
+    if renmap = [] then td.tdDef
+    else substitute_ctyp renmap td.tdDef
+  ]
+;
+
 value registered_ctyp_extension arg = fun [
   <:ctyp:< [% import: $type:t$ ] >> ->
-    Some (import_type loc arg t)
+    Some (import_type arg t)
 | _ -> assert False
 ]
 ;

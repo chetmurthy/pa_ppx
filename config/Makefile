@@ -14,6 +14,9 @@ PACKAGES=camlp5
 
 top: all
 
+.mli.cmi:
+	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES) -syntax camlp5r -c $<
+
 .ml.cmo:
 	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES) -syntax camlp5r -c $<
 
