@@ -128,8 +128,12 @@ value registered_expr_extension arg = fun [
 value is_registered_deriving attr =
   List.exists (fun (name, _) -> is_deriving name attr) plugin_registry.val ;
 
-ef.val := EF.{ (ef.val) with
-            str_item = extfun ef.val.str_item with [
+value is_registered_extension attr =
+  List.mem_assoc (Pcaml.unvala (fst attr)) extension2plugin.val ;
+
+value install_to_ef ef =
+let ef = EF.{ (ef) with
+            str_item = extfun ef.str_item with [
     <:str_item:< type $_flag:_$ $list:tdl$ >> as z
     when  List.exists is_registered_deriving (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
     fun arg ->
@@ -140,11 +144,10 @@ ef.val := EF.{ (ef.val) with
         else []) in
       let l = List.concat ll in
       Some <:str_item< declare $list:[z :: l ]$ end >>
-  ] }
-;
+  ] } in
 
-ef.val := EF.{ (ef.val) with
-            sig_item = extfun ef.val.sig_item with [
+let ef = EF.{ (ef) with
+            sig_item = extfun ef.sig_item with [
     <:sig_item:< type $_flag:_$ $list:tdl$ >> as z
     when  List.exists is_registered_deriving (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
     fun arg ->
@@ -155,16 +158,18 @@ ef.val := EF.{ (ef.val) with
         else []) in
       let l = List.concat ll in
       Some <:sig_item< declare $list:[z :: l ]$ end >>
-  ] }
-;
+  ] } in
 
-value is_registered_extension attr =
-  List.mem_assoc (Pcaml.unvala (fst attr)) extension2plugin.val ;
-
-ef.val := EF.{ (ef.val) with
-  expr = extfun ef.val.expr with [
+let ef = EF.{ (ef) with
+  expr = extfun ef.expr with [
     <:expr:< [% $extension:e$ ] >> as z when is_registered_extension e ->
       fun arg ->
         registered_expr_extension arg z
-  ] }
+  ] } in
+ef
+;
+
+value install () = do {
+  ef.val := install_to_ef ef.val
+}
 ;

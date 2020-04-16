@@ -18,9 +18,12 @@ top: all
 .ml.cmo:
 	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES) -syntax camlp5r -c $<
 
-.SUFFIXES: .cmo .cmi .ml .mli
+.ml.cmx:
+	$(OCAMLFIND) ocamlopt $(DEBUG) -package $(PACKAGES) -syntax camlp5r -c $<
+
+.SUFFIXES: .cmo .cmi .ml .mli .cmx .cma .cmxa
 
 clean::
-	$(RM) -f *.cm* *.byte *.log *.cache *.ppo *.ppo.ml _build/*
+	$(RM) -f *.cm* *.o *.a *.byte *.log *.cache *.ppo *.ppo.ml _build/*
 
 realclean:: clean

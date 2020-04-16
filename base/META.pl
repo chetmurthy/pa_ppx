@@ -13,13 +13,13 @@ description = "pa_ppx base support"
 directory = "$destdir/pa_ppx_base"
 
 # For linking
-archive(byte) = "ppxutil.cmo pa_passthru.cmo pa_unmatched_vala.cmo"
-archive(native) = "ppxutil.cmx pa_passthru.cmx pa_unmatched_vala.cmx"
+archive(byte) = "pa_ppx_base.cma"
+archive(native) = "pa_ppx_base.cmxa"
 
 # For the toploop:
-archive(byte,toploop) = "ppxutil.cmo pa_passthru.cmo pa_unmatched_vala.cmo"
+archive(byte,toploop) = "pa_ppx_base.cma"
 
 # For the preprocessor itself:
-archive(syntax,preprocessor) = "ppxutil.cmo pa_passthru.cmo pa_unmatched_vala.cmo"
+archive(syntax,preprocessor) = "pa_ppx_base.cma"
 
 EOF

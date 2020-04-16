@@ -1,5 +1,5 @@
 (* camlp5r *)
-(* pa_deriving.ml,v *)
+(* surveil.ml,v *)
 (* Copyright (c) INRIA 2007-2017 *)
 
 #load "q_MLast.cmo";
@@ -17,32 +17,31 @@ value item_attributes = ref [] ;
 value alg_attributes = ref [] ;
 value alg_extensions = ref [] ;
 
-ef.val := EF.{ (ef.val) with
-            str_item = extfun ef.val.str_item with [
-    <:str_item:< type $_flag:_$ $list:tdl$ >> as z
+value install_to_ef ef =
+let ef = EF.{ (ef) with
+            str_item = extfun ef.str_item with [
+    <:str_item:< type $_flag:_$ $list:tdl$ >>
     when  List.exists is_registered_deriving (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
     fun arg -> do {
       List.iter (fun td -> List.iter (push item_attributes) (Pcaml.unvala td.tdAttributes))
         tdl ;
         None
       }
-  ] }
-;
+  ] } in
 
-ef.val := EF.{ (ef.val) with
-            sig_item = extfun ef.val.sig_item with [
-    <:sig_item:< type $_flag:_$ $list:tdl$ >> as z
+let ef = EF.{ (ef) with
+            sig_item = extfun ef.sig_item with [
+    <:sig_item:< type $_flag:_$ $list:tdl$ >>
     when  List.exists is_registered_deriving (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
     fun arg -> do {
       List.iter (fun td -> List.iter (push item_attributes) (Pcaml.unvala td.tdAttributes))
         tdl ;
         None
       }
-  ] }
-;
+  ] } in
 
-ef.val := EF.{ (ef.val) with
-  ctyp = extfun ef.val.ctyp with [
+let ef = EF.{ (ef) with
+  ctyp = extfun ef.ctyp with [
     <:ctyp:< $_$ [@ $attribute:attr$ ] >> ->
       fun arg -> do {
         push alg_attributes attr ;
@@ -58,16 +57,15 @@ ef.val := EF.{ (ef.val) with
         None
       }
 
-  ] }
-;
+  ] } in
 
-ef.val := EF.{ (ef.val) with
-  expr = extfun ef.val.expr with [
+let ef = EF.{ (ef) with
+  expr = extfun ef.expr with [
     <:expr:< [% $extension:e$ ] >> ->
       fun arg -> do {
         push alg_extensions e ;
         None
       }
-  ] }
+  ] } in
+ef
 ;
-

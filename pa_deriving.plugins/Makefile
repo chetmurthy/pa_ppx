@@ -2,7 +2,7 @@
 # Copyright (c) INRIA 2007-2017
 
 WD=$(shell pwd)
-TOP=$(WD)/..
+TOP=..
 include $(TOP)/config/Makefile
 
 DESTDIR=
@@ -30,11 +30,11 @@ install::
 	./META.pl $(DESTDIR)/lib > META
 	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_pa_deriving_plugins || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_pa_deriving_plugins -destdir $(DESTDIR)/lib $(CMO) $(CMI) META
+	$(OCAMLFIND) install pa_ppx_pa_deriving_plugins -destdir $(DESTDIR)/lib META $(CMO) $(CMI)
 	$(RM) -f META
 
 local-install::
-	$(MAKE) DESTDIR=$(TOP)/local-install/ install
+	$(MAKE) DESTDIR=$(WD)/$(TOP)/local-install/ install
 
 clean::
 	rm -rf META camlp5.pa_ppx_pa_deriving_plugins

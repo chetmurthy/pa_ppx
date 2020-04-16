@@ -34,4 +34,40 @@ package "show" (
   archive(byte) = "pa_deriving_show.cmo"
 )
 
+package "eq" (
+  requires(syntax,toploop) = "camlp5,pa_ppx_pa_deriving"
+
+  package "syntax" (
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_pa_deriving"
+    archive(syntax,preprocessor) = "pa_deriving_eq.cmo"
+  )
+
+  requires(byte) = "camlp5,pa_ppx_pa_deriving"
+  archive(byte) = "pa_deriving_eq.cmo"
+)
+
+package "ord" (
+  requires(syntax,toploop) = "camlp5,pa_ppx_pa_deriving"
+
+  package "syntax" (
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_pa_deriving"
+    archive(syntax,preprocessor) = "pa_deriving_ord.cmo"
+  )
+
+  requires(byte) = "camlp5,pa_ppx_pa_deriving"
+  archive(byte) = "pa_deriving_ord.cmo"
+)
+
+package "enum" (
+  requires(syntax,toploop) = "camlp5,pa_ppx_pa_deriving"
+
+  package "syntax" (
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_pa_deriving"
+    archive(syntax,preprocessor) = "pa_deriving_enum.cmo"
+  )
+
+  requires(byte) = "camlp5,pa_ppx_pa_deriving"
+  archive(byte) = "pa_deriving_enum.cmo"
+)
+
 EOF

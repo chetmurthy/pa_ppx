@@ -13,13 +13,13 @@ description = "pa_ppx_pa_deriving base support"
 directory = "$destdir/pa_ppx_pa_deriving"
 
 # For linking
-archive(byte) = "pa_deriving.cmo"
-archive(native) = "pa_deriving.cmx"
+archive(byte) = "pa_deriving.cma"
+archive(native) = "pa_deriving.cmxa"
 
 # For the toploop:
-archive(byte,toploop) = "pa_deriving.cmo"
+archive(byte,toploop) = "pa_deriving.cma"
 
 # For the preprocessor itself:
-archive(syntax,preprocessor) = "pa_deriving.cmo"
+archive(syntax,preprocessor) = "pa_deriving.cma"
 
 EOF
