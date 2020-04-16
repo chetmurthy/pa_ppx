@@ -78,7 +78,7 @@ value lookup_cmi fmod =
 value find1lid lid = fun [
   <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
   try_find (fun td -> if Pcaml.unvala (snd (Pcaml.unvala td.tdNam)) = lid then (td,tdl) else failwith "caught") tdl
-| _ -> assert False
+| _ -> failwith "caught"
 ]
 ;
 
@@ -108,11 +108,16 @@ value find_mod mname sil =
   ]
 ;
 
-value rec find_type modpath lid sil =
+value find_type modpath lid sil =
+  let rec findrec modpath lid sil =
   match modpath with [
     [] -> find_lid lid sil
   | [m :: t] ->
-    find_type t lid (find_mod m sil)
+    findrec t lid (find_mod m sil)
+  ] in
+  match findrec modpath lid sil with [
+    x -> x
+  | exception Failure _ -> failwith (Printf.sprintf "find_type: %s.%s" (String.concat "." modpath) lid)
   ]
 ;
 
