@@ -79,11 +79,19 @@ let pp_lexbuf lb =
 
 print_string "================ START ================\n";; flush stdout ;;
 
+#require "pa_ppx_pa_import";;
+
 open Asttypes ;;
 open Parsetree ;;
 open Longident ;;
 
+#trace Pa_import.import_type ;;
+#trace Pa_import.find_type ;;
+#trace Pa_import.lookup1 ;;
 
+Pa_import.add_include "." ;;
+
+"test_ppx_import.ml" |> Fpath.v|> Bos.OS.File.read |> Rresult.R.get_ok |> PAPR.Implem.pa1 |> PAPR.Implem.pr |> print_string ;;o
 
 (*
 ;;; Local Variables: ***

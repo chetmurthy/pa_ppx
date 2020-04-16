@@ -69,7 +69,7 @@ value reparse_cmi infile =
 
 value lookup_cmi fmod =
   let fname = Printf.sprintf "%s.cmi" (String.lowercase_ascii fmod) in
-  match try_find (lookup1 fname) lookup_path.val with [
+  match try_find (fun s -> lookup1 fname s) lookup_path.val with [
     f -> Fmt.(str "%a" Fpath.pp f)
   | exception Failure _ -> failwith (Printf.sprintf "lookup_cmi: module %s not found" fmod)
   ]
@@ -96,7 +96,8 @@ value find1mod mname = fun [
         (Some uid, MtSig _ sil) when Pcaml.unvala uid = mname -> Pcaml.unvala sil
       | _ -> failwith "caught"
       ]) l
-| _ -> assert False
+| <:sig_item< module type $i$ = sig $list:sil$ end $itemattrs:_$ >> when i = mname -> sil
+| _ -> failwith "find1mod"
 ]
 ;
 
@@ -114,17 +115,19 @@ value find_type modpath lid sil =
     [] -> find_lid lid sil
   | [m :: t] ->
     findrec t lid (find_mod m sil)
-  ] in
+  ] in do {
+  Fmt.(pf stderr "[find_type: %a]\n%!" (list ~sep:(const string ".") string) (modpath@[lid])) ;
   match findrec modpath lid sil with [
     x -> x
-  | exception Failure _ -> failwith (Printf.sprintf "find_type: %s.%s" (String.concat "." modpath) lid)
+  | exception Failure _ -> failwith (Printf.sprintf "find_type: %s" (String.concat "." (modpath@[lid])))
   ]
+  }
 ;
 
 value lookup_ctyp (fmod, modpath, lid) = do {
   let f = lookup_cmi fmod in
   let sil = reparse_cmi f in
-  Fmt.(pf stderr "[pa_import: type %s -> %s]\n%!" lid f) ;
+  Fmt.(pf stderr "[pa_import: type %a -> %s]\n%!" (list ~sep:(const string ".") string) ([fmod]@modpath@[lid]) f) ;
   find_type modpath lid sil
 }
 ;
