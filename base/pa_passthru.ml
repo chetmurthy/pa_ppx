@@ -10,6 +10,7 @@
 
 open Asttools;
 open MLast;
+open Ppxutil ;
 
 value option_map f =
   fun
@@ -145,8 +146,6 @@ value option ctxt name =
   ]
 ;
 end ;
-
-value ef = ref (EF.mk ()) ;
 
 value rec ctyp (arg : Ctxt.t)  x =
   match Extfun.apply arg.Ctxt.ef.EF.ctyp x arg with [
@@ -842,13 +841,25 @@ and implem0 arg (l, status) =
     (List.map (fun (si, loc) -> (str_item arg si, loc)) l, status)
 ;
 
-value passthru pa_before arg = do {
+value onepass loc arg ((na:string), ef) = do {
+      Printf.(fprintf stderr "[pass %s]\n%!" na) ;
+      let ctxt = Ctxt.mk ef loc in
+      implem ctxt arg
+    }
+;
+
+value passthru eflist pa_before arg = do {
   let rv = pa_before arg in
   let (l, status) = rv in
   assert (l <> []) ;
   let (_, loc) = List.hd l in
-  let ctxt = Ctxt.mk ef.val loc in
-  implem ctxt (l, status)
+  List.fold_left (onepass loc) (l,status) eflist
 }
 ;
-Pcaml.parse_implem.val := passthru Pcaml.parse_implem.val;
+
+value eflist = ref [] ;
+
+value install x =
+  push eflist x ;
+value before = Pcaml.parse_implem.val ;
+Pcaml.parse_implem.val := (fun arg -> passthru (List.rev eflist.val) before arg);

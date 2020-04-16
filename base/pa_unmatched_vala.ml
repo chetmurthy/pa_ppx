@@ -149,8 +149,10 @@ value rewrite_expr arg = fun [
 ]
 ;
 
-ef.val := EF.{ (ef.val) with
-            expr = extfun ef.val.expr with [
+value install () = 
+let ef = EF.mk () in 
+let ef = EF.{ (ef) with
+            expr = extfun ef.expr with [
     <:expr:< match $e$ with [ $list:branches$ ] >> as z
     when is_unmatched_vala_branches branches ->
     fun arg ->
@@ -159,6 +161,8 @@ ef.val := EF.{ (ef.val) with
     when is_unmatched_vala_branches branches ->
     fun arg ->
       Some (expr0 arg (rewrite_expr arg z))
-  ] }
+  ] } in
+  Pa_passthru.install ("pa_unmatched_vala", ef)
 ;
 
+install();

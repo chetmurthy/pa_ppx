@@ -129,7 +129,8 @@ value is_registered_deriving attr =
 value is_registered_extension attr =
   List.mem_assoc (Pcaml.unvala (fst attr)) extension2plugin.val ;
 
-value install_to_ef ef =
+value install () =
+let ef = EF.mk() in
 let ef = EF.{ (ef) with
             str_item = extfun ef.str_item with [
     <:str_item:< type $_flag:_$ $list:tdl$ >> as z
@@ -164,5 +165,6 @@ let ef = EF.{ (ef) with
       fun arg ->
         registered_expr_extension arg z
   ] } in
-ef
+  Pa_passthru.install ("pa_deriving", ef)
 ;
+install();

@@ -253,8 +253,8 @@ value registered_module_type_extension arg = fun [
 ]
 ;
 
-value install_to_ef ef =
-
+value install () =
+let ef = EF.mk() in
 let ef = EF.{ (ef) with
   ctyp = extfun ef.ctyp with [
     <:ctyp:< [% import: $type:_$ ] >> as z ->
@@ -268,7 +268,7 @@ let ef = EF.{ (ef) with
       fun arg ->
         registered_module_type_extension arg z
   ] } in
-ef
+Pa_passthru.install ("pa_import", ef)
 ;
 
 Pcaml.add_option "-pa_import-package" (Arg.String add_package)
