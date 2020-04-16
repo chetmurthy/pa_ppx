@@ -24,6 +24,7 @@ archive(syntax,preprocessor) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriv
 
 package "show" (
   requires(syntax,toploop) = "camlp5,pa_ppx_pa_deriving"
+  archive(syntax,toploop) = "pa_deriving_show.cmo"
 
   package "syntax" (
     requires(syntax,preprocessor) = "camlp5,pa_ppx_pa_deriving"

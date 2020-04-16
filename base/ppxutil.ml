@@ -57,6 +57,14 @@ value wrap_attrs ty al =
     ty al
 ;
 
+
+value unwrap_attrs e =
+  let rec unrec acc = fun [
+    <:ctyp< $t$  [@ $_attribute:attr$ ] >> -> unrec [attr::acc] t
+  | t -> (t,acc)
+  ] in unrec [] e
+;
+
 value applist e el =
   List.fold_left (fun e arg -> let loc = loc_of_ctyp arg in <:ctyp< $e$ $arg$ >>) e el
 ;

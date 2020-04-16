@@ -108,17 +108,18 @@ end
 
 and Ctxt : sig
   type t = {
-    module_path : string; 
+    _module_path : string; 
     options : list (string * expr) ;
     ef : EF.t } ;
   value mk : EF.t -> Ploc.t -> t ;
   value append_module : t -> string -> t ;
+  value module_path_s : t -> string ;
   value set_module_path : t -> string -> t ;
   value add_options : t -> list (string * expr) -> t ;
   value option : t -> string -> expr ;
 end = struct
   type t = {
-    module_path : string;
+    _module_path : string;
     options : list (string * expr) ;
     ef : EF.t } ;
 value mk ef loc =
@@ -128,13 +129,15 @@ value mk ef loc =
   let base = match String.split_on_char '.' last with [
     [base :: _] -> base | _ -> assert False ] in
   let modname = String.capitalize_ascii base in
-  { module_path = modname ; options = [] ; ef = ef  }
+  { _module_path = modname ; options = [] ; ef = ef  }
 ;
 value append_module ctxt s =
-  { (ctxt) with module_path = Printf.sprintf "%s.%s" ctxt.module_path s }
+  { (ctxt) with _module_path = Printf.sprintf "%s.%s" ctxt._module_path s }
 ;
 value set_module_path ctxt s =
-  { (ctxt) with module_path = s } ;
+  { (ctxt) with _module_path = s } ;
+
+value module_path_s ctxt = ctxt._module_path ;
 
 value add_options ctxt l = { (ctxt) with options = l @ ctxt.options } ;
 

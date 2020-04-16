@@ -191,44 +191,162 @@ value import_typedecl arg t = do {
 }
 ;
 
+module RM = struct
+  value (=) = Reloc.eq_ctyp ;
+  value rec assoc x = fun [
+    [] -> raise Not_found
+  | [(a,b)::l] -> if  a = x then b else assoc x l ];
+
+value rec mem_assoc x = fun [
+    [] -> False
+  | [(a, _) :: l] ->  a = x || mem_assoc x l ];
+
+end
+;
+
 value substitute_ctyp renmap t =
   let rec subrec = fun [
-    <:ctyp:< ' $id$ >> when List.mem_assoc id renmap ->
-      <:ctyp< ' $(List.assoc id renmap)$ >>
+    <:ctyp:< ( $list:l$ ) >> -> <:ctyp< ( $list:List.map subrec l$ ) >>
   | <:ctyp:< [ $list:l$ ] >> ->
     let l = List.map (fun (loc, cid, tyl, tyo, attrs) ->
         (loc, cid, Pcaml.vala_map (List.map subrec) tyl, option_map subrec tyo, attrs)
       ) l in
       <:ctyp< [ $list:l$ ] >>
-  | <:ctyp< $lid:_$ >> | <:ctyp< $longid:_$ . $lid:_$ >> as z -> z
-  ] in
-  subrec t
+  | <:ctyp:< $_$ $_$ >> as z ->
+    subst1 (Ctyp.unapplist z)
+  | t when RM.mem_assoc t renmap ->
+      RM.assoc t renmap
+  | z -> subst1 (z,[])
+  ]
+  and subst1 (t,args) =
+    let args = List.map subrec args in
+    if not (RM.mem_assoc t renmap) then Ctyp.applist t args
+    else match RM.assoc t renmap with [
+      <:ctyp:< $t$ [@ "polyprinter" $e$ ; ] >> ->
+        <:ctyp< $Ctyp.applist t args$ [@ "polyprinter" $e$ ; ] >>
+    | t -> Ctyp.applist t args
+    ]
+  in subrec t
 ;
 
-value rec import_type arg t =
-  match t with [
-    <:ctyp< $t$ [@ $_attribute:attr$ ] >> ->
-      import_type arg t
-  | t ->
-    let (t, actuals) = Ctyp.unapplist t in
-    let (td, tdl) = import_typedecl arg t in
-    let formals = Pcaml.unvala td.tdPrm in
+value string_list_of_expr e =
+  let rec srec = fun [
+    <:expr< $lid:i$ >> -> [i]
+  | <:expr< $uid:i$ >> -> [i]
+  | <:expr< $e1$ . $e2$ >> -> (srec e1) @ (srec e2)
+  ]
+  in srec e
+;
+
+value expr_to_ctyp0 loc e = do {
+  let l = string_list_of_expr e in
+  let (last,l) = sep_last l in
+  assert (last = String.lowercase_ascii last) ;
+  match l with [
+    [] -> <:ctyp< $lid:last$ >>
+  | [h::t] ->
+    let li = List.fold_left (fun li i -> <:longident< $longid:li$ . $uid:i$ >>)
+        <:longident< $uid:h$ >> t in
+    <:ctyp< $longid:li$ . $lid:last$ >>
+  ]}
+;
+
+value expr_to_ctyp loc e =
+  match e with [
+    <:expr:< $e$ [@ $attribute:a$ ] >> ->
+    let ct = expr_to_ctyp0 loc e in
+    <:ctyp:< $ct$ [@ $attribute:a$ ] >>
+  | e -> expr_to_ctyp0 loc e
+  ]
+;
+
+value assignment_to_subst = fun [
+  <:expr:< $e1$ . val := $e2$ >> ->
+    let t1 = expr_to_ctyp loc e1 in
+    let t2 = expr_to_ctyp loc e2 in
+    if Reloc.eq_ctyp t1 t2 then [] else [(t1, t2)]
+]
+;
+
+value attr_id attr = Pcaml.unvala (fst (Pcaml.unvala attr)) ;
+
+value extend_renmap attr renmap =
+  let e = match Pcaml.unvala attr with [
+    <:attribute_body<"with" $exp:e$ ; >> -> e
+  | _ -> failwith "import: unrecognized attribute"
+  ] in
+  let l = match e with [
+    <:expr< $_$ := $_$ >> -> assignment_to_subst e
+  | <:expr< do { $list:l$ } >> ->
+    List.concat (List.map assignment_to_subst l)
+  ] in
+  l @ renmap
+;
+
+value extract_with_attributes attrs =
+  (List.filter (fun a -> "with" = (attr_id a)) attrs,
+   List.filter (fun a -> "with" <> (attr_id a)) attrs)
+;
+
+type unpacked_t =
+  {
+    full_t : ctyp
+  ; attrs : list attribute_body
+  ; bare_t : ctyp
+  ; unapp_t : ctyp
+  ; args : list ctyp
+  ; li : longid
+  ; lid : string
+  ; sl : list string
+  ; loc : Ploc.t
+  }
+;
+
+value unpack_imported_type full_t =
+  let (bare_t,attrs) = Ctyp.unwrap_attrs full_t in
+  let (unapp_t, args) = Ctyp.unapplist bare_t in
+  let (li, lid) = match unapp_t with [
+    <:ctyp< $longid:li$ . $lid:lid$ >> -> (li, lid)
+  | _ -> failwith "unpack_imported_type"
+  ] in
+  let sl = longid_to_string_list li in
+  { full_t = full_t ; attrs = attrs ; bare_t = bare_t ;
+    unapp_t = unapp_t ; args = args ; li = li ;
+    lid = lid ; sl = sl ; loc = loc_of_ctyp full_t }
+;
+
+value rec import_type arg (newtname,new_formals) t renmap =
+  let unp = unpack_imported_type t in
+  let (with_attrs, rest_attrs) = extract_with_attributes unp.attrs in
+  let unp = { (unp) with attrs = rest_attrs } in
+  let renmap = List.fold_right extend_renmap with_attrs [] in
+  let loc = unp.loc in
+  let actuals = unp.args in
+  let (td, tdl) = import_typedecl arg unp.unapp_t in
+  let formals = Pcaml.unvala td.tdPrm in
     if List.length formals <> List.length actuals then
       failwith "import_type: type-param formal/actual list-length mismatch"
     else let renmap = List.fold_left2 (fun renmap f a ->
         match (Pcaml.unvala (fst f), a) with [
           (None, _) -> renmap
-        | (Some fid, <:ctyp< ' $id$ >>) when fid <> id -> [ (fid, id) :: renmap ]
+        | (Some fid, <:ctyp< ' $id$ >>) when fid <> id ->
+          let fid = <:ctyp< ' $fid$ >> in
+          [ (fid, a) :: renmap ]
         | _ -> renmap
-        ]) [] formals actuals in
-    if renmap = [] then td.tdDef
-    else substitute_ctyp renmap td.tdDef
-  ]
+        ]) renmap formals actuals in
+    let oldtname = Pcaml.unvala (snd (Pcaml.unvala td.tdNam)) in
+    let newtname = Pcaml.unvala (snd newtname)in
+    let renmap = if oldtname = newtname then
+        renmap
+      else [ (<:ctyp< $lid:oldtname$ >>, <:ctyp< $lid:newtname$ >>) :: renmap ] in
+    let ct = if renmap = [] then td.tdDef
+    else Ctyp.wrap_attrs (substitute_ctyp renmap td.tdDef) unp.attrs in
+    ct
 ;
 
 value rec import_module_type arg t =
   match t with [
-    <:ctyp< $t$ [@ $_attribute:attr$ ] >> ->
+    <:ctyp< $t$ [@ $attribute:attr$ ] >> ->
       import_module_type arg t
   | <:ctyp< ( module  $longid:li$ . $lid:i$ ) >> ->
       let sl = longid_to_string_list li in
@@ -239,9 +357,10 @@ value rec import_module_type arg t =
   ]
 ;
 
-value registered_ctyp_extension arg = fun [
-  <:ctyp:< [% import: $type:t$ ] >> ->
-    Some (import_type arg t)
+value registered_str_item_extension arg = fun [
+  <:str_item:< type $tp:tname$ $list:l$ = [% import: $type:t$ ] $_itemattrs:ia$ >> ->
+    let ct = import_type arg (tname,l) t [] in
+    <:str_item< type $tp:tname$ $list:l$ = $ct$ $_itemattrs:ia$ >>
 | _ -> assert False
 ]
 ;
@@ -256,10 +375,10 @@ value registered_module_type_extension arg = fun [
 value install () =
 let ef = EF.mk() in
 let ef = EF.{ (ef) with
-  ctyp = extfun ef.ctyp with [
-    <:ctyp:< [% import: $type:_$ ] >> as z ->
+  str_item = extfun ef.str_item with [
+    <:str_item:< type $tp:_$ $list:_$ = [% import: $type:_$ ] $_itemattrs:_$ >> as z ->
       fun arg ->
-        registered_ctyp_extension arg z
+        Some (registered_str_item_extension arg z)
   ] } in
 
 let ef = EF.{ (ef) with
@@ -280,5 +399,5 @@ Pcaml.add_option "-pa_import-predicates" (Arg.String add_predicates)
 Pcaml.add_option "-pa_import-I" (Arg.String add_include)
   "<string> include-directory to search for CMI files.";
 
-Findlib.init() ;
+(* calls lazy_init() so we're sure of being inited *)
 add_include (Findlib.ocaml_stdlib());

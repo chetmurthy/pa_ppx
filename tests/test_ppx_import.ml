@@ -3,6 +3,7 @@
 open OUnit2
 
 type a = [%import: Stuff.a]
+
 type b = [%import: Stuff.b]
 type c = [%import: Stuff.c]
 type d = [%import: Stuff.d]
@@ -75,3 +76,4 @@ let suite = "Test ppx_import" >::: [
 
 let _ =
   run_test_tt_main suite
+

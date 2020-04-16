@@ -22,7 +22,7 @@ value with_path ctxt =
 ;
 
 value prefixed_name ctxt id =
-  if with_path ctxt then Printf.sprintf "%s.%s" ctxt.module_path id
+  if with_path ctxt then Printf.sprintf "%s.%s" (Ctxt.module_path_s ctxt) id
   else id
 ;
 

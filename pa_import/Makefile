@@ -11,7 +11,7 @@ RM=rm
 LAUNCH=$(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),pa_ppx_base,fmt,bos,compiler-libs.common,findlib
+PACKAGES := $(PACKAGES),pa_ppx_base,fmt,bos,compiler-libs.common,findlib.internal
 
 TARGET=pa_import.cma
 CMO=pa_import.cmo harness.cmo
