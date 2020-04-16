@@ -1,9 +1,9 @@
 open OUnit2
 
-type t = [%import: Foo.t]
+type t = [%import: Stuff.t]
 
 let test_simplest ctxt =
- ()
+ let (_ : bool) = true in ()
 
 let suite = "Test import(0)" >::: [
     "test_simplest"   >:: test_simplest

@@ -11,7 +11,7 @@ RM=rm
 LAUNCH=$(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),pa_ppx_base,fmt,bos,compiler-libs.common
+PACKAGES := $(PACKAGES),pa_ppx_base,fmt,bos,compiler-libs.common,findlib
 
 TARGET=pa_import.cma
 CMO=pa_import.cmo harness.cmo
@@ -20,7 +20,7 @@ CMI=$(CMO:.cmo=.cmi)
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_pa_import local-install
 
 camlp5.pa_ppx_pa_import:
-	$(MKCAMLP5) -verbose -package camlp5.pa_r,camlp5.pr_r,pa_ppx_base $(TARGET) -o $@
+	$(MKCAMLP5) -verbose -package $(PACKAGES) $(TARGET) -o $@
 
 META: META.pl
 	./META.pl > META
@@ -39,7 +39,7 @@ clean::
 	rm -rf META camlp5.pa_ppx_pa_import
 
 $(TARGET): $(CMO)
-	$(FINDLIB) ocamlc $(DEBUG) $(CMO) -a -o $(TARGET)
+	$(OCAMLFIND) ocamlc $(DEBUG) $(CMO) -a -o $(TARGET)
 
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 	$(OCAMLFIND) ocamlopt $(DEBUG) $(CMO:.cmo=.cmx) -a -o $(TARGET:.cma=.cmxa)
