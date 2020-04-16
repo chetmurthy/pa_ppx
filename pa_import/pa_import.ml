@@ -13,15 +13,23 @@ open MLast;
 open Pa_passthru ;
 open Ppxutil ;
 
-value packages = ref [] ;
+value lookup_path = ref [] ;
 
-value add_packages s =
+value add_package s =
   let l = String.split_on_char ',' s in
-  List.iter (fun p -> if p <> "" then push packages p else ()) l
+  let l = filter (fun s -> s <> "") l in
+  push lookup_path (Left l)
+;
+
+value add_include s =
+  push lookup_path (Right s)
 ;
 
 value import_type loc arg t = do {
-  Fmt.(pf stderr "[import_type: packages: %s]\n%!" (String.concat "," packages.val)) ;
+  let path = lookup_path.val in
+  let path = List.map (fun [ Left l -> String.concat "," l | Right s -> s ]) path in
+  let path = String.concat ":" path in
+  Fmt.(pf stderr "[import_type: packages: %s]\n%!" path) ;
   <:ctyp< int >> 
 }
 ;
@@ -44,5 +52,8 @@ let ef = EF.{ (ef) with
 ef
 ;
 
-Pcaml.add_option "-pa_import-package" (Arg.String add_packages)
+Pcaml.add_option "-pa_import-package" (Arg.String add_package)
   "<string> list of packages to search for CMI files.";
+
+Pcaml.add_option "-pa_import-I" (Arg.String add_include)
+  "<string> include-directory to search for CMI files.";

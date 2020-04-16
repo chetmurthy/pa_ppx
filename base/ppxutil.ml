@@ -8,6 +8,13 @@
 open Asttools;
 open MLast;
 
+value filter p =
+  let rec filter_aux = fun [
+      [] -> []
+    | [x::l] -> if p x then [x::filter_aux l] else filter_aux l ]
+  in filter_aux
+;
+
 value push r v = r.val := [v :: r.val] ;
 
 module Expr = struct
