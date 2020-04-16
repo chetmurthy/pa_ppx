@@ -71,8 +71,6 @@ value plugin_registry = ref [] ;
 value extension2plugin = ref [] ;
 value algattr2plugin = ref [] ;
 
-value push r v = r.val := [v :: r.val] ;
-
 value add_plugin t = do {
   if List.mem_assoc t.name plugin_registry.val then
     failwith (Printf.sprintf "plugin %s already registered" t.name)

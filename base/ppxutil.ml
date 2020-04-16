@@ -8,6 +8,8 @@
 open Asttools;
 open MLast;
 
+value push r v = r.val := [v :: r.val] ;
+
 module Expr = struct
 
 value prepend_longident li e =

@@ -21,6 +21,7 @@ all:
 	$(MAKE) -C base all
 	$(MAKE) -C pa_deriving all
 	$(MAKE) -C pa_deriving.plugins all
+	$(MAKE) -C pa_import all
 	$(MAKE) -C tests all
 
 
@@ -37,4 +38,5 @@ clean::
 	$(MAKE) -C base clean
 	$(MAKE) -C pa_deriving clean
 	$(MAKE) -C pa_deriving.plugins clean
+	$(MAKE) -C pa_import clean
 	$(MAKE) -C tests clean

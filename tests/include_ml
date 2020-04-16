@@ -33,7 +33,6 @@ Pcaml.inter_phrases := Some ";\n";;
 #directory "../../camlp5/main";;
 Exparser.optim := false ;;
 
-#directory "../../camlp5/testsuite";;
 #load "testutil.cmo";;
 #load "testutil2.cmo";;
 
@@ -41,16 +40,8 @@ open OUnit2 ;;
 open Testutil ;;
 open Testutil2 ;;
 
-#load "roundtrip_lexer.cmo";;
-open Roundtrip_lexer ;;
-
 let pp_plexing_lexbuf b = Fmt.(pf stdout "<<%s>>" (Plexing.Lexbuf.get b)) ;;
 #install_printer pp_plexing_lexbuf ;;
-
-(*
-#load "papr_matrix_test.cmo" ;;
-#load "r2r_test.cmo" ;;
-*)
 
 let pp_loc (loc : Location.t) = Format.print_string "<loc>" ;;
 #install_printer pp_loc ;;
@@ -92,8 +83,8 @@ open Asttypes ;;
 open Parsetree ;;
 open Longident ;;
 
-#require "pa_ppx_pa_deriving_plugins.show" ;;
-"foo.ml" |> Fpath.v |> Bos.OS.File.read |> Rresult.R.get_ok |> PAPR.Implem.pa1 |> PAPR.Implem.pr |> print_string ;;
+
+
 (*
 ;;; Local Variables: ***
 ;;; mode:tuareg ***
