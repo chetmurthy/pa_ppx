@@ -32,7 +32,7 @@ value add_package s =
 ;
 
 value add_include s =
-  push lookup_path s
+  push lookup_path (Findlib.resolve_path s)
 ;
 
 value report () =
@@ -67,11 +67,16 @@ value reparse_cmi infile =
   List.map fst (fst (Pcaml.parse_interf.val (Stream.of_string txt)))
 ;
 
-value lookup_cmi fmod =
-  let fname = Printf.sprintf "%s.cmi" (String.lowercase_ascii fmod) in
+value parse_mli infile =
+  let txt = infile |> Fpath.v|> Bos.OS.File.read |> Rresult.R.get_ok in
+  List.map fst (fst (Pcaml.parse_interf.val (Stream.of_string txt)))
+;
+
+value lookup_file suffix fmod =
+  let fname = Printf.sprintf "%s.%s" (String.lowercase_ascii fmod) suffix in
   match try_find (fun s -> lookup1 fname s) lookup_path.val with [
     f -> Fmt.(str "%a" Fpath.pp f)
-  | exception Failure _ -> failwith (Printf.sprintf "lookup_cmi: module %s not found" fmod)
+  | exception Failure _ -> failwith (Printf.sprintf "lookup_file: module %s (%s) not found" fmod suffix)
   ]
 ;
 
@@ -101,11 +106,24 @@ value find1mod mname = fun [
 ]
 ;
 
+value find1modty mname = fun [
+  <:sig_item< module type $i$ = $mt$ $itemattrs:_$ >> when i = mname -> mt
+| _ -> failwith "find1modty"
+]
+;
+
 
 value find_mod mname sil =
   match try_find (find1mod mname) sil with [
     x -> x
   | exception Failure _ -> failwith (Printf.sprintf "find_mod: %s" mname)
+  ]
+;
+
+value find_modty mname sil =
+  match try_find (find1modty mname) sil with [
+    x -> x
+  | exception Failure _ -> failwith (Printf.sprintf "find_modty: %s" mname)
   ]
 ;
 
@@ -124,11 +142,40 @@ value find_type modpath lid sil =
   }
 ;
 
+value find_module_type modpath sil =
+  let rec findrec modpath sil =
+  match modpath with [
+    [m] ->
+    find_modty m sil
+  | [m :: t] ->
+    findrec t (find_mod m sil)
+  ] in do {
+  Fmt.(pf stderr "[find_module_type: %a]\n%!" (list ~{sep=(const string ".")} string) modpath) ;
+  match findrec modpath sil with [
+    x -> x
+  | exception Failure _ -> failwith (Printf.sprintf "find_type: %s" (String.concat "." modpath))
+  ]
+  }
+;
+
+value lookup_interf fmod =
+  try
+    reparse_cmi (lookup_file "cmi" fmod)
+  with Failure _ ->
+    parse_mli (lookup_file "mli" fmod)
+;
+
 value lookup_typedecl (fmod, modpath, lid) = do {
-  let f = lookup_cmi fmod in
-  let sil = reparse_cmi f in
-  Fmt.(pf stderr "[pa_import: type %a -> %s]\n%!" (list ~{sep=(const string ".")} string) ([fmod]@modpath@[lid]) f) ;
+  let sil = lookup_interf fmod in
   find_type modpath lid sil
+}
+;
+
+value lookup_module_type sil = do {
+  let (fmod, modpath) = match sil with [ [h::t] -> (h,t) | [] -> assert False ] in
+  assert (modpath <> []);
+  let sil = lookup_interf fmod in
+  find_module_type modpath sil
 }
 ;
 
@@ -179,9 +226,29 @@ value rec import_type arg t =
   ]
 ;
 
+value rec import_module_type arg t =
+  match t with [
+    <:ctyp< $t$ [@ $_attribute:attr$ ] >> ->
+      import_module_type arg t
+  | <:ctyp< ( module  $longid:li$ . $lid:i$ ) >> ->
+      let sl = longid_to_string_list li in
+      lookup_module_type (sl@[i])
+  | <:ctyp< ( module  $longid:li$ ) >> ->
+      let sl = longid_to_string_list li in
+      lookup_module_type sl
+  ]
+;
+
 value registered_ctyp_extension arg = fun [
   <:ctyp:< [% import: $type:t$ ] >> ->
     Some (import_type arg t)
+| _ -> assert False
+]
+;
+
+value registered_module_type_extension arg = fun [
+  <:module_type:< [% import: $type:t$ ] >> ->
+    Some (import_module_type arg t)
 | _ -> assert False
 ]
 ;
@@ -193,6 +260,13 @@ let ef = EF.{ (ef) with
     <:ctyp:< [% import: $type:_$ ] >> as z ->
       fun arg ->
         registered_ctyp_extension arg z
+  ] } in
+
+let ef = EF.{ (ef) with
+  module_type = extfun ef.module_type with [
+    <:module_type:< [% import: $type:_$ ] >> as z ->
+      fun arg ->
+        registered_module_type_extension arg z
   ] } in
 ef
 ;
@@ -207,3 +281,4 @@ Pcaml.add_option "-pa_import-I" (Arg.String add_include)
   "<string> include-directory to search for CMI files.";
 
 Findlib.init() ;
+add_include (Findlib.ocaml_stdlib());
