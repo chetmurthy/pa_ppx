@@ -168,8 +168,3 @@ let ef = EF.{ (ef) with
   ] } in
 ef
 ;
-
-value install () = do {
-  ef.val := install_to_ef ef.val
-}
-;
