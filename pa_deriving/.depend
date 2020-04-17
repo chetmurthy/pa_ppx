@@ -1,5 +1,9 @@
-harness.cmo :
-harness.cmx :
+harness.cmo : \
+    surveil.cmo \
+    pa_deriving.cmo
+harness.cmx : \
+    surveil.cmx \
+    pa_deriving.cmx
 pa_deriving.cmo :
 pa_deriving.cmx :
 surveil.cmo : \

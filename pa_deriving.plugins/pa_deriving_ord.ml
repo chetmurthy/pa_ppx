@@ -361,7 +361,7 @@ value expr_ord arg = fun [
 | _ -> assert False ]
 ;
 
-Pa_deriving.(add_plugin {
+Pa_deriving.(add_plugin PI.{
   name = "ord"
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]

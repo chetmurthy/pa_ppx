@@ -259,8 +259,6 @@ value assignment_to_subst = fun [
 ]
 ;
 
-value attr_id attr = Pcaml.unvala (fst (Pcaml.unvala attr)) ;
-
 value extend_renmap attr renmap =
   let e = match Pcaml.unvala attr with [
     <:attribute_body<"with" $exp:e$ ; >> -> e

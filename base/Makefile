@@ -11,6 +11,7 @@ RM=rm
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 
+PACKAGES := $(PACKAGES),fmt
 TARGET := pa_ppx_base.cma
 CMO := ppxutil.cmo pa_passthru.cmo pa_unmatched_vala.cmo
 CMI := $(CMO:.cmo=.cmi)
@@ -18,7 +19,7 @@ CMI := $(CMO:.cmo=.cmi)
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_base local-install
 
 camlp5.pa_ppx_base: $(TARGET)
-	$(MKCAMLP5) -verbose -package camlp5.pa_r,camlp5.pr_r $(TARGET) -o $@
+	$(MKCAMLP5) -verbose -package fmt,camlp5.pa_r,camlp5.pr_r $(TARGET) -o $@
 
 META: META.pl
 	./META.pl > META

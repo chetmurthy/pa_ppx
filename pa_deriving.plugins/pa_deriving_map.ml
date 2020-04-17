@@ -265,7 +265,7 @@ value sig_item_gen_map arg = fun [
 | _ -> assert False ]
 ;
 
-Pa_deriving.(add_plugin{
+Pa_deriving.(add_plugin PI.{
   name = "map"
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]

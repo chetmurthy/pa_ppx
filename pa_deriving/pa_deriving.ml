@@ -13,41 +13,47 @@ open MLast;
 open Pa_passthru ;
 open Ppxutil ;
 
-value or_option from opt1 opt2 =
-  match (opt1, opt2) with [
-    (None, None) -> None
-  | (Some _, None) -> opt1
-  | (None, Some _) -> opt2
-  | (Some _, Some _) -> failwith (Printf.sprintf "found more than one derinvig.%s" from)
+value extract_option name = (fun [
+      (<:patt< $lid:s$ >>, e) -> (s,e)
+    | _ -> failwith ("invalid option-label in deriving."^name)
+    ])
+;
+
+value extract_deriving0 attr =
+  match Pcaml.unvala attr with [
+    <:attribute_body< deriving $structure:sil$ >> ->
+      let rv = [] in
+      List.fold_left (fun rv -> fun [
+        <:str_item< $lid:s$ >> -> [ (s, []) :: rv ]
+      | <:str_item< $lid:s$ { $list:l$ } >> ->
+        let l = List.map (extract_option s) l in
+        [ (s,l) :: rv ]
+      | <:str_item< ( $list:l$ ) >> ->
+        List.fold_left (fun rv -> fun [
+            <:expr< $lid:s$ >>  -> [ (s,[]) :: rv ]
+          | <:expr< $lid:s$ { $list:l$ } >> ->
+            let l = List.map (extract_option s) l in
+            [ (s, l) :: rv ]
+          | _ -> rv ]) rv l
+      | _ -> rv ]) rv sil
+  | _ -> []
   ]
 ;
 
+value is_deriving_attribute attr = attr_id attr = "deriving" ;
 
 value extract_deriving name attr =
-  let rv = None in
-  match Pcaml.unvala attr with [
-    <:attribute_body< deriving $structure:sil$ >> ->
-      List.fold_left (fun rv -> fun [
-        <:str_item< $lid:s$ >> when s = name -> or_option name rv (Some[])
-      | <:str_item< $lid:s$ { $list:l$ } >> when s = name -> or_option name rv (Some l)
-      | <:str_item< ( $list:l$ ) >> ->
-        List.fold_left (fun rv -> fun [
-            <:expr< $lid:s$ >> when s = name -> or_option name rv (Some[])
-          | <:expr< $lid:s$ { $list:l$ } >> when s = name -> or_option name rv (Some l)
-          | _ -> rv ]) rv l
-      | _ -> rv ]) rv sil
-  | _ -> None
-  ]
+  if not (is_deriving_attribute attr) then None
+  else let l = attr |> extract_deriving0
+               |> filter (fun (s,_) -> name = s) in
+    if l = [] then None
+    else  Some (l |> List.map snd |> List.concat)
 ;
 
 value is_deriving name attr = None <> (extract_deriving name attr) ;
 
 value apply_deriving name ctxt attr =
   let update_ctxt ctxt l =
-    let l = List.map (fun [
-      (<:patt< $lid:s$ >>, e) -> (s,e)
-    | _ -> failwith ("invalid option-label in deriving."^name)
-    ]) l in
     Ctxt.{ (ctxt) with options = l @ ctxt.options } in
   match extract_deriving name attr with [
     None -> ctxt
@@ -55,7 +61,8 @@ value apply_deriving name ctxt attr =
   ]
 ;
 
-type plugin_t = {
+module PI = struct
+type t = {
   name : string
 ; options : list string
 ; alg_attributes : list string
@@ -66,13 +73,15 @@ type plugin_t = {
 ; default_options : list (string * expr)
 }
 ;
+end
+;
 
 value plugin_registry = ref [] ;
 value extension2plugin = ref [] ;
 value algattr2plugin = ref [] ;
 
 value add_plugin t = do {
-  if List.mem_assoc t.name plugin_registry.val then
+  if List.mem_assoc t.PI.name plugin_registry.val then
     failwith (Printf.sprintf "plugin %s already registered" t.name)
   else () ;
   List.iter (fun ename ->
@@ -92,8 +101,8 @@ value add_plugin t = do {
 value registered_str_item arg pi = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> as z ->
     let attrs = Pcaml.unvala (fst (sep_last tdl)).tdAttributes in
-    let arg = Ctxt.add_options arg pi.default_options in
-    let arg = List.fold_left (apply_deriving pi.name) arg attrs in
+    let arg = Ctxt.add_options arg pi.PI.default_options in
+    let arg = List.fold_left (apply_deriving pi.PI.name) arg attrs in
     pi.str_item arg z
 
 | _ -> assert False
@@ -103,8 +112,8 @@ value registered_str_item arg pi = fun [
 value registered_sig_item arg pi = fun [
   <:sig_item:< type $_flag:_$ $list:tdl$ >> as z ->
     let attrs = Pcaml.unvala (fst (sep_last tdl)).tdAttributes in
-    let arg = Ctxt.add_options arg pi.default_options in
-    let arg = List.fold_left (apply_deriving pi.name) arg attrs in
+    let arg = Ctxt.add_options arg pi.PI.default_options in
+    let arg = List.fold_left (apply_deriving pi.PI.name) arg attrs in
     pi.sig_item arg z
 
 | _ -> assert False
@@ -167,4 +176,3 @@ let ef = EF.{ (ef) with
   ] } in
   Pa_passthru.install ("pa_deriving", ef)
 ;
-install();

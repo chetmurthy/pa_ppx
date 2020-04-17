@@ -359,7 +359,7 @@ value expr_show arg = fun [
 | _ -> assert False ]
 ;
 
-Pa_deriving.(add_plugin {
+Pa_deriving.(add_plugin PI.{
   name = "show"
 ; options = ["with_path"; "optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ; ("with_path", <:expr< True >>) ]

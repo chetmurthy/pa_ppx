@@ -255,7 +255,7 @@ value sig_item_gen_iter arg = fun [
 | _ -> assert False ]
 ;
 
-Pa_deriving.(add_plugin{
+Pa_deriving.(add_plugin PI.{
   name = "iter"
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]

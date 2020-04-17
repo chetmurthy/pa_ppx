@@ -3,4 +3,6 @@
 (* Copyright (c) INRIA 2007-2017 *)
 
 
-1;
+Surveil.install();
+Pa_deriving.install();
+

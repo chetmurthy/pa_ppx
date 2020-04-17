@@ -122,6 +122,8 @@ and Ctxt : sig
   value set_module_path : t -> list string -> t ;
   value add_options : t -> list (string * expr) -> t ;
   value option : t -> string -> expr ;
+  value scratchdata : t -> string -> scratchdata_t ;
+  value init_scratchdata : t -> string -> scratchdata_t -> unit ;
 end = struct
   type t = {
     _module_path : list string;
@@ -156,6 +158,21 @@ value option ctxt name =
     failwith (Printf.sprintf "Pa_deriving_show.Ctxt.option: option %s not found" name)
   ]
 ;
+
+value scratchdata ctxt name =
+  if not (List.mem_assoc name ctxt.scratch.val) then
+    failwith "scratchdata: no scratch found"
+  else List.assoc name ctxt.scratch.val
+;
+
+value init_scratchdata ctxt name init = do {
+  if  List.mem_assoc name ctxt.scratch.val then
+    failwith "init_scratchdata: scratch already inited"
+  else () ;
+  ctxt.scratch.val := [(name, init) :: ctxt.scratch.val ]
+}
+;
+
 end ;
 
 value rec ctyp (arg : Ctxt.t)  x =
@@ -872,7 +889,10 @@ value passthru eflist pa_before arg = do {
 
 value eflist = ref [] ;
 
-value install x =
-  push eflist x ;
+value install ((na, _) as x) = do {
+  Fmt.(pf stderr "[install %s]\n%!" na) ;
+  push eflist x
+}
+;
 value before = Pcaml.parse_implem.val ;
 Pcaml.parse_implem.val := (fun arg -> passthru (List.rev eflist.val) before arg);
