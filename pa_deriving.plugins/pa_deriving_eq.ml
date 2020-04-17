@@ -176,14 +176,7 @@ value fmt_expression arg param_map ty0 =
     | <:ctyp< $longid:li$ . $_lid:lid$ >> -> (Some li, lid)
     ] in
     let conspat = <:patt< (( # $lilongid:lili$ as a ), ( # $lilongid:lili$ as b )) >> in
-    let fmtf = match ty with [
-      <:ctyp< $lid:lid$ >> ->
-        let f = eq_fname arg lid in
-        <:expr< $lid:f$ >>
-    | <:ctyp< $longid:li$ . $lid:lid$ >> ->
-        let f = eq_fname arg lid in
-        Expr.prepend_longident li <:expr< $lid:f$ >>
-    ] in
+    let fmtf = fmtrec ty in
     (conspat, <:vala< None >>, <:expr< $fmtf$ a b >>)
   ]) l in
   let branches = branches @ [ (<:patt< _ >>, <:vala< None >>, <:expr< False >>) ] in

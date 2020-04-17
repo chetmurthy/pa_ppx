@@ -13,7 +13,17 @@ OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
 PACKAGES := $(PACKAGES),pa_ppx_pa_deriving
 
-CMO=pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo
+CMO=\
+	pa_deriving_show.cmo \
+	pa_deriving_eq.cmo \
+	pa_deriving_ord.cmo \
+	pa_deriving_enum.cmo \
+	pa_deriving_iter.cmo \
+	pa_deriving_map.cmo \
+
+
+#	pa_deriving_fold.cmo \
+
 CMI=$(CMO:.cmo=.cmi)
 
 all: $(CMO) camlp5.pa_ppx_pa_deriving_plugins local-install

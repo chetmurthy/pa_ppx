@@ -306,21 +306,6 @@ value unpack_imported_type full_t =
     lid = lid ; sl = sl ; loc = loc_of_ctyp full_t }
 ;
 
-value rec is_poly_variant t =
-  let (t,_) = Ctyp.unwrap_attrs t in
-  match t with [
-    <:ctyp< [= $list:_$ ] >> -> True
-  | _ -> False ] 
-;
-
-value rec is_generative_type t =
-  let (t,_) = Ctyp.unwrap_attrs t in
-  match t with [
-    <:ctyp< [ $list:_$ ] >> -> True
-  | <:ctyp< { $list:_$ } >> -> True
-  | _ -> False ] 
-;
-
 value rec import_type arg (newtname,new_formals) t renmap =
   let unp = unpack_imported_type t in
   let (with_attrs, rest_attrs) = extract_with_attributes unp.attrs in

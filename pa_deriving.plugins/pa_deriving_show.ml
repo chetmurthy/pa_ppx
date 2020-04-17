@@ -210,21 +210,13 @@ value fmt_expression arg param_map ty0 =
     (conspat, <:vala< None >>, <:expr< let open Fmt in ($e$) >>)
 
   | PvInh _ ty ->
-    let lili = match ty with [
+    let lili = match fst (Ctyp.unapplist ty) with [
       <:ctyp< $_lid:lid$ >> -> (None, lid)
     | <:ctyp< $longid:li$ . $_lid:lid$ >> -> (Some li, lid)
     | [%unmatched_vala] -> failwith "fmt_expression-PvInh"
      ] in
     let conspat = <:patt< ( # $lilongid:lili$ as z ) >> in
-    let fmtf = match ty with [
-      <:ctyp< $lid:lid$ >> ->
-        let f = pp_fname arg lid in
-        <:expr< $lid:f$ >>
-    | <:ctyp< $longid:li$ . $lid:lid$ >> ->
-        let f = pp_fname arg lid in
-        Expr.prepend_longident li <:expr< $lid:f$ >>
-    | [%unmatched_vala] -> failwith "fmt_expression-PvInh-2"
-    ] in
+    let fmtf = fmtrec ty in
     (conspat, <:vala< None >>, <:expr< let open Fmt in ($fmtf$ ofmt z) >>)
   ]) l in
   <:expr< fun ofmt -> fun [ $list:branches$ ] >>

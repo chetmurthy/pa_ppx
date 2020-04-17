@@ -85,3 +85,20 @@ value longid_to_string_list li =
   ] in
   lirec li
 ;
+
+value rec is_poly_variant t =
+  let (t,_) = Ctyp.unwrap_attrs t in
+  match t with [
+    <:ctyp< [ = $list:_$ ] >> -> True
+  | <:ctyp< [ > $list:_$ ] >> -> True
+  | <:ctyp< [ < $list:_$ ] >> -> True
+  | _ -> False ] 
+;
+
+value rec is_generative_type t =
+  let (t,_) = Ctyp.unwrap_attrs t in
+  match t with [
+    <:ctyp< [ $list:_$ ] >> -> True
+  | <:ctyp< { $list:_$ } >> -> True
+  | _ -> False ] 
+;
