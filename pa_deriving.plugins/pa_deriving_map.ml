@@ -52,7 +52,7 @@ value fmt_expression arg param_map ty0 =
     let fmt1 = fmtrec ty in
     <:expr< fun [
             None -> None
-          | (Some) -> Some ($fmt1$ a) ] >>
+          | (Some a) -> Some ($fmt1$ a) ] >>
 
 | (<:ctyp:< result $ty1$ $ty2$ >> | <:ctyp:< Result.result $ty1$ $ty2$ >>) ->
   <:expr< fun [

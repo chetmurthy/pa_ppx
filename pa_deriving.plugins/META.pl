@@ -13,18 +13,14 @@ description = "pa_ppx_pa_deriving_plugins support"
 directory = "$destdir/pa_ppx_pa_deriving_plugins"
 
 # For linking
-#archive(byte) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo pa_deriving_fold.cmo"
-archive(byte) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo"
-#archive(native) = "pa_deriving_show.cmx pa_deriving_eq.cmx pa_deriving_ord.cmx pa_deriving_enum.cmx pa_deriving_iter.cmx pa_deriving_map.cmx pa_deriving_fold.cmx"
-archive(native) = "pa_deriving_show.cmx pa_deriving_eq.cmx pa_deriving_ord.cmx pa_deriving_enum.cmx pa_deriving_iter.cmx pa_deriving_map.cmx"
+archive(byte) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo pa_deriving_fold.cmo"
+archive(native) = "pa_deriving_show.cmx pa_deriving_eq.cmx pa_deriving_ord.cmx pa_deriving_enum.cmx pa_deriving_iter.cmx pa_deriving_map.cmx pa_deriving_fold.cmx"
 
 # For the toploop:
-#archive(byte,toploop) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo pa_deriving_fold.cmo"
-archive(byte,toploop) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo"
+archive(byte,toploop) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo pa_deriving_fold.cmo"
 
 # For the preprocessor itself:
-#archive(syntax,preprocessor) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo pa_deriving_fold.cmo"
-archive(syntax,preprocessor) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo"
+archive(syntax,preprocessor) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo pa_deriving_fold.cmo"
 
 package "show" (
   requires(syntax,toploop) = "camlp5,pa_ppx_pa_deriving"
@@ -99,16 +95,16 @@ package "map" (
   archive(byte) = "pa_deriving_map.cmo"
 )
 
-#package "fold" (
-#  requires(syntax,toploop) = "camlp5,pa_ppx_pa_deriving"
-#
-#  package "syntax" (
-#    requires(syntax,preprocessor) = "camlp5,pa_ppx_pa_deriving"
-#    archive(syntax,preprocessor) = "pa_deriving_fold.cmo"
-#  )
+package "fold" (
+  requires(syntax,toploop) = "camlp5,pa_ppx_pa_deriving"
 
-#  requires(byte) = "camlp5,pa_ppx_pa_deriving"
-#  archive(byte) = "pa_deriving_fold.cmo"
-#)
+  package "syntax" (
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_pa_deriving"
+    archive(syntax,preprocessor) = "pa_deriving_fold.cmo"
+  )
+
+  requires(byte) = "camlp5,pa_ppx_pa_deriving"
+  archive(byte) = "pa_deriving_fold.cmo"
+)
 
 EOF
