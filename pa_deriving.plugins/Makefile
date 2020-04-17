@@ -46,3 +46,9 @@ local-install::
 
 clean::
 	rm -rf META camlp5.pa_ppx_pa_deriving_plugins
+
+depend::
+	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli > .depend.NEW \
+		&& mv .depend.NEW .depend
+
+-include .depend

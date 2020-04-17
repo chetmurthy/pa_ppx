@@ -40,3 +40,10 @@ clean::
 	$(MAKE) -C pa_deriving.plugins clean
 	$(MAKE) -C pa_import clean
 	$(MAKE) -C tests clean
+
+depend:
+	$(MAKE) -C base depend
+	$(MAKE) -C pa_deriving depend
+	$(MAKE) -C pa_deriving.plugins depend
+	$(MAKE) -C pa_import depend
+	$(MAKE) -C tests depend

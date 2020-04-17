@@ -80,4 +80,9 @@ testutil2.cmo: testutil2.ml
 stuff.cmo: stuff.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES) -syntax camlp5o -c $<
 
-testutil2.cmo: testutil.cmo
+depend::
+	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5o testutil2.ml stuff.ml test_*.ml > .depend.NEW
+	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r testutil.ml >> .depend.NEW
+	mv .depend.NEW .depend
+
+-include .depend

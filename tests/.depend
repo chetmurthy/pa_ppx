@@ -1,0 +1,42 @@
+stuff.cmo :
+stuff.cmx :
+test_deriving_enum.cmo : \
+    testutil2.cmo
+test_deriving_enum.cmx : \
+    testutil2.cmx
+test_deriving_eq.cmo : \
+    testutil2.cmo
+test_deriving_eq.cmx : \
+    testutil2.cmx
+test_deriving_fold.cmo :
+test_deriving_fold.cmx :
+test_deriving_iter.cmo :
+test_deriving_iter.cmx :
+test_deriving_map.cmo :
+test_deriving_map.cmx :
+test_deriving_ord.cmo :
+test_deriving_ord.cmx :
+test_deriving_show.cmo : \
+    testutil2.cmo
+test_deriving_show.cmx : \
+    testutil2.cmx
+test_import0.cmo : \
+    testutil2.cmo
+test_import0.cmx : \
+    testutil2.cmx
+test_ppx_import.cmo : \
+    test_self_import.cmi \
+    stuff.cmo
+test_ppx_import.cmx : \
+    test_self_import.cmx \
+    stuff.cmx
+test_self_import.cmo : \
+    test_self_import.cmi
+test_self_import.cmx : \
+    test_self_import.cmi
+testutil2.cmo : \
+    testutil.cmo
+testutil2.cmx : \
+    testutil.cmx
+testutil.cmo :
+testutil.cmx :

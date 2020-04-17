@@ -1,0 +1,12 @@
+pa_passthru.cmo : \
+    ppxutil.cmo
+pa_passthru.cmx : \
+    ppxutil.cmx
+pa_unmatched_vala.cmo : \
+    ppxutil.cmo \
+    pa_passthru.cmo
+pa_unmatched_vala.cmx : \
+    ppxutil.cmx \
+    pa_passthru.cmx
+ppxutil.cmo :
+ppxutil.cmx :

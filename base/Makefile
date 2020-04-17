@@ -36,7 +36,7 @@ clean::
 	rm -rf META camlp5.pa_ppx_base
 
 $(TARGET): $(CMO)
-	$(FINDLIB) ocamlc $(DEBUG) $(CMO) -a -o $(TARGET)
+	$(OCAMLFIND) ocamlc $(DEBUG) $(CMO) -a -o $(TARGET)
 
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 	$(OCAMLFIND) ocamlopt $(DEBUG) $(CMO:.cmo=.cmx) -a -o $(TARGET:.cma=.cmxa)
@@ -44,3 +44,8 @@ $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
+depend::
+	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli > .depend.NEW \
+		&& mv .depend.NEW .depend
+
+-include .depend

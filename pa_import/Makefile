@@ -47,5 +47,8 @@ $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
-harness.cmo: pa_import.cmo
-harness.cmx: pa_import.cmx
+depend::
+	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli > .depend.NEW \
+		&& mv .depend.NEW .depend
+
+-include .depend

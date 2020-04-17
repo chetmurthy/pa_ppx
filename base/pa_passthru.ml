@@ -36,6 +36,8 @@ value class_infos_map arg ~{attributes} f x =
    ciNam = x.ciNam; ciExp = f x.ciExp; ciAttributes = attributes arg x.ciAttributes }
 ;
 
+type scratchdata_t = .. ;
+
 module rec EF : sig
   type extension_point 'a = Extfun.t 'a (Ctxt.t -> option 'a) ;
   type t = {
@@ -110,7 +112,9 @@ and Ctxt : sig
   type t = {
     _module_path : list string; 
     options : list (string * expr) ;
-    ef : EF.t } ;
+    ef : EF.t ;
+    scratch : ref (list ( string * scratchdata_t))
+  } ;
   value mk : EF.t -> Ploc.t -> t ;
   value append_module : t -> string -> t ;
   value module_path : t -> list string ;
@@ -122,7 +126,9 @@ end = struct
   type t = {
     _module_path : list string;
     options : list (string * expr) ;
-    ef : EF.t } ;
+    ef : EF.t ;
+    scratch : ref (list ( string * scratchdata_t))
+  } ;
 value mk ef loc =
   let fname = Ploc.file_name loc in
   let path = String.split_on_char '/' fname in
@@ -130,7 +136,7 @@ value mk ef loc =
   let base = match String.split_on_char '.' last with [
     [base :: _] -> base | _ -> assert False ] in
   let modname = String.capitalize_ascii base in
-  { _module_path = [modname] ; options = [] ; ef = ef  }
+  { _module_path = [modname] ; options = [] ; ef = ef ; scratch = ref []  }
 ;
 value append_module ctxt s =
   { (ctxt) with _module_path = ctxt._module_path @ [s] }
@@ -846,10 +852,10 @@ and implem0 arg (l, status) =
     (List.map (fun (si, loc) -> (str_item arg si, loc)) l, status)
 ;
 
-value onepass loc arg ((na:string), ef) = do {
+value onepass (ctxt,arg) (na, ef) = do {
       Printf.(fprintf stderr "[pass %s]\n%!" na) ;
-      let ctxt = Ctxt.mk ef loc in
-      implem ctxt arg
+      let ctxt = Ctxt.{ (ctxt) with ef = ef } in
+      (ctxt, implem ctxt arg)
     }
 ;
 
@@ -858,7 +864,9 @@ value passthru eflist pa_before arg = do {
   let (l, status) = rv in
   assert (l <> []) ;
   let (_, loc) = List.hd l in
-  List.fold_left (onepass loc) (l,status) eflist
+  let ctxt = Ctxt.mk (EF.mk()) loc in
+  let (_, rv) = List.fold_left onepass (ctxt,(l,status)) eflist in
+  rv
 }
 ;
 
