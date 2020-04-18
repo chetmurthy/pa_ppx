@@ -5,3 +5,4 @@ tests/_build
 */*.o
 */*.a
 local-install
+*/.depend.NEW

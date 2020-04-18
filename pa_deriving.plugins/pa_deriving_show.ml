@@ -55,9 +55,16 @@ value extract_printer (attrs : MLast.attributes_no_anti) =
   exrec attrs
 ;
 
+type attrmod_t = [ Nobuiltin ] ;
+
 value fmt_expression arg param_map ty0 =
-  let rec fmtrec = fun [
-  <:ctyp:< _ >> -> <:expr< let open Fmt in (const string "_") >>
+  let rec fmtrec ?{attrmod=None} = fun [
+
+  <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
+  let fname = pp_fname arg lid in
+  <:expr< $lid:fname$ >>
+
+| <:ctyp:< _ >> -> <:expr< let open Fmt in (const string "_") >>
 | <:ctyp:< unit >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "()") >>
 | <:ctyp:< int >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%d" arg) >>
 | <:ctyp:< bool >> -> <:expr<  Fmt.bool >>
@@ -70,9 +77,8 @@ value fmt_expression arg param_map ty0 =
 | <:ctyp:< nativeint >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%an" nativeint arg) >>
 | <:ctyp:< float >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%F" arg) >>
 
-| <:ctyp:< $lid:lid$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "nobuiltin" ->
-  let fname = pp_fname arg lid in
-  <:expr< $lid:fname$ >>
+| <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "nobuiltin" ->
+    fmtrec ~{attrmod=Some Nobuiltin} t
 
 | <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "opaque" ->
     <:expr< let open Fmt in (const string "<opaque>") >>
@@ -82,7 +88,7 @@ value fmt_expression arg param_map ty0 =
   let argfmts = List.map fmtrec argtys in
   Expr.applist <:expr< $e$ >> argfmts
 
-| <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec t
+| <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
 
 | <:ctyp:< list $ty$ >> ->
   let fmt1 = fmtrec ty in

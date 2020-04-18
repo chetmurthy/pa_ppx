@@ -184,7 +184,7 @@ let test_result_result ctxt =
     (show_i_has_result_result (I_has (Error "err")))
 
 type es =
-  | ESBool of (bool [@nobuiltin])
+  | ESBool of (bool [@a][@nobuiltin][@a])
   | ESString of (string [@nobuiltin])
 and bool =
   | Bfoo of int * (int -> int)

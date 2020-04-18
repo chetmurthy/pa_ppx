@@ -19,6 +19,7 @@ CMI = $(CMO:.cmo=.cmi)
 all:
 	$(RM) -rf local-install && mkdir -p local-install/lib
 	$(MAKE) -C base all
+	$(MAKE) -C pa_unmatched_vala all
 	$(MAKE) -C pa_deriving all
 	$(MAKE) -C pa_deriving.plugins all
 	$(MAKE) -C pa_import all
@@ -36,6 +37,7 @@ install: META.pl
 clean::
 	rm -rf META local-install
 	$(MAKE) -C base clean
+	$(MAKE) -C pa_unmatched_vala clean
 	$(MAKE) -C pa_deriving clean
 	$(MAKE) -C pa_deriving.plugins clean
 	$(MAKE) -C pa_import clean
@@ -43,6 +45,7 @@ clean::
 
 depend:
 	$(MAKE) -C base depend
+	$(MAKE) -C pa_unmatched_vala depend
 	$(MAKE) -C pa_deriving depend
 	$(MAKE) -C pa_deriving.plugins depend
 	$(MAKE) -C pa_import depend
