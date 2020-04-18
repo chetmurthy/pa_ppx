@@ -66,7 +66,6 @@ type t = {
   name : string
 ; options : list string
 ; alg_attributes : list string
-; extensions : list string
 ; expr : Ctxt.t -> expr -> expr
 ; str_item : Ctxt.t -> str_item -> str_item
 ; sig_item : Ctxt.t -> sig_item -> sig_item
@@ -75,7 +74,6 @@ type t = {
 ;
 
 value attributes pi = pi.alg_attributes ;
-value extensions pi = pi.alg_attributes ;
 
 value is_medium_form_attribute pi attr = starts_with ~{pat=pi.name} (attr_id attr) ;
 value is_long_form_attribute pi attr =
@@ -85,15 +83,8 @@ value is_long_form_attribute pi attr =
 value medium_form_attributes pi =
   List.map (fun n -> Printf.sprintf "%s.%s" pi.name n) (attributes pi)
 ;
-value medium_form_extensions pi =
-  List.map (fun n -> Printf.sprintf "%s.%s" pi.name n) (extensions pi)
-;
-
 value long_form_attributes pi =
   List.map (fun n -> Printf.sprintf "deriving.%s.%s" pi.name n) (attributes pi)
-;
-value long_form_extensions pi =
-  List.map (fun n -> Printf.sprintf "deriving.%s.%s" pi.name n) (extensions pi)
 ;
 
 end
@@ -108,12 +99,9 @@ value add t = do {
   if List.mem_assoc t.PI.name plugin_registry.val then
     failwith (Printf.sprintf "plugin %s already registered" t.name)
   else () ;
-  List.iter (fun ename ->
-    if List.mem_assoc ename extension2plugin.val then
-      failwith (Printf.sprintf "extension %s already registered" ename)
-    else ()) t.extensions;
   push plugin_registry (t.name, t) ;
-  List.iter (fun ename -> push extension2plugin (ename, t.name)) t.extensions ;
+  push extension2plugin (t.name, t.name) ;
+  push extension2plugin (Printf.sprintf "deriving.%s" t.name, t.name) ;
   List.iter (fun aname -> push algattr2plugin (aname, t.name)) t.alg_attributes
 }
 ;
@@ -145,8 +133,8 @@ value registered_sig_item arg pi = fun [
 ;
 
 value registered_expr_extension arg = fun [
-  <:expr:< [% $extension:e$ ] >> as z ->
-    let ename = Pcaml.unvala (fst e) in
+  <:expr:< [% $_extension:e$ ] >> as z ->
+    let ename = attr_id e in
     let piname = List.assoc ename extension2plugin.val in
     let pi = List.assoc piname plugin_registry.val in
     let arg = Ctxt.add_options arg pi.default_options in

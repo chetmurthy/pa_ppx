@@ -308,7 +308,6 @@ Pa_deriving.(Registry.add PI.{
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
 ; alg_attributes = ["equal"; "nobuiltin"]
-; extensions = ["eq"]
 ; expr = expr_eq
 ; str_item = str_item_gen_eq
 ; sig_item = sig_item_gen_eq

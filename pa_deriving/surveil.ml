@@ -58,7 +58,6 @@ type t =
   {
     all_plugins : ref (list string)
   ; all_attributes : ref (list string)
-  ; all_extensions : ref (list string)
 
   ; current_plugins : ref (list string)
   ; current_attributes : ref (list string)
@@ -69,7 +68,6 @@ type t =
 value mk () = { 
   all_plugins = ref []
 ; all_attributes = ref [] 
-; all_extensions = ref []
 ; current_plugins = ref []
 ; current_attributes = ref []
 ; allowed_form = ref None
@@ -123,10 +121,9 @@ value (dump : Fmt.t t) ofmt dc =
     Short -> Fmt.(const string "Short" ppf ())
   | Medium -> Fmt.(const string "Medium" ppf ())
   | Long -> Fmt.(const string "Lon" ppf ()) ] in
-  Fmt.(pf ofmt "<dc< {@[ @[all_plugins = [ %a ];@]@, @[all_attributes = [ %a ];@]@, @[all_extension = [ %a ];@]@, @[current_plugins = [ %a ]@] @[current_attributes = [ %a ];@]@, @[allowed_form = %a@] } >>@.%!"
+  Fmt.(pf ofmt "<dc< {@[ @[all_plugins = [ %a ];@]@, @[all_attributes = [ %a ];@]@, @[current_plugins = [ %a ]@] @[current_attributes = [ %a ];@]@, @[allowed_form = %a@] } >>@.%!"
          ssl dc.all_plugins.val
         ssl dc.all_attributes.val
-        ssl dc.all_extensions.val
         ssl dc.current_plugins.val
         ssl dc.current_attributes.val
         (option ppform) dc.allowed_form.val
@@ -159,11 +156,6 @@ value implem arg x = do {
 value add_current_attribute arg id =
   let dc = DC.get arg in
   DC.addset dc.current_attributes id
-;
-
-value add_extension arg id =
-  let dc = DC.get arg in
-  DC.addset dc.all_extensions id
 ;
 
 value add_deriving_attributes ctxt attrs = do {
@@ -318,15 +310,6 @@ let ef = EF.{ (ef) with
         None
       }
 
-  ] } in
-
-let ef = EF.{ (ef) with
-  expr = extfun ef.expr with [
-    <:expr:< [% $_extension:e$ ] >> ->
-      fun arg -> do {
-        add_extension arg (attr_id e) ;
-        None
-      }
   ] } in
 
 let ef = EF.{ (ef) with
