@@ -69,9 +69,11 @@ value fmt_expression arg param_map ty0 =
   ] in
   <:expr< $lid:fmtf$ >>
 
-| <:ctyp:< $lid:lid$ [@nobuiltin] >> ->
+| <:ctyp:< $lid:lid$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "fold" "nobuiltin" ->
   let fname = fold_fname arg lid in
   <:expr< $lid:fname$ >>
+
+| <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec t
 
 | <:ctyp:< $lid:lid$ >> ->
   let fname = fold_fname arg lid in

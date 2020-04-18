@@ -33,7 +33,13 @@ value fmt_expression arg param_map ty0 =
   | <:ctyp:< string >> -> <:expr< fun a b -> Stdlib.compare a b >>
   | <:ctyp:< bytes >> -> <:expr< fun a b -> Stdlib.compare a b >>
 
+| <:ctyp:< $lid:lid$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "ord" "nobuiltin" ->
+  let fname = ord_fname arg lid in
+  <:expr< $lid:fname$ >>
+
   | <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "ord" "compare" -> e
+
+  | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec t
 
   | <:ctyp:< list $ty$ >> ->
   let fmt1 = fmtrec ty in
@@ -94,10 +100,6 @@ value fmt_expression arg param_map ty0 =
     x -> x | exception Not_found -> failwith "pa_deriving.ord: unrecognized param-var in type-decl"
   ] in
   <:expr< $lid:fmtf$ >>
-
-| <:ctyp:< $lid:lid$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "ord" "nobuiltin" ->
-  let fname = ord_fname arg lid in
-  <:expr< $lid:fname$ >>
 
 | <:ctyp:< $lid:lid$ >> ->
   let fname = ord_fname arg lid in

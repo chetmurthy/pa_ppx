@@ -33,8 +33,6 @@ value fmt_expression arg param_map ty0 =
   | <:ctyp:< string >> -> <:expr< fun a b -> a=b >>
   | <:ctyp:< bytes >> -> <:expr< fun a b -> a=b >>
 
-  | <:ctyp:< $t$ [@equal $exp:e$ ;] >> -> e
-
   | <:ctyp:< list $ty$ >> ->
   let fmt1 = fmtrec ty in
   <:expr< let rec loop x y =
@@ -87,9 +85,13 @@ value fmt_expression arg param_map ty0 =
   ] in
   <:expr< $lid:fmtf$ >>
 
-| <:ctyp:< $lid:lid$ [@nobuiltin] >> ->
+  | <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "eq" "equal" -> e
+
+| <:ctyp:< $lid:lid$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "eq" "nobuiltin" ->
   let fname = eq_fname arg lid in
   <:expr< $lid:fname$ >>
+
+| <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec t
 
 | <:ctyp:< $lid:lid$ >> ->
   let fname = eq_fname arg lid in
