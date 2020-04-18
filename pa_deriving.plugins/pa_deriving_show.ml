@@ -228,7 +228,7 @@ value fmt_expression arg param_map ty0 =
 | <:ctyp:< { $list:fields$ } >> ->
   let (recpat, body) = fmt_record ~{without_path=False} ~{prefix_txt=""} ~{bracket_space=" "} loc arg fields in
   <:expr< fun ofmt $recpat$ -> $body$ >>
-| [%unmatched_vala] -> failwith "fmt_expression"
+| [%unmatched_vala] -> failwith "pa_deriving_show.fmt_expression"
 ]
 and fmt_record ~{without_path} ~{prefix_txt} ~{bracket_space} loc arg fields = 
   let labels_vars_fmts = List.map (fun (_, fname, _, ty, attrs) ->

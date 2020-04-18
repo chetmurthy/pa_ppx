@@ -92,6 +92,8 @@ value to_expression arg = fun [
   ]) (0, [], []) l in
   let branches = List.rev revacc in
   (map, <:expr< fun [ $list:branches$ ] >>)
+
+| [%unmatched_vala] -> failwith "pa_deriving_enum.fmt_expression"
   ]
 ;
 

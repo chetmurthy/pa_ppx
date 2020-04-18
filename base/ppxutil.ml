@@ -102,7 +102,10 @@ value longid_to_string_list li =
   let rec lirec = fun [
     <:longident< $uid:uid$ >> -> [uid]
   | <:longident< $longid:li$ . $uid:uid$ >> -> (lirec li) @ [uid]
-  | <:extended_longident< $longid:_$ ( $longid:_$ ) >> -> failwith "longid_to_string_list: LiApp not allowed here"
+  | <:extended_longident< $longid:_$ ( $longid:_$ ) >> ->
+    failwith "longid_to_string_list: LiApp not allowed here"
+  | <:longident< $_uid:_$ >> | <:longident< $longid:_$ . $_uid:_$ >> ->
+    failwith "[internal error] longid_to_string_list: called with longid containing placeholders"
   ] in
   lirec li
 ;

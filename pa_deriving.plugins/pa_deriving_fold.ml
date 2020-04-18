@@ -152,6 +152,7 @@ value fmt_expression arg param_map ty0 =
   let (rec1pat, body) = fmt_record loc arg fields in
   <:expr< fun acc -> fun $rec1pat$ -> $body$ >>
 
+| [%unmatched_vala] -> failwith "pa_deriving_fold.fmt_expression"
   ]
   and fmt_record loc arg fields = 
   let labels_vars_fmts = List.map (fun (_, fname, _, ty, attrs) ->
