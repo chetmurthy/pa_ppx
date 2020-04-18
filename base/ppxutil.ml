@@ -63,6 +63,14 @@ module Patt = struct
 value applist e el =
   List.fold_left (fun e arg -> let loc = loc_of_patt arg in <:patt< $e$ $arg$ >>) e el
 ;
+
+value unapplist e =
+  let rec unrec acc = fun [
+    <:patt< $t$ $arg$ >> -> unrec [arg::acc] t
+  | t -> (t,acc)
+  ] in unrec [] e
+;
+
 end ;
 
 module Ctyp = struct

@@ -44,6 +44,7 @@ module rec EF : sig
     ctyp : extension_point ctyp ;
     generic_constructor : extension_point generic_constructor ;
     patt : extension_point patt ;
+    case_branch : extension_point case_branch ;
     expr : extension_point expr ;
     module_type : extension_point module_type ;
     sig_item : extension_point sig_item ;
@@ -68,6 +69,7 @@ end = struct
     ctyp : extension_point ctyp ;
     generic_constructor : extension_point generic_constructor ;
     patt : extension_point patt ;
+    case_branch : extension_point case_branch ;
     expr : extension_point expr ;
     module_type : extension_point module_type ;
     sig_item : extension_point sig_item ;
@@ -89,6 +91,7 @@ end = struct
     ctyp = Extfun.empty ;
     generic_constructor = Extfun.empty ;
     patt = Extfun.empty ;
+    case_branch = Extfun.empty ;
     expr = Extfun.empty ;
     module_type = Extfun.empty ;
     sig_item = Extfun.empty ;
@@ -363,12 +366,7 @@ and expr0 arg =
     | ExFor loc x1 x2 x3 x4 x5 →
         ExFor loc (patt arg x1) (self x2) (self x3) x4 (vala_map (List.map self) x5)
     | ExFun loc x1 →
-        ExFun loc
-          (vala_map
-             (List.map
-                (fun (x1, x2, x3) →
-                   (patt arg x1, vala_map (option_map self) x2, self x3)))
-             x1)
+        ExFun loc (vala_map (List.map (case_branch arg)) x1)
     | ExIfe loc x1 x2 x3 →
         ExIfe loc (self x1) (self x2) (self x3)
     | ExInt loc x1 x2 →
@@ -395,12 +393,7 @@ and expr0 arg =
     | ExLop loc b x1 x2 →
         ExLop loc b (module_expr arg x1) (self x2)
     | ExMat loc x1 x2 →
-        ExMat loc (self x1)
-          (vala_map
-             (List.map
-                (fun (x1, x2, x3) →
-                   (patt arg x1, vala_map (option_map self) x2, self x3)))
-             x2)
+        ExMat loc (self x1) (vala_map (List.map (case_branch arg)) x2)
     | ExNew loc x1 →
         ExNew loc (vala_map (longid_lident arg) x1)
     | ExObj loc x1 x2 →
@@ -426,12 +419,7 @@ and expr0 arg =
     | ExStr loc x1 →
         ExStr loc x1
     | ExTry loc x1 x2 →
-        ExTry loc (self x1)
-          (vala_map
-             (List.map
-                (fun (x1, x2, x3) →
-                   (patt arg x1, vala_map (option_map self) x2, self x3)))
-             x2)
+        ExTry loc (self x1) (vala_map (List.map (case_branch arg)) x2)
     | ExTup loc x1 →
         ExTup loc (vala_map (List.map self) x1)
     | ExTyc loc x1 x2 →
@@ -450,6 +438,16 @@ and expr0 arg =
         ExUnr loc
     ] in
   self0
+
+and case_branch arg x =
+  match Extfun.apply arg.Ctxt.ef.EF.case_branch x arg with [
+    Some x -> x
+  | None -> case_branch0 arg x
+  | exception Extfun.Failure -> case_branch0 arg x
+  ]
+and case_branch0 arg = fun (x1, x2, x3) →
+      (patt arg x1, vala_map (option_map (expr arg)) x2, expr arg x3)
+
 and module_type arg x =
   match Extfun.apply arg.Ctxt.ef.EF.module_type x arg with [
     Some x -> x
