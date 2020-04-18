@@ -8,12 +8,29 @@
 open Asttools;
 open MLast;
 
+value starts_with ~{pat} s =
+  let patlen = String.length pat in
+  (String.length s >= patlen) && pat = String.sub s 0 patlen
+;
+
+value duplicated (l : list string) =
+  let l = List.sort Stdlib.compare l in
+  let rec duprec = fun [
+    [] -> False
+  | [ h1 ; h2 :: acc ] when h1=h2 -> True
+  | [ _ :: acc ] -> duprec acc
+  ] in
+  duprec l
+;
+
 value filter p =
   let rec filter_aux = fun [
       [] -> []
     | [x::l] -> if p x then [x::filter_aux l] else filter_aux l ]
   in filter_aux
 ;
+
+value intersect l1 l2 = filter (fun x -> List.mem x l2) l1 ;
 
 value count p l = List.length (filter p l) ;
 

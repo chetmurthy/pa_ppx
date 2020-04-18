@@ -52,16 +52,28 @@ module DerivingConfig = struct
 value addset r s =
   if not (List.mem s r.val) then push r s else ()
 ;
+value addsetl r l = List.iter (addset r) l ;
+type form_t = [ Short | Medium | Long ] ;
 type t =
   {
     all_plugins : ref (list string)
+  ; all_attributes : ref (list string)
+  ; all_extensions : ref (list string)
+
   ; current_plugins : ref (list string)
-  ; attributes : ref (list string)
-  ; extensions : ref (list string)
+  ; current_attributes : ref (list string)
+
+  ; allowed_form : ref (option form_t)
   }
 ;
-value mk () = { all_plugins = ref [] ; current_plugins = ref [] ;
-                attributes = ref [] ; extensions = ref [] } ;
+value mk () = { 
+  all_plugins = ref []
+; all_attributes = ref [] 
+; all_extensions = ref []
+; current_plugins = ref []
+; current_attributes = ref []
+; allowed_form = ref None
+} ;
 
 type scratchdata_t += [ Pa_deriving of t ] ;
 
@@ -75,13 +87,67 @@ value init arg =
    Ctxt.init_scratchdata arg "deriving" (Pa_deriving (mk()))
 ;
 
-value dump ofmt dc =
+value start_decl dc plugins = do {
+  assert ([] = dc.current_plugins.val) ;
+  assert ([] = dc.current_attributes.val) ;
+  List.iter (fun (na, options) ->
+      if not (Registry.mem na) &&
+         not (List.exists (fun [ (optional, <:expr< True >>) -> True | _ -> False ]) options) then
+        failwith (Printf.sprintf "plugin %s specified but not loaded" na)
+      else ()) plugins ;
+  dc.current_plugins.val := List.map fst plugins
+}
+;
+
+value end_decl dc = do {
+  let attributes = dc.current_attributes.val in
+  dc.current_plugins.val := [] ;
+  dc.current_attributes.val := [] ;
+  attributes
+}
+;
+
+value set_form dc f =
+  if dc.allowed_form.val = None then
+    dc.allowed_form.val := Some f
+  else if dc.allowed_form.val = Some f then ()
+  else failwith "DC.set_form: form of attributes/extensions already set; trying to set it to different value"
+;
+
+value get_form dc =
+  match dc.allowed_form.val with [ None -> Short | Some f -> f ] ;
+
+value (dump : Fmt.t t) ofmt dc =
   let ssl = Fmt.(list ~{sep=semi} string) in
-  Fmt.(pf ofmt "<dc< { all_plugins = [ %a ]; current_plugins = [ %a ] ; attributes = [ %a ] ; extension = [ %a ] >>%!"
-         ssl dc.all_plugins.val ssl dc.current_plugins.val ssl dc.attributes.val ssl dc.extensions.val)
+  let ppform ppf = fun [
+    Short -> Fmt.(const string "Short" ppf ())
+  | Medium -> Fmt.(const string "Medium" ppf ())
+  | Long -> Fmt.(const string "Lon" ppf ()) ] in
+  Fmt.(pf ofmt "<dc< {@[ @[all_plugins = [ %a ];@]@, @[all_attributes = [ %a ];@]@, @[all_extension = [ %a ];@]@, @[current_plugins = [ %a ]@] @[current_attributes = [ %a ];@]@, @[allowed_form = %a@] } >>@.%!"
+         ssl dc.all_plugins.val
+        ssl dc.all_attributes.val
+        ssl dc.all_extensions.val
+        ssl dc.current_plugins.val
+        ssl dc.current_attributes.val
+        (option ppform) dc.allowed_form.val
+      )
 ;
-end
+
+value allowed_attribute dc piname attrname = do {
+  assert (List.mem attrname  Registry.((get piname).alg_attributes)) ;
+  match dc.allowed_form.val with [
+    (None | Some Short) -> attrname
+  | Some Medium -> Printf.sprintf "%s.%s" piname attrname
+  | Some Long -> Printf.sprintf "deriving.%s.%s" piname attrname
+  ]
+}
 ;
+value is_allowed_attribute dc piname attrname attr =
+  let wantid = allowed_attribute dc piname attrname in
+  wantid = attr_id attr
+;
+end ;
+
 module DC = DerivingConfig ;  
 
 value implem arg x = do {
@@ -90,56 +156,163 @@ value implem arg x = do {
 }
 ;
 
-value add_deriving arg attr =
+value add_current_attribute arg id =
   let dc = DC.get arg in
-  let _ = dc in
-  let l = extract_deriving0 attr in
-  if l = [] then failwith "add_derivings: @@deriving with no plugins"
-  else
-    l |> List.map fst |> List.iter (DC.addset dc.all_plugins)
+  DC.addset dc.current_attributes id
 ;
 
+value add_extension arg id =
+  let dc = DC.get arg in
+  DC.addset dc.all_extensions id
+;
 
+value add_deriving_attributes ctxt attrs = do {
+    let dc = DC.get ctxt in
+    let attrs = filter is_deriving_attribute attrs in
+    let plugins = extract_deriving0 (List.hd attrs) in
+    if plugins = [] then failwith "Surveil.str_item: @@deriving with no plugins"
+    else DC.addsetl dc.all_plugins (List.map fst plugins) ;
+    plugins
+}
+;
+
+value sig_item arg = fun [
+  <:sig_item:< type $_flag:_$ $list:tdl$ >> as z -> do {
+    let td = fst (sep_last tdl) in
+    let plugins = add_deriving_attributes arg (Pcaml.unvala td.tdAttributes) in
+    let dc = DC.get arg in
+    DC.start_decl dc plugins ;
+    let rv = Pa_passthru.sig_item0 arg z in
+    let attributes = DC.end_decl dc in
+    let reg_short_form_attributes =
+      plugins
+      |> List.map fst
+      |> List.map Registry.get
+      |> List.map PI.attributes
+      |> List.concat in
+    let reg_short_form_duplicated = duplicated reg_short_form_attributes in
+    let reg_medium_form_attributes =
+      plugins
+      |> List.map fst
+      |> List.map Registry.get
+      |> List.map PI.medium_form_attributes
+      |> List.concat in
+    let reg_long_form_attributes =
+      plugins
+      |> List.map fst
+      |> List.map Registry.get
+      |> List.map PI.long_form_attributes
+      |> List.concat in
+
+    let short_form_attributes = intersect attributes reg_short_form_attributes in
+    let medium_form_attributes = intersect attributes reg_medium_form_attributes in
+    let long_form_attributes = intersect attributes reg_long_form_attributes in
+
+    if not (match (short_form_attributes<>[], medium_form_attributes<>[], long_form_attributes<>[]) with [
+      (True, False, False) -> True
+    | (False, True, False) -> True
+    | (False, False, True) -> True
+    | (False, False, False) -> True
+    | _ -> False
+    ]) then failwith "mixed short/medium/long-form attributes"
+    else () ;
+    if short_form_attributes <> [] && reg_short_form_duplicated then
+      failwith "short-form attributes used, but some apply to more than one plugin"
+    else () ;
+    
+    if [] <> long_form_attributes then DC.(set_form dc Long)
+    else if [] <> medium_form_attributes then DC.(set_form dc Medium)
+    else if [] <> short_form_attributes then DC.(set_form dc Short)
+    else () ;
+    rv
+  }
+| _ -> assert False
+]
+;
+
+value str_item arg = fun [
+  <:str_item:< type $_flag:_$ $list:tdl$ >> as z -> do {
+    let td = fst (sep_last tdl) in
+    let plugins = add_deriving_attributes arg (Pcaml.unvala td.tdAttributes) in
+    let dc = DC.get arg in
+    DC.start_decl dc plugins ;
+    let rv = Pa_passthru.str_item0 arg z in
+    let attributes = DC.end_decl dc in
+    let reg_short_form_attributes =
+      plugins
+      |> List.map fst
+      |> List.map Registry.get
+      |> List.map PI.attributes
+      |> List.concat in
+    let reg_medium_form_attributes =
+      plugins
+      |> List.map fst
+      |> List.map Registry.get
+      |> List.map PI.medium_form_attributes
+      |> List.concat in
+    let reg_long_form_attributes =
+      plugins
+      |> List.map fst
+      |> List.map Registry.get
+      |> List.map PI.long_form_attributes
+      |> List.concat in
+
+    let used_short_form_attributes = filter (fun s -> List.mem s attributes) reg_short_form_attributes in
+    let used_medium_form_attributes = filter (fun s -> List.mem s attributes) reg_medium_form_attributes in
+    let used_long_form_attributes = filter (fun s -> List.mem s attributes) reg_long_form_attributes in
+
+    if not (match (used_short_form_attributes<>[],
+                   used_medium_form_attributes<>[],
+                   used_long_form_attributes<>[]) with [
+      (True, False, False) -> True
+    | (False, True, False) -> True
+    | (False, False, True) -> True
+    | (False, False, False) -> True
+    | _ -> False
+    ]) then failwith "mixed short/medium/long-form attributes"
+    else () ;
+    if duplicated used_short_form_attributes then
+      failwith "short-form attributes used, but some apply to more than one plugin"
+    else () ;
+    
+    if [] <> used_long_form_attributes then DC.(set_form dc Long)
+    else if [] <> used_medium_form_attributes then DC.(set_form dc Medium)
+    else if [] <> used_short_form_attributes then DC.(set_form dc Short)
+    else () ;
+    rv
+  }
+| _ -> assert False
+]
+;
 
 value install () =
 let ef = EF.mk() in
 
 let ef = EF.{ (ef) with
             str_item = extfun ef.str_item with [
-    <:str_item:< type $_flag:_$ $list:tdl$ >>
-    when  1 = count is_registered_deriving (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
-    fun arg -> do {
-      let add1 (attr : attribute_body) = if is_deriving_attribute attr then
-          add_deriving arg attr else () in
-      List.iter add1 (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ;
-        None
-      }
+    <:str_item:< type $_flag:_$ $list:tdl$ >> as z
+    when  1 = count is_deriving_attribute (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
+    fun arg -> Some (str_item arg z)
+  ] } in
+let ef = EF.{ (ef) with
+            sig_item = extfun ef.sig_item with [
+    <:sig_item:< type $_flag:_$ $list:tdl$ >> as z
+    when  1 = count is_deriving_attribute (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
+    fun arg -> Some (sig_item arg z)
   ] } in
 
 let ef = EF.{ (ef) with
-            sig_item = extfun ef.sig_item with [
-    <:sig_item:< type $_flag:_$ $list:tdl$ >>
-    when  List.exists is_registered_deriving (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
-    fun arg -> do {
-      let add1 (attr : attribute_body) = if is_deriving_attribute attr then
-          add_deriving arg attr else () in
-      List.iter add1 (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ;
-        None
-      }
-  ] } in
-(*
-let ef = EF.{ (ef) with
   ctyp = extfun ef.ctyp with [
-    <:ctyp:< $_$ [@ $attribute:attr$ ] >> ->
+    <:ctyp:< $_$ [@ $_attribute:attr$ ] >> ->
       fun arg -> do {
-        push alg_attributes attr ;
+        add_current_attribute arg (attr_id attr) ;
         None
       }
   | <:ctyp:< [ $list:l$ ] >> ->
       fun arg -> do {
         List.iter (fun [
           (loc, cid, tyl, None, attrs) ->
-          List.iter (fun a -> push alg_attributes (Pcaml.unvala a)) (Pcaml.unvala attrs)
+          List.iter (fun a -> add_current_attribute arg (attr_id a)) (Pcaml.unvala attrs)
         | _ -> ()
         ]) l ;
         None
@@ -149,13 +322,13 @@ let ef = EF.{ (ef) with
 
 let ef = EF.{ (ef) with
   expr = extfun ef.expr with [
-    <:expr:< [% $extension:e$ ] >> ->
+    <:expr:< [% $_extension:e$ ] >> ->
       fun arg -> do {
-        push alg_extensions e ;
+        add_extension arg (attr_id e) ;
         None
       }
   ] } in
-*)
+
 let ef = EF.{ (ef) with
   implem = extfun ef.implem with [
     z ->

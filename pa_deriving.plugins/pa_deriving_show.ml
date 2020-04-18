@@ -9,6 +9,7 @@ open Asttools;
 open MLast;
 open Pa_passthru ;
 open Ppxutil ;
+open Surveil ;
 
 module Ctxt = struct
   include Pa_passthru.Ctxt ;
@@ -69,12 +70,19 @@ value fmt_expression arg param_map ty0 =
 | <:ctyp:< nativeint >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%an" nativeint arg) >>
 | <:ctyp:< float >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%F" arg) >>
 
-| <:ctyp:< $t$ [@opaque] >> -> <:expr< let open Fmt in (const string "<opaque>") >>
-| <:ctyp:< $t$ [@printer $exp:e$ ;] >> -> e
-| <:ctyp:< $t$ [@polyprinter $exp:e$ ;] >> ->
+| <:ctyp:< $lid:lid$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "nobuiltin" ->
+  let fname = pp_fname arg lid in
+  <:expr< $lid:fname$ >>
+
+| <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "opaque" ->
+    <:expr< let open Fmt in (const string "<opaque>") >>
+| <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "show" "printer" -> e
+| <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "show" "polyprinter" ->
   let (t0, argtys) = Ctyp.unapplist t in
   let argfmts = List.map fmtrec argtys in
   Expr.applist <:expr< $e$ >> argfmts
+
+| <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec t
 
 | <:ctyp:< list $ty$ >> ->
   let fmt1 = fmtrec ty in
@@ -115,10 +123,6 @@ value fmt_expression arg param_map ty0 =
     x -> x | exception Not_found -> failwith "pa_deriving.show: unrecognized param-var in type-decl"
   ] in
   <:expr< $lid:fmtf$ >>
-
-| <:ctyp:< $lid:lid$ [@nobuiltin] >> ->
-  let fname = pp_fname arg lid in
-  <:expr< $lid:fname$ >>
 
 | <:ctyp:< $lid:lid$ >> ->
   let fname = pp_fname arg lid in
@@ -359,11 +363,11 @@ value expr_show arg = fun [
 | _ -> assert False ]
 ;
 
-Pa_deriving.(add_plugin PI.{
+Pa_deriving.(Registry.add PI.{
   name = "show"
 ; options = ["with_path"; "optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ; ("with_path", <:expr< True >>) ]
-; alg_attributes = ["opaque"; "printer"; "polyprinter"]
+; alg_attributes = ["opaque"; "printer"; "polyprinter"; "nobuiltin"]
 ; extensions = ["show"]
 ; expr = expr_show
 ; str_item = str_item_gen_show

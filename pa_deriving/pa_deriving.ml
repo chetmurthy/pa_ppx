@@ -73,6 +73,29 @@ type t = {
 ; default_options : list (string * expr)
 }
 ;
+
+value attributes pi = pi.alg_attributes ;
+value extensions pi = pi.alg_attributes ;
+
+value is_medium_form_attribute pi attr = starts_with ~{pat=pi.name} (attr_id attr) ;
+value is_long_form_attribute pi attr =
+  let name = Printf.sprintf "deriving.%s" pi.name in
+ starts_with ~{pat=name} (attr_id attr) ;
+
+value medium_form_attributes pi =
+  List.map (fun n -> Printf.sprintf "%s.%s" pi.name n) (attributes pi)
+;
+value medium_form_extensions pi =
+  List.map (fun n -> Printf.sprintf "%s.%s" pi.name n) (extensions pi)
+;
+
+value long_form_attributes pi =
+  List.map (fun n -> Printf.sprintf "deriving.%s.%s" pi.name n) (attributes pi)
+;
+value long_form_extensions pi =
+  List.map (fun n -> Printf.sprintf "deriving.%s.%s" pi.name n) (extensions pi)
+;
+
 end
 ;
 
@@ -80,7 +103,8 @@ value plugin_registry = ref [] ;
 value extension2plugin = ref [] ;
 value algattr2plugin = ref [] ;
 
-value add_plugin t = do {
+module Registry = struct
+value add t = do {
   if List.mem_assoc t.PI.name plugin_registry.val then
     failwith (Printf.sprintf "plugin %s already registered" t.name)
   else () ;
@@ -88,16 +112,16 @@ value add_plugin t = do {
     if List.mem_assoc ename extension2plugin.val then
       failwith (Printf.sprintf "extension %s already registered" ename)
     else ()) t.extensions;
-  List.iter (fun aname ->
-    if List.mem_assoc aname algattr2plugin.val then
-      failwith (Printf.sprintf "algebraic %s already registered" aname)
-    else ()) t.alg_attributes ;
   push plugin_registry (t.name, t) ;
   List.iter (fun ename -> push extension2plugin (ename, t.name)) t.extensions ;
   List.iter (fun aname -> push algattr2plugin (aname, t.name)) t.alg_attributes
 }
 ;
 
+value mem na = List.mem_assoc na plugin_registry.val ;
+value get na = List.assoc na  plugin_registry.val ;
+end
+;
 value registered_str_item arg pi = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> as z ->
     let attrs = Pcaml.unvala (fst (sep_last tdl)).tdAttributes in

@@ -210,11 +210,11 @@ value sig_item_gen_enum arg = fun [
 | _ -> assert False ]
 ;
 
-Pa_deriving.(add_plugin PI.{
+Pa_deriving.(Registry.add PI.{
   name = "enum"
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
-; alg_attributes = ["value"]
+; alg_attributes = ["value"; "nobuiltin"]
 ; extensions = []
 ; expr = (fun _ _ -> assert False)
 ; str_item = str_item_gen_enum

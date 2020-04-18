@@ -361,11 +361,11 @@ value expr_ord arg = fun [
 | _ -> assert False ]
 ;
 
-Pa_deriving.(add_plugin PI.{
+Pa_deriving.(Registry.add PI.{
   name = "ord"
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
-; alg_attributes = ["compare"]
+; alg_attributes = ["compare";"nobuiltin"]
 ; extensions = ["ord"]
 ; expr = expr_ord
 ; str_item = str_item_gen_ord

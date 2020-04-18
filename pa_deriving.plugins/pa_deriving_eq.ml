@@ -303,11 +303,11 @@ value expr_eq arg = fun [
 | _ -> assert False ]
 ;
 
-Pa_deriving.(add_plugin PI.{
+Pa_deriving.(Registry.add PI.{
   name = "eq"
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
-; alg_attributes = ["equal"]
+; alg_attributes = ["equal"; "nobuiltin"]
 ; extensions = ["eq"]
 ; expr = expr_eq
 ; str_item = str_item_gen_eq
