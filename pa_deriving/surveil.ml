@@ -85,15 +85,21 @@ value init arg =
    Ctxt.init_scratchdata arg "deriving" (Pa_deriving (mk()))
 ;
 
+value legitimate_plugin_reference (na, options) =
+  Registry.mem na ||
+  List.exists (fun [ ("optional", <:expr< True >>) -> True | _ -> False ]) options
+;
+
 value start_decl dc plugins = do {
   assert ([] = dc.current_plugins.val) ;
   assert ([] = dc.current_attributes.val) ;
-  List.iter (fun (na, options) ->
-      if not (Registry.mem na) &&
-         not (List.exists (fun [ (optional, <:expr< True >>) -> True | _ -> False ]) options) then
+  List.iter (fun ((na, _) as r) ->
+      if not (legitimate_plugin_reference r) then
         failwith (Printf.sprintf "plugin %s specified but not loaded" na)
       else ()) plugins ;
-  dc.current_plugins.val := List.map fst plugins
+  let plugins = filter (fun (na,_) -> Registry.mem na) plugins in
+  dc.current_plugins.val := List.map fst plugins ;
+  plugins
 }
 ;
 
@@ -173,7 +179,7 @@ value sig_item arg = fun [
     let td = fst (sep_last tdl) in
     let plugins = add_deriving_attributes arg (Pcaml.unvala td.tdAttributes) in
     let dc = DC.get arg in
-    DC.start_decl dc plugins ;
+    let plugins = DC.start_decl dc plugins in
     let rv = Pa_passthru.sig_item0 arg z in
     let attributes = DC.end_decl dc in
     let reg_short_form_attributes =
@@ -227,7 +233,7 @@ value str_item arg = fun [
     let td = fst (sep_last tdl) in
     let plugins = add_deriving_attributes arg (Pcaml.unvala td.tdAttributes) in
     let dc = DC.get arg in
-    DC.start_decl dc plugins ;
+    let plugins = DC.start_decl dc plugins in
     let rv = Pa_passthru.str_item0 arg z in
     let attributes = DC.end_decl dc in
     let reg_short_form_attributes =
