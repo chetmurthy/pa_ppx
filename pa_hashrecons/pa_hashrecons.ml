@@ -54,6 +54,10 @@ value rec rerec0 = fun [
     (<:patt< ($p$ as $z$ ) >>, e) ->
     rerec1 zvar (p, e)
 
+  | (<:patt< $uid:puid$ >>, (<:expr< $uid:euid$ >> as e)) when puid = euid ->
+    let czvar = "c"^zvar in
+    (czvar, e, zvar)
+
   | ((<:patt< $_$ $_$ >> as p), (<:expr:< $_$ $_$ >> as e)) ->
     let (p, pargs) = Patt.unapplist p in
     let (e, eargs) = Expr.unapplist e in
@@ -89,9 +93,12 @@ value rewrite_expr0 (p0, e0) =
   <:expr< let $lid:cz$ = $e$ in $lid:cz$ >>
 ;
 
-value rewrite_expr rv1 p e = match (p, e) with [
+value rec rewrite_expr rv1 p e = match (p, e) with [
   (p, <:expr< $e$ [@hashrecons $lid:rv2$ ; ] >>) when rv1 = rv2 ->
   rewrite_expr0 (p, e)
+| (p, <:expr:< let $_flag:r$ $_list:l$ in $x$ >>) ->
+  let x = rewrite_expr rv1 p x in
+  <:expr< let $_flag:r$ $_list:l$ in $x$ >>
 ]
 ;
 

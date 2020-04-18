@@ -2,6 +2,14 @@ open OUnit2
 
 type t = Leaf of int | Node of t * int * t
 
+module HCList = struct
+
+let rec map f = function
+    [][@hashrecons z] -> [][@hashrecons z]
+  | (a::l)[@hashrecons z] -> let r = f a in ((r :: map f l)[@hashrecons z])
+
+end
+
 let deep =
 let rec deep = (function
   Leaf n[@hashrecons z] -> Leaf n[@hashrecons z]
@@ -11,47 +19,57 @@ let rec deep = (function
 [@@ocaml.warning "-26"]
 in deep
 
-let rec manual_deep =
-let rec deep =
-  (function
-    | Leaf (n as z_0) as z_1 ->
-      let cz_1 =
-        let cz_0 = n in
-        if cz_0 == z_0 && true then z_1 else Leaf cz_0
-      in cz_1
-
-    | Node ((l as z_0), (n as z_1), (r as z_2)) as z_3 ->
-      let cz_3 =
-        let cz_0 = deep l in
-        let cz_1 = n in
-        let cz_2 = deep r in
-        if cz_0 == z_0 && cz_1 == z_1 && cz_2 == z_2 && true then z_3
-        else Node (cz_0, cz_1, cz_2)
-      in cz_3
-
-  )[@@ocaml.warning "-26"]
-in deep
-
-let test_simplest ctxt =
+let test_tree_deep ctxt =
  assert_equal (Node (Leaf 0, 1, Leaf 2)) (deep (Node (Leaf 0, 1, Leaf 2)))
 
-let test_pointer_equality ctxt =
+let test_tree_pointer_equality ctxt =
  let arg = Node (Leaf 0, 1, Leaf 2) in
  assert_bool "not pointer-equal" (arg == (deep arg))
 
-let test_manual_pointer_equality0 ctxt =
- let arg = Leaf 0 in
- assert_bool "not pointer-equal" (arg == (manual_deep arg))
+type sexp = 
+  | Atom of string 
+  | List of sexp list
 
-let test_manual_pointer_equality1 ctxt =
- let arg = Node (Leaf 0, 1, Leaf 2) in
- assert_bool "not pointer-equal" (arg == (manual_deep arg))
+let sexp_deep =
+  let rec deep = function
+      Atom s[@hashrecons z] -> Atom s[@hashrecons z]
+    | List l[@hashrecons z] -> List (HCList.map deep l)[@hashrecons z]
+  in deep
+
+let test_sexp_deep ctxt =
+  let arg = List[Atom "lambda"; List[Atom"x"]; Atom "x"] in
+ assert_equal arg (sexp_deep arg)
+
+let test_sexp_pointer_equality0 ctxt =
+  let arg = Atom "x" in
+ assert_bool "not pointer-equal" (arg == (sexp_deep arg))
+
+let test_sexp_pointer_equality1 ctxt =
+  let arg = List[Atom "x"] in
+ assert_bool "not pointer-equal" (arg == (sexp_deep arg))
+
+let test_map0 ctxt =
+  let arg = [] in
+ assert_bool "not pointer-equal" (arg == HCList.map (fun x -> x) arg)
+
+let test_map1 ctxt =
+  let arg = [1;2;3] in
+ assert_bool "not pointer-equal" (arg == HCList.map (fun x -> x) arg)
+
+let test_sexp_pointer_equality2 ctxt =
+  let arg = List[Atom "lambda"; List[Atom"x"]; Atom "x"] in
+ assert_bool "not pointer-equal" (arg == (sexp_deep arg))
+
 
 let suite = "Test hashrecons" >::: [
-    "test_simplest"   >:: test_simplest ;
-    "test_pointer_equality"   >:: test_pointer_equality ;
-    "test_manual_pointer_equality0"   >:: test_manual_pointer_equality0 ;
-    "test_manual_pointer_equality1"   >:: test_manual_pointer_equality1
+    "test_tree_deep"   >:: test_tree_deep ;
+    "test_tree_pointer_equality"   >:: test_tree_pointer_equality ;
+    "test_sexp_deep"   >:: test_sexp_deep ;
+    "test_map0"   >:: test_map0 ;
+    "test_map1"   >:: test_map1 ;
+    "test_sexp_pointer_equality0"   >:: test_sexp_pointer_equality0 ;
+    "test_sexp_pointer_equality1"   >:: test_sexp_pointer_equality1 ;
+    "test_sexp_pointer_equality2"   >:: test_sexp_pointer_equality2
   ]
 
 let _ = 
