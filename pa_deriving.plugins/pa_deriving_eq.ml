@@ -12,6 +12,7 @@ open Asttools;
 open MLast;
 open Pa_passthru ;
 open Ppxutil ;
+open Surveil ;
 
 value eq_fname arg tyname =
   if tyname = "t" then "equal"
@@ -297,7 +298,7 @@ value sig_item_gen_eq arg = fun [
 ;
 
 value expr_eq arg = fun [
-  <:expr:< [%eq: $type:ty$ ] >> ->
+  <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "eq" || id = "derive.eq" ->
     let loc = loc_of_ctyp ty in
     let e = fmt_top arg [] ty in
     <:expr< fun a b ->  $e$ a b >>

@@ -12,6 +12,7 @@ open Asttools;
 open MLast;
 open Pa_passthru ;
 open Ppxutil ;
+open Surveil ;
 
 value ord_fname arg tyname =
   if tyname = "t" then "compare"
@@ -32,7 +33,7 @@ value fmt_expression arg param_map ty0 =
   | <:ctyp:< string >> -> <:expr< fun a b -> Stdlib.compare a b >>
   | <:ctyp:< bytes >> -> <:expr< fun a b -> Stdlib.compare a b >>
 
-  | <:ctyp:< $t$ [@compare $exp:e$ ;] >> -> e
+  | <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "ord" "compare" -> e
 
   | <:ctyp:< list $ty$ >> ->
   let fmt1 = fmtrec ty in
@@ -94,7 +95,7 @@ value fmt_expression arg param_map ty0 =
   ] in
   <:expr< $lid:fmtf$ >>
 
-| <:ctyp:< $lid:lid$ [@nobuiltin] >> ->
+| <:ctyp:< $lid:lid$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "ord" "nobuiltin" ->
   let fname = ord_fname arg lid in
   <:expr< $lid:fname$ >>
 
@@ -355,7 +356,7 @@ value sig_item_gen_ord arg = fun [
 ;
 
 value expr_ord arg = fun [
-  <:expr:< [%ord: $type:ty$ ] >> ->
+  <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "ord" || id = "derive.ord" ->
     let loc = loc_of_ctyp ty in
     let e = fmt_top arg [] ty in
     <:expr< fun a b ->  $e$ a b >>

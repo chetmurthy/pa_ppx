@@ -12,6 +12,7 @@ open Asttools;
 open MLast;
 open Pa_passthru ;
 open Ppxutil ;
+open Surveil ;
 
 value fold_fname arg tyname =
   if tyname = "t" then "fold"
