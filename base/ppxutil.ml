@@ -56,6 +56,13 @@ value abstract_over l e =
 value applist e el =
   List.fold_left (fun e arg -> let loc = loc_of_expr arg in <:expr< $e$ $arg$ >>) e el
 ;
+value unapplist e =
+  let rec unrec acc = fun [
+    <:expr< $t$ $arg$ >> -> unrec [arg::acc] t
+  | t -> (t,acc)
+  ] in unrec [] e
+;
+
 end ;
 
 module Patt = struct

@@ -45,12 +45,60 @@ value rewrite_patt f p0 =
   rerec p0
 ;
 
-value rewrite_expr p e = e ;
+value rec rerec0 = fun [
+    (<:patt< ( $p$ as $lid:z$ ) >>, e) ->
+    rerec1 z (p, e)
+
+  ]
+  and rerec1 zvar = fun [
+    (<:patt< ($p$ as $z$ ) >>, e) ->
+    rerec1 zvar (p, e)
+
+  | ((<:patt< $_$ $_$ >> as p), (<:expr:< $_$ $_$ >> as e)) ->
+    let (p, pargs) = Patt.unapplist p in
+    let (e, eargs) = Expr.unapplist e in
+    match (p, e) with [
+      (<:patt< $uid:puid$ >>, <:expr< $uid:euid$ >>)
+      when puid = euid && List.length pargs = List.length eargs ->
+      let cz_e_zs = List.map2 (fun p e -> rerec0 (p,e)) pargs eargs in
+      let pred = List.fold_right (fun (czvar, _, zvar) rest ->
+          <:expr< ($lid:czvar$ == $lid:zvar$) && $rest$ >>)
+          cz_e_zs <:expr< True >> in
+      let consexp = Expr.applist <:expr< $uid:euid$ >>
+          (List.map (fun (cz, _, _) -> <:expr< $lid:cz$ >>) cz_e_zs) in
+      let body = <:expr< if $pred$ then $lid:zvar$ else $consexp$ >> in
+      let e = List.fold_right (fun (cz, e, _) rhs ->
+          <:expr< let $lid:cz$ = $e$ in $rhs$ >>)
+          cz_e_zs body in
+      let czvar = "c"^zvar in
+      (czvar, e, zvar)
+
+    | _ -> assert False
+    ]
+
+  | (<:patt< $lid:pv$ >>, e) ->
+    let czvar = "c"^zvar in
+    (czvar, e, zvar)
+
+  ]
+;
+
+value rewrite_expr0 (p0, e0) =
+  let loc = loc_of_expr e0 in
+  let (cz, e, _) = rerec0 (p0,e0) in
+  <:expr< let $lid:cz$ = $e$ in $lid:cz$ >>
+;
+
+value rewrite_expr rv1 p e = match (p, e) with [
+  (p, <:expr< $e$ [@hashrecons $lid:rv2$ ; ] >>) when rv1 = rv2 ->
+  rewrite_expr0 (p, e)
+]
+;
 
 value rewrite_case_branch arg = fun [
   (<:patt< $p$ [@hashrecons $lid:rootvar$ ; ] >>, eopt, body) ->
     let p = rewrite_patt (Fresh.mk rootvar) p in
-    let body = rewrite_expr p body in
+    let body = rewrite_expr rootvar p body in
     (p, eopt, body)
 | _ -> assert False
 ]
