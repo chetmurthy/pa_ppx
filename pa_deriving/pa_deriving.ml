@@ -101,7 +101,7 @@ value add t = do {
   else () ;
   push plugin_registry (t.name, t) ;
   push extension2plugin (t.name, t.name) ;
-  push extension2plugin (Printf.sprintf "deriving.%s" t.name, t.name) ;
+  push extension2plugin (Printf.sprintf "derive.%s" t.name, t.name) ;
   List.iter (fun aname -> push algattr2plugin (aname, t.name)) t.alg_attributes
 }
 ;

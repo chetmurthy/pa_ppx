@@ -356,7 +356,7 @@ value sig_item_gen_show arg = fun [
 ;
 
 value expr_show arg = fun [
-  <:expr:< [%show: $type:ty$ ] >> ->
+  <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "show" || id = "derive.show" ->
     let loc = loc_of_ctyp ty in
     let e = fmt_top arg [] ty in
     <:expr< fun arg -> Format.asprintf "%a" $e$ arg >>
