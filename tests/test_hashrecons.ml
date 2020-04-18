@@ -12,8 +12,13 @@ let rec deep = (function
 let test_simplest ctxt =
  assert_equal (Node (Leaf 0, 1, Leaf 2)) (deep (Node (Leaf 0, 1, Leaf 2)))
 
+let test_pointer_equality ctxt =
+ let arg = Node (Leaf 0, 1, Leaf 2) in
+ assert_bool "not pointer-equal" (arg == (deep arg))
+
 let suite = "Test hashrecons" >::: [
-    "test_simplest"   >:: test_simplest
+    "test_simplest"   >:: test_simplest ;
+    "test_pointer_equality"   >:: test_pointer_equality
   ]
 
 let _ = 
