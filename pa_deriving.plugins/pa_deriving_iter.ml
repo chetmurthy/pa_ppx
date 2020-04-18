@@ -19,9 +19,15 @@ value iter_fname arg tyname =
   else "iter_"^tyname
 ;
 
+type attrmod_t = [ Nobuiltin ] ;
+
 value fmt_expression arg param_map ty0 =
-  let rec fmtrec = fun [
-    <:ctyp:< _ >> -> <:expr< fun _ -> () >>
+  let rec fmtrec ?{attrmod=None} = fun [
+    <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
+  let fname = iter_fname arg lid in
+  <:expr< $lid:fname$ >>
+
+  | <:ctyp:< _ >> -> <:expr< fun _ -> () >>
   | <:ctyp:< unit >> -> <:expr< fun _ -> () >>
   | <:ctyp:< int >> -> <:expr< fun _ -> () >>
   | <:ctyp:< int32 >> -> <:expr< fun _ -> () >>
@@ -69,9 +75,8 @@ value fmt_expression arg param_map ty0 =
   ] in
   <:expr< $lid:fmtf$ >>
 
-| <:ctyp:< $lid:lid$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "iter" "nobuiltin" ->
-  let fname = iter_fname arg lid in
-  <:expr< $lid:fname$ >>
+| <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "iter" "nobuiltin" ->
+    fmtrec ~{attrmod=Some Nobuiltin} t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec t
 

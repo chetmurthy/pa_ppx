@@ -19,9 +19,15 @@ value ord_fname arg tyname =
   else "compare_"^tyname
 ;
 
+type attrmod_t = [ Nobuiltin ] ;
+
 value fmt_expression arg param_map ty0 =
-  let rec fmtrec = fun [
-    <:ctyp:< _ >> -> <:expr< fun a b -> 0 >>
+  let rec fmtrec ?{attrmod=None} = fun [
+    <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
+  let fname = ord_fname arg lid in
+  <:expr< $lid:fname$ >>
+
+  | <:ctyp:< _ >> -> <:expr< fun a b -> 0 >>
   | <:ctyp:< unit >> -> <:expr< fun a b -> 0 >>
   | <:ctyp:< int >> -> <:expr< fun a b -> Stdlib.compare a b >>
   | <:ctyp:< int32 >> -> <:expr< fun a b -> Stdlib.compare a b >>
@@ -33,9 +39,8 @@ value fmt_expression arg param_map ty0 =
   | <:ctyp:< string >> -> <:expr< fun a b -> Stdlib.compare a b >>
   | <:ctyp:< bytes >> -> <:expr< fun a b -> Stdlib.compare a b >>
 
-| <:ctyp:< $lid:lid$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "ord" "nobuiltin" ->
-  let fname = ord_fname arg lid in
-  <:expr< $lid:fname$ >>
+| <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "ord" "nobuiltin" ->
+    fmtrec ~{attrmod=Some Nobuiltin} t
 
   | <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "ord" "compare" -> e
 

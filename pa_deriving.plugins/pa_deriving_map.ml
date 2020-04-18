@@ -19,9 +19,15 @@ value map_fname arg tyname =
   else "map_"^tyname
 ;
 
+type attrmod_t = [ Nobuiltin ] ;
+
 value fmt_expression arg param_map ty0 =
-  let rec fmtrec = fun [
-    <:ctyp:< _ >> -> <:expr< fun x -> x >>
+  let rec fmtrec ?{attrmod=None} = fun [
+    <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
+  let fname = map_fname arg lid in
+  <:expr< $lid:fname$ >>
+
+  | <:ctyp:< _ >> -> <:expr< fun x -> x >>
   | <:ctyp:< unit >> -> <:expr< fun x -> x >>
   | <:ctyp:< int >> -> <:expr< fun x -> x >>
   | <:ctyp:< int32 >> -> <:expr< fun x -> x >>
@@ -69,9 +75,8 @@ value fmt_expression arg param_map ty0 =
   ] in
   <:expr< $lid:fmtf$ >>
 
-| <:ctyp:< $lid:lid$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "map" "nobuiltin" ->
-  let fname = map_fname arg lid in
-  <:expr< $lid:fname$ >>
+| <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "map" "nobuiltin" ->
+  fmtrec ~{attrmod=Some Nobuiltin} t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec t
 

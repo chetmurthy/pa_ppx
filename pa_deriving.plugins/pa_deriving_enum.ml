@@ -94,7 +94,7 @@ value to_expression arg = fun [
   let branches = List.rev revacc in
   (map, <:expr< fun [ $list:branches$ ] >>)
 
-| [%unmatched_vala] -> failwith "pa_deriving_enum.fmt_expression"
+| [%unmatched_vala] -> failwith "pa_deriving_enum.to_expression"
   ]
 ;
 
@@ -217,7 +217,7 @@ Pa_deriving.(Registry.add PI.{
   name = "enum"
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
-; alg_attributes = ["value"; "nobuiltin"]
+; alg_attributes = ["value"]
 ; expr = (fun _ _ -> assert False)
 ; str_item = str_item_gen_enum
 ; sig_item = sig_item_gen_enum

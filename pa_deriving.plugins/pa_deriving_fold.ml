@@ -19,9 +19,15 @@ value fold_fname arg tyname =
   else "fold_"^tyname
 ;
 
+type attrmod_t = [ Nobuiltin ] ;
+
 value fmt_expression arg param_map ty0 =
-  let rec fmtrec = fun [
-    <:ctyp:< _ >> -> <:expr< fun acc _ -> acc >>
+  let rec fmtrec ?{attrmod=None} = fun [
+    <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
+  let fname = fold_fname arg lid in
+  <:expr< $lid:fname$ >>
+
+  | <:ctyp:< _ >> -> <:expr< fun acc _ -> acc >>
   | <:ctyp:< unit >> -> <:expr< fun acc _ -> acc >>
   | <:ctyp:< int >> -> <:expr< fun acc _ -> acc >>
   | <:ctyp:< int32 >> -> <:expr< fun acc _ -> acc >>
@@ -69,9 +75,8 @@ value fmt_expression arg param_map ty0 =
   ] in
   <:expr< $lid:fmtf$ >>
 
-| <:ctyp:< $lid:lid$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "fold" "nobuiltin" ->
-  let fname = fold_fname arg lid in
-  <:expr< $lid:fname$ >>
+| <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "fold" "nobuiltin" ->
+    fmtrec ~{attrmod=Some Nobuiltin} t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec t
 

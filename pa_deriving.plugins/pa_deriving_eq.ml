@@ -19,9 +19,15 @@ value eq_fname arg tyname =
   else "equal_"^tyname
 ;
 
+type attrmod_t = [ Nobuiltin ] ;
+
 value fmt_expression arg param_map ty0 =
-  let rec fmtrec = fun [
-    <:ctyp:< _ >> -> <:expr< fun a b -> True >>
+  let rec fmtrec ?{attrmod=None} = fun [
+    <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
+  let fname = eq_fname arg lid in
+  <:expr< $lid:fname$ >>
+
+  | <:ctyp:< _ >> -> <:expr< fun a b -> True >>
   | <:ctyp:< unit >> -> <:expr< fun a b -> True >>
   | <:ctyp:< int >> -> <:expr< fun a b -> a=b >>
   | <:ctyp:< int32 >> -> <:expr< fun a b -> a=b >>
@@ -87,9 +93,8 @@ value fmt_expression arg param_map ty0 =
 
   | <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "eq" "equal" -> e
 
-| <:ctyp:< $lid:lid$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "eq" "nobuiltin" ->
-  let fname = eq_fname arg lid in
-  <:expr< $lid:fname$ >>
+| <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "eq" "nobuiltin" ->
+    fmtrec ~{attrmod=Some Nobuiltin} t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec t
 
