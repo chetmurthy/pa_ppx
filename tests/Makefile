@@ -32,7 +32,6 @@ TESTS= \
 	test_deriving_fold.byte \
 	test_deriving_fold.ppx.byte \
 	test_import0.byte \
-	test_import0.ppx.byte \
 	test_ppx_import.byte \
 	test_ppx_import.ppx.byte \
 	test_hashrecons.byte \

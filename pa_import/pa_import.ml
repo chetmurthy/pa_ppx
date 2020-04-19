@@ -72,8 +72,8 @@ value lookup_file suffix fmod =
 ;
 
 value find1lid lid = fun [
-  <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
-  try_find (fun td -> if Pcaml.unvala (snd (Pcaml.unvala td.tdNam)) = lid then (td,tdl) else failwith "caught") tdl
+  <:sig_item:< type $flag:nrfl$ $list:tdl$ >> ->
+  try_find (fun td -> if Pcaml.unvala (snd (Pcaml.unvala td.tdNam)) = lid then (td,(nrfl, tdl)) else failwith "caught") tdl
 | _ -> failwith "caught"
 ]
 ;
@@ -304,7 +304,7 @@ value unpack_imported_type full_t =
     lid = lid ; sl = sl ; loc = loc_of_ctyp full_t }
 ;
 
-value rec import_type arg (newtname,new_formals) t renmap =
+value import_type arg (newtname,new_formals) t =
   let unp = unpack_imported_type t in
   let (with_attrs, rest_attrs) = extract_with_attributes unp.attrs in
   let unp = { (unp) with attrs = rest_attrs } in
@@ -335,6 +335,24 @@ value rec import_type arg (newtname,new_formals) t renmap =
     else ct
 ;
 
+value import_typedecl_group arg t =
+  let unp = unpack_imported_type t in
+  let (with_attrs, rest_attrs) = extract_with_attributes unp.attrs in
+  let unp = { (unp) with attrs = rest_attrs } in
+  let renmap = List.fold_right extend_renmap with_attrs [] in
+  let loc = unp.loc in
+  let actuals = unp.args in
+  let (rd, (nrfl, tdl)) = import_typedecl arg unp.unapp_t in
+  (nrfl, List.map (fun td ->
+       let ct = if renmap = [] then td.tdDef
+         else Ctyp.wrap_attrs (substitute_ctyp renmap td.tdDef) unp.attrs in
+       let ct = if is_generative_type ct then
+           <:ctyp< $unp.bare_t$ == $ct$ >>
+         else ct in
+       { (td) with tdDef = ct }
+     ) tdl)
+;
+
 value rec import_module_type arg t =
   match t with [
     <:ctyp< $t$ [@ $attribute:attr$ ] >> ->
@@ -355,13 +373,16 @@ value registered_str_item_extension arg = fun [
           <:ctyp< [% import: $type:t$ ] >> ->
           let tname = Pcaml.unvala td.tdNam in
           let l = Pcaml.unvala td.tdPrm in
-          let ct = import_type arg (tname,l) t [] in
+          let ct = import_type arg (tname,l) t in
           { (td) with tdDef = ct }
         | _ -> td
         ]
       ) tdl in
     <:str_item< type $flag:nrfl$ $list:tdl$ >>
 
+  | <:str_item:< [%% import: $type:t$ ] >> ->
+    let (nrfl, tdl) = import_typedecl_group arg t in
+    <:str_item< type $flag:nrfl$ $list:tdl$ >>
 | _ -> assert False
 ]
 ;
@@ -380,11 +401,11 @@ let ef = EF.{ (ef) with
     <:str_item:< type $flag:_$ $list:_$ >> as z ->
       fun arg ->
         Some (registered_str_item_extension arg z)
-(*
+
   | <:str_item< [%% import: $type:_$ ] >> as z -> 
       fun arg ->
         Some (registered_str_item_extension arg z)
-*)
+
   ] } in
 
 let ef = EF.{ (ef) with

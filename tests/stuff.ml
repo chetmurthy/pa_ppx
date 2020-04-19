@@ -31,4 +31,4 @@ module type S_optional = sig
 end
 
 type w1 = A of w2 option
-and w2 = B of w1
+and w2 = B of w1 * i
