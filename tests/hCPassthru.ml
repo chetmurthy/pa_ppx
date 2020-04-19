@@ -7,6 +7,14 @@ open MLast;
 open Ppxutil ;
 open Pa_passthru ;
 
+module List = struct
+include Stdlib.List ;
+value rec map f = fun [
+    [][@hashrecons z;] -> [][@hashrecons z;]
+  | [a::l][@hashrecons z;] -> let r = f a in ([r :: map f l][@hashrecons z;]) ]
+[@@ocaml.warning "-26";] ;
+end
+;
 value option_map f =
   fun
   [ Some x[@hashrecons z;] -> Some (f x)[@hashrecons z;]
@@ -104,10 +112,10 @@ and generic_constructor0 arg = fun (loc, x1, x2, x3, x4) ->
      option_map (ctyp arg) x3, attributes arg x4)
 and poly_variant arg =
   fun
-  [ PvTag loc x1 x2 x3 x4 →
-      PvTag loc x1 x2 (vala_map (List.map (ctyp arg)) x3) (attributes arg x4)
-  | PvInh loc x1 →
-      PvInh loc (ctyp arg x1) ]
+  [ PvTag loc x1 x2 x3 x4[@hashrecons z;] →
+      PvTag loc x1 x2 (vala_map (List.map (ctyp arg)) x3) (attributes arg x4)[@hashrecons z;]
+  | PvInh loc x1[@hashrecons z;] →
+      PvInh loc (ctyp arg x1)[@hashrecons z;] ]
 and patt arg x =
   match Extfun.apply arg.Ctxt.ef.EF.patt x arg with [
     Some x -> x
@@ -118,65 +126,66 @@ and patt0 arg =
   let rec self x = patt arg x
   and self0 =
     fun
-    [ PaAtt loc p attr ->
-       PaAtt loc (self p) (attribute arg attr)
-    | PaPfx loc li p ->
-       PaPfx loc (longid arg li) (self p)
-    | PaLong loc li ->
-       PaLong loc (longid arg li)
-    | PaAli loc x1 x2 →
-        PaAli loc (self x1) (self x2)
+    [ PaAtt loc p attr[@hashrecons z;] ->
+       PaAtt loc (self p) (attribute arg attr)[@hashrecons z;]
+    | PaPfx loc li p[@hashrecons z;] ->
+       PaPfx loc (longid arg li) (self p)[@hashrecons z;]
+    | PaLong loc li[@hashrecons z;] ->
+       PaLong loc (longid arg li)[@hashrecons z;]
+    | PaAli loc x1 x2[@hashrecons z;] →
+        PaAli loc (self x1) (self x2)[@hashrecons z;]
     | PaAnt loc x1 → assert False
-    | PaAny loc →
-        PaAny loc
-    | PaApp loc x1 x2 →
-        PaApp loc (self x1) (self x2)
-    | PaArr loc x1 →
-        PaArr loc (vala_map (List.map self) x1)
-    | PaChr loc x1 →
-        PaChr loc x1
-    | PaExc loc x1 →
-        PaExc loc (self x1)
-    | PaFlo loc x1 →
-        PaFlo loc x1
-    | PaInt loc x1 x2 →
-        PaInt loc x1 x2
-    | PaLab loc x1 →
+    | PaAny loc[@hashrecons z;] →
+        PaAny loc[@hashrecons z;]
+    | PaApp loc x1 x2[@hashrecons z;] →
+        PaApp loc (self x1) (self x2)[@hashrecons z;]
+    | PaArr loc x1[@hashrecons z;] →
+        PaArr loc (vala_map (List.map self) x1)[@hashrecons z;]
+    | PaChr loc x1[@hashrecons z;] →
+        PaChr loc x1[@hashrecons z;]
+    | PaExc loc x1[@hashrecons z;] →
+        PaExc loc (self x1)[@hashrecons z;]
+    | PaFlo loc x1[@hashrecons z;] →
+        PaFlo loc x1[@hashrecons z;]
+    | PaInt loc x1 x2[@hashrecons z;] →
+        PaInt loc x1 x2[@hashrecons z;]
+    | PaLab loc x1[@hashrecons z;] →
         PaLab loc
           (vala_map
              (List.map
-                (fun (x1, x2) → (self x1, vala_map (option_map self) x2)))
-             x1)
-    | PaLaz loc x1 →
-        PaLaz loc (self x1)
-    | PaLid loc x1 →
-        PaLid loc x1
-    | PaNty loc x1 →
-        PaNty loc x1
-    | PaOlb loc x1 x2 →
-        PaOlb loc (self x1) (vala_map (option_map (expr arg)) x2)
-    | PaOrp loc x1 x2 →
-        PaOrp loc (self x1) (self x2)
-    | PaRec loc x1 →
-        PaRec loc (vala_map (List.map (fun (x1, x2) → (self x1, self x2))) x1)
-    | PaRng loc x1 x2 →
-        PaRng loc (self x1) (self x2)
-    | PaStr loc x1 →
-        PaStr loc x1
-    | PaTup loc x1 →
-        PaTup loc (vala_map (List.map self) x1)
-    | PaTyc loc x1 x2 →
-        PaTyc loc (self x1) (ctyp arg x2)
-    | PaTyp loc x1 →
-        PaTyp loc (vala_map (longid_lident arg) x1)
-    | PaUnp loc x1 x2 →
-        PaUnp loc x1 (option_map (module_type arg) x2)
-    | PaVrn loc x1 →
-        PaVrn loc x1
-    | PaXtr loc x1 x2 →
-        PaXtr loc x1 (option_map (vala_map self) x2)
-    | PaExten loc exten ->
-        PaExten loc (attribute arg exten)
+                (fun (x1, x2)[@hashrecons z;] → (self x1, vala_map (option_map self) x2)[@hashrecons z;]))
+             x1)[@hashrecons z;]
+    | PaLaz loc x1[@hashrecons z;] →
+        PaLaz loc (self x1)[@hashrecons z;]
+    | PaLid loc x1[@hashrecons z;] →
+        PaLid loc x1[@hashrecons z;]
+    | PaNty loc x1[@hashrecons z;] →
+        PaNty loc x1[@hashrecons z;]
+    | PaOlb loc x1 x2[@hashrecons z;] →
+        PaOlb loc (self x1) (vala_map (option_map (expr arg)) x2)[@hashrecons z;]
+    | PaOrp loc x1 x2[@hashrecons z;] →
+        PaOrp loc (self x1) (self x2)[@hashrecons z;]
+    | PaRec loc x1[@hashrecons z;] →
+        PaRec loc (vala_map (List.map (fun (x1, x2)[@hashrecons z;]
+                                        → (self x1, self x2)[@hashrecons z;])) x1)[@hashrecons z;]
+    | PaRng loc x1 x2[@hashrecons z;] →
+        PaRng loc (self x1) (self x2)[@hashrecons z;]
+    | PaStr loc x1[@hashrecons z;] →
+        PaStr loc x1[@hashrecons z;]
+    | PaTup loc x1[@hashrecons z;] →
+        PaTup loc (vala_map (List.map self) x1)[@hashrecons z;]
+    | PaTyc loc x1 x2 [@hashrecons z;] →
+        PaTyc loc (self x1) (ctyp arg x2)[@hashrecons z;]
+    | PaTyp loc x1[@hashrecons z;] →
+        PaTyp loc (vala_map (longid_lident arg) x1)[@hashrecons z;]
+    | PaUnp loc x1 x2[@hashrecons z;] →
+        PaUnp loc x1 (option_map (module_type arg) x2)[@hashrecons z;]
+    | PaVrn loc x1[@hashrecons z;] →
+        PaVrn loc x1[@hashrecons z;]
+    | PaXtr loc x1 x2[@hashrecons z;] →
+        PaXtr loc x1 (option_map (vala_map self) x2)[@hashrecons z;]
+    | PaExten loc exten[@hashrecons z;] ->
+        PaExten loc (attribute arg exten)[@hashrecons z;]
     ] in
   self0
 and expr arg x =
@@ -307,29 +316,29 @@ and module_type0 arg =
   let rec self x = module_type arg x
   and self0 =
     fun
-    [ MtAtt loc e attr ->
-       MtAtt loc (self e) (attribute arg attr)
-    | MtLong loc x1 →
-        MtLong loc (longid arg x1)
-    | MtLongLid loc x1 x2 →
-        MtLongLid loc (longid arg x1) x2
-    | MtFun loc arg x3 →
-        let arg = vala_map (option_map (fun (idopt, m) -> (idopt, self m))) arg in
-        MtFun loc arg (self x3)
-    | MtLid loc x1 →
-        MtLid loc x1
-    | MtQuo loc x1 →
-        MtQuo loc x1
-    | MtSig loc x1 →
-        MtSig loc (vala_map (List.map (sig_item arg)) x1)
-    | MtTyo loc x1 →
-        MtTyo loc (module_expr arg x1)
-    | MtWit loc x1 x2 →
-        MtWit loc (self x1) (vala_map (List.map (with_constr arg)) x2)
-    | MtXtr loc x1 x2 →
-        MtXtr loc x1 (option_map (vala_map self) x2)
-    | MtExten loc exten ->
-        MtExten loc (attribute arg exten)
+    [ MtAtt loc e attr[@hashrecons z;] ->
+       MtAtt loc (self e) (attribute arg attr)[@hashrecons z;]
+    | MtLong loc x1[@hashrecons z;] →
+        MtLong loc (longid arg x1)[@hashrecons z;]
+    | MtLongLid loc x1 x2[@hashrecons z;] →
+        MtLongLid loc (longid arg x1) x2[@hashrecons z;]
+    | MtFun loc arg x3[@hashrecons z;] →
+        let arg = vala_map (option_map (fun (idopt, m)[@hashrecons z;] -> (idopt, self m)[@hashrecons z;])) arg in
+        MtFun loc arg (self x3)[@hashrecons z;]
+    | MtLid loc x1[@hashrecons z;] →
+        MtLid loc x1[@hashrecons z;]
+    | MtQuo loc x1[@hashrecons z;] →
+        MtQuo loc x1[@hashrecons z;]
+    | MtSig loc x1[@hashrecons z;] →
+        MtSig loc (vala_map (List.map (sig_item arg)) x1)[@hashrecons z;]
+    | MtTyo loc x1[@hashrecons z;] →
+        MtTyo loc (module_expr arg x1)[@hashrecons z;]
+    | MtWit loc x1 x2[@hashrecons z;] →
+        MtWit loc (self x1) (vala_map (List.map (with_constr arg)) x2)[@hashrecons z;]
+    | MtXtr loc x1 x2[@hashrecons z;] →
+        MtXtr loc x1 (option_map (vala_map self) x2)[@hashrecons z;]
+    | MtExten loc exten[@hashrecons z;] ->
+        MtExten loc (attribute arg exten)[@hashrecons z;]
     ] in
     self0
 and sig_item arg x =
@@ -342,51 +351,53 @@ and sig_item0 arg =
   let rec self x = sig_item arg x
   and self0 =
     fun
-    [ SgCls loc x1 →
+    [ SgCls loc x1[@hashrecons z;] →
         SgCls loc
-          (vala_map (List.map (class_infos_map arg ~{attributes=attributes}  (class_type arg))) x1)
-    | SgClt loc x1 →
+          (vala_map (List.map (class_infos_map arg ~{attributes=attributes}  (class_type arg))) x1)[@hashrecons z;]
+    | SgClt loc x1[@hashrecons z;] →
         SgClt loc
-          (vala_map (List.map (class_infos_map arg ~{attributes=attributes} (class_type arg))) x1)
-    | SgDcl loc x1 →
-        SgDcl loc (vala_map (List.map self) x1)
-    | SgDir loc x1 x2 →
-        SgDir loc x1 (vala_map (option_map (expr arg)) x2)
-    | SgExc loc x1 x2 →
-        SgExc loc (generic_constructor arg x1) (attributes arg x2)
-    | SgExt loc x1 x2 x3 x4 →
-        SgExt loc x1 (ctyp arg x2) x3 (attributes arg x4)
-    | SgInc loc x1 x2 →
-        SgInc loc (module_type arg x1) (attributes arg x2)
-    | SgMod loc x1 x2 →
+          (vala_map (List.map (class_infos_map arg ~{attributes=attributes} (class_type arg))) x1)[@hashrecons z;]
+    | SgDcl loc x1[@hashrecons z;] →
+        SgDcl loc (vala_map (List.map self) x1)[@hashrecons z;]
+    | SgDir loc x1 x2[@hashrecons z;] →
+        SgDir loc x1 (vala_map (option_map (expr arg)) x2)[@hashrecons z;]
+    | SgExc loc x1 x2[@hashrecons z;] →
+        SgExc loc (generic_constructor arg x1) (attributes arg x2)[@hashrecons z;]
+    | SgExt loc x1 x2 x3 x4[@hashrecons z;] →
+        SgExt loc x1 (ctyp arg x2) x3 (attributes arg x4)[@hashrecons z;]
+    | SgInc loc x1 x2[@hashrecons z;] →
+        SgInc loc (module_type arg x1) (attributes arg x2)[@hashrecons z;]
+    | SgMod loc x1 x2[@hashrecons z;] →
         SgMod loc x1
-          (vala_map (List.map (fun (x1, x2, x3) → (x1, module_type arg x2, attributes arg x3)))
-             x2)
-    | SgMty loc x1 x2 x3 →
-        SgMty loc x1 (module_type arg x2) (attributes arg x3)
-    | SgMtyAbs loc x1 x2 →
-        SgMtyAbs loc x1  (attributes arg x2)
-    | SgMtyAlias loc x1 x2 x3 →
-        SgMtyAlias loc x1 (vala_map (longid arg) x2) (attributes arg x3)
-    | SgModSubst loc x1 x2 x3 →
-        SgModSubst loc x1 (longid arg x2) (attributes arg x3)
-    | SgOpn loc x1 x2 →
-        SgOpn loc (longid arg x1) (attributes arg x2)
-    | SgTyp loc x1 x2 →
-        SgTyp loc x1 (vala_map (List.map (type_decl arg)) x2)
-    | SgTypExten loc x1 →
-        SgTypExten loc (type_extension arg x1)
-    | SgUse loc x1 x2 →
+          (vala_map (List.map (fun (x1, x2, x3)[@hashrecons z;] →
+                                (x1, module_type arg x2, attributes arg x3)[@hashrecons z;]))
+             x2)[@hashrecons z;]
+    | SgMty loc x1 x2 x3[@hashrecons z;] →
+        SgMty loc x1 (module_type arg x2) (attributes arg x3)[@hashrecons z;]
+    | SgMtyAbs loc x1 x2[@hashrecons z;] →
+        SgMtyAbs loc x1  (attributes arg x2)[@hashrecons z;]
+    | SgMtyAlias loc x1 x2 x3[@hashrecons z;] →
+        SgMtyAlias loc x1 (vala_map (longid arg) x2) (attributes arg x3)[@hashrecons z;]
+    | SgModSubst loc x1 x2 x3[@hashrecons z;] →
+        SgModSubst loc x1 (longid arg x2) (attributes arg x3)[@hashrecons z;]
+    | SgOpn loc x1 x2[@hashrecons z;] →
+        SgOpn loc (longid arg x1) (attributes arg x2)[@hashrecons z;]
+    | SgTyp loc x1 x2[@hashrecons z;] →
+        SgTyp loc x1 (vala_map (List.map (type_decl arg)) x2)[@hashrecons z;]
+    | SgTypExten loc x1[@hashrecons z;] →
+        SgTypExten loc (type_extension arg x1)[@hashrecons z;]
+    | SgUse loc x1 x2[@hashrecons z;] →
         SgUse loc x1
-          (vala_map (List.map (fun (x1, loc) → (self x1, loc))) x2)
-    | SgVal loc x1 x2 x3 →
-        SgVal loc x1 (ctyp arg x2) (attributes arg x3)
-    | SgXtr loc x1 x2 →
-        SgXtr loc x1 (option_map (vala_map self) x2)
-    | SgFlAtt loc a ->
-        SgFlAtt loc (attribute arg a)
-    | SgExten loc exten attrs ->
-        SgExten loc (attribute arg exten) (attributes arg attrs)
+          (vala_map (List.map (fun (x1, loc)[@hashrecons z;]
+                                → (self x1, loc)[@hashrecons z;])) x2)[@hashrecons z;]
+    | SgVal loc x1 x2 x3[@hashrecons z;] →
+        SgVal loc x1 (ctyp arg x2) (attributes arg x3)[@hashrecons z;]
+    | SgXtr loc x1 x2[@hashrecons z;] →
+        SgXtr loc x1 (option_map (vala_map self) x2)[@hashrecons z;]
+    | SgFlAtt loc a[@hashrecons z;] ->
+        SgFlAtt loc (attribute arg a)[@hashrecons z;]
+    | SgExten loc exten attrs[@hashrecons z;] ->
+        SgExten loc (attribute arg exten) (attributes arg attrs)[@hashrecons z;]
     ] in
   self0
 and with_constr arg x =
@@ -397,14 +408,14 @@ and with_constr arg x =
   ]
 and with_constr0 arg =
   fun
-  [ WcMod loc x1 x2 →
-      WcMod loc (vala_map (longid arg) x1) (module_expr arg x2)
-  | WcMos loc x1 x2 →
-      WcMos loc (vala_map (longid arg) x1) (module_expr arg x2)
-  | WcTyp loc x1 x2 x3 x4 →
-      WcTyp loc (vala_map (longid_lident arg) x1) x2 x3 (ctyp arg x4)
-  | WcTys loc x1 x2 x3 →
-      WcTys loc (vala_map (longid_lident arg) x1) x2 (ctyp arg x3) ]
+  [ WcMod loc x1 x2[@hashrecons z;] →
+      WcMod loc (vala_map (longid arg) x1) (module_expr arg x2)[@hashrecons z;]
+  | WcMos loc x1 x2[@hashrecons z;] →
+      WcMos loc (vala_map (longid arg) x1) (module_expr arg x2)[@hashrecons z;]
+  | WcTyp loc x1 x2 x3 x4[@hashrecons z;] →
+      WcTyp loc (vala_map (longid_lident arg) x1) x2 x3 (ctyp arg x4)[@hashrecons z;]
+  | WcTys loc x1 x2 x3[@hashrecons z;] →
+      WcTys loc (vala_map (longid_lident arg) x1) x2 (ctyp arg x3)[@hashrecons z;] ]
 and longid arg x =
   match Extfun.apply arg.Ctxt.ef.EF.longid x arg with [
     Some x -> x
@@ -415,12 +426,12 @@ and longid0 arg =
   let rec self x = longid arg x
   and self0 =
     fun
-    [ LiAcc loc x1 x2 →
-        LiAcc loc (self x1) x2
-    | LiApp loc x1 x2 →
-        LiApp loc (self x1) (self x2)
-    | LiUid loc x1 →
-        LiUid loc x1
+    [ LiAcc loc x1 x2[@hashrecons z;] →
+        LiAcc loc (self x1) x2[@hashrecons z;]
+    | LiApp loc x1 x2[@hashrecons z;] →
+        LiApp loc (self x1) (self x2)[@hashrecons z;]
+    | LiUid loc x1[@hashrecons z;] →
+        LiUid loc x1[@hashrecons z;]
     ] in
   self0
 and module_expr arg x =
@@ -433,27 +444,27 @@ and module_expr0 arg =
   let rec self x = module_expr arg x
   and self0 =
     fun
-    [ MeAtt loc e attr ->
-       MeAtt loc (self e) (attribute arg attr)
-    | MeAcc loc x1 x2 →
-        MeAcc loc (self x1) (self x2)
-    | MeApp loc x1 x2 →
-        MeApp loc (self x1) (self x2)
-    | MeFun loc farg x3 →
+    [ MeAtt loc e attr[@hashrecons z;] ->
+       MeAtt loc (self e) (attribute arg attr)[@hashrecons z;]
+    | MeAcc loc x1 x2[@hashrecons z;] →
+        MeAcc loc (self x1) (self x2)[@hashrecons z;]
+    | MeApp loc x1 x2[@hashrecons z;] →
+        MeApp loc (self x1) (self x2)[@hashrecons z;]
+    | MeFun loc farg x3[@hashrecons z;] →
         let farg = vala_map (option_map (fun (idopt, m) -> (idopt, module_type arg m))) farg in
-        MeFun loc farg (self x3)
-    | MeStr loc x1 →
-        MeStr loc (vala_map (List.map (str_item arg)) x1)
-    | MeTyc loc x1 x2 →
-        MeTyc loc (self x1) (module_type arg x2)
-    | MeUid loc x1 →
-        MeUid loc x1
-    | MeUnp loc x1 x2 x3 →
-        MeUnp loc (expr arg x1) (option_map (module_type arg) x2) (option_map (module_type arg) x3)
-    | MeXtr loc x1 x2 →
-        MeXtr loc x1 (option_map (vala_map self) x2)
-    | MeExten loc exten ->
-        MeExten loc (attribute arg exten)
+        MeFun loc farg (self x3)[@hashrecons z;]
+    | MeStr loc x1[@hashrecons z;] →
+        MeStr loc (vala_map (List.map (str_item arg)) x1)[@hashrecons z;]
+    | MeTyc loc x1 x2[@hashrecons z;] →
+        MeTyc loc (self x1) (module_type arg x2)[@hashrecons z;]
+    | MeUid loc x1[@hashrecons z;] →
+        MeUid loc x1[@hashrecons z;]
+    | MeUnp loc x1 x2 x3[@hashrecons z;] →
+        MeUnp loc (expr arg x1) (option_map (module_type arg) x2) (option_map (module_type arg) x3)[@hashrecons z;]
+    | MeXtr loc x1 x2[@hashrecons z;] →
+        MeXtr loc x1 (option_map (vala_map self) x2)[@hashrecons z;]
+    | MeExten loc exten[@hashrecons z;] ->
+        MeExten loc (attribute arg exten)[@hashrecons z;]
     ] in
     self0
 and str_item arg x =
@@ -466,57 +477,58 @@ and str_item0 arg =
   let rec self x = str_item arg x
   and self0 =
     fun
-    [ StCls loc x1 →
+    [ StCls loc x1[@hashrecons z;] →
         StCls loc
-          (vala_map (List.map (class_infos_map arg ~{attributes=attributes} (class_expr arg))) x1)
-    | StClt loc x1 →
+          (vala_map (List.map (class_infos_map arg ~{attributes=attributes} (class_expr arg))) x1)[@hashrecons z;]
+    | StClt loc x1[@hashrecons z;] →
         StClt loc
-          (vala_map (List.map (class_infos_map arg ~{attributes=attributes} (class_type arg))) x1)
-    | StDcl loc x1 →
-        StDcl loc (vala_map (List.map self) x1)
-    | StDir loc x1 x2 →
-        StDir loc x1 (vala_map (option_map (expr arg)) x2)
-    | StExc loc x1 x2 →
-        StExc loc (vala_map (extension_constructor arg) x1) (attributes arg x2)
-    | StExp loc x1 x2 →
-        StExp loc (expr arg x1) (attributes arg x2)
-    | StExt loc x1 x2 x3 x4 →
-        StExt loc x1 (ctyp arg x2) x3 (attributes arg x4)
-    | StInc loc x1 x2 →
-        StInc loc (module_expr arg x1) (attributes arg x2)
-    | StMod loc x1 x2 →
+          (vala_map (List.map (class_infos_map arg ~{attributes=attributes} (class_type arg))) x1)[@hashrecons z;]
+    | StDcl loc x1[@hashrecons z;] →
+        StDcl loc (vala_map (List.map self) x1)[@hashrecons z;]
+    | StDir loc x1 x2[@hashrecons z;] →
+        StDir loc x1 (vala_map (option_map (expr arg)) x2)[@hashrecons z;]
+    | StExc loc x1 x2[@hashrecons z;] →
+        StExc loc (vala_map (extension_constructor arg) x1) (attributes arg x2)[@hashrecons z;]
+    | StExp loc x1 x2[@hashrecons z;] →
+        StExp loc (expr arg x1) (attributes arg x2)[@hashrecons z;]
+    | StExt loc x1 x2 x3 x4[@hashrecons z;] →
+        StExt loc x1 (ctyp arg x2) x3 (attributes arg x4)[@hashrecons z;]
+    | StInc loc x1 x2[@hashrecons z;] →
+        StInc loc (module_expr arg x1) (attributes arg x2)[@hashrecons z;]
+    | StMod loc x1 x2[@hashrecons z;] →
         StMod loc x1
-          (vala_map (List.map (fun (x1, x2, x3) →
+          (vala_map (List.map (fun (x1, x2, x3)[@hashrecons z;] →
            let arg = match Pcaml.unvala x1  with [
              Some s -> Ctxt.append_module arg (Pcaml.unvala s)
            | None -> arg
            ] in
-           (x1, module_expr arg x2, attributes arg x3)))
-             x2)
-    | StMty loc x1 x2 x3 →
-        StMty loc x1 (module_type arg x2) (attributes arg x3)
-    | StMtyAbs loc x1 x2 →
-        StMtyAbs loc x1 (attributes arg x2)
-    | StOpn loc x1 x2 x3 →
-        StOpn loc x1 (module_expr arg x2) (attributes arg x3)
-    | StTyp loc x1 x2 →
-        StTyp loc x1 (vala_map (List.map (type_decl arg)) x2)
-    | StTypExten loc x1 →
-        StTypExten loc (type_extension arg x1)
-    | StUse loc x1 x2 →
+           (x1, module_expr arg x2, attributes arg x3)[@hashrecons z;]))
+             x2)[@hashrecons z;]
+    | StMty loc x1 x2 x3[@hashrecons z;] →
+        StMty loc x1 (module_type arg x2) (attributes arg x3)[@hashrecons z;]
+    | StMtyAbs loc x1 x2[@hashrecons z;] →
+        StMtyAbs loc x1 (attributes arg x2)[@hashrecons z;]
+    | StOpn loc x1 x2 x3[@hashrecons z;] →
+        StOpn loc x1 (module_expr arg x2) (attributes arg x3)[@hashrecons z;]
+    | StTyp loc x1 x2[@hashrecons z;] →
+        StTyp loc x1 (vala_map (List.map (type_decl arg)) x2)[@hashrecons z;]
+    | StTypExten loc x1[@hashrecons z;] →
+        StTypExten loc (type_extension arg x1)[@hashrecons z;]
+    | StUse loc x1 x2[@hashrecons z;] →
         StUse loc x1
-          (vala_map (List.map (fun (x1, loc) → (self x1, loc))) x2)
-    | StVal loc x1 x2 →
+          (vala_map (List.map (fun (x1, loc) → (self x1, loc))) x2)[@hashrecons z;]
+    | StVal loc x1 x2[@hashrecons z;] →
         StVal loc x1
           (vala_map
-             (List.map (fun (x1, x2, x3) → (patt arg x1, expr arg x2, attributes arg x3)))
-             x2)
-    | StXtr loc x1 x2 →
-        StXtr loc x1 (option_map (vala_map self) x2)
-    | StFlAtt loc a ->
-        StFlAtt loc (attribute arg a)
-    | StExten loc exten attrs ->
-        StExten loc (attribute arg exten) (attributes arg attrs)
+             (List.map (fun (x1, x2, x3)[@hashrecons z;] →
+                         (patt arg x1, expr arg x2, attributes arg x3)[@hashrecons z;]))
+             x2)[@hashrecons z;]
+    | StXtr loc x1 x2[@hashrecons z;] →
+        StXtr loc x1 (option_map (vala_map self) x2)[@hashrecons z;]
+    | StFlAtt loc a[@hashrecons z;] ->
+        StFlAtt loc (attribute arg a)[@hashrecons z;]
+    | StExten loc exten attrs[@hashrecons z;] ->
+        StExten loc (attribute arg exten) (attributes arg attrs)[@hashrecons z;]
     ] in
   self0
 and type_decl arg x =
@@ -564,25 +576,25 @@ and class_type0 arg =
   let rec self x = class_type arg x
   and self0 =
     fun
-    [ CtAtt loc e attr ->
-        CtAtt loc (self e) (attribute arg attr)
-    | CtLongLid loc x1 x2 →
-        CtLongLid loc (longid arg x1) x2
-    | CtLid loc x1 →
-        CtLid loc x1
-    | CtLop loc x1 x2 x3 →
-        CtLop loc x1 (longid arg x2) (self x3)
-    | CtCon loc x1 x2 →
-        CtCon loc (self x1) (vala_map (List.map (ctyp arg)) x2)
-    | CtFun loc x1 x2 →
-        CtFun loc (ctyp arg x1) (self x2)
-    | CtSig loc x1 x2 →
+    [ CtAtt loc e attr[@hashrecons z;] ->
+        CtAtt loc (self e) (attribute arg attr)[@hashrecons z;]
+    | CtLongLid loc x1 x2[@hashrecons z;] →
+        CtLongLid loc (longid arg x1) x2[@hashrecons z;]
+    | CtLid loc x1[@hashrecons z;] →
+        CtLid loc x1[@hashrecons z;]
+    | CtLop loc x1 x2 x3[@hashrecons z;] →
+        CtLop loc x1 (longid arg x2) (self x3)[@hashrecons z;]
+    | CtCon loc x1 x2[@hashrecons z;] →
+        CtCon loc (self x1) (vala_map (List.map (ctyp arg)) x2)[@hashrecons z;]
+    | CtFun loc x1 x2[@hashrecons z;] →
+        CtFun loc (ctyp arg x1) (self x2)[@hashrecons z;]
+    | CtSig loc x1 x2[@hashrecons z;] →
         CtSig loc (vala_map (option_map (ctyp arg)) x1)
-          (vala_map (List.map (class_sig_item arg)) x2)
-    | CtXtr loc x1 x2 →
-        CtXtr loc x1 (option_map (vala_map self) x2)
-    | CtExten loc exten ->
-        CtExten loc (attribute arg exten)
+          (vala_map (List.map (class_sig_item arg)) x2)[@hashrecons z;]
+    | CtXtr loc x1 x2[@hashrecons z;] →
+        CtXtr loc x1 (option_map (vala_map self) x2)[@hashrecons z;]
+    | CtExten loc exten[@hashrecons z;] ->
+        CtExten loc (attribute arg exten)[@hashrecons z;]
     ] in
   self0
 and class_sig_item arg x =
@@ -595,22 +607,22 @@ and class_sig_item0 arg =
   let rec self x = class_sig_item arg x
   and self0 =
     fun
-    [ CgCtr loc x1 x2 x3 →
-        CgCtr loc (ctyp arg x1) (ctyp arg x2) (attributes arg x3)
-    | CgDcl loc x1 →
-        CgDcl loc (vala_map (List.map self) x1)
-    | CgInh loc x1 x2 →
-        CgInh loc (class_type arg x1) (attributes arg x2)
-    | CgMth loc x1 x2 x3 x4 →
-        CgMth loc x1 x2 (ctyp arg x3) (attributes arg x4)
-    | CgVal loc x1 x2 x3 x4 x5 →
-        CgVal loc x1 x2 x3 (ctyp arg x4) (attributes arg x5)
-    | CgVir loc x1 x2 x3 x4 →
-        CgVir loc x1 x2 (ctyp arg x3) (attributes arg x4)
-    | CgFlAtt loc a ->
-        CgFlAtt loc (attribute arg a)
-    | CgExten loc exten ->
-        CgExten loc (attribute arg exten)
+    [ CgCtr loc x1 x2 x3[@hashrecons z;] →
+        CgCtr loc (ctyp arg x1) (ctyp arg x2) (attributes arg x3)[@hashrecons z;]
+    | CgDcl loc x1[@hashrecons z;] →
+        CgDcl loc (vala_map (List.map self) x1)[@hashrecons z;]
+    | CgInh loc x1 x2[@hashrecons z;] →
+        CgInh loc (class_type arg x1) (attributes arg x2)[@hashrecons z;]
+    | CgMth loc x1 x2 x3 x4[@hashrecons z;] →
+        CgMth loc x1 x2 (ctyp arg x3) (attributes arg x4)[@hashrecons z;]
+    | CgVal loc x1 x2 x3 x4 x5[@hashrecons z;] →
+        CgVal loc x1 x2 x3 (ctyp arg x4) (attributes arg x5)[@hashrecons z;]
+    | CgVir loc x1 x2 x3 x4[@hashrecons z;] →
+        CgVir loc x1 x2 (ctyp arg x3) (attributes arg x4)[@hashrecons z;]
+    | CgFlAtt loc a[@hashrecons z;] ->
+        CgFlAtt loc (attribute arg a)[@hashrecons z;]
+    | CgExten loc exten[@hashrecons z;] ->
+        CgExten loc (attribute arg exten)[@hashrecons z;]
     ] in
   self0
 and class_expr arg x =
@@ -623,31 +635,32 @@ and class_expr0 arg =
   let rec self x = class_expr arg x
   and self0 =
     fun
-    [ CeAtt loc e attr ->
-       CeAtt loc (self e) (attribute arg attr)
-    | CeApp loc x1 x2 →
-        CeApp loc (self x1) (expr arg x2)
-    | CeCon loc x1 x2 →
-        CeCon loc (vala_map (longid_lident arg) x1) (vala_map (List.map (ctyp arg)) x2)
-    | CeFun loc x1 x2 →
-        CeFun loc (patt arg x1) (self x2)
-    | CeLet loc x1 x2 x3 →
+    [ CeAtt loc e attr[@hashrecons z;] ->
+       CeAtt loc (self e) (attribute arg attr)[@hashrecons z;]
+    | CeApp loc x1 x2[@hashrecons z;] →
+        CeApp loc (self x1) (expr arg x2)[@hashrecons z;]
+    | CeCon loc x1 x2[@hashrecons z;] →
+        CeCon loc (vala_map (longid_lident arg) x1) (vala_map (List.map (ctyp arg)) x2)[@hashrecons z;]
+    | CeFun loc x1 x2[@hashrecons z;] →
+        CeFun loc (patt arg x1) (self x2)[@hashrecons z;]
+    | CeLet loc x1 x2 x3[@hashrecons z;] →
         CeLet loc x1
           (vala_map
-             (List.map (fun (x1, x2, x3) → (patt arg x1, expr arg x2, attributes arg x3)))
+             (List.map (fun (x1, x2, x3)[@hashrecons z;] →
+                         (patt arg x1, expr arg x2, attributes arg x3)[@hashrecons z;]))
              x2)
-          (self x3)
-    | CeLop loc x1 x2 x3 →
-        CeLop loc x1 (longid arg x2) (self x3)
-    | CeStr loc x1 x2 →
+          (self x3)[@hashrecons z;]
+    | CeLop loc x1 x2 x3[@hashrecons z;] →
+        CeLop loc x1 (longid arg x2) (self x3)[@hashrecons z;]
+    | CeStr loc x1 x2[@hashrecons z;] →
         CeStr loc (vala_map (option_map (patt arg)) x1)
-          (vala_map (List.map (class_str_item arg)) x2)
-    | CeTyc loc x1 x2 →
-        CeTyc loc (self x1) (class_type arg x2)
-    | CeXtr loc x1 x2 →
-        CeXtr loc x1 (option_map (vala_map self) x2)
-    | CeExten loc exten ->
-        CeExten loc (attribute arg exten)
+          (vala_map (List.map (class_str_item arg)) x2)[@hashrecons z;]
+    | CeTyc loc x1 x2[@hashrecons z;] →
+        CeTyc loc (self x1) (class_type arg x2)[@hashrecons z;]
+    | CeXtr loc x1 x2[@hashrecons z;] →
+        CeXtr loc x1 (option_map (vala_map self) x2)[@hashrecons z;]
+    | CeExten loc exten[@hashrecons z;] ->
+        CeExten loc (attribute arg exten)[@hashrecons z;]
     ] in
   self0
 and class_str_item arg x =
@@ -660,27 +673,27 @@ and class_str_item0 arg =
   let rec self x = class_str_item arg x
   and self0 =
     fun
-    [ CrCtr loc x1 x2 x3 →
-        CrCtr loc (ctyp arg x1) (ctyp arg x2) (attributes arg x3)
-    | CrDcl loc x1 →
-        CrDcl loc (vala_map (List.map self) x1)
-    | CrInh loc ovf x1 x2 x3 →
-        CrInh loc ovf (class_expr arg x1) x2 (attributes arg x3)
-    | CrIni loc x1 x2 →
-        CrIni loc (expr arg x1) (attributes arg x2)
-    | CrMth loc x1 x2 x3 x4 x5 x6 →
+    [ CrCtr loc x1 x2 x3[@hashrecons z;] →
+        CrCtr loc (ctyp arg x1) (ctyp arg x2) (attributes arg x3)[@hashrecons z;]
+    | CrDcl loc x1[@hashrecons z;] →
+        CrDcl loc (vala_map (List.map self) x1)[@hashrecons z;]
+    | CrInh loc ovf x1 x2 x3[@hashrecons z;] →
+        CrInh loc ovf (class_expr arg x1) x2 (attributes arg x3)[@hashrecons z;]
+    | CrIni loc x1 x2 [@hashrecons z;] →
+        CrIni loc (expr arg x1) (attributes arg x2)[@hashrecons z;]
+    | CrMth loc x1 x2 x3 x4 x5 x6[@hashrecons z;] →
         CrMth loc x1 x2 x3 (vala_map (option_map (ctyp arg)) x4)
-          (expr arg x5) (attributes arg x6)
-    | CrVal loc x1 x2 x3 x4 x5 →
-        CrVal loc x1 x2 x3 (expr arg x4) (attributes arg x5)
-    | CrVav loc x1 x2 x3 x4 →
-        CrVav loc x1 x2 (ctyp arg x3) (attributes arg x4)
-    | CrVir loc x1 x2 x3 x4 →
-        CrVir loc x1 x2 (ctyp arg x3) (attributes arg x4)
-    | CrFlAtt loc a -> 
-        CrFlAtt loc (attribute arg a)
-    | CrExten loc exten -> 
-        CrExten loc (attribute arg exten)
+          (expr arg x5) (attributes arg x6)[@hashrecons z;]
+    | CrVal loc x1 x2 x3 x4 x5[@hashrecons z;] →
+        CrVal loc x1 x2 x3 (expr arg x4) (attributes arg x5)[@hashrecons z;]
+    | CrVav loc x1 x2 x3 x4[@hashrecons z;] →
+        CrVav loc x1 x2 (ctyp arg x3) (attributes arg x4)[@hashrecons z;]
+    | CrVir loc x1 x2 x3 x4[@hashrecons z;] →
+        CrVir loc x1 x2 (ctyp arg x3) (attributes arg x4)[@hashrecons z;]
+    | CrFlAtt loc a [@hashrecons z;] -> 
+        CrFlAtt loc (attribute arg a)[@hashrecons z;]
+    | CrExten loc exten[@hashrecons z;] -> 
+        CrExten loc (attribute arg exten)[@hashrecons z;]
     ] in
   self0
 and longid_lident arg (x1, x2) =
@@ -694,14 +707,14 @@ and attribute_body arg x =
   ]
 and attribute_body0 arg (s, p) =
     let p = match p with [
-      StAttr loc x1 ->
-      StAttr loc (vala_map (List.map (str_item arg)) x1)
-    | SiAttr loc x1 ->
-      SiAttr loc (vala_map (List.map (sig_item arg)) x1)
-    | TyAttr loc x1 ->
-      TyAttr loc (vala_map (ctyp arg) x1)
-    | PaAttr loc x1 x2 ->
-      PaAttr loc (vala_map (patt arg) x1) (option_map (vala_map (expr arg)) x2)
+      StAttr loc x1[@hashrecons z;] ->
+      StAttr loc (vala_map (List.map (str_item arg)) x1)[@hashrecons z;]
+    | SiAttr loc x1[@hashrecons z;] ->
+      SiAttr loc (vala_map (List.map (sig_item arg)) x1)[@hashrecons z;]
+    | TyAttr loc x1[@hashrecons z;] ->
+      TyAttr loc (vala_map (ctyp arg) x1)[@hashrecons z;]
+    | PaAttr loc x1 x2[@hashrecons z;] ->
+      PaAttr loc (vala_map (patt arg) x1) (option_map (vala_map (expr arg)) x2)[@hashrecons z;]
     ] in
     (s, p)
 and attributes_no_anti arg x1 = List.map (attribute arg) x1
