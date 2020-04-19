@@ -37,59 +37,59 @@ and ctyp0 arg =
   let rec self x = ctyp arg x
   and self0 =
     fun
-    [ TyAtt loc ct attr ->
-       TyAtt loc (self ct) (attribute arg attr)
-    | TyAcc loc x1 x2 ->
-        TyAcc loc (longid arg x1) x2
-    | TyAli loc x1 x2 →
-        TyAli loc (self x1) (self x2)
-    | TyAny loc →
-        TyAny loc
-    | TyApp loc x1 x2 →
-        TyApp loc (self x1) (self x2)
-    | TyArr loc x1 x2 →
-        TyArr loc (self x1) (self x2)
-    | TyCls loc x1 →
-        TyCls loc (vala_map (longid_lident arg) x1)
-    | TyLab loc x1 x2 →
-        TyLab loc x1 (self x2)
-    | TyLid loc x1 →
-        TyLid loc x1
-    | TyMan loc x1 x2 x3 →
-        TyMan loc (self x1) x2 (self x3)
-    | TyObj loc x1 x2 →
-        TyObj loc (vala_map (List.map (fun (x1, x2, x3) → (x1, self x2, attributes arg x3))) x1) x2
-    | TyOlb loc x1 x2 →
-        TyOlb loc x1 (self x2)
-    | TyOpn loc ->
-       TyOpn loc
-    | TyPck loc x1 →
-        TyPck loc (module_type arg x1)
-    | TyPol loc x1 x2 →
-        TyPol loc x1 (self x2)
-    | TyPot loc x1 x2 →
-        TyPot loc x1 (self x2)
-    | TyQuo loc x1 →
-        TyQuo loc x1
-    | TyRec loc x1 →
+    [ TyAtt loc ct attr[@hashrecons z;] ->
+       TyAtt loc (self ct) (attribute arg attr)[@hashrecons z;]
+    | TyAcc loc x1 x2[@hashrecons z;] ->
+        TyAcc loc (longid arg x1) x2[@hashrecons z;]
+    | TyAli loc x1 x2 [@hashrecons z;] →
+        TyAli loc (self x1) (self x2)[@hashrecons z;]
+    | TyAny loc[@hashrecons z;] →
+        TyAny loc[@hashrecons z;]
+    | TyApp loc x1 x2[@hashrecons z;] →
+        TyApp loc (self x1) (self x2)[@hashrecons z;]
+    | TyArr loc x1 x2[@hashrecons z;] →
+        TyArr loc (self x1) (self x2)[@hashrecons z;]
+    | TyCls loc x1[@hashrecons z;] →
+        TyCls loc (vala_map (longid_lident arg) x1)[@hashrecons z;]
+    | TyLab loc x1 x2[@hashrecons z;] →
+        TyLab loc x1 (self x2)[@hashrecons z;]
+    | TyLid loc x1[@hashrecons z;] →
+        TyLid loc x1[@hashrecons z;]
+    | TyMan loc x1 x2 x3[@hashrecons z;] →
+        TyMan loc (self x1) x2 (self x3)[@hashrecons z;]
+    | TyObj loc x1 x2[@hashrecons z;] →
+        TyObj loc (vala_map (List.map (fun (x1, x2, x3)[@hashrecons z;] → (x1, self x2, attributes arg x3)[@hashrecons z;])) x1) x2[@hashrecons z;]
+    | TyOlb loc x1 x2[@hashrecons z;] →
+        TyOlb loc x1 (self x2)[@hashrecons z;]
+    | TyOpn loc[@hashrecons z;] ->
+       TyOpn loc[@hashrecons z;]
+    | TyPck loc x1[@hashrecons z;] →
+        TyPck loc (module_type arg x1)[@hashrecons z;]
+    | TyPol loc x1 x2[@hashrecons z;] →
+        TyPol loc x1 (self x2)[@hashrecons z;]
+    | TyPot loc x1 x2[@hashrecons z;] →
+        TyPot loc x1 (self x2)[@hashrecons z;]
+    | TyQuo loc x1[@hashrecons z;] →
+        TyQuo loc x1[@hashrecons z;]
+    | TyRec loc x1[@hashrecons z;] →
         TyRec loc
           (vala_map
              (List.map (fun (loc, x1, x2, x3, x4) → (loc, x1, x2, self x3, attributes arg x4)))
-             x1)
-    | TySum loc x1 →
+             x1)[@hashrecons z;]
+    | TySum loc x1[@hashrecons z;] →
         TySum loc
           (vala_map
              (List.map
                 (generic_constructor arg))
-             x1)
-    | TyTup loc x1 →
-        TyTup loc (vala_map (List.map self) x1)
-      | TyVrn loc x1 x2 →
-        TyVrn loc (vala_map (List.map (poly_variant arg)) x1) x2
-    | TyXtr loc x1 x2 →
-        TyXtr loc x1 (option_map (vala_map self) x2)
-    | TyExten loc exten ->
-        TyExten loc (attribute arg exten)
+             x1)[@hashrecons z;]
+    | TyTup loc x1[@hashrecons z;] →
+        TyTup loc (vala_map (List.map self) x1)[@hashrecons z;]
+      | TyVrn loc x1 x2[@hashrecons z;] →
+        TyVrn loc (vala_map (List.map (poly_variant arg)) x1) x2[@hashrecons z;]
+    | TyXtr loc x1 x2[@hashrecons z;] →
+        TyXtr loc x1 (option_map (vala_map self) x2)[@hashrecons z;]
+    | TyExten loc exten[@hashrecons z;] ->
+        TyExten loc (attribute arg exten)[@hashrecons z;]
     ] in
   self0
 

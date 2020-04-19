@@ -34,6 +34,10 @@ value rewrite_patt f p0 =
       let p = Patt.applist p args in
       let newv = Fresh.get f in
       <:patt< ( $p$ as $lid:newv$ ) >>
+  | <:patt:< ( $list:pl$ ) >> ->
+      let pl = List.map rerec pl in
+      let newv = Fresh.get f in
+      <:patt< ( ( $list:pl$ ) as $lid:newv$ ) >>
   | <:patt:< $uid:uid$ >> ->
       let newv = Fresh.get f in
       <:patt< ( $uid:uid$ as $lid:newv$ ) >>
@@ -80,6 +84,22 @@ value rec rerec0 = fun [
     | _ -> assert False
     ]
 
+  | ((<:patt< ( $list:pl$ ) >> as p), (<:expr:< ( $list:el$ ) >> as e))
+    when List.length pl = List.length el ->
+      let cz_e_zs = List.map2 (fun p e -> rerec0 (p,e)) pl el in
+      let pred = List.fold_right (fun (czvar, _, zvar) rest ->
+          <:expr< ($lid:czvar$ == $lid:zvar$) && $rest$ >>)
+          cz_e_zs <:expr< True >> in
+      let consexp =
+        let cel = List.map (fun (cz, _, _) -> <:expr< $lid:cz$ >>) cz_e_zs in
+        <:expr< ( $list:cel$ ) >> in
+      let body = <:expr< if $pred$ then $lid:zvar$ else $consexp$ >> in
+      let e = List.fold_right (fun (cz, e, _) rhs ->
+          <:expr< let $lid:cz$ = $e$ in $rhs$ >>)
+          cz_e_zs body in
+      let czvar = "c"^zvar in
+      (czvar, e, zvar)
+
   | (<:patt< $lid:pv$ >>, e) ->
     let czvar = "c"^zvar in
     (czvar, e, zvar)
@@ -87,17 +107,18 @@ value rec rerec0 = fun [
   ]
 ;
 
-value rewrite_expr0 (p0, e0) =
+value rewrite_expr0 arg (p0, e0) =
   let loc = loc_of_expr e0 in
   let (cz, e, _) = rerec0 (p0,e0) in
   <:expr< let $lid:cz$ = $e$ in $lid:cz$ >>
 ;
 
-value rec rewrite_expr rv1 p e = match (p, e) with [
+value rec rewrite_expr arg rv1 p e = match (p, e) with [
   (p, <:expr< $e$ [@hashrecons $lid:rv2$ ; ] >>) when rv1 = rv2 ->
-  rewrite_expr0 (p, e)
+  let e = Pa_passthru.expr arg e in
+  rewrite_expr0 arg (p, e)
 | (p, <:expr:< let $_flag:r$ $_list:l$ in $x$ >>) ->
-  let x = rewrite_expr rv1 p x in
+  let x = rewrite_expr arg rv1 p x in
   <:expr< let $_flag:r$ $_list:l$ in $x$ >>
 | _ -> failwith "Pa_hashrecons.rewrite_expr: no expr found to match pattern"
 ]
@@ -106,7 +127,7 @@ value rec rewrite_expr rv1 p e = match (p, e) with [
 value rewrite_case_branch arg = fun [
   (<:patt< $p$ [@hashrecons $lid:rootvar$ ; ] >>, eopt, body) ->
     let p = rewrite_patt (Fresh.mk rootvar) p in
-    let body = rewrite_expr rootvar p body in
+    let body = rewrite_expr arg rootvar p body in
     (p, eopt, body)
 | _ -> assert False
 ]

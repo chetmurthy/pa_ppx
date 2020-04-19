@@ -60,6 +60,15 @@ let test_sexp_pointer_equality2 ctxt =
   let arg = List[Atom "lambda"; List[Atom"x"]; Atom "x"] in
  assert_bool "not pointer-equal" (arg == (sexp_deep arg))
 
+type tup3 = int * sexp * (string * bool) list
+
+let tup3_deep = fun (a,b,c)[@hashrecons z] ->
+  (a, sexp_deep b, HCList.map (fun (a,b)[@hashrecons y] -> (a,b)[@hashrecons y]) c)[@hashrecons z]
+
+let test_tup3_pointer_equality1 ctxt =
+  let arg = (1, List[Atom "lambda"; List[Atom"x"]; Atom "x"], [("foo", true)]) in
+ assert_bool "not pointer-equal" (arg == (tup3_deep arg))
+
 let suite = "Test hashrecons" >::: [
     "test_tree_deep"   >:: test_tree_deep
   ; "test_tree_pointer_equality"   >:: test_tree_pointer_equality
@@ -69,6 +78,7 @@ let suite = "Test hashrecons" >::: [
   ; "test_sexp_pointer_equality0"   >:: test_sexp_pointer_equality0
   ; "test_sexp_pointer_equality1"   >:: test_sexp_pointer_equality1
   ; "test_sexp_pointer_equality2"   >:: test_sexp_pointer_equality2
+  ; "test_tup3_pointer_equality1"   >:: test_tup3_pointer_equality1
   ]
 
 let _ = 
