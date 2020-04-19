@@ -335,7 +335,7 @@ value import_type arg (newtname,new_formals) t =
     else ct
 ;
 
-value import_typedecl_group arg t =
+value import_typedecl_group arg t item_attrs =
   let unp = unpack_imported_type t in
   let (with_attrs, rest_attrs) = extract_with_attributes unp.attrs in
   let unp = { (unp) with attrs = rest_attrs } in
@@ -343,25 +343,32 @@ value import_typedecl_group arg t =
   let loc = unp.loc in
   let actuals = unp.args in
   let (rd, (nrfl, tdl)) = import_typedecl arg unp.unapp_t in
-  (nrfl, List.map (fun td ->
-       let imported_tycon =
-         let tyna = Pcaml.unvala (snd (Pcaml.unvala td.tdNam)) in
-         let baset = <:ctyp< $longid:unp.li$ . $lid:tyna$ >> in
-         let type_var2arg (so, _) =
-           match Pcaml.unvala so with [
-             Some s -> <:ctyp< ' $s$ >>
-           | None ->
-             failwith "import_typedecl_group: cannot import typedecl group where some params are unnamed"
-           ] in
-         let args = List.map type_var2arg (Pcaml.unvala td.tdPrm) in
-         Ctyp.applist baset args in
-       let ct = if renmap = [] then td.tdDef
-         else Ctyp.wrap_attrs (substitute_ctyp renmap td.tdDef) unp.attrs in
-       let ct = if is_generative_type ct then
-           <:ctyp< $imported_tycon$ == $ct$ >>
-         else ct in
-       { (td) with tdDef = ct }
-     ) tdl)
+  let tdl = List.map (fun td ->
+      let imported_tycon =
+        let tyna = Pcaml.unvala (snd (Pcaml.unvala td.tdNam)) in
+        let baset = <:ctyp< $longid:unp.li$ . $lid:tyna$ >> in
+        let type_var2arg (so, _) =
+          match Pcaml.unvala so with [
+            Some s -> <:ctyp< ' $s$ >>
+          | None ->
+            failwith "import_typedecl_group: cannot import typedecl group where some params are unnamed"
+          ] in
+        let args = List.map type_var2arg (Pcaml.unvala td.tdPrm) in
+        Ctyp.applist baset args in
+      let ct = if renmap = [] then td.tdDef
+        else Ctyp.wrap_attrs (substitute_ctyp renmap td.tdDef) unp.attrs in
+      let ct = if is_generative_type ct then
+          <:ctyp< $imported_tycon$ == $ct$ >>
+        else ct in
+      { (td) with tdDef = ct }
+    ) tdl in
+  let (last, tdl) = sep_last tdl in
+  let last =
+    let last_attrs = Pcaml.unvala last.tdAttributes in
+    let new_attrs = last_attrs@item_attrs in
+    { (last) with tdAttributes = <:vala< new_attrs >> } in
+  let tdl = tdl @ [last] in
+  (nrfl, tdl)
 ;
 
 value rec import_module_type arg t =
@@ -391,8 +398,8 @@ value registered_str_item_extension arg = fun [
       ) tdl in
     <:str_item< type $flag:nrfl$ $list:tdl$ >>
 
-  | <:str_item:< [%% import: $type:t$ ] >> ->
-    let (nrfl, tdl) = import_typedecl_group arg t in
+  | <:str_item:< [%% import: $type:t$ ] $itemattrs:item_attrs$ >> ->
+    let (nrfl, tdl) = import_typedecl_group arg t item_attrs in
     <:str_item< type $flag:nrfl$ $list:tdl$ >>
 | _ -> assert False
 ]
@@ -413,7 +420,7 @@ let ef = EF.{ (ef) with
       fun arg ->
         Some (registered_str_item_extension arg z)
 
-  | <:str_item< [%% import: $type:_$ ] >> as z -> 
+  | <:str_item< [%% import: $type:_$ ] $itemattrs:_$ >> as z -> 
       fun arg ->
         Some (registered_str_item_extension arg z)
 

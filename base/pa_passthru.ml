@@ -536,8 +536,8 @@ and sig_item0 arg =
         SgXtr loc x1 (option_map (vala_map self) x2)
     | SgFlAtt loc a ->
         SgFlAtt loc (attribute arg a)
-    | SgExten loc exten ->
-        SgExten loc (attribute arg exten)
+    | SgExten loc exten attrs ->
+        SgExten loc (attribute arg exten) (attributes arg attrs)
     ] in
   self0
 and with_constr arg x =
@@ -666,8 +666,8 @@ and str_item0 arg =
         StXtr loc x1 (option_map (vala_map self) x2)
     | StFlAtt loc a ->
         StFlAtt loc (attribute arg a)
-    | StExten loc exten ->
-        StExten loc (attribute arg exten)
+    | StExten loc exten attrs ->
+        StExten loc (attribute arg exten) (attributes arg attrs)
     ] in
   self0
 and type_decl arg x =

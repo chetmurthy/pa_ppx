@@ -7,7 +7,17 @@ module S = struct
   and w2 = [%import: Stuff.w2 [@with i := Stuff.i]] [@@deriving show]
 end
 
-[%%import: Stuff.w1 [@with i := Stuff.i]]
+[%%import: Stuff.w1 [@with i := Stuff.i]] [@@deriving show]
+
+module N = struct
+type w1 =
+   Stuff.w1 =
+      A of w2 option[@with_deriving show]
+and w2 =
+  Stuff.w2 =
+      B of w1 * Stuff.i[@with_deriving show]
+end
+
 
 let test_simplest ctxt =
  let (_ : t) = A1 in ()
