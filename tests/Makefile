@@ -11,7 +11,7 @@ RM=rm
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common
+PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,pa_ppx_base
 
 CMO=
 CMI=$(CMO:.cmo=.cmi)
@@ -36,6 +36,7 @@ TESTS= \
 	test_ppx_import.byte \
 	test_ppx_import.ppx.byte \
 	test_hashrecons.byte \
+	test_passthru_hashrecons.byte \
 
 all: $(CMO) $(TESTS) test
 
@@ -52,6 +53,13 @@ test_%.byte: test_%.ml testutil.cmo testutil2.cmo
 
 test_%.ppx.byte: test_%.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
 	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),ounit2,$(PPXPACKAGES) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@
+
+test_passthru_hashrecons.byte: test_passthru_hashrecons.ml testutil.cmo testutil2.cmo hCPassthru.cmo
+	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),camlp5.pa_o,camlp5.pr_o,pa_ppx_base,pa_ppx_pa_hashrecons.syntax \
+	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo hCPassthru.cmo $< -o $@
+
+hCPassthru.cmo: hCPassthru.ml
+	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),pa_ppx_pa_hashrecons.syntax -syntax camlp5r -c $<
 
 test_import0.byte: test_import0.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmi
 	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),pa_ppx_pa_import \

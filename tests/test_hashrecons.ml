@@ -7,7 +7,7 @@ module HCList = struct
 let rec map f = function
     [][@hashrecons z] -> [][@hashrecons z]
   | (a::l)[@hashrecons z] -> let r = f a in ((r :: map f l)[@hashrecons z])
-
+[@@ocaml.warning "-26"]
 end
 
 let deep =
@@ -60,16 +60,15 @@ let test_sexp_pointer_equality2 ctxt =
   let arg = List[Atom "lambda"; List[Atom"x"]; Atom "x"] in
  assert_bool "not pointer-equal" (arg == (sexp_deep arg))
 
-
 let suite = "Test hashrecons" >::: [
-    "test_tree_deep"   >:: test_tree_deep ;
-    "test_tree_pointer_equality"   >:: test_tree_pointer_equality ;
-    "test_sexp_deep"   >:: test_sexp_deep ;
-    "test_map0"   >:: test_map0 ;
-    "test_map1"   >:: test_map1 ;
-    "test_sexp_pointer_equality0"   >:: test_sexp_pointer_equality0 ;
-    "test_sexp_pointer_equality1"   >:: test_sexp_pointer_equality1 ;
-    "test_sexp_pointer_equality2"   >:: test_sexp_pointer_equality2
+    "test_tree_deep"   >:: test_tree_deep
+  ; "test_tree_pointer_equality"   >:: test_tree_pointer_equality
+  ; "test_sexp_deep"   >:: test_sexp_deep
+  ; "test_map0"   >:: test_map0
+  ; "test_map1"   >:: test_map1
+  ; "test_sexp_pointer_equality0"   >:: test_sexp_pointer_equality0
+  ; "test_sexp_pointer_equality1"   >:: test_sexp_pointer_equality1
+  ; "test_sexp_pointer_equality2"   >:: test_sexp_pointer_equality2
   ]
 
 let _ = 
