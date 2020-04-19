@@ -349,9 +349,19 @@ value rec import_module_type arg t =
 ;
 
 value registered_str_item_extension arg = fun [
-  <:str_item:< type $tp:tname$ $list:l$ = [% import: $type:t$ ] $_itemattrs:ia$ >> ->
-    let ct = import_type arg (tname,l) t [] in
-    <:str_item< type $tp:tname$ $list:l$ = $ct$ $_itemattrs:ia$ >>
+  <:str_item:< type $flag:nrfl$ $list:tdl$ >> ->
+    let tdl = List.map (fun td ->
+        match td.tdDef with [
+          <:ctyp< [% import: $type:t$ ] >> ->
+          let tname = Pcaml.unvala td.tdNam in
+          let l = Pcaml.unvala td.tdPrm in
+          let ct = import_type arg (tname,l) t [] in
+          { (td) with tdDef = ct }
+        | _ -> td
+        ]
+      ) tdl in
+    <:str_item< type $flag:nrfl$ $list:tdl$ >>
+
 | _ -> assert False
 ]
 ;
@@ -367,9 +377,14 @@ value install () =
 let ef = EF.mk() in
 let ef = EF.{ (ef) with
   str_item = extfun ef.str_item with [
-    <:str_item:< type $tp:_$ $list:_$ = [% import: $type:_$ ] $_itemattrs:_$ >> as z ->
+    <:str_item:< type $flag:_$ $list:_$ >> as z ->
       fun arg ->
         Some (registered_str_item_extension arg z)
+(*
+  | <:str_item< [%% import: $type:_$ ] >> as z -> 
+      fun arg ->
+        Some (registered_str_item_extension arg z)
+*)
   ] } in
 
 let ef = EF.{ (ef) with

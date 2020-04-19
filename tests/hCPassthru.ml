@@ -169,102 +169,102 @@ and expr0 arg =
   let rec self x = expr arg x
   and self0 =
     fun
-    [ ExAtt loc e attr ->
-       ExAtt loc (self e) (attribute_body arg attr)
-    | ExAcc loc x1 x2 →
-        ExAcc loc (self x1) (self x2)
-    | ExAnt loc x1 → assert False
-    | ExApp loc x1 x2 →
-        ExApp loc (self x1) (self x2)
-    | ExAre loc x1 x2 x3 →
-        ExAre loc x1 (self x2) (vala_map (List.map self) x3)
-    | ExArr loc x1 →
-        ExArr loc (vala_map (List.map self) x1)
-    | ExAsr loc x1 →
-        ExAsr loc (self x1)
-    | ExAss loc x1 x2 →
-        ExAss loc (self x1) (self x2)
-    | ExBae loc x1 x2 x3 →
-        ExBae loc x1 (self x2) (vala_map (List.map self) x3)
-    | ExChr loc x1 →
-        ExChr loc x1
-    | ExCoe loc x1 x2 x3 →
-        ExCoe loc (self x1) (option_map (ctyp arg) x2) (ctyp arg x3)
-    | ExFlo loc x1 →
-        ExFlo loc x1
-    | ExFor loc x1 x2 x3 x4 x5 →
-        ExFor loc (patt arg x1) (self x2) (self x3) x4 (vala_map (List.map self) x5)
-    | ExFun loc x1 →
-        ExFun loc (vala_map (List.map (case_branch arg)) x1)
-    | ExIfe loc x1 x2 x3 →
-        ExIfe loc (self x1) (self x2) (self x3)
+    [ ExAtt loc e attr[@hashrecons z;] ->
+       ExAtt loc (self e) (attribute_body arg attr)[@hashrecons z;]
+    | ExAcc loc x1 x2[@hashrecons z;] →
+        ExAcc loc (self x1) (self x2)[@hashrecons z;]
+    | ExAnt loc x1[@hashrecons z;] → assert False
+    | ExApp loc x1 x2[@hashrecons z;] →
+        ExApp loc (self x1) (self x2)[@hashrecons z;]
+    | ExAre loc x1 x2 x3[@hashrecons z;] →
+        ExAre loc x1 (self x2) (vala_map (List.map self) x3)[@hashrecons z;]
+    | ExArr loc x1[@hashrecons z;] →
+        ExArr loc (vala_map (List.map self) x1)[@hashrecons z;]
+    | ExAsr loc x1[@hashrecons z;] →
+        ExAsr loc (self x1)[@hashrecons z;]
+    | ExAss loc x1 x2[@hashrecons z;] →
+        ExAss loc (self x1) (self x2)[@hashrecons z;]
+    | ExBae loc x1 x2 x3[@hashrecons z;] →
+        ExBae loc x1 (self x2) (vala_map (List.map self) x3)[@hashrecons z;]
+    | ExChr loc x1[@hashrecons z;] →
+        ExChr loc x1[@hashrecons z;]
+    | ExCoe loc x1 x2 x3[@hashrecons z;] →
+        ExCoe loc (self x1) (option_map (ctyp arg) x2) (ctyp arg x3)[@hashrecons z;]
+    | ExFlo loc x1[@hashrecons z;] →
+        ExFlo loc x1[@hashrecons z;]
+    | ExFor loc x1 x2 x3 x4 x5[@hashrecons z;] →
+        ExFor loc (patt arg x1) (self x2) (self x3) x4 (vala_map (List.map self) x5)[@hashrecons z;]
+    | ExFun loc x1[@hashrecons z;] →
+        ExFun loc (vala_map (List.map (case_branch arg)) x1)[@hashrecons z;]
+    | ExIfe loc x1 x2 x3[@hashrecons z;] →
+        ExIfe loc (self x1) (self x2) (self x3)[@hashrecons z;]
     | (ExInt loc x1 x2)[@hashrecons z;] →
         (ExInt loc x1 x2)[@hashrecons z;]
-    | ExLab loc x1 →
+    | ExLab loc x1[@hashrecons z;] →
         ExLab loc
           (vala_map
              (List.map
                 (fun (x1, x2) →
                    (patt arg x1, vala_map (option_map self) x2)))
-             x1)
-    | ExLaz loc x1 →
-        ExLaz loc (self x1)
-    | ExLet loc x1 x2 x3 →
+             x1)[@hashrecons z;]
+    | ExLaz loc x1[@hashrecons z;] →
+        ExLaz loc (self x1)[@hashrecons z;]
+    | ExLet loc x1 x2 x3[@hashrecons z;] →
         ExLet loc x1
           (vala_map (List.map (fun (x1, x2, x3) → (patt arg x1, self x2, attributes arg x3))) x2)
-          (self x3)
-    | ExLEx loc x1 x2 x3 x4 ->
-        ExLEx loc x1 (vala_map (List.map (ctyp arg)) x2) (self x3) (attributes arg x4)
-    | ExLid loc x1 →
-        ExLid loc x1
-    | ExLmd loc x1 x2 x3 →
-        ExLmd loc x1 (module_expr arg x2) (self x3)
-    | ExLop loc b x1 x2 →
-        ExLop loc b (module_expr arg x1) (self x2)
-    | ExMat loc x1 x2 →
-        ExMat loc (self x1) (vala_map (List.map (case_branch arg)) x2)
-    | ExNew loc x1 →
-        ExNew loc (vala_map (longid_lident arg) x1)
-    | ExObj loc x1 x2 →
+          (self x3)[@hashrecons z;]
+    | ExLEx loc x1 x2 x3 x4[@hashrecons z;] ->
+        ExLEx loc x1 (vala_map (List.map (ctyp arg)) x2) (self x3) (attributes arg x4)[@hashrecons z;]
+    | ExLid loc x1[@hashrecons z;] →
+        ExLid loc x1[@hashrecons z;]
+    | ExLmd loc x1 x2 x3[@hashrecons z;] →
+        ExLmd loc x1 (module_expr arg x2) (self x3)[@hashrecons z;]
+    | ExLop loc b x1 x2[@hashrecons z;] →
+        ExLop loc b (module_expr arg x1) (self x2)[@hashrecons z;]
+    | ExMat loc x1 x2[@hashrecons z;] →
+        ExMat loc (self x1) (vala_map (List.map (case_branch arg)) x2)[@hashrecons z;]
+    | ExNew loc x1[@hashrecons z;] →
+        ExNew loc (vala_map (longid_lident arg) x1)[@hashrecons z;]
+    | ExObj loc x1 x2[@hashrecons z;] →
         ExObj loc (vala_map (option_map (patt arg)) x1)
-          (vala_map (List.map (class_str_item arg)) x2)
-    | ExOlb loc x1 x2 →
-        ExOlb loc (patt arg x1) (vala_map (option_map self) x2)
-    | ExOvr loc x1 →
-        ExOvr loc (vala_map (List.map (fun (x1, x2) → (x1, self x2))) x1)
-    | ExPck loc x1 x2 →
+          (vala_map (List.map (class_str_item arg)) x2)[@hashrecons z;]
+    | ExOlb loc x1 x2[@hashrecons z;] →
+        ExOlb loc (patt arg x1) (vala_map (option_map self) x2)[@hashrecons z;]
+    | ExOvr loc x1[@hashrecons z;] →
+        ExOvr loc (vala_map (List.map (fun (x1, x2) → (x1, self x2))) x1)[@hashrecons z;]
+    | ExPck loc x1 x2[@hashrecons z;] →
         ExPck loc (module_expr arg x1)
-          (option_map (module_type arg) x2)
-    | ExRec loc x1 x2 →
+          (option_map (module_type arg) x2)[@hashrecons z;]
+    | ExRec loc x1 x2[@hashrecons z;] →
         ExRec loc
           (vala_map (List.map (fun (x1, x2) → (patt arg x1, self x2))) x1)
-          (option_map self x2)
-    | ExSeq loc x1 →
-        ExSeq loc (vala_map (List.map self) x1)
-    | ExSnd loc x1 x2 →
-        ExSnd loc (self x1) x2
-    | ExSte loc x1 x2 x3 →
-        ExSte loc x1 (self x2) (vala_map (List.map self) x3)
-    | ExStr loc x1 →
-        ExStr loc x1
-    | ExTry loc x1 x2 →
-        ExTry loc (self x1) (vala_map (List.map (case_branch arg)) x2)
-    | ExTup loc x1 →
-        ExTup loc (vala_map (List.map self) x1)
-    | ExTyc loc x1 x2 →
-        ExTyc loc (self x1) (ctyp arg x2)
-    | ExUid loc x1 →
-        ExUid loc x1
-    | ExVrn loc x1 →
-        ExVrn loc x1
-    | ExWhi loc x1 x2 →
-        ExWhi loc (self x1) (vala_map (List.map self) x2)
-    | ExXtr loc x1 x2 →
-        ExXtr loc x1 (option_map (vala_map self) x2)
-    | ExExten loc exten ->
-        ExExten loc exten
-    | ExUnr loc ->
-        ExUnr loc
+          (option_map self x2)[@hashrecons z;]
+    | ExSeq loc x1[@hashrecons z;] →
+        ExSeq loc (vala_map (List.map self) x1)[@hashrecons z;]
+    | ExSnd loc x1 x2[@hashrecons z;] →
+        ExSnd loc (self x1) x2[@hashrecons z;]
+    | ExSte loc x1 x2 x3[@hashrecons z;] →
+        ExSte loc x1 (self x2) (vala_map (List.map self) x3)[@hashrecons z;]
+    | ExStr loc x1[@hashrecons z;] →
+        ExStr loc x1[@hashrecons z;]
+    | ExTry loc x1 x2[@hashrecons z;] →
+        ExTry loc (self x1) (vala_map (List.map (case_branch arg)) x2)[@hashrecons z;]
+    | ExTup loc x1[@hashrecons z;] →
+        ExTup loc (vala_map (List.map self) x1)[@hashrecons z;]
+    | ExTyc loc x1 x2[@hashrecons z;] →
+        ExTyc loc (self x1) (ctyp arg x2)[@hashrecons z;]
+    | ExUid loc x1[@hashrecons z;] →
+        ExUid loc x1[@hashrecons z;]
+    | ExVrn loc x1[@hashrecons z;] →
+        ExVrn loc x1[@hashrecons z;]
+    | ExWhi loc x1 x2[@hashrecons z;] →
+        ExWhi loc (self x1) (vala_map (List.map self) x2)[@hashrecons z;]
+    | ExXtr loc x1 x2[@hashrecons z;] →
+        ExXtr loc x1 (option_map (vala_map self) x2)[@hashrecons z;]
+    | ExExten loc exten[@hashrecons z;] ->
+        ExExten loc exten[@hashrecons z;]
+    | ExUnr loc[@hashrecons z;] ->
+        ExUnr loc[@hashrecons z;]
     ] in
   self0
 

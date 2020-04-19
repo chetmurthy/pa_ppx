@@ -2,6 +2,12 @@ open OUnit2
 
 type t = [%import: Stuff.a]
 
+module S = struct
+  type w1 = [%import: Stuff.w1]
+  and w2 = [%import: Stuff.w2] [@@deriving show]
+end
+
+
 let test_simplest ctxt =
  let (_ : t) = A1 in ()
 

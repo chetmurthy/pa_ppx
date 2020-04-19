@@ -29,3 +29,6 @@ end
 module type S_optional = sig
   val f : ?opt:int -> unit -> unit
 end
+
+type w1 = A of w2 option
+and w2 = B of w1
