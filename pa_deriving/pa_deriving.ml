@@ -154,7 +154,7 @@ value install () =
 let ef = EF.mk() in
 let ef = EF.{ (ef) with
             str_item = extfun ef.str_item with [
-    <:str_item:< type $_flag:_$ $list:tdl$ >> as z
+    <:str_item:< type $flag:nrfl$ $list:tdl$ >> as z
     when  List.exists is_registered_deriving (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
     fun arg ->
       let attrs = Pcaml.unvala (fst (sep_last tdl)).tdAttributes in
@@ -163,7 +163,21 @@ let ef = EF.{ (ef) with
           [registered_str_item arg pi z]
         else []) in
       let l = List.concat ll in
-      Some <:str_item< declare $list:[z :: l ]$ end >>
+      let z =
+        let (last, tdl) = sep_last tdl in
+        let (deriving_attr, other_attrs) =
+          match filter_split is_deriving_attribute (Pcaml.unvala last.tdAttributes) with [
+            (([] | [_ ; _ :: _]), _) -> failwith "should only be one @@deriving attribute"
+          | ([a], others) -> (a, others)
+          ] in
+        let payload = snd (Pcaml.unvala deriving_attr) in
+        let newattr = (<:vala< "deriving_inline" >>, payload) in
+        let attrs = other_attrs @ [ <:vala< newattr >> ] in
+        let last = { (last) with tdAttributes = <:vala< attrs >> } in
+        let tdl = tdl @ [ last ] in
+        <:str_item:< type $flag:nrfl$ $list:tdl$ >> in
+      let l = [z :: l ] @ [ <:str_item< [@@@"end"] >> ] in
+      Some <:str_item< declare $list:l$ end >>
   ] } in
 
 let ef = EF.{ (ef) with

@@ -23,6 +23,13 @@ value duplicated (l : list string) =
   duprec l
 ;
 
+value filter_split p l =
+  let rec filtrec yes no = fun [
+      [] -> (List.rev yes, List.rev no)
+    | [x::l] -> if p x then filtrec [x::yes] no l else filtrec yes [x::no] l ]
+  in filtrec [] [] l
+;
+
 value filter p =
   let rec filter_aux = fun [
       [] -> []
