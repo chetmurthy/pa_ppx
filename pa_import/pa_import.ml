@@ -64,7 +64,7 @@ value parse_mli infile =
 ;
 
 value lookup_file suffix fmod =
-  let fname = Printf.sprintf "%s.%s" (String.lowercase_ascii fmod) suffix in
+  let fname = Printf.sprintf "%s.%s" (String.uncapitalize_ascii fmod) suffix in
   match try_find (fun s -> lookup1 fname s) lookup_path.val with [
     f -> Fmt.(str "%a" Fpath.pp f)
   | exception Failure _ -> failwith (Printf.sprintf "lookup_file: module %s (%s) not found" fmod suffix)
@@ -198,6 +198,10 @@ end
 value substitute_ctyp renmap t =
   let rec subrec = fun [
     <:ctyp:< ( $list:l$ ) >> -> <:ctyp< ( $list:List.map subrec l$ ) >>
+  | <:ctyp:< { $list:ldl$ } >> ->
+    let sub_label_decl (loc, na,b,ty,al) =
+      (loc,na,b,subrec ty, al) in
+    <:ctyp< { $list:List.map sub_label_decl ldl$ } >>
   | <:ctyp:< [ $list:l$ ] >> ->
     let l = List.map (fun (loc, cid, tyl, tyo, attrs) ->
         (loc, cid, Pcaml.vala_map (List.map subrec) tyl, option_map subrec tyo, attrs)
@@ -232,7 +236,7 @@ value string_list_of_expr e =
 value expr_to_ctyp0 loc e = do {
   let l = string_list_of_expr e in
   let (last,l) = sep_last l in
-  assert (last = String.lowercase_ascii last) ;
+  assert (last = String.uncapitalize_ascii last) ;
   match l with [
     [] -> <:ctyp< $lid:last$ >>
   | [h::t] ->

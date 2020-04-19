@@ -1,7 +1,7 @@
-harness.cmo : \
+deriving_harness.cmo : \
     surveil.cmo \
     pa_deriving.cmo
-harness.cmx : \
+deriving_harness.cmx : \
     surveil.cmx \
     pa_deriving.cmx
 pa_deriving.cmo :

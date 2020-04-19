@@ -20,10 +20,26 @@ test_deriving_show.cmo : \
     testutil2.cmo
 test_deriving_show.cmx : \
     testutil2.cmx
-test_import0.cmo : \
+test_hashrecons.cmo : \
     testutil2.cmo
-test_import0.cmx : \
+test_hashrecons.cmx : \
     testutil2.cmx
+test_import0.cmo : \
+    testutil2.cmo \
+    stuff.cmo
+test_import0.cmx : \
+    testutil2.cmx \
+    stuff.cmx
+test_import_camlp5.cmo : \
+    testutil2.cmo
+test_import_camlp5.cmx : \
+    testutil2.cmx
+test_passthru_hashrecons.cmo : \
+    testutil2.cmo \
+    hCPassthru.cmo
+test_passthru_hashrecons.cmx : \
+    testutil2.cmx \
+    hCPassthru.cmx
 test_ppx_import.cmo : \
     test_self_import.cmi \
     stuff.cmo

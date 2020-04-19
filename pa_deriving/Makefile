@@ -14,8 +14,9 @@ MKCAMLP5=$(LAUNCH) mkcamlp5
 PACKAGES := $(PACKAGES),fmt,pa_ppx_base,pa_ppx_base.syntax
 
 TARGET=pa_deriving.cma
-CMO=pa_deriving.cmo surveil.cmo harness.cmo
+CMO=pa_deriving.cmo surveil.cmo deriving_harness.cmo
 CMI=$(CMO:.cmo=.cmi)
+INSTALL_CMI=$(filter-out deriving_harness.cmi,$(CMI))
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_pa_deriving local-install
 
@@ -29,7 +30,7 @@ install::
 	./META.pl $(DESTDIR)/lib > META
 	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_pa_deriving || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_pa_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(CMI)
+	$(OCAMLFIND) install pa_ppx_pa_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(INSTALL_CMI)
 	$(RM) -f META
 
 local-install::
