@@ -62,13 +62,13 @@ value rec rerec0 = fun [
     let (p, pargs) = Patt.unapplist p in
     let (e, eargs) = Expr.unapplist e in
     match (p, e) with [
-      (<:patt< $uid:puid$ >>, <:expr< $uid:euid$ >>)
-      when puid = euid && List.length pargs = List.length eargs ->
+      (<:patt< $longid:li$ >>, e)
+      when Longid.to_string_list li = Expr.to_string_list e && List.length pargs = List.length eargs ->
       let cz_e_zs = List.map2 (fun p e -> rerec0 (p,e)) pargs eargs in
       let pred = List.fold_right (fun (czvar, _, zvar) rest ->
           <:expr< ($lid:czvar$ == $lid:zvar$) && $rest$ >>)
           cz_e_zs <:expr< True >> in
-      let consexp = Expr.applist <:expr< $uid:euid$ >>
+      let consexp = Expr.applist e
           (List.map (fun (cz, _, _) -> <:expr< $lid:cz$ >>) cz_e_zs) in
       let body = <:expr< if $pred$ then $lid:zvar$ else $consexp$ >> in
       let e = List.fold_right (fun (cz, e, _) rhs ->

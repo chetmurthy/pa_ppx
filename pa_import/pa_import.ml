@@ -175,7 +175,7 @@ value import_typedecl arg t = do {
   match fst (Ctyp.unapplist t)  with [
     <:ctyp< $lid:lid$ >> -> failwith "self-type-lookup not implemented"
   | <:ctyp< $longid:modname$ . $lid:lid$ >> ->
-    let sl = longid_to_string_list modname in
+    let sl = Longid.to_string_list modname in
     let (fmod, modpath) = match sl with [ [] -> failwith "import_type: internal error" | [h::t] -> (h,t) ] in
     lookup_typedecl (fmod, modpath, lid)
   ]
@@ -298,7 +298,7 @@ value unpack_imported_type full_t =
     <:ctyp< $longid:li$ . $lid:lid$ >> -> (li, lid)
   | _ -> failwith "unpack_imported_type"
   ] in
-  let sl = longid_to_string_list li in
+  let sl = Longid.to_string_list li in
   { full_t = full_t ; attrs = attrs ; bare_t = bare_t ;
     unapp_t = unapp_t ; args = args ; li = li ;
     lid = lid ; sl = sl ; loc = loc_of_ctyp full_t }
@@ -341,7 +341,6 @@ value import_typedecl_group arg t item_attrs =
   let unp = { (unp) with attrs = rest_attrs } in
   let renmap = List.fold_right extend_renmap with_attrs [] in
   let loc = unp.loc in
-  let actuals = unp.args in
   let (rd, (nrfl, tdl)) = import_typedecl arg unp.unapp_t in
   let tdl = List.map (fun td ->
       let imported_tycon =
@@ -376,10 +375,10 @@ value rec import_module_type arg t =
     <:ctyp< $t$ [@ $attribute:attr$ ] >> ->
       import_module_type arg t
   | <:ctyp< ( module  $longid:li$ . $lid:i$ ) >> ->
-      let sl = longid_to_string_list li in
+      let sl = Longid.to_string_list li in
       lookup_module_type (sl@[i])
   | <:ctyp< ( module  $longid:li$ ) >> ->
-      let sl = longid_to_string_list li in
+      let sl = Longid.to_string_list li in
       lookup_module_type sl
   ]
 ;

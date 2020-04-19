@@ -28,7 +28,7 @@ value prefixed_name ctxt id =
 ;
 
 value module_path ctxt li =
-  Ctxt.set_module_path ctxt (longid_to_string_list li)
+  Ctxt.set_module_path ctxt (Longid.to_string_list li)
 ;
 
 end ;

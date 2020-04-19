@@ -40,6 +40,15 @@ value attr_id attr = Pcaml.unvala (fst (Pcaml.unvala attr)) ;
 
 module Expr = struct
 
+value to_string_list e =
+  let rec srec = fun [
+    <:expr< $lid:i$ >> -> [i]
+  | <:expr< $uid:i$ >> -> [i]
+  | <:expr< $e1$ . $e2$ >> -> (srec e1) @ (srec e2)
+  ]
+  in srec e
+;
+
 value prepend_longident li e =
   let rec prerec li e = match li with [
     <:longident:< $uid:uid$ >> -> <:expr< $uid:uid$ . $e$ >>
@@ -113,7 +122,9 @@ value unapplist e =
 ;
 end ;
 
-value longid_to_string_list li =
+module Longid = struct
+  
+value to_string_list li =
   let rec lirec = fun [
     <:longident< $uid:uid$ >> -> [uid]
   | <:longident< $longid:li$ . $uid:uid$ >> -> (lirec li) @ [uid]
@@ -123,6 +134,8 @@ value longid_to_string_list li =
     failwith "[internal error] longid_to_string_list: called with longid containing placeholders"
   ] in
   lirec li
+;
+end
 ;
 
 value rec is_poly_variant t =

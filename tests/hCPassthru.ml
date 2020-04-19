@@ -7,6 +7,26 @@ open MLast;
 open Ppxutil ;
 open Pa_passthru ;
 
+value option_map f =
+  fun
+  [ Some x[@hashrecons z;] -> Some (f x)[@hashrecons z;]
+  | None[@hashrecons z;] -> None[@hashrecons z;] ]
+;
+
+value vala_map f =
+    fun
+    [ Ploc.VaAnt s [@hashrecons z;] -> Ploc.VaAnt s[@hashrecons z;]
+    | Ploc.VaVal x [@hashrecons z;] -> Ploc.VaVal (f x)[@hashrecons z;] ]
+;
+
+value class_infos_map arg ~{attributes} f x =
+  {ciLoc = x.ciLoc; ciVir = x.ciVir;
+   ciPrm =
+     let (x1, x2) = x.ciPrm in
+     (x1, x2);
+   ciNam = x.ciNam; ciExp = f x.ciExp; ciAttributes = attributes arg x.ciAttributes }
+;
+
 value rec ctyp (arg : Ctxt.t)  x =
   match Extfun.apply arg.Ctxt.ef.EF.ctyp x arg with [
     Some x -> x
