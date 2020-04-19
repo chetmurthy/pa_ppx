@@ -27,12 +27,14 @@ value vala_map f =
     | Ploc.VaVal x [@hashrecons z;] -> Ploc.VaVal (f x)[@hashrecons z;] ]
 ;
 
-value class_infos_map arg ~{attributes} f x =
-  {ciLoc = x.ciLoc; ciVir = x.ciVir;
+value class_infos_map arg ~{attributes} f 
+  {ciLoc = ciLoc; ciVir = ciVir;
+   ciPrm = ciPrm ; ciNam = ciNam;
+   ciExp = ciExp; ciAttributes = ciAttributes }[@hashrecons z;] =
+  {ciLoc = ciLoc; ciVir = ciVir;
    ciPrm =
-     let (x1, x2) = x.ciPrm in
-     (x1, x2);
-   ciNam = x.ciNam; ciExp = f x.ciExp; ciAttributes = attributes arg x.ciAttributes }
+     (fun (x1, x2)[@hashrecons z;] -> (x1, x2)[@hashrecons z;]) ciPrm;
+   ciNam = ciNam; ciExp = f ciExp; ciAttributes = attributes arg ciAttributes }[@hashrecons z;]
 ;
 
 value rec ctyp (arg : Ctxt.t)  x =
@@ -554,11 +556,15 @@ and type_extension arg x =
   | None -> type_extension0 arg x
   | exception Extfun.Failure -> type_extension0 arg x
   ]
-and type_extension0 arg x =
-  {teNam = vala_map (longid_lident arg) x.teNam; tePrm = x.tePrm;
-   tePrv = x.tePrv;
-   teECs = vala_map (List.map (extension_constructor arg)) x.teECs ;
-   teAttributes = attributes arg x.teAttributes}
+and type_extension0 arg 
+  {teNam = teNam; tePrm = tePrm;
+   tePrv = tePrv;
+   teECs =  teECs ;
+   teAttributes = teAttributes}[@hashrecons z;] =
+  {teNam = vala_map (longid_lident arg) teNam; tePrm = tePrm;
+   tePrv = tePrv;
+   teECs = vala_map (List.map (extension_constructor arg)) teECs ;
+   teAttributes = attributes arg teAttributes}[@hashrecons z;]
 and extension_constructor arg x =
   match Extfun.apply arg.Ctxt.ef.EF.extension_constructor x arg with [
     Some x -> x
