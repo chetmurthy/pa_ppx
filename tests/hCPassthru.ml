@@ -537,14 +537,17 @@ and type_decl arg x =
   | None -> type_decl0 arg x
   | exception Extfun.Failure -> type_decl0 arg x
   ]
-and type_decl0 arg x =
-  {tdIsDecl = x.tdIsDecl ;
-   tdNam = vala_map (fun (loc, x1) → (loc, x1)) x.tdNam; tdPrm = x.tdPrm;
-   tdPrv = x.tdPrv; tdDef = ctyp arg x.tdDef;
-   tdCon =
-     vala_map (List.map (fun (x1, x2) → (ctyp arg x1, ctyp arg x2)))
-       x.tdCon;
-   tdAttributes = attributes arg x.tdAttributes}
+and type_decl0 arg
+    {tdIsDecl = tdIsDecl ; tdNam = tdNam; tdPrm = tdPrm;
+     tdPrv = tdPrv; tdDef = tdDef; tdCon = tdCon;
+     tdAttributes = tdAttributes}[@hashrecons z;] =
+    {tdIsDecl = tdIsDecl ;
+     tdNam = vala_map (fun (loc, x1)[@hashrecons z;] → (loc, x1)[@hashrecons z;]) tdNam; tdPrm = tdPrm;
+     tdPrv = tdPrv; tdDef = ctyp arg tdDef;
+     tdCon =
+       vala_map (List.map (fun (x1, x2)[@hashrecons z;] → (ctyp arg x1, ctyp arg x2)[@hashrecons z;]))
+         tdCon;
+   tdAttributes = attributes arg tdAttributes}[@hashrecons z;]
 and type_extension arg x =
   match Extfun.apply arg.Ctxt.ef.EF.type_extension x arg with [
     Some x -> x

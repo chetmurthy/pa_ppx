@@ -41,6 +41,10 @@ value rewrite_patt f p0 =
   | <:patt:< $uid:uid$ >> ->
       let newv = Fresh.get f in
       <:patt< ( $uid:uid$ as $lid:newv$ ) >>
+  | <:patt:< { $list:lpl$ } >> ->
+      let lpl = List.map (fun (lp, vp) -> (lp, rerec vp)) lpl in
+      let newv = Fresh.get f in
+      <:patt< ( { $list:lpl$ } as $lid:newv$ ) >>
   | p ->
     let loc = loc_of_patt p in
       let newv = Fresh.get f in
@@ -99,6 +103,34 @@ value rec rerec0 = fun [
           cz_e_zs body in
       let czvar = "c"^zvar in
       (czvar, e, zvar)
+
+  | ((<:patt< { $list:lpl$ } >> as p), (<:expr:< { $list:lel$ } >> as e))
+    when List.length lpl = List.length lel -> do {
+      let patmap = List.map (fun (lp, vp) ->
+          let id = match lp with [ <:patt< $lid:i$ >> -> i | <:patt< $longid:_$ . $lid:i$ >> -> i ] in
+          (id, (lp, vp))) lpl in
+      let expmap = List.map (fun (lp, ep) ->
+          let id = match lp with [ <:patt< $lid:i$ >> -> i | <:patt< $longid:_$ . $lid:i$ >> -> i ] in
+          (id, (lp, ep))) lel in
+      if not ((List.sort compare (List.map fst patmap)) = (List.sort compare (List.map fst expmap))) then
+        failwith "rewrite_expr0/rerec: record-patt and -expr have differing sets of labels" else () ;
+      let l_cz_e_zs = List.map (fun (f, (_, p)) ->
+          let (l, e) = List.assoc f expmap in
+          let (czvar, e, zvar) = rerec0 (p, e) in
+          (l, czvar, e, zvar)) patmap in
+      let pred = List.fold_right (fun (_, czvar, _, zvar) rest ->
+          <:expr< ($lid:czvar$ == $lid:zvar$) && $rest$ >>)
+          l_cz_e_zs <:expr< True >> in
+      let consexp =
+        let lel = List.map (fun (l, cz, _, _) -> (l, <:expr< $lid:cz$ >>)) l_cz_e_zs in
+        <:expr< { $list:lel$ } >> in
+      let body = <:expr< if $pred$ then $lid:zvar$ else $consexp$ >> in
+      let e = List.fold_right (fun (_, cz, e, _) rhs ->
+          <:expr< let $lid:cz$ = $e$ in $rhs$ >>)
+          l_cz_e_zs body in
+      let czvar = "c"^zvar in
+      (czvar, e, zvar)
+    }
 
   | (<:patt< $lid:pv$ >>, e) ->
     let czvar = "c"^zvar in

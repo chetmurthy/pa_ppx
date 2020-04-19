@@ -69,6 +69,14 @@ let test_tup3_pointer_equality1 ctxt =
   let arg = (1, List[Atom "lambda"; List[Atom"x"]; Atom "x"], [("foo", true)]) in
  assert_bool "not pointer-equal" (arg == (tup3_deep arg))
 
+type rec2 = { a : int ; b : string }
+let rec2_deep { a ; b }[@hashrecons z] = { a ; b}[@hashrecons z]
+
+
+let test_rec2_pointer_equality1 ctxt =
+  let arg = { a = 4 ; b = "foo" } in
+ assert_bool "not pointer-equal" (arg == (rec2_deep arg))
+
 let suite = "Test hashrecons" >::: [
     "test_tree_deep"   >:: test_tree_deep
   ; "test_tree_pointer_equality"   >:: test_tree_pointer_equality
@@ -79,6 +87,7 @@ let suite = "Test hashrecons" >::: [
   ; "test_sexp_pointer_equality1"   >:: test_sexp_pointer_equality1
   ; "test_sexp_pointer_equality2"   >:: test_sexp_pointer_equality2
   ; "test_tup3_pointer_equality1"   >:: test_tup3_pointer_equality1
+  ; "test_rec2_pointer_equality1"   >:: test_rec2_pointer_equality1
   ]
 
 let _ = 
