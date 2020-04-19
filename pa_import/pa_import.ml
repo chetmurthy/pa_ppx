@@ -344,10 +344,21 @@ value import_typedecl_group arg t =
   let actuals = unp.args in
   let (rd, (nrfl, tdl)) = import_typedecl arg unp.unapp_t in
   (nrfl, List.map (fun td ->
+       let imported_tycon =
+         let tyna = Pcaml.unvala (snd (Pcaml.unvala td.tdNam)) in
+         let baset = <:ctyp< $longid:unp.li$ . $lid:tyna$ >> in
+         let type_var2arg (so, _) =
+           match Pcaml.unvala so with [
+             Some s -> <:ctyp< ' $s$ >>
+           | None ->
+             failwith "import_typedecl_group: cannot import typedecl group where some params are unnamed"
+           ] in
+         let args = List.map type_var2arg (Pcaml.unvala td.tdPrm) in
+         Ctyp.applist baset args in
        let ct = if renmap = [] then td.tdDef
          else Ctyp.wrap_attrs (substitute_ctyp renmap td.tdDef) unp.attrs in
        let ct = if is_generative_type ct then
-           <:ctyp< $unp.bare_t$ == $ct$ >>
+           <:ctyp< $imported_tycon$ == $ct$ >>
          else ct in
        { (td) with tdDef = ct }
      ) tdl)
