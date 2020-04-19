@@ -280,7 +280,7 @@ value extract_with_attributes attrs =
 type unpacked_t =
   {
     full_t : ctyp
-  ; attrs : list attribute_body
+  ; attrs : list attribute
   ; bare_t : ctyp
   ; unapp_t : ctyp
   ; args : list ctyp

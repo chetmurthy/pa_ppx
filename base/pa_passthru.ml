@@ -189,7 +189,7 @@ and ctyp0 arg =
   and self0 =
     fun
     [ TyAtt loc ct attr ->
-       TyAtt loc (self ct) (attribute_body arg attr)
+       TyAtt loc (self ct) (attribute arg attr)
     | TyAcc loc x1 x2 ->
         TyAcc loc (longid arg x1) x2
     | TyAli loc x1 x2 →
@@ -240,7 +240,7 @@ and ctyp0 arg =
     | TyXtr loc x1 x2 →
         TyXtr loc x1 (option_map (vala_map self) x2)
     | TyExten loc exten ->
-        TyExten loc (attribute_body arg exten)
+        TyExten loc (attribute arg exten)
     ] in
   self0
 
@@ -270,7 +270,7 @@ and patt0 arg =
   and self0 =
     fun
     [ PaAtt loc p attr ->
-       PaAtt loc (self p) (attribute_body arg attr)
+       PaAtt loc (self p) (attribute arg attr)
     | PaPfx loc li p ->
        PaPfx loc (longid arg li) (self p)
     | PaLong loc li ->
@@ -327,7 +327,7 @@ and patt0 arg =
     | PaXtr loc x1 x2 →
         PaXtr loc x1 (option_map (vala_map self) x2)
     | PaExten loc exten ->
-        PaExten loc (attribute_body arg exten)
+        PaExten loc (attribute arg exten)
     ] in
   self0
 and expr arg x =
@@ -341,7 +341,7 @@ and expr0 arg =
   and self0 =
     fun
     [ ExAtt loc e attr ->
-       ExAtt loc (self e) (attribute_body arg attr)
+       ExAtt loc (self e) (attribute arg attr)
     | ExAcc loc x1 x2 →
         ExAcc loc (self x1) (self x2)
     | ExAnt loc x1 → assert False
@@ -459,7 +459,7 @@ and module_type0 arg =
   and self0 =
     fun
     [ MtAtt loc e attr ->
-       MtAtt loc (self e) (attribute_body arg attr)
+       MtAtt loc (self e) (attribute arg attr)
     | MtLong loc x1 →
         MtLong loc (longid arg x1)
     | MtLongLid loc x1 x2 →
@@ -480,7 +480,7 @@ and module_type0 arg =
     | MtXtr loc x1 x2 →
         MtXtr loc x1 (option_map (vala_map self) x2)
     | MtExten loc exten ->
-        MtExten loc (attribute_body arg exten)
+        MtExten loc (attribute arg exten)
     ] in
     self0
 and sig_item arg x =
@@ -535,9 +535,9 @@ and sig_item0 arg =
     | SgXtr loc x1 x2 →
         SgXtr loc x1 (option_map (vala_map self) x2)
     | SgFlAtt loc a ->
-        SgFlAtt loc (attribute_body arg a)
+        SgFlAtt loc (attribute arg a)
     | SgExten loc exten ->
-        SgExten loc (attribute_body arg exten)
+        SgExten loc (attribute arg exten)
     ] in
   self0
 and with_constr arg x =
@@ -585,7 +585,7 @@ and module_expr0 arg =
   and self0 =
     fun
     [ MeAtt loc e attr ->
-       MeAtt loc (self e) (attribute_body arg attr)
+       MeAtt loc (self e) (attribute arg attr)
     | MeAcc loc x1 x2 →
         MeAcc loc (self x1) (self x2)
     | MeApp loc x1 x2 →
@@ -604,7 +604,7 @@ and module_expr0 arg =
     | MeXtr loc x1 x2 →
         MeXtr loc x1 (option_map (vala_map self) x2)
     | MeExten loc exten ->
-        MeExten loc (attribute_body arg exten)
+        MeExten loc (attribute arg exten)
     ] in
     self0
 and str_item arg x =
@@ -665,9 +665,9 @@ and str_item0 arg =
     | StXtr loc x1 x2 →
         StXtr loc x1 (option_map (vala_map self) x2)
     | StFlAtt loc a ->
-        StFlAtt loc (attribute_body arg a)
+        StFlAtt loc (attribute arg a)
     | StExten loc exten ->
-        StExten loc (attribute_body arg exten)
+        StExten loc (attribute arg exten)
     ] in
   self0
 and type_decl arg x =
@@ -716,7 +716,7 @@ and class_type0 arg =
   and self0 =
     fun
     [ CtAtt loc e attr ->
-        CtAtt loc (self e) (attribute_body arg attr)
+        CtAtt loc (self e) (attribute arg attr)
     | CtLongLid loc x1 x2 →
         CtLongLid loc (longid arg x1) x2
     | CtLid loc x1 →
@@ -733,7 +733,7 @@ and class_type0 arg =
     | CtXtr loc x1 x2 →
         CtXtr loc x1 (option_map (vala_map self) x2)
     | CtExten loc exten ->
-        CtExten loc (attribute_body arg exten)
+        CtExten loc (attribute arg exten)
     ] in
   self0
 and class_sig_item arg x =
@@ -759,9 +759,9 @@ and class_sig_item0 arg =
     | CgVir loc x1 x2 x3 x4 →
         CgVir loc x1 x2 (ctyp arg x3) (attributes arg x4)
     | CgFlAtt loc a ->
-        CgFlAtt loc (attribute_body arg a)
+        CgFlAtt loc (attribute arg a)
     | CgExten loc exten ->
-        CgExten loc (attribute_body arg exten)
+        CgExten loc (attribute arg exten)
     ] in
   self0
 and class_expr arg x =
@@ -775,7 +775,7 @@ and class_expr0 arg =
   and self0 =
     fun
     [ CeAtt loc e attr ->
-       CeAtt loc (self e) (attribute_body arg attr)
+       CeAtt loc (self e) (attribute arg attr)
     | CeApp loc x1 x2 →
         CeApp loc (self x1) (expr arg x2)
     | CeCon loc x1 x2 →
@@ -798,7 +798,7 @@ and class_expr0 arg =
     | CeXtr loc x1 x2 →
         CeXtr loc x1 (option_map (vala_map self) x2)
     | CeExten loc exten ->
-        CeExten loc (attribute_body arg exten)
+        CeExten loc (attribute arg exten)
     ] in
   self0
 and class_str_item arg x =
@@ -829,33 +829,33 @@ and class_str_item0 arg =
     | CrVir loc x1 x2 x3 x4 →
         CrVir loc x1 x2 (ctyp arg x3) (attributes arg x4)
     | CrFlAtt loc a -> 
-        CrFlAtt loc (attribute_body arg a)
+        CrFlAtt loc (attribute arg a)
     | CrExten loc exten -> 
-        CrExten loc (attribute_body arg exten)
+        CrExten loc (attribute arg exten)
     ] in
   self0
 and longid_lident arg (x1, x2) =
     (option_map (longid arg) x1, x2)
+and attribute arg x = vala_map (attribute_body arg) x
 and attribute_body arg x =
   match Extfun.apply arg.Ctxt.ef.EF.attribute_body x arg with [
     Some x -> x
   | None -> attribute_body0 arg x
   | exception Extfun.Failure -> attribute_body0 arg x
   ]
-and attribute_body0 arg x1 =
-    vala_map (fun (s, p) ->
-        let p = match p with [
-          StAttr loc x1 ->
-            StAttr loc (vala_map (List.map (str_item arg)) x1)
-        | SiAttr loc x1 ->
-            SiAttr loc (vala_map (List.map (sig_item arg)) x1)
-        | TyAttr loc x1 ->
-            TyAttr loc (vala_map (ctyp arg) x1)
-        | PaAttr loc x1 x2 ->
-            PaAttr loc (vala_map (patt arg) x1) (option_map (vala_map (expr arg)) x2)
-        ] in
-        (s, p)) x1
-and attributes_no_anti arg x1 = List.map (attribute_body arg) x1
+and attribute_body0 arg (s, p) =
+    let p = match p with [
+      StAttr loc x1 ->
+      StAttr loc (vala_map (List.map (str_item arg)) x1)
+    | SiAttr loc x1 ->
+      SiAttr loc (vala_map (List.map (sig_item arg)) x1)
+    | TyAttr loc x1 ->
+      TyAttr loc (vala_map (ctyp arg) x1)
+    | PaAttr loc x1 x2 ->
+      PaAttr loc (vala_map (patt arg) x1) (option_map (vala_map (expr arg)) x2)
+    ] in
+    (s, p)
+and attributes_no_anti arg x1 = List.map (attribute arg) x1
 and attributes arg x1 = vala_map (attributes_no_anti arg) x1
 and implem arg x =
   match Extfun.apply arg.Ctxt.ef.EF.implem x arg with [
