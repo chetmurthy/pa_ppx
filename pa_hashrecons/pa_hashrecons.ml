@@ -99,6 +99,7 @@ value rec rewrite_expr rv1 p e = match (p, e) with [
 | (p, <:expr:< let $_flag:r$ $_list:l$ in $x$ >>) ->
   let x = rewrite_expr rv1 p x in
   <:expr< let $_flag:r$ $_list:l$ in $x$ >>
+| _ -> failwith "Pa_hashrecons.rewrite_expr: no expr found to match pattern"
 ]
 ;
 
