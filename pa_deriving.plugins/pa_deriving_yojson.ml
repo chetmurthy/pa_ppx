@@ -28,7 +28,7 @@ value of_yojson_fname arg tyname =
 
 type attrmod_t = [ Nobuiltin ] ;
 
-value to_expression arg param_map ty0 =
+value to_expression arg ~{msg} param_map ty0 =
   let rec fmtrec ?{attrmod=None} = fun [
 
   <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
@@ -36,7 +36,7 @@ value to_expression arg param_map ty0 =
   <:expr< $lid:fname$ >>
 
 | <:ctyp:< _ >> -> <:expr< let open Fmt in (const string "_") >>
-| <:ctyp:< unit >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "()") >>
+| <:ctyp:< unit >> -> <:expr< fun () -> `Null >>
 | <:ctyp:< int >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%d" arg) >>
 | <:ctyp:< bool >> -> <:expr<  Fmt.bool >>
 | <:ctyp:< int32 >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%ldl" arg) >>
@@ -72,7 +72,7 @@ value to_expression arg param_map ty0 =
 in fmtrec ty0
 ;
 
-value of_expression arg param_map ty0 =
+value of_expression arg ~{msg} param_map ty0 =
   let rec fmtrec ?{attrmod=None} = fun [
 
   <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
@@ -80,7 +80,7 @@ value of_expression arg param_map ty0 =
   <:expr< $lid:fname$ >>
 
 | <:ctyp:< _ >> -> <:expr< let open Fmt in (const string "_") >>
-| <:ctyp:< unit >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "()") >>
+| <:ctyp:< unit >> -> <:expr< fun [ `Null -> Result.Ok () | _ -> Result.Error $str:msg$ ] >>
 | <:ctyp:< int >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%d" arg) >>
 | <:ctyp:< bool >> -> <:expr<  Fmt.bool >>
 | <:ctyp:< int32 >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%ldl" arg) >>
@@ -118,17 +118,17 @@ value of_expression arg param_map ty0 =
 in fmtrec ty0
 ;
 
-value fmt_to_top arg params = fun [
+value fmt_to_top arg ~{msg} params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
-  to_expression arg params t2
-| t -> to_expression arg params t
+  to_expression arg ~{msg=msg} params t2
+| t -> to_expression arg ~{msg} params t
 ]
 ;
 
-value fmt_of_top arg params = fun [
+value fmt_of_top arg ~{msg} params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
-  of_expression arg params t2
-| t -> of_expression arg params t
+  of_expression arg ~{msg=msg} params t2
+| t -> of_expression arg ~{msg=msg} params t
 ]
 ;
 
@@ -137,14 +137,14 @@ value str_item_top_funs arg (loc, tyname) param_map ty =
 
   let (to_fname, to_exp) =
     let to_yojsonfname = to_yojson_fname arg tyname in
-    let to_e = fmt_to_top arg param_map ty in
+    let to_e = fmt_to_top arg ~{msg=Printf.sprintf "to_yojson.%s" tyname} param_map ty in
     let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
     (to_yojsonfname, Expr.abstract_over paramfun_patts
        <:expr< fun arg -> $to_e$ arg >>) in
 
   let (of_fname, of_exp) =
     let of_yojsonfname = of_yojson_fname arg tyname in
-    let of_e = fmt_of_top arg param_map ty in
+    let of_e = fmt_of_top arg ~{msg=Printf.sprintf "of_yojson.%s" tyname} param_map ty in
     let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
     (of_yojsonfname, Expr.abstract_over paramfun_patts
        <:expr< fun arg -> $of_e$ arg >>) in
@@ -165,9 +165,9 @@ value sig_item_top_funs arg (loc, tyname) param_map ty =
   let (of_fname, of_type) =
     let of_yojsonfname = of_yojson_fname arg tyname in
     let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
-    let argfmttys = List.map (fun pty -> <:ctyp< Yojson.Safe.t -> Rresult.R.result $pty$ string >>) paramtys in  
+    let argfmttys = List.map (fun pty -> <:ctyp< Yojson.Safe.t -> Rresult.result $pty$ string >>) paramtys in  
     let ty = <:ctyp< $lid:tyname$ >> in
-    let offtype = Ctyp.arrows_list loc argfmttys <:ctyp< Yojson.Safe.t -> Rresult.R.result $(Ctyp.applist ty paramtys)$ string >> in
+    let offtype = Ctyp.arrows_list loc argfmttys <:ctyp< Yojson.Safe.t -> Rresult.result $(Ctyp.applist ty paramtys)$ string >> in
     (of_yojsonfname, offtype) in
     [(of_fname, of_type); (to_fname, to_type)]
 ;
@@ -237,20 +237,22 @@ value sig_item_gen_yojson arg = fun [
 value expr_yojson arg = fun [
   <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "to_yojson" || id = "derive.to_yojson" ->
     let loc = loc_of_ctyp ty in
-    let e = fmt_to_top arg [] ty in
+    let e = fmt_to_top arg ~{msg="to_yojson"} [] ty in
     <:expr< fun arg -> Format.asprintf "%a" $e$ arg >>
 | <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "of_yojson" || id = "derive.of_yojson" ->
     let loc = loc_of_ctyp ty in
-    let e = fmt_of_top arg [] ty in
+    let e = fmt_of_top ~{msg="of_yojson"} arg [] ty in
     <:expr< fun arg -> Format.asprintf "%a" $e$ arg >>
 | _ -> assert False ]
 ;
 
 Pa_deriving.(Registry.add PI.{
   name = "yojson"
+; alternates = ["to_yojson"; "of_yojson"]
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
 ; alg_attributes = ["nobuiltin"; "key"; "name"; "encodin"; "default"]
+; expr_extensions = ["to_yojson"; "of_yojson"]
 ; expr = expr_yojson
 ; str_item = str_item_gen_yojson
 ; sig_item = sig_item_gen_yojson

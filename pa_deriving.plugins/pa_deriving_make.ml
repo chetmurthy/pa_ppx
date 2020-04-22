@@ -196,20 +196,14 @@ value sig_item_gen_make arg = fun [
 | _ -> assert False ]
 ;
 
-value expr_make arg = fun [
-  <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "make" || id = "derive.make" ->
-    let loc = loc_of_ctyp ty in
-    let e = fmt_top arg [] ty in
-    <:expr< fun arg -> Format.asprintf "%a" $e$ arg >>
-| _ -> assert False ]
-;
-
 Pa_deriving.(Registry.add PI.{
   name = "make"
+; alternates = []
 ; options = ["with_path"; "optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ; ("with_path", <:expr< True >>) ]
 ; alg_attributes = ["opaque"; "printer"; "polyprinter"; "nobuiltin"]
-; expr = expr_make
+; expr_extensions = []
+; expr = (fun arg e -> assert False)
 ; str_item = str_item_gen_make
 ; sig_item = sig_item_gen_make
 })

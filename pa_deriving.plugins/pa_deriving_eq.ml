@@ -314,9 +314,11 @@ value expr_eq arg = fun [
 
 Pa_deriving.(Registry.add PI.{
   name = "eq"
+; alternates = []
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
 ; alg_attributes = ["equal"; "nobuiltin"]
+; expr_extensions = ["eq"]
 ; expr = expr_eq
 ; str_item = str_item_gen_eq
 ; sig_item = sig_item_gen_eq

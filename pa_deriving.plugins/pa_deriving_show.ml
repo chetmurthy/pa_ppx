@@ -371,9 +371,11 @@ value expr_show arg = fun [
 
 Pa_deriving.(Registry.add PI.{
   name = "show"
+; alternates = []
 ; options = ["with_path"; "optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ; ("with_path", <:expr< True >>) ]
 ; alg_attributes = ["opaque"; "printer"; "polyprinter"; "nobuiltin"]
+; expr_extensions = ["show"]
 ; expr = expr_show
 ; str_item = str_item_gen_show
 ; sig_item = sig_item_gen_show

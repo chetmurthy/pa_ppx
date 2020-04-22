@@ -64,8 +64,10 @@ value apply_deriving name ctxt attr =
 module PI = struct
 type t = {
   name : string
+; alternates : list string
 ; options : list string
 ; alg_attributes : list string
+; expr_extensions : list string
 ; expr : Ctxt.t -> expr -> expr
 ; str_item : Ctxt.t -> str_item -> str_item
 ; sig_item : Ctxt.t -> sig_item -> sig_item
@@ -91,23 +93,41 @@ end
 ;
 
 value plugin_registry = ref [] ;
+value alternate2plugin = ref [] ;
 value extension2plugin = ref [] ;
 value algattr2plugin = ref [] ;
 
+value checked_add_assoc ~{mapping} r (k,v) =
+  if List.mem_assoc k r.val then
+    failwith (Printf.sprintf "%s %s already registered" mapping k)
+  else push r (k,v)
+;
+
 module Registry = struct
 value add t = do {
-  if List.mem_assoc t.PI.name plugin_registry.val then
-    failwith (Printf.sprintf "plugin %s already registered" t.name)
-  else () ;
-  push plugin_registry (t.name, t) ;
-  push extension2plugin (t.name, t.name) ;
-  push extension2plugin (Printf.sprintf "derive.%s" t.name, t.name) ;
+  checked_add_assoc ~{mapping="plugin"} plugin_registry (t.PI.name, t) ;
+  t.PI.alternates |> List.iter (fun s ->
+      checked_add_assoc ~{mapping="plugin-alternates"} alternate2plugin (s, t.PI.name)) ;
+  t.expr_extensions |> List.iter (fun e ->
+      push extension2plugin (e, t.name)) ;
+
+  t.expr_extensions |> List.iter (fun e ->
+      push extension2plugin (Printf.sprintf "derive.%s" t.name, t.name)) ;
+
   List.iter (fun aname -> push algattr2plugin (aname, t.name)) t.alg_attributes
 }
 ;
 
-value mem na = List.mem_assoc na plugin_registry.val ;
-value get na = List.assoc na  plugin_registry.val ;
+value mem na =
+  List.mem_assoc na plugin_registry.val || List.mem_assoc na alternate2plugin.val ;
+
+value get na = match List.assoc na plugin_registry.val with [
+  x -> x
+| exception Not_found ->
+  let na = List.assoc na  alternate2plugin.val in
+    List.assoc na plugin_registry.val
+]
+;
 end
 ;
 value registered_str_item arg pi = fun [

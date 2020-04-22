@@ -215,9 +215,11 @@ value sig_item_gen_enum arg = fun [
 
 Pa_deriving.(Registry.add PI.{
   name = "enum"
+; alternates = []
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
 ; alg_attributes = ["value"]
+; expr_extensions = []
 ; expr = (fun _ _ -> assert False)
 ; str_item = str_item_gen_enum
 ; sig_item = sig_item_gen_enum

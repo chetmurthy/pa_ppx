@@ -267,9 +267,11 @@ value sig_item_gen_fold arg = fun [
 
 Pa_deriving.(Registry.add PI.{
   name = "fold"
+; alternates = []
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
 ; alg_attributes = ["nobuiltin"]
+; expr_extensions = []
 ; expr = (fun arg e -> assert False)
 ; str_item = str_item_gen_fold
 ; sig_item = sig_item_gen_fold

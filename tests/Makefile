@@ -52,7 +52,7 @@ test: $(TESTS:.byte=)
 PPXPACKAGES=ppx_import,ppx_deriving.show,ppx_deriving.eq,ppx_deriving.ord,ppx_deriving.enum,ppx_deriving.iter,ppx_deriving.map,ppx_deriving.fold,ppx_deriving.make,ppx_deriving_yojson
 
 test_%.byte: test_%.ml testutil.cmo testutil2.cmo
-	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),pa_ppx_pa_deriving_plugins,pa_ppx_pa_hashrecons.syntax \
+	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),yojson,rresult,pa_ppx_pa_deriving_plugins,pa_ppx_pa_hashrecons.syntax \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
 
 test_%.ppx.byte: test_%.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
