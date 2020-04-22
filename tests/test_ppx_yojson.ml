@@ -41,10 +41,10 @@ type i8 = int64       [@encoding `string] [@@deriving show, yojson]
 type i9 = nativeint   [@encoding `string] [@@deriving show, yojson]
 type f  = float       [@@deriving show, yojson]
 type b  = bool        [@@deriving show, yojson]
-(*
 type c  = char        [@@deriving show, yojson]
 type s  = string      [@@deriving show, yojson]
 type y  = bytes       [@@deriving show, yojson]
+(*
 type xr = int ref     [@@deriving show, yojson]
 type xo = int option  [@@deriving show, yojson]
 type xl = int list    [@@deriving show, yojson]

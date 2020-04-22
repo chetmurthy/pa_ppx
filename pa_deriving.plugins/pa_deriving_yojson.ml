@@ -44,9 +44,9 @@ value to_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< int64 [@encoding `string ; ] >> | <:ctyp:< Int64.t [@encoding `string ; ] >> ->
     <:expr< fun x -> `String (Int64.to_string x) >>
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" arg) >>
-| <:ctyp:< bytes >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" (Bytes.to_string arg)) >>
-| <:ctyp:< char >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%C" arg) >>
+  <:expr< fun x -> `String x >>
+| <:ctyp:< bytes >> -> <:expr< fun x -> `String (Bytes.to_string x) >>
+| <:ctyp:< char >> -> <:expr< fun x -> `String (String.make 1 x) >>
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun x -> `Intlit (Nativeint.to_string x) >>
 | <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> ->
     <:expr< fun x -> `String (Nativeint.to_string x) >>
@@ -102,9 +102,17 @@ value of_expression arg ~{msg} param_map ty0 =
         `String x -> Result.Ok (Int64.of_string x)
       | _ -> Result.Error $str:msg$ ] >>
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" arg) >>
-| <:ctyp:< bytes >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" (Bytes.to_string arg)) >>
-| <:ctyp:< char >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%C" arg) >>
+  <:expr< fun [
+        `String x -> Result.Ok x
+      | _ -> Result.Error $str:msg$ ] >>
+| <:ctyp:< bytes >> -> <:expr< fun [
+        `String x -> Result.Ok (Bytes.of_string x)
+      | _ -> Result.Error $str:msg$ ] >>
+| <:ctyp:< char >> -> <:expr< fun [ `String x ->
+          if (String.length x) = 1
+          then Result.Ok (x.[0])
+          else Result.Error $str:msg$
+      | _ -> Result.Error $str:msg$ ] >>
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun [
         `Int x -> Result.Ok (Nativeint.of_int x)
       | `Intlit x -> Result.Ok (Nativeint.of_string x)
