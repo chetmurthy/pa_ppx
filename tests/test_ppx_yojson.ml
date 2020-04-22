@@ -38,8 +38,8 @@ type i5 = Int64.t     [@@deriving show, yojson]
 type i6 = nativeint   [@@deriving show, yojson]
 type i7 = Nativeint.t [@@deriving show, yojson]
 type i8 = int64       [@encoding `string] [@@deriving show, yojson]
-(*
 type i9 = nativeint   [@encoding `string] [@@deriving show, yojson]
+(*
 type f  = float       [@@deriving show, yojson]
 type b  = bool        [@@deriving show, yojson]
 type c  = char        [@@deriving show, yojson]

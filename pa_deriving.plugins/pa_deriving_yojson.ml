@@ -48,6 +48,8 @@ value to_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< bytes >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" (Bytes.to_string arg)) >>
 | <:ctyp:< char >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%C" arg) >>
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun x -> `Intlit (Nativeint.to_string x) >>
+| <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> ->
+    <:expr< fun x -> `String (Nativeint.to_string x) >>
 | <:ctyp:< float >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%F" arg) >>
 
 | <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
@@ -104,6 +106,9 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun [
         `Int x -> Result.Ok (Nativeint.of_int x)
       | `Intlit x -> Result.Ok (Nativeint.of_string x)
+      | _ -> Result.Error $str:msg$ ] >>
+| <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> -> <:expr< fun [
+        `String x -> Result.Ok (Nativeint.of_string x)
       | _ -> Result.Error $str:msg$ ] >>
 | <:ctyp:< float >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%F" arg) >>
 
