@@ -38,7 +38,7 @@ value to_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< _ >> -> <:expr< let open Fmt in (const string "_") >>
 | <:ctyp:< unit >> -> <:expr< fun () -> `Null >>
 | <:ctyp:< int >> -> <:expr< fun x -> `Int x >>
-| <:ctyp:< bool >> -> <:expr<  Fmt.bool >>
+| <:ctyp:< bool >> -> <:expr< fun x -> `Bool x >>
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< fun x -> `Intlit (Int32.to_string x) >>
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< fun x -> `Intlit (Int64.to_string x) >>
 | <:ctyp:< int64 [@encoding `string ; ] >> | <:ctyp:< Int64.t [@encoding `string ; ] >> ->
@@ -50,7 +50,7 @@ value to_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun x -> `Intlit (Nativeint.to_string x) >>
 | <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> ->
     <:expr< fun x -> `String (Nativeint.to_string x) >>
-| <:ctyp:< float >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%F" arg) >>
+| <:ctyp:< float >> -> <:expr< fun x -> `Float x >>
 
 | <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
@@ -86,7 +86,9 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< _ >> -> <:expr< let open Fmt in (const string "_") >>
 | <:ctyp:< unit >> -> <:expr< fun [ `Null -> Result.Ok () | _ -> Result.Error $str:msg$ ] >>
 | <:ctyp:< int >> -> <:expr< fun [`Int x -> Result.Ok x | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< bool >> -> <:expr<  Fmt.bool >>
+| <:ctyp:< bool >> -> <:expr< fun [
+        `Bool x -> Result.Ok x
+      | _ -> Result.Error $str:msg$ ] >>
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< fun [
         `Int x -> Result.Ok (Int32.of_int x)
       | `Intlit x -> Result.Ok (Int32.of_string x)
@@ -110,7 +112,11 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> -> <:expr< fun [
         `String x -> Result.Ok (Nativeint.of_string x)
       | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< float >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%F" arg) >>
+| <:ctyp:< float >> -> <:expr< fun [
+        `Int x -> Result.Ok (float_of_int x)
+      | `Intlit x -> Result.Ok (float_of_string x)
+      | `Float x -> Result.Ok x
+      | _ -> Result.Error $str:msg$ ] >>
 
 | <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
