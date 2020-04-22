@@ -68,13 +68,13 @@ value fmt_expression arg param_map ty0 =
 | <:ctyp:< unit >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "()") >>
 | <:ctyp:< int >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%d" arg) >>
 | <:ctyp:< bool >> -> <:expr<  Fmt.bool >>
-| <:ctyp:< int32 >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%ldl" arg) >>
-| <:ctyp:< int64 >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%LdL" arg) >>
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%ldl" arg) >>
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%LdL" arg) >>
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
   <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" arg) >>
 | <:ctyp:< bytes >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" (Bytes.to_string arg)) >>
 | <:ctyp:< char >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%C" arg) >>
-| <:ctyp:< nativeint >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%an" nativeint arg) >>
+| <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%an" nativeint arg) >>
 | <:ctyp:< float >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%F" arg) >>
 
 | <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "nobuiltin" ->

@@ -29,8 +29,7 @@ let assert_failure pp_obj of_json err str =
   let json = Yojson.Safe.from_string str in
   assert_equal ~printer:(show_error_or pp_obj) (Result.Error err) (of_json json)
 
-type u = unit         [@@deriving yojson]
-(*
+type u = unit         [@@deriving show, yojson]
 type i1 = int         [@@deriving show, yojson]
 type i2 = int32       [@@deriving show, yojson]
 type i3 = Int32.t     [@@deriving show, yojson]
@@ -38,6 +37,7 @@ type i4 = int64       [@@deriving show, yojson]
 type i5 = Int64.t     [@@deriving show, yojson]
 type i6 = nativeint   [@@deriving show, yojson]
 type i7 = Nativeint.t [@@deriving show, yojson]
+(*
 type i8 = int64       [@encoding `string] [@@deriving show, yojson]
 type i9 = nativeint   [@encoding `string] [@@deriving show, yojson]
 type f  = float       [@@deriving show, yojson]
