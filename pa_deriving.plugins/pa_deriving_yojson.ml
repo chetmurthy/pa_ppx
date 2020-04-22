@@ -41,6 +41,8 @@ value to_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< bool >> -> <:expr<  Fmt.bool >>
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< fun x -> `Intlit (Int32.to_string x) >>
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< fun x -> `Intlit (Int64.to_string x) >>
+| <:ctyp:< int64 [@encoding `string ; ] >> | <:ctyp:< Int64.t [@encoding `string ; ] >> ->
+    <:expr< fun x -> `String (Int64.to_string x) >>
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
   <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" arg) >>
 | <:ctyp:< bytes >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" (Bytes.to_string arg)) >>
@@ -90,6 +92,10 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< fun [
       `Int x -> Result.Ok (Int64.of_int x)
       | `Intlit x -> Result.Ok (Int64.of_string x)
+      | _ -> Result.Error $str:msg$ ] >>
+| <:ctyp:< int64 [@encoding `string ; ] >> | <:ctyp:< Int64.t [@encoding `string ; ] >> ->
+ <:expr< fun [
+        `String x -> Result.Ok (Int64.of_string x)
       | _ -> Result.Error $str:msg$ ] >>
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
   <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" arg) >>
