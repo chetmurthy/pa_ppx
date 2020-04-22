@@ -8,6 +8,10 @@
 open Asttools;
 open MLast;
 
+value fst3 (a,_,_) = a ;
+value snd3 (_,b,_) = b ;
+value third3 (_,_,c) = c ;
+
 value starts_with ~{pat} s =
   let patlen = String.length pat in
   (String.length s >= patlen) && pat = String.sub s 0 patlen

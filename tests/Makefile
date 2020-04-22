@@ -31,6 +31,8 @@ TESTS= \
 	test_deriving_map.ppx.byte \
 	test_deriving_fold.byte \
 	test_deriving_fold.ppx.byte \
+	test_deriving_make.byte \
+	test_deriving_make.ppx.byte \
 	test_import0.byte \
 	test_import_camlp5.byte \
 	test_ppx_import.byte \
@@ -45,7 +47,7 @@ test: $(TESTS:.byte=)
 % : %.byte
 	./$<
 
-PPXPACKAGES=ppx_import,ppx_deriving.show,ppx_deriving.eq,ppx_deriving.ord,ppx_deriving.enum,ppx_deriving.iter,ppx_deriving.map,ppx_deriving.fold
+PPXPACKAGES=ppx_import,ppx_deriving.show,ppx_deriving.eq,ppx_deriving.ord,ppx_deriving.enum,ppx_deriving.iter,ppx_deriving.map,ppx_deriving.fold,ppx_deriving.make
 
 test_%.byte: test_%.ml testutil.cmo testutil2.cmo
 	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),pa_ppx_pa_deriving_plugins,pa_ppx_pa_hashrecons.syntax \

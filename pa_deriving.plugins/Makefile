@@ -21,6 +21,7 @@ CMO=\
 	pa_deriving_iter.cmo \
 	pa_deriving_map.cmo \
 	pa_deriving_fold.cmo \
+	pa_deriving_make.cmo \
 
 CMI=$(CMO:.cmo=.cmi)
 
