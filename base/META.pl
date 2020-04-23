@@ -7,7 +7,7 @@ our $destdir = shift @ARGV ;
 
 print <<"EOF";
 # Specifications for the "pa_ppx" preprocessor:
-requires = "camlp5,fmt"
+requires = "camlp5,rresult,fmt"
 version = "$version"
 description = "pa_ppx base support"
 directory = "$destdir/pa_ppx_base"
@@ -21,7 +21,7 @@ archive(byte,toploop) = "pa_ppx_base.cma"
 
 package "syntax" (
   # For the preprocessor itself:
-  requires(syntax,preprocessor) = "camlp5,fmt"
+  requires(syntax,preprocessor) = "camlp5,rresult,fmt"
   archive(syntax,preprocessor) = "pa_ppx_base.cma"
 )
 

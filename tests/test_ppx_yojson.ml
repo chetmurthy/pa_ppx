@@ -44,13 +44,11 @@ type b  = bool        [@@deriving show, yojson]
 type c  = char        [@@deriving show, yojson]
 type s  = string      [@@deriving show, yojson]
 type y  = bytes       [@@deriving show, yojson]
-(*
 type xr = int ref     [@@deriving show, yojson]
 type xo = int option  [@@deriving show, yojson]
 type xl = int list    [@@deriving show, yojson]
 type xa = int array   [@@deriving show, yojson]
 type xt = int * int   [@@deriving show, yojson]
-
 type 'a p = 'a option
 [@@deriving show, yojson]
 type pv = [ `A | `B of int | `C of int * string ]
@@ -59,13 +57,13 @@ type pva = [ `A ] and pvb = [ `B ]
 [@@deriving show, yojson]
 type 'a pvc = [ `C of 'a ]
 [@@deriving show, yojson]
-type pvd = [ pva | pvb | int pvc ]
+type pvd = [ pva | `A1 | `B1 of int | `C1 of int * string | pvb | int pvc ]
 [@@deriving show, yojson]
-
 type v  = A | B of int | C of int * string
 [@@deriving show, yojson]
 type r  = { x : int; y : string }
 [@@deriving show, yojson]
+
 type rv = RA | RB of int | RC of int * string | RD of { z : string }
 [@@deriving show, yojson]
 
@@ -542,4 +540,3 @@ let suite = "Test ppx_yojson" >::: [
 
 let _ =
   run_test_tt_main suite
-*)
