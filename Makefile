@@ -16,7 +16,7 @@ all:
 	$(MAKE) -C pa_deriving all
 	$(MAKE) -C pa_deriving.plugins all
 	$(MAKE) -C pa_import all
-#	$(MAKE) -C tests all
+	$(MAKE) -C tests all
 
 
 
