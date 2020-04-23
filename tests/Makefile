@@ -5,13 +5,15 @@ WD=$(shell pwd)
 TOP=$(WD)/..
 include $(TOP)/config/Makefile
 
+PACKAGEPREFIX=pa_ppx_
+
 DESTDIR=
 RM=rm
 
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,pa_ppx_base
+PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,$(PACKAGEPREFIX)base
 
 CMO=
 CMI=$(CMO:.cmo=.cmi)
@@ -52,33 +54,33 @@ test: $(TESTS:.byte=)
 PPXPACKAGES=ppx_import,ppx_deriving.show,ppx_deriving.eq,ppx_deriving.ord,ppx_deriving.enum,ppx_deriving.iter,ppx_deriving.map,ppx_deriving.fold,ppx_deriving.make,ppx_deriving_yojson
 
 test_%.byte: test_%.ml testutil.cmo testutil2.cmo
-	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),yojson,rresult,pa_ppx_pa_deriving_plugins,pa_ppx_pa_hashrecons.syntax \
+	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),yojson,rresult,$(PACKAGEPREFIX)deriving_plugins.std.syntax,$(PACKAGEPREFIX)deriving_plugins.yojson.syntax,$(PACKAGEPREFIX)hashrecons.syntax \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
 
 test_%.ppx.byte: test_%.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
 	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),ounit2,$(PPXPACKAGES) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@
 
 test_passthru_hashrecons.byte: test_passthru_hashrecons.ml testutil.cmo testutil2.cmo hCPassthru.cmo
-	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),camlp5.pa_o,camlp5.pr_o,pa_ppx_base,pa_ppx_pa_hashrecons.syntax \
+	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),camlp5.pa_o,camlp5.pr_o,$(PACKAGEPREFIX)base,$(PACKAGEPREFIX)hashrecons.syntax \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo hCPassthru.cmo $< -o $@
 
 hCPassthru.cmo: hCPassthru.ml
-	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),pa_ppx_pa_hashrecons.syntax -syntax camlp5r -c $<
+	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),$(PACKAGEPREFIX)hashrecons.syntax -syntax camlp5r -c $<
 
 test_import0.byte: test_import0.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmi
-	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),pa_ppx_pa_import.syntax \
+	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),$(PACKAGEPREFIX)import.syntax \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
 
 test_import_camlp5.byte: test_import_camlp5.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmi
-	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),pa_ppx_pa_import.syntax,pa_ppx_pa_deriving_plugins.show.syntax \
+	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),$(PACKAGEPREFIX)import.syntax,$(PACKAGEPREFIX)deriving_plugins.show.syntax \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
 
 test_self_import.cmo: test_self_import.ml test_self_import.cmi
-	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),pa_ppx_pa_import.syntax \
+	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),$(PACKAGEPREFIX)import.syntax \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
 	-syntax camlp5o -c $< -o $@
@@ -88,7 +90,7 @@ test_self_import.cmi: test_self_import.mli
 	-syntax camlp5o -c $< -o $@
 
 test_ppx_import.byte: test_ppx_import.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
-	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),pa_ppx_pa_import.syntax,ppx_deriving.show \
+	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES),$(PACKAGEPREFIX)import.syntax,$(PACKAGEPREFIX)deriving_plugins.show.syntax \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@

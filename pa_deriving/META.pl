@@ -6,10 +6,9 @@ our $version = "0.01" ;
 our $destdir = shift @ARGV ;
 
 print <<"EOF";
-# Specifications for the "pa_ppx_pa_deriving" preprocessor:
+# Specifications for the "pa_ppx_deriving" preprocessor:
 version = "$version"
-description = "pa_ppx_pa_deriving base support"
-directory = "$destdir/pa_ppx_pa_deriving"
+description = "pa_ppx_deriving base support"
 
 # For linking
 requires = "camlp5,fmt,pa_ppx_base"

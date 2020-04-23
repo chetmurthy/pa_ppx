@@ -13,29 +13,29 @@ OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
 
 PACKAGES := $(PACKAGES),fmt,pa_ppx_base
-TARGET := pa_ppx_pa_hashrecons.cma
+TARGET := pa_ppx_hashrecons.cma
 CMO := pa_hashrecons.cmo
 CMI := $(CMO:.cmo=.cmi)
 
-all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_pa_hashrecons local-install
+all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_hashrecons local-install
 
-camlp5.pa_ppx_pa_hashrecons: $(TARGET)
+camlp5.pa_ppx_hashrecons: $(TARGET)
 	$(MKCAMLP5) -verbose -package fmt,camlp5.pa_r,camlp5.pr_r,pa_ppx_base $(TARGET) -o $@
 
 META: META.pl
 	./META.pl > META
 install::
 	./META.pl $(DESTDIR)/lib > META
-	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_pa_hashrecons || true
+	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_hashrecons || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_pa_hashrecons -destdir $(DESTDIR)/lib META $(TARGET) $(CMO:.cmo=.cmx) $(CMI)
+	$(OCAMLFIND) install pa_ppx_hashrecons -destdir $(DESTDIR)/lib META $(TARGET) $(CMO:.cmo=.cmx) $(CMI)
 	$(RM) -f META
 
 local-install::
 	$(MAKE) DESTDIR=$(WD)/$(TOP)/local-install/ install
 
 clean::
-	rm -rf META camlp5.pa_ppx_pa_hashrecons
+	rm -rf META camlp5.pa_ppx_hashrecons
 
 $(TARGET): $(CMO)
 	$(OCAMLFIND) ocamlc $(DEBUG) $(CMO) -a -o $(TARGET)

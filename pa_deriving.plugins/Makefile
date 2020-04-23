@@ -11,7 +11,7 @@ RM=rm
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),pa_ppx_pa_deriving,pa_ppx_base.syntax,,pa_ppx_pa_unmatched_vala.syntax
+PACKAGES := $(PACKAGES),pa_ppx_deriving,pa_ppx_base.syntax,,pa_ppx_unmatched_vala.syntax
 
 CMO=\
 	pa_deriving_show.cmo \
@@ -26,28 +26,28 @@ CMO=\
 
 CMI=$(CMO:.cmo=.cmi)
 
-all: $(CMO) camlp5.pa_ppx_pa_deriving_plugins local-install
+all: $(CMO) camlp5.pa_ppx_deriving_plugins local-install
 
 KITS=$(CMO)
 
-camlp5.pa_ppx_pa_deriving_plugins:
-	$(MKCAMLP5) -verbose -package camlp5.pa_r,camlp5.pr_r,pa_ppx_pa_deriving $(KITS) -o $@
+camlp5.pa_ppx_deriving_plugins:
+	$(MKCAMLP5) -verbose -package camlp5.pa_r,camlp5.pr_r,pa_ppx_deriving $(KITS) -o $@
 
 META: META.pl
 	./META.pl > META
 
 install::
 	./META.pl $(DESTDIR)/lib > META
-	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_pa_deriving_plugins || true
+	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_deriving_plugins || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_pa_deriving_plugins -destdir $(DESTDIR)/lib META $(CMO) $(CMI)
+	$(OCAMLFIND) install pa_ppx_deriving_plugins -destdir $(DESTDIR)/lib META $(CMO) $(CMI)
 	$(RM) -f META
 
 local-install::
 	$(MAKE) DESTDIR=$(WD)/$(TOP)/local-install/ install
 
 clean::
-	rm -rf META camlp5.pa_ppx_pa_deriving_plugins
+	rm -rf META camlp5.pa_ppx_deriving_plugins
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli > .depend.NEW \

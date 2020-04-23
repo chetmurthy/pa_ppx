@@ -6,11 +6,10 @@ our $version = "0.01" ;
 our $destdir = shift @ARGV ;
 
 print <<"EOF";
-# Specifications for the "pa_ppx_pa_import" preprocessor:
+# Specifications for the "pa_ppx_import" preprocessor:
 requires = "camlp5.pa_o,pa_ppx_base,fmt,bos,compiler-libs.common,findlib.internal"
 version = "$version"
-description = "pa_ppx_pa_import base support"
-directory = "$destdir/pa_ppx_pa_import"
+description = "pa_ppx_import base support"
 
 # For linking
 archive(byte) = "pa_import.cma"

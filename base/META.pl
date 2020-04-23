@@ -10,7 +10,6 @@ print <<"EOF";
 requires = "camlp5,rresult,fmt"
 version = "$version"
 description = "pa_ppx base support"
-directory = "$destdir/pa_ppx_base"
 
 # For linking
 archive(byte) = "pa_ppx_base.cma"

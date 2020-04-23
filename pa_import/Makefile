@@ -18,9 +18,9 @@ CMO=pa_import.cmo import_harness.cmo
 CMI=$(CMO:.cmo=.cmi)
 INSTALL_CMI=$(filter-out import_harness.cmi,$(CMI))
 
-all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_pa_import local-install
+all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_import local-install
 
-camlp5.pa_ppx_pa_import:
+camlp5.pa_ppx_import:
 	$(MKCAMLP5) -verbose -package $(PACKAGES) $(TARGET) -o $@
 
 META: META.pl
@@ -28,16 +28,16 @@ META: META.pl
 
 install::
 	./META.pl $(DESTDIR)/lib > META
-	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_pa_import || true
+	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_import || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_pa_import -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(INSTALL_CMI)
+	$(OCAMLFIND) install pa_ppx_import -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(INSTALL_CMI)
 	$(RM) -f META
 
 local-install::
 	$(MAKE) DESTDIR=$(WD)/$(TOP)/local-install/ install
 
 clean::
-	rm -rf META camlp5.pa_ppx_pa_import
+	rm -rf META camlp5.pa_ppx_import
 
 $(TARGET): $(CMO)
 	$(OCAMLFIND) ocamlc $(DEBUG) $(CMO) -a -o $(TARGET)

@@ -8,14 +8,6 @@ WD=$(shell pwd)
 DESTDIR=
 RM=rm
 
-BASE_CMO = base/ppxutil.cmo base/pa_passthru.cmo base/pa_unmatched_vala.cmo
-PAD_CMO =  pa_deriving/pa_deriving.cmo
-PADP_CMO = pa_deriving/pa_deriving_show.cmo pa_deriving/pa_deriving_eq.cmo \
-	pa_deriving/pa_deriving_ord.cmo pa_deriving/pa_deriving_enum.cmo
-
-CMO = $(BASE_CMO) $(PAD_CMO) $(PADP_CMO)
-CMI = $(CMO:.cmo=.cmi)
-
 all:
 	$(RM) -rf local-install && mkdir -p local-install/lib
 	$(MAKE) -C base all
@@ -24,16 +16,20 @@ all:
 	$(MAKE) -C pa_deriving all
 	$(MAKE) -C pa_deriving.plugins all
 	$(MAKE) -C pa_import all
-	$(MAKE) -C tests all
+#	$(MAKE) -C tests all
 
 
 
 META: META.pl
 	./META.pl > META
 
-install: META.pl
-	./META.pl $(DESTDIR)/pa_ppx > META
-	$(OCAMLFIND) install -destdir $(DESTDIR) pa_ppx $(CMO) $(CMI) META
+install: all META.pl
+	$(OCAMLFIND) remove pa_ppx || true
+	./META.pl > META
+	$(OCAMLFIND) install pa_ppx local-install/lib/*/*.* META
+
+uninstall:
+	$(OCAMLFIND) remove pa_ppx || true
 
 clean::
 	rm -rf META local-install
