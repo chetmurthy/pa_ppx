@@ -78,7 +78,7 @@ functionality being exercised.  Here is a simple one, stripped-down to
 the minimum:
 ```
 ocamlfind ocamlc -verbose -package rresult,ounit2,pa_ppx.runtime,pa_ppx.deriving_plugins.std.syntax \
-	-syntax camlp5o -c test_deriving_show.ml
+	-syntax camlp5o -linkpkg -linkall test_deriving_show.ml -o test_deriving_show.byte
 ```
 
 1. specify syntax `-syntax camlp5o`
