@@ -311,7 +311,11 @@ value str_item_funs arg ((loc,_) as tyname) params ty =
       let fty = List.assoc fname types in
       let fty = if param_map = [] then fty
         else <:ctyp< ! $list:(List.map fst param_map)$ . $fty$ >> in
-      (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [] >>)) l
+      let attrwarn39 = <:attribute_body< "ocaml.warning" "-39" ; >> in
+      let attrwarn39 = <:vala< attrwarn39 >> in
+      let attrwarn33 = <:attribute_body< "ocaml.warning" "-33" ; >> in
+      let attrwarn33 = <:vala< attrwarn33 >> in
+      (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39; attrwarn33] >>)) l
 ;
 
 value sig_item_funs arg ((loc,_) as tyname) params ty =
