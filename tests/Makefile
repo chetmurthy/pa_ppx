@@ -13,7 +13,7 @@ RM=rm
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common
+PACKAGES := $(PACKAGES),ounit2,pcre,rresult,compiler-libs.common,$(PACKAGEPREFIX)runtime
 
 CMO=
 CMI=$(CMO:.cmo=.cmi)

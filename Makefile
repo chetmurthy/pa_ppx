@@ -10,6 +10,7 @@ RM=rm
 
 all:
 	$(RM) -rf local-install && mkdir -p local-install/lib
+	$(MAKE) -C runtime all
 	$(MAKE) -C base all
 	$(MAKE) -C pa_unmatched_vala all
 	$(MAKE) -C pa_hashrecons all
@@ -43,6 +44,7 @@ uninstall:
 
 clean::
 	rm -rf META local-install camlp5o.pa_ppx
+	$(MAKE) -C runtime clean
 	$(MAKE) -C base clean
 	$(MAKE) -C pa_unmatched_vala clean
 	$(MAKE) -C pa_hashrecons clean
@@ -52,6 +54,7 @@ clean::
 	$(MAKE) -C tests clean
 
 depend:
+	$(MAKE) -C runtime depend
 	$(MAKE) -C base depend
 	$(MAKE) -C pa_unmatched_vala depend
 	$(MAKE) -C pa_hashrecons depend

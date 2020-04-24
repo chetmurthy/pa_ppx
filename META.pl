@@ -8,6 +8,7 @@ use File::Basename;
 our $version = "0.01" ;
 
 our %pkgmap = (
+  'pa_ppx_runtime' => 'pa_ppx.runtime',
   'pa_ppx_deriving' => 'pa_ppx.deriving',
   'pa_ppx_deriving_plugins' => 'pa_ppx.deriving_plugins',
   'pa_ppx_base' => 'pa_ppx.base',
@@ -18,6 +19,7 @@ our %pkgmap = (
     );
 
 {
+  my $rtmeta = indent(2, fixdeps(capturex("./runtime/META.pl"))) ;
   my $basemeta = indent(2, fixdeps(capturex("./base/META.pl"))) ;
   my $uvmeta = indent(2, fixdeps(capturex("./pa_unmatched_vala/META.pl"))) ;
   my $hrmeta = indent(2, fixdeps(capturex("./pa_hashrecons/META.pl"))) ;
@@ -29,6 +31,9 @@ our %pkgmap = (
 version = "0.01"
 description = "pa_ppx: camlp5-based PPX rewriters"
 
+package "runtime" (
+$rtmeta
+)
 package "base" (
 $basemeta
 )
