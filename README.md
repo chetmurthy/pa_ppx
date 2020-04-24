@@ -1,10 +1,10 @@
 Implementation of PPX rewriters using camlp5 infrastructure.
 
-== Introduction
+# Introduction
 
-== Installation
+# Installation
 
-== Using with Makefiles
+# Using with Makefiles
 
-== Using with Dune
+# Using with Dune
 
