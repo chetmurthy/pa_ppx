@@ -1,4 +1,4 @@
-Implementation of PPX rewriters using camlp5 infrastructure.
+lugImplementation of PPX rewriters using camlp5 infrastructure.
 
 # Introduction
 
@@ -16,11 +16,11 @@ well.
 
 This code (re-)implements:
 
-1. all of ppx_deriving: pa_deriving_plugins.{enum,eq,fold,iter,make,map,ord,show}
+1. all of ppx_deriving: pa_ppx.deriving_plugins.{enum,eq,fold,iter,make,map,ord,show}
 2. ppx_import: pa_import
 3. [for internal use by PPX rewriters using this infrastructure] pa_unmatched_vala
 4. [an example] pa_hashrecons
-5. ppx_deriving_yojson: pa_deriving_plugins.yojson (partially broken)
+5. ppx_deriving_yojson: pa_ppx.deriving_plugins.yojson (partially broken)
 
 the re-implementations of ppx_deriving and ppx_import pass all their
 unit-tests and use the same syntax of attributes as the original
@@ -55,6 +55,20 @@ and you can run tests (the Yojson test fails to build):
 ```
 make -C tests -k all
 ```
+
+# Organization of Findlib packages
+
+There are a bunch of findlib packages.  Maybe too many and too
+confusing, I can't tell.  But the general idea is that for each
+reweriter or group of rewriters, there are two packages:
+
+1. the package for loading into the toplevel or linking into a commandline tool, viz. `pa_ppx.deriving.plugins.show`
+2. the package for adding to camlp5 during preprocessing, viz. `pa_ppx.deriving.plugins.show.syntax`
+
+Note the ".syntax" at the end there.  These are separated like this so
+we can specify "preprocess with the show plugin, but don't link it
+into the program" and separately "link the show plugin into the
+program, but don't preprocess with it".
 
 # Using with Makefiles
 
