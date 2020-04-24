@@ -6,3 +6,5 @@ tests/_build
 */*.a
 local-install
 */.depend.NEW
+META
+camlp5o.pa_ppx
