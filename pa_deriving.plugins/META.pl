@@ -22,7 +22,7 @@ archive(byte,toploop) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord
 
   package "syntax" (
   # For the preprocessor itself:
-  requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
+  requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving.syntax"
   archive(syntax,preprocessor) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo pa_deriving_fold.cmo pa_deriving_make.cmo"
   )
 
@@ -33,7 +33,7 @@ package "show" (
   archive(syntax,toploop) = "pa_deriving_show.cmo"
 
   package "syntax" (
-    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving.syntax"
     archive(syntax,preprocessor) = "pa_deriving_show.cmo"
   )
 
@@ -45,7 +45,7 @@ package "eq" (
   requires(syntax,toploop) = "camlp5,pa_ppx_deriving"
 
   package "syntax" (
-    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving.syntax"
     archive(syntax,preprocessor) = "pa_deriving_eq.cmo"
   )
 
@@ -57,7 +57,7 @@ package "ord" (
   requires(syntax,toploop) = "camlp5,pa_ppx_deriving"
 
   package "syntax" (
-    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving.syntax"
     archive(syntax,preprocessor) = "pa_deriving_ord.cmo"
   )
 
@@ -69,7 +69,7 @@ package "enum" (
   requires(syntax,toploop) = "camlp5,pa_ppx_deriving"
 
   package "syntax" (
-    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving.syntax"
     archive(syntax,preprocessor) = "pa_deriving_enum.cmo"
   )
 
@@ -81,7 +81,7 @@ package "iter" (
   requires(syntax,toploop) = "camlp5,pa_ppx_deriving"
 
   package "syntax" (
-    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving.syntax"
     archive(syntax,preprocessor) = "pa_deriving_iter.cmo"
   )
 
@@ -93,7 +93,7 @@ package "map" (
   requires(syntax,toploop) = "camlp5,pa_ppx_deriving"
 
   package "syntax" (
-    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving.syntax"
     archive(syntax,preprocessor) = "pa_deriving_map.cmo"
   )
 
@@ -105,7 +105,7 @@ package "fold" (
   requires(syntax,toploop) = "camlp5,pa_ppx_deriving"
 
   package "syntax" (
-    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving.syntax"
     archive(syntax,preprocessor) = "pa_deriving_fold.cmo"
   )
 
@@ -117,7 +117,7 @@ package "make" (
   requires(syntax,toploop) = "camlp5,pa_ppx_deriving"
 
   package "syntax" (
-    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving.syntax"
     archive(syntax,preprocessor) = "pa_deriving_make.cmo"
   )
 
@@ -130,7 +130,7 @@ package "yojson" (
   archive(syntax,toploop) = "pa_deriving_yojson.cmo"
 
   package "syntax" (
-    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving.syntax"
     archive(syntax,preprocessor) = "pa_deriving_yojson.cmo"
   )
 

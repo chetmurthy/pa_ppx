@@ -8,12 +8,12 @@ use File::Basename;
 our $version = "0.01" ;
 
 our %pkgmap = (
-  'pa_ppx_pa_deriving' => 'pa_ppx.deriving',
-  'pa_ppx_pa_deriving_plugins' => 'pa_ppx.deriving_plugins',
-  'pa_ppx_pa_base' => 'pa_ppx.base',
-  'pa_ppx_pa_import' => 'pa_ppx.import',
-  'pa_ppx_pa_unmatched_vala' => 'pa_ppx.unmatched_vala',
-  'pa_ppx.hashrecons' => 'pa_ppx.hashrecons',
+  'pa_ppx_deriving' => 'pa_ppx.deriving',
+  'pa_ppx_deriving_plugins' => 'pa_ppx.deriving_plugins',
+  'pa_ppx_base' => 'pa_ppx.base',
+  'pa_ppx_import' => 'pa_ppx.import',
+  'pa_ppx_unmatched_vala' => 'pa_ppx.unmatched_vala',
+  'pa_ppx_hashrecons' => 'pa_ppx.hashrecons',
   
     );
 
@@ -68,7 +68,8 @@ sub fix {
   my @l = split(/,/,$txt);
   my @ol = () ;
   foreach my $p (@l) {
-    push(@ol, ($pkgmap{$p} || $p));
+    $p =~ s,^([^.]+), $pkgmap{$1} || $1 ,e ;
+    push(@ol, $p);
   }
   $txt = join(',', @ol) ;
   return $txt ;

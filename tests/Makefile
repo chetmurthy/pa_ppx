@@ -13,7 +13,7 @@ RM=rm
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,$(PACKAGEPREFIX)base
+PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common
 
 CMO=
 CMI=$(CMO:.cmo=.cmi)
@@ -54,7 +54,7 @@ test: $(TESTS:.byte=)
 PPXPACKAGES=ppx_import,ppx_deriving.show,ppx_deriving.eq,ppx_deriving.ord,ppx_deriving.enum,ppx_deriving.iter,ppx_deriving.map,ppx_deriving.fold,ppx_deriving.make,ppx_deriving_yojson
 
 test_%.byte: test_%.ml testutil.cmo testutil2.cmo
-	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),yojson,rresult,$(PACKAGEPREFIX)deriving_plugins.std.syntax,$(PACKAGEPREFIX)deriving_plugins.yojson.syntax,$(PACKAGEPREFIX)hashrecons.syntax \
+	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),yojson,$(PACKAGEPREFIX)deriving_plugins.std.syntax,$(PACKAGEPREFIX)deriving_plugins.yojson.syntax,$(PACKAGEPREFIX)hashrecons.syntax \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
 
 test_%.ppx.byte: test_%.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
