@@ -151,7 +151,9 @@ value str_item_funs arg ((loc,_) as tyname) ty =
   let types = sig_item_top_funs arg tyname ty in
   List.map (fun (fname, body) ->
       let fty = List.assoc fname types in
-      (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [] >>)) l
+      let attrwarn39 = <:attribute_body< "ocaml.warning" "-39" ; >> in
+      let attrwarn39 = <:vala< attrwarn39 >> in
+      (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39] >>)) l
 ;
 
 value sig_item_funs arg ((loc,_) as tyname) ty =

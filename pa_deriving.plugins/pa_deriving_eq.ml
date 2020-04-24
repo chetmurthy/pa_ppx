@@ -81,7 +81,7 @@ value fmt_expression arg param_map ty0 =
           (Result.Ok a, Result.Ok b) -> $(fmtrec ty1)$ a b
         | (Result.Error a, Result.Error b) -> $(fmtrec ty2)$ a b
         | _ -> False
-      ] >>
+      ] [@ocaml.warning "-4";] >>
 
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 
@@ -152,7 +152,7 @@ value fmt_expression arg param_map ty0 =
   | (_, _, _, Some _, _) -> assert False
   ]) l in
   let branches = branches @ [ (<:patt< _ >>, <:vala< None >>, <:expr< False >>) ] in
-  <:expr< fun a b -> match (a,b) with [ $list:branches$ ] >>
+  <:expr< fun a b -> match (a,b) with [ $list:branches$ ] [@ocaml.warning "-4";][@ocaml.warning "-11";] >>
 
 
 | <:ctyp:< [= $list:l$ ] >> ->
@@ -255,7 +255,9 @@ value str_item_funs arg ((loc,_) as tyname) params ty =
       let fty = List.assoc fname types in
       let fty = if param_map = [] then fty
         else <:ctyp< ! $list:(List.map fst param_map)$ . $fty$ >> in
-      (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [] >>)) l
+      let attrwarn39 = <:attribute_body< "ocaml.warning" "-39" ; >> in
+      let attrwarn39 = <:vala< attrwarn39 >> in
+      (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39] >>)) l
 ;
 
 value sig_item_funs arg ((loc,_) as tyname) params ty =

@@ -27,8 +27,8 @@ value fmt_expression arg param_map ty0 =
   let fname = ord_fname arg lid in
   <:expr< $lid:fname$ >>
 
-  | <:ctyp:< _ >> -> <:expr< fun a b -> 0 >>
-  | <:ctyp:< unit >> -> <:expr< fun a b -> 0 >>
+  | <:ctyp:< _ >> -> <:expr< fun _ _ -> 0 >>
+  | <:ctyp:< unit >> -> <:expr< fun _ _ -> 0 >>
   | <:ctyp:< int >> -> <:expr< fun a b -> Stdlib.compare a b >>
   | <:ctyp:< int32 >> -> <:expr< fun a b -> Stdlib.compare a b >>
   | <:ctyp:< int64 >> -> <:expr< fun a b -> Stdlib.compare a b >>
@@ -307,7 +307,9 @@ value str_item_funs arg ((loc,_) as tyname) params ty =
       let fty = List.assoc fname types in
       let fty = if param_map = [] then fty
         else <:ctyp< ! $list:(List.map fst param_map)$ . $fty$ >> in
-      (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [] >>)) l
+      let attrwarn39 = <:attribute_body< "ocaml.warning" "-39" ; >> in
+      let attrwarn39 = <:vala< attrwarn39 >> in
+      (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39] >>)) l
 ;
 
 value sig_item_funs arg ((loc,_) as tyname) params ty =
