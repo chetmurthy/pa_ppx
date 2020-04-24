@@ -77,7 +77,8 @@ over almost-verbatim from ppx_deriving, and show almost all the
 functionality being exercised.  Here is a simple one, stripped-down to
 the minimum:
 ```
-ocamlfind ocamlc -verbose -package rresult,ounit2,pa_ppx.runtime,pa_ppx.deriving_plugins.std.syntax -syntax camlp5o -c test_deriving_show.ml
+ocamlfind ocamlc -verbose -package rresult,ounit2,pa_ppx.runtime,pa_ppx.deriving_plugins.std.syntax \
+	-syntax camlp5o -c test_deriving_show.ml
 ```
 
 1. specify syntax `-syntax camlp5o`
