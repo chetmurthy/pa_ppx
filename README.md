@@ -74,7 +74,58 @@ program, but don't preprocess with it".
 
 There are copious examples in the `tests` directory: these are copied
 over almost-verbatim from ppx_deriving, and show almost all the
-functionality being exercised.
+functionality being exercised.  Here is a simple one, stripped-down to
+the minimum:
+```
+ocamlfind ocamlc -verbose -package rresult,ounit2,pa_ppx.runtime,pa_ppx.deriving_plugins.std.syntax -syntax camlp5o -c test_deriving_show.ml
+```
+
+1. specify syntax `-syntax camlp5o`
+2. specify packages needed by the test itself: `rresult,ounit2`
+3. specify pa_ppx runtime support package: `pa_ppx.runtime`
+4. specify the rewriter packages: `pa_ppx.deriving_plugins.std.syntax`
 
 # Using with Dune
 
+Dune requires that we provide a command that will preprocess, but not
+compile.  Since this is cumbersome to do with ocamlfind, `pa_ppx`
+builds such a preprocessor and installs it as part of the package,
+linked with all the rewriting plugins.  This can be invoked this:
+```
+ocamlfind pa_ppx/camlp5o.pa_ppx  ./test_deriving_show.ml
+```
+[BTW, this command was built using `mkcamlp5`, and you can see the build command in the `pa_ppx` top-level Makefile.]
+
+With this command, we can modify a dune file pretty easily.  Here's the modification for [Yara-ocaml](https://github.com/XVilka/yara-ocaml):
+```
+@@ -2,7 +2,13 @@
+  (name yara)
+  (public_name yara)
+  (wrapped false)
+- (preprocess
+-  (pps ppx_deriving.std))
++
++;; (preprocess
++;;  (pps ppx_deriving.std))
++
++ (preprocess (action
++      (run ocamlfind pa_ppx/camlp5o.pa_ppx %{input-file})
++    ))
++
+```
+
+and here's a dunefile that will compile `test_deriving_show.ml`:
+```
+(env
+  (dev
+    (flags (:standard -w -27 -w -32))))
+
+(test
+ (name test_deriving_show)
+ (libraries oUnit fmt ppx_deriving.runtime)
+ (preprocess (action
+      (run ocamlfind pa_ppx/camlp5o.pa_ppx %{input-file})
+    )))
+
+```
+(the errors must be silenced b/c the test itself elicits warnings, and I didn't want to modify it.)
