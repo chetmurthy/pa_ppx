@@ -16,23 +16,33 @@ all:
 	$(MAKE) -C pa_deriving all
 	$(MAKE) -C pa_deriving.plugins all
 	$(MAKE) -C pa_import all
-	$(MAKE) -C tests all
+#	$(MAKE) -C tests all
 
+PACKAGES := pa_ppx_base
+PACKAGES := $(PACKAGES),pa_ppx_unmatched_vala
+PACKAGES := $(PACKAGES),pa_ppx_deriving
+PACKAGES := $(PACKAGES),pa_ppx_deriving_plugins.std
+PACKAGES := $(PACKAGES),pa_ppx_deriving_plugins.yojson
+PACKAGES := $(PACKAGES),pa_ppx_hashrecons
+PACKAGES := $(PACKAGES),pa_ppx_import
+
+camlp5o.pa_ppx:
+	tools/LAUNCH $(MKCAMLP5) -verbose -package camlp5.pa_o,camlp5.pr_o,$(PACKAGES) $(KITS) -o $@
 
 
 META: META.pl
 	./META.pl > META
 
-install: all META.pl
+install: all META.pl camlp5o.pa_ppx
 	$(OCAMLFIND) remove pa_ppx || true
 	./META.pl > META
-	$(OCAMLFIND) install pa_ppx local-install/lib/*/*.* META
+	$(OCAMLFIND) install pa_ppx META local-install/lib/*/*.* camlp5o.pa_ppx
 
 uninstall:
 	$(OCAMLFIND) remove pa_ppx || true
 
 clean::
-	rm -rf META local-install
+	rm -rf META local-install camlp5o.pa_ppx
 	$(MAKE) -C base clean
 	$(MAKE) -C pa_unmatched_vala clean
 	$(MAKE) -C pa_hashrecons clean

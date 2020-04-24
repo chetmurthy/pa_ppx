@@ -1,8 +1,6 @@
 (* camlp5o *)
 (* testutil2.ml,v *)
 
-open Printf;;
-open Fmt;;
 open Testutil ;;
 
 let car = List.hd

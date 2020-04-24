@@ -11,7 +11,7 @@ RM=rm
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),pa_ppx_deriving,pa_ppx_base.syntax,,pa_ppx_unmatched_vala.syntax
+PACKAGES := $(PACKAGES),pa_ppx_deriving,pa_ppx_base.syntax,pa_ppx_unmatched_vala.syntax
 
 CMO=\
 	pa_deriving_show.cmo \
