@@ -32,6 +32,15 @@ module Ctxt = struct
     | exception Not_found -> assert False
     ]
   ;
+
+  value is_exn ctxt =
+    match List.assoc "exn" ctxt.options with [
+      <:expr< True >> -> True
+    | <:expr< False >> -> False
+    | _ -> failwith "malformed option 'exn'"
+    | exception Not_found -> assert False
+    ]
+  ;
 end ;
 
 value tuplepatt loc l = if List.length l = 1 then List.hd l else <:patt< ( $list:l$ ) >> ;
@@ -516,11 +525,21 @@ value fmt_of_top arg ~{msg} params = fun [
 value str_item_top_funs arg (loc, tyname) param_map ty =
   let tyname = Pcaml.unvala tyname in
   let of_yojsonfname = of_yojson_fname arg tyname in
-  let of_e = fmt_of_top arg ~{msg=Printf.sprintf "of_yojson.%s" tyname} param_map ty in
-  let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $of_e$ >> in
   let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
-  (of_yojsonfname, Expr.abstract_over paramfun_patts
-     <:expr< fun arg -> $of_e$ arg >>)
+  let paramfun_exprs = List.map (fun (_,ppf) -> <:expr< $lid:ppf$ >>) param_map in
+  let body = fmt_of_top arg ~{msg=Printf.sprintf "of_yojson.%s" tyname} param_map ty in
+  let e = 
+    let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $body$ >> in
+    (of_yojsonfname, Expr.abstract_over paramfun_patts
+       <:expr< fun arg -> $of_e$ arg >>) in
+  if not (Ctxt.is_exn arg) then [e] else
+    let exn_name = of_yojsonfname^"_exn" in
+    let body = Expr.applist <:expr< $lid:of_yojsonfname$ >> paramfun_exprs in
+    let body = <:expr< match $body$ arg with [ Rresult.Ok x -> x | Result.Error s -> failwith s ] >> in
+    let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $body$ >> in
+    let e' = (exn_name, Expr.abstract_over paramfun_patts
+       <:expr< fun arg -> $of_e$ arg >>) in
+    [e; e']
 ;
 
 value sig_item_top_funs arg (loc, tyname) param_map ty =
@@ -530,7 +549,12 @@ value sig_item_top_funs arg (loc, tyname) param_map ty =
   let argfmttys = List.map (fun pty -> <:ctyp< Yojson.Safe.t -> Rresult.result $pty$ string >>) paramtys in  
   let ty = <:ctyp< $lid:tyname$ >> in
   let offtype = Ctyp.arrows_list loc argfmttys <:ctyp< Yojson.Safe.t -> Rresult.result $(Ctyp.applist ty paramtys)$ string >> in
-  (of_yojsonfname, offtype)
+  let e = (of_yojsonfname, offtype) in
+  if not (Ctxt.is_exn arg) then [e] else
+  let exn_name = of_yojsonfname^"_exn" in
+  let exnftype = Ctyp.arrows_list loc argfmttys <:ctyp< Yojson.Safe.t -> $(Ctyp.applist ty paramtys)$ >> in
+  let e' = (exn_name, exnftype) in
+  [e; e']
 ;
 
 end
@@ -541,7 +565,7 @@ value str_item_top_funs arg tyname param_map ty =
     [To.str_item_top_funs arg tyname param_map ty]
   else []) @
   (if Ctxt.is_plugin_name arg "of_yojson" || Ctxt.is_plugin_name arg "yojson" then
-     [Of.str_item_top_funs arg tyname param_map ty]
+     Of.str_item_top_funs arg tyname param_map ty
    else [])
 ;
 
@@ -550,7 +574,7 @@ value sig_item_top_funs arg tyname param_map ty =
     [To.sig_item_top_funs arg tyname param_map ty]
   else []) @
   (if Ctxt.is_plugin_name arg "of_yojson" || Ctxt.is_plugin_name arg "yojson" then
-     [Of.sig_item_top_funs arg tyname param_map ty]
+     Of.sig_item_top_funs arg tyname param_map ty
    else [])
 ;
 
