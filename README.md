@@ -60,7 +60,7 @@ make -C tests -k all
 
 There are a bunch of findlib packages.  Maybe too many and too
 confusing, I can't tell.  But the general idea is that for each
-reweriter or group of rewriters, there are two packages:
+rewriter or group of rewriters, there are two packages:
 
 1. the package for loading into the toplevel or linking into a commandline tool, viz. `pa_ppx.deriving.plugins.show`
 2. the package for adding to camlp5 during preprocessing, viz. `pa_ppx.deriving.plugins.show.syntax`
@@ -69,6 +69,11 @@ Note the ".syntax" at the end there.  These are separated like this so
 we can specify "preprocess with the show plugin, but don't link it
 into the program" and separately "link the show plugin into the
 program, but don't preprocess with it".
+
+[I thought of having a "virtual package" that just required the both,
+but it turns out that there's a bug in findlib that prevents this from
+working correctly in the context of preprocessing.  So I'm stuck with
+this for now.]
 
 # Using with Makefiles
 
@@ -97,7 +102,7 @@ ocamlfind pa_ppx/camlp5o.pa_ppx  ./test_deriving_show.ml
 ```
 [BTW, this command was built using `mkcamlp5`, and you can see the build command in the `pa_ppx` top-level Makefile.]
 
-With this command, we can modify a dune file pretty easily.  Here's the modification for [Yara-ocaml](https://github.com/XVilka/yara-ocaml):
+With this command, we can modify a dune file pretty easily.  Here's the modification for [yara-ocaml](https://github.com/XVilka/yara-ocaml):
 ```
 @@ -2,7 +2,13 @@
   (name yara)
@@ -127,6 +132,9 @@ and here's a dunefile that will compile `test_deriving_show.ml`:
  (preprocess (action
       (run ocamlfind pa_ppx/camlp5o.pa_ppx %{input-file})
     )))
-
 ```
-(the errors must be silenced b/c the test itself elicits warnings, and I didn't want to modify it.)
+
+[The warnings must be silenced b/c the test itself elicits warnings,
+and I didn't want to modify it.  OTOH, I didn't silence all warnings
+b/c if there are warning produced by the generated code, I'd like to
+know about them.]
