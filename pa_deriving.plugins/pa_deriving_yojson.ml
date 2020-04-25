@@ -21,8 +21,17 @@ module Ctxt = struct
       <:expr< $str:na$ >> -> na
     | _ -> assert False
     ]}
-    ;
-    value is_plugin_name ctxt s = (s = plugin_name ctxt) ;
+  ;
+  value is_plugin_name ctxt s = (s = plugin_name ctxt) ;
+
+  value is_strict ctxt =
+    match List.assoc "strict" ctxt.options with [
+      <:expr< True >> -> True
+    | <:expr< False >> -> False
+    | _ -> failwith "malformed option 'strict'"
+    | exception Not_found -> assert False
+    ]
+  ;
 end ;
 
 value tuplepatt loc l = if List.length l = 1 then List.hd l else <:patt< ( $list:l$ ) >> ;
@@ -475,9 +484,12 @@ and fmt_record ~{cid} loc arg fields =
         <:expr< Rresult.R.bind $lid:v$ (fun $lid:v$ -> $rhs$) >>) labels_vars_fmts consexp in
     (<:patt< [] >>, <:vala< None >>, e) in
 
-  let catch_branch = (<:patt< [_ :: _] >>, <:vala< None >>, <:expr< Result.Error $str:msg$ >>) in
+  let catch_branch =
+    if Ctxt.is_strict arg then
+      [(<:patt< [_ :: _] >>, <:vala< None >>, <:expr< Result.Error $str:msg$ >>)]
+  else [] in
 
-  let branches = branches @ [finish_branch ; catch_branch] in
+  let branches = branches @ [finish_branch] @ catch_branch in
 
   let e = 
     let varpats = List.map (fun (_,v,_) -> <:patt< $lid:v$ >>) labels_vars_fmts in
@@ -646,8 +658,9 @@ value expr_yojson arg = fun [
 Pa_deriving.(Registry.add PI.{
   name = "yojson"
 ; alternates = ["to_yojson"; "of_yojson"]
-; options = ["optional"]
-; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
+; options = ["optional"; "strict"; "exn"]
+; default_options = let loc = Ploc.dummy in
+    [ ("optional", <:expr< False >>); ("strict", <:expr< False >>); ("exn", <:expr< False >>) ]
 ; alg_attributes = ["nobuiltin"; "key"; "name"; "encodin"; "default"; "to_yojson"; "of_yojson"]
 ; expr_extensions = ["to_yojson"; "of_yojson"]
 ; expr = expr_yojson

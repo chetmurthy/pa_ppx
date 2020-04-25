@@ -85,17 +85,21 @@ value init arg =
    Ctxt.init_scratchdata arg "deriving" (Pa_deriving (mk()))
 ;
 
-value legitimate_plugin_reference (na, options) =
-  Registry.mem na ||
-  List.exists (fun [ ("optional", <:expr< True >>) -> True | _ -> False ]) options
+value legitimate_plugin_reference dc (na, options) =
+  match Registry.get na with [
+    pi ->
+    List.for_all (fun (oname,_) -> List.mem oname pi.PI.options) options
+  | exception Not_found ->
+    List.exists (fun [ ("optional", <:expr< True >>) -> True | _ -> False ]) options
+  ]
 ;
 
 value start_decl dc plugins = do {
   assert ([] = dc.current_plugins.val) ;
   assert ([] = dc.current_attributes.val) ;
   List.iter (fun ((na, _) as r) ->
-      if not (legitimate_plugin_reference r) then
-        failwith (Printf.sprintf "plugin %s specified but not loaded" na)
+      if not (legitimate_plugin_reference dc r) then
+        failwith (Printf.sprintf "ill-formed plugin reference %s" na)
       else ()) plugins ;
   let plugins = filter (fun (na,_) -> Registry.mem na) plugins in
   dc.current_plugins.val := List.map fst plugins ;
