@@ -1,4 +1,4 @@
-lugImplementation of PPX rewriters using camlp5 infrastructure.
+Implementation of PPX rewriters using camlp5 infrastructure.
 
 # Introduction
 
