@@ -25,21 +25,17 @@ module Ctxt = struct
     value is_plugin_name ctxt s = (s = plugin_name ctxt) ;
 end ;
 
-value to_yojson_fname arg tyname =
-  if tyname = "t" then "to_yojson"
-  else tyname^"_to_yojson"
-;
-
-value of_yojson_fname arg tyname =
-  if tyname = "t" then "of_yojson"
-  else tyname^"_of_yojson"
-;
-
 type attrmod_t = [ Nobuiltin ] ;
 
 
 value tuplepatt loc l = if List.length l = 1 then List.hd l else <:patt< ( $list:l$ ) >> ;
 value tupleexpr loc l = if List.length l = 1 then List.hd l else <:expr< ( $list:l$ ) >> ;
+
+module To = struct
+value to_yojson_fname arg tyname =
+  if tyname = "t" then "to_yojson"
+  else tyname^"_to_yojson"
+;
 
 value to_expression arg ~{msg} param_map ty0 =
   let rec fmtrec ?{attrmod=None} = fun [
@@ -200,6 +196,41 @@ and fmt_record loc arg fields =
   (<:patt< { $list:pl$ } >>, <:expr< `Assoc $liste$ >>)
 
 in fmtrec ty0
+;
+
+
+value fmt_to_top arg ~{msg} params = fun [
+  <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
+  to_expression arg ~{msg=msg} params t2
+| t -> to_expression arg ~{msg} params t
+]
+;
+
+value str_item_top_funs arg (loc, tyname) param_map ty =
+  let tyname = Pcaml.unvala tyname in
+  let to_yojsonfname = to_yojson_fname arg tyname in
+  let to_e = fmt_to_top arg ~{msg=Printf.sprintf "to_yojson.%s" tyname} param_map ty in
+  let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
+  (to_yojsonfname, Expr.abstract_over paramfun_patts
+     <:expr< fun arg -> $to_e$ arg >>)
+;
+
+value sig_item_top_funs arg (loc, tyname) param_map ty =
+  let tyname = Pcaml.unvala tyname in
+  let to_yojsonfname = to_yojson_fname arg tyname in
+  let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
+  let argfmttys = List.map (fun pty -> <:ctyp< $pty$ -> Yojson.Safe.t >>) paramtys in  
+  let ty = <:ctyp< $lid:tyname$ >> in
+  let toftype = Ctyp.arrows_list loc argfmttys <:ctyp< $(Ctyp.applist ty paramtys)$ -> Yojson.Safe.t >> in
+  (to_yojsonfname, toftype)
+;
+end
+;
+
+module Of = struct
+value of_yojson_fname arg tyname =
+  if tyname = "t" then "of_yojson"
+  else tyname^"_of_yojson"
 ;
 
 value of_expression arg ~{msg} param_map ty0 =
@@ -452,13 +483,6 @@ and fmt_record ~{cid} loc arg fields =
 in fmtrec ty0
 ;
 
-value fmt_to_top arg ~{msg} params = fun [
-  <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
-  to_expression arg ~{msg=msg} params t2
-| t -> to_expression arg ~{msg} params t
-]
-;
-
 value fmt_of_top arg ~{msg} params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
   of_expression arg ~{msg=msg} params t2
@@ -468,56 +492,42 @@ value fmt_of_top arg ~{msg} params = fun [
 
 value str_item_top_funs arg (loc, tyname) param_map ty =
   let tyname = Pcaml.unvala tyname in
-
-  let rv = [] in
-  let rv =
-    if Ctxt.is_plugin_name arg "yojson" || Ctxt.is_plugin_name arg "to_yojson" then
-      let to_yojsonfname = to_yojson_fname arg tyname in
-      let to_e = fmt_to_top arg ~{msg=Printf.sprintf "to_yojson.%s" tyname} param_map ty in
-      let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
-      let e = (to_yojsonfname, Expr.abstract_over paramfun_patts
-               <:expr< fun arg -> $to_e$ arg >>) in
-      rv @ [e]
-    else rv in
-
-  let rv =
-    if Ctxt.is_plugin_name arg "yojson" || Ctxt.is_plugin_name arg "of_yojson" then
-    let of_yojsonfname = of_yojson_fname arg tyname in
-    let of_e = fmt_of_top arg ~{msg=Printf.sprintf "of_yojson.%s" tyname} param_map ty in
-    let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
-    let e = (of_yojsonfname, Expr.abstract_over paramfun_patts
-       <:expr< fun arg -> $of_e$ arg >>) in
-    rv @ [e]
-    else rv in
-  rv
+  let of_yojsonfname = of_yojson_fname arg tyname in
+  let of_e = fmt_of_top arg ~{msg=Printf.sprintf "of_yojson.%s" tyname} param_map ty in
+  let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
+  (of_yojsonfname, Expr.abstract_over paramfun_patts
+     <:expr< fun arg -> $of_e$ arg >>)
 ;
 
 value sig_item_top_funs arg (loc, tyname) param_map ty =
   let tyname = Pcaml.unvala tyname in
+  let of_yojsonfname = of_yojson_fname arg tyname in
+  let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
+  let argfmttys = List.map (fun pty -> <:ctyp< Yojson.Safe.t -> Rresult.result $pty$ string >>) paramtys in  
+  let ty = <:ctyp< $lid:tyname$ >> in
+  let offtype = Ctyp.arrows_list loc argfmttys <:ctyp< Yojson.Safe.t -> Rresult.result $(Ctyp.applist ty paramtys)$ string >> in
+  (of_yojsonfname, offtype)
+;
 
-  let rv = [] in
-  let rv =
-    if Ctxt.is_plugin_name arg "yojson" || Ctxt.is_plugin_name arg "to_yojson" then
-      let to_yojsonfname = to_yojson_fname arg tyname in
-      let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
-      let argfmttys = List.map (fun pty -> <:ctyp< $pty$ -> Yojson.Safe.t >>) paramtys in  
-      let ty = <:ctyp< $lid:tyname$ >> in
-      let toftype = Ctyp.arrows_list loc argfmttys <:ctyp< $(Ctyp.applist ty paramtys)$ -> Yojson.Safe.t >> in
-      let e = (to_yojsonfname, toftype) in
-      rv @ [e]
-    else rv in
+end
+;
 
-  let rv =
-    if Ctxt.is_plugin_name arg "yojson" || Ctxt.is_plugin_name arg "of_yojson" then
-      let of_yojsonfname = of_yojson_fname arg tyname in
-      let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
-      let argfmttys = List.map (fun pty -> <:ctyp< Yojson.Safe.t -> Rresult.result $pty$ string >>) paramtys in  
-      let ty = <:ctyp< $lid:tyname$ >> in
-      let offtype = Ctyp.arrows_list loc argfmttys <:ctyp< Yojson.Safe.t -> Rresult.result $(Ctyp.applist ty paramtys)$ string >> in
-      let e = (of_yojsonfname, offtype) in
-      rv @ [e]
-    else rv in
-  rv
+value str_item_top_funs arg tyname param_map ty =
+  (if Ctxt.is_plugin_name arg "to_yojson" || Ctxt.is_plugin_name arg "yojson" then
+    [To.str_item_top_funs arg tyname param_map ty]
+  else []) @
+  (if Ctxt.is_plugin_name arg "of_yojson" || Ctxt.is_plugin_name arg "yojson" then
+     [Of.str_item_top_funs arg tyname param_map ty]
+   else [])
+;
+
+value sig_item_top_funs arg tyname param_map ty =
+  (if Ctxt.is_plugin_name arg "to_yojson" || Ctxt.is_plugin_name arg "yojson" then
+    [To.sig_item_top_funs arg tyname param_map ty]
+  else []) @
+  (if Ctxt.is_plugin_name arg "of_yojson" || Ctxt.is_plugin_name arg "yojson" then
+     [Of.sig_item_top_funs arg tyname param_map ty]
+   else [])
 ;
 
 value str_item_funs arg ((loc,_) as tyname) params ty =
@@ -606,14 +616,14 @@ value expr_yojson arg = fun [
   <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "to_yojson" || id = "derive.to_yojson" ->
     let loc = loc_of_ctyp ty in
     let param_map = build_param_map ty in
-    let e = fmt_to_top arg ~{msg="to_yojson"} param_map ty in
+    let e = To.fmt_to_top arg ~{msg="to_yojson"} param_map ty in
     let parampats = List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map in
     Expr.abstract_over parampats e
 
 | <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "of_yojson" || id = "derive.of_yojson" ->
     let loc = loc_of_ctyp ty in
     let param_map = build_param_map ty in
-    let e = fmt_of_top ~{msg="of_yojson"} arg param_map ty in
+    let e = Of.fmt_of_top ~{msg="of_yojson"} arg param_map ty in
     let parampats = List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map in
     Expr.abstract_over parampats e
 | _ -> assert False ]
