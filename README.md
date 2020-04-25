@@ -136,5 +136,5 @@ and here's a dunefile that will compile `test_deriving_show.ml`:
 
 [The warnings must be silenced b/c the test itself elicits warnings,
 and I didn't want to modify it.  OTOH, I didn't silence all warnings
-b/c if there are warning produced by the generated code, I'd like to
+b/c if there are warnings produced by the generated code, I'd like to
 know about them.]
