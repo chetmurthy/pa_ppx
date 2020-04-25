@@ -189,7 +189,7 @@ value str_item_gen_enum0 arg td =
 
 value loc_of_type_decl td = fst (Pcaml.unvala td.tdNam) ;
 
-value str_item_gen_enum arg = fun [
+value str_item_gen_enum name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->
     let loc = loc_of_type_decl (List.hd tdl) in
     let l = List.concat (List.map (str_item_gen_enum0 arg) tdl) in
@@ -207,7 +207,7 @@ value sig_item_gen_enum0 arg td =
     sig_item_funs arg tyname tk
 ;
 
-value sig_item_gen_enum arg = fun [
+value sig_item_gen_enum name arg = fun [
   <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
     let loc = loc_of_type_decl (List.hd tdl) in
     let l = List.concat (List.map (sig_item_gen_enum0 arg) tdl) in

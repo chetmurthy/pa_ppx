@@ -11,8 +11,18 @@ open Pa_passthru ;
 open Ppxutil ;
 open Surveil ;
 
+
 module Ctxt = struct
   include Pa_passthru.Ctxt ;
+
+value has_direction ctxt d  =
+  match option ctxt "direction" with [
+    <:expr< $str:d0$ >> when d = d0 -> True
+  | <:expr< $str:d0$ >> when d <> d0 -> False
+  | _ -> True
+  | exception Failure _ -> True
+  ]
+;
 
 end ;
 
@@ -535,7 +545,7 @@ value str_item_gen_yojson0 arg td =
 
 value loc_of_type_decl td = fst (Pcaml.unvala td.tdNam) ;
 
-value str_item_gen_yojson arg = fun [
+value str_item_gen_yojson name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->
     let loc = loc_of_type_decl (List.hd tdl) in
     let l = List.concat (List.map (str_item_gen_yojson0 arg) tdl) in
@@ -550,7 +560,7 @@ value sig_item_gen_yojson0 arg td =
   sig_item_funs arg tyname params tk
 ;
 
-value sig_item_gen_yojson arg = fun [
+value sig_item_gen_yojson name arg = fun [
   <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
     let loc = loc_of_type_decl (List.hd tdl) in
     let l = List.concat (List.map (sig_item_gen_yojson0 arg) tdl) in

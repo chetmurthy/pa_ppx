@@ -19,7 +19,7 @@ value extract_option name = (fun [
     ])
 ;
 
-value extract_deriving0 attr =
+value extract_deriving0 (attr : attribute) =
   match Pcaml.unvala attr with [
     <:attribute_body< deriving $structure:sil$ >> ->
       let rv = [] in
@@ -40,7 +40,7 @@ value extract_deriving0 attr =
   ]
 ;
 
-value is_deriving_attribute attr = attr_id attr = "deriving" ;
+value is_deriving_attribute (attr : attribute) = attr_id attr = "deriving" ;
 
 value extract_deriving name attr =
   if not (is_deriving_attribute attr) then None
@@ -69,8 +69,8 @@ type t = {
 ; alg_attributes : list string
 ; expr_extensions : list string
 ; expr : Ctxt.t -> expr -> expr
-; str_item : Ctxt.t -> str_item -> str_item
-; sig_item : Ctxt.t -> sig_item -> sig_item
+; str_item : string -> Ctxt.t -> str_item -> str_item
+; sig_item : string -> Ctxt.t -> sig_item -> sig_item
 ; default_options : list (string * expr)
 }
 ;
@@ -130,23 +130,18 @@ value get na = match List.assoc na plugin_registry.val with [
 ;
 end
 ;
-value registered_str_item arg pi = fun [
-  <:str_item:< type $_flag:_$ $list:tdl$ >> as z ->
-    let attrs = Pcaml.unvala (fst (sep_last tdl)).tdAttributes in
-    let arg = Ctxt.add_options arg pi.PI.default_options in
-    let arg = List.fold_left (apply_deriving pi.PI.name) arg attrs in
-    pi.str_item arg z
+
+value registered_str_item (name,pi) arg = fun [
+  <:str_item:< type $_flag:_$ $list:_$ >> as z ->
+    pi.PI.str_item name arg z
 
 | _ -> assert False
 ]
 ;
 
-value registered_sig_item arg pi = fun [
-  <:sig_item:< type $_flag:_$ $list:tdl$ >> as z ->
-    let attrs = Pcaml.unvala (fst (sep_last tdl)).tdAttributes in
-    let arg = Ctxt.add_options arg pi.PI.default_options in
-    let arg = List.fold_left (apply_deriving pi.PI.name) arg attrs in
-    pi.sig_item arg z
+value registered_sig_item (name,pi) arg = fun [
+  <:sig_item:< type $_flag:_$ $list:_$ >> as z ->
+    pi.PI.sig_item name arg z
 
 | _ -> assert False
 ]
@@ -163,25 +158,35 @@ value registered_expr_extension arg = fun [
 ]
 ;
 
-
 value is_registered_deriving attr =
   List.exists (fun (name, _) -> is_deriving name attr) plugin_registry.val ;
 
 value is_registered_extension attr =
   List.mem_assoc (Pcaml.unvala (fst attr)) extension2plugin.val ;
 
+value is_registered_plugin na =
+  List.mem_assoc na plugin_registry.val || List.mem_assoc na alternate2plugin.val ;
+
 value install () =
 let ef = EF.mk() in
 let ef = EF.{ (ef) with
             str_item = extfun ef.str_item with [
     <:str_item:< type $flag:nrfl$ $list:tdl$ >> as z
-    when  List.exists is_registered_deriving (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
+    when 1 = count is_deriving_attribute (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
     fun arg ->
-      let attrs = Pcaml.unvala (fst (sep_last tdl)).tdAttributes in
-      let ll = plugin_registry.val |> List.map (fun (name, pi) ->
-        if List.exists (is_deriving name) attrs then
-          [registered_str_item arg pi z]
-        else []) in
+      let last_td = fst (sep_last tdl) in
+      let attrs = last_td.tdAttributes in
+      let derivings = attrs |> Pcaml.unvala |> List.map extract_deriving0 |> List.concat in
+      let ll = derivings |> List.map (fun (na, options) ->
+      if not (is_registered_plugin na) then
+        if List.mem_assoc "optional" options &&
+           Reloc.eq_expr <:expr< True >> (List.assoc "optional" options) then []
+        else failwith (Printf.sprintf "Pa_deriving.str_item: missing but mandatory plugin %s" na)
+      else
+        let pi = Registry.get na in
+        let arg = Ctxt.add_options arg pi.PI.default_options in
+        let arg = Ctxt.add_options arg options in
+          [registered_str_item (na,pi) arg z]) in
       let l = List.concat ll in
       let z =
         let (last, tdl) = sep_last tdl in
@@ -203,13 +208,21 @@ let ef = EF.{ (ef) with
 let ef = EF.{ (ef) with
             sig_item = extfun ef.sig_item with [
     <:sig_item:< type $_flag:_$ $list:tdl$ >> as z
-    when  List.exists is_registered_deriving (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
+    when 1 = count is_deriving_attribute (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
     fun arg ->
-      let attrs = Pcaml.unvala (fst (sep_last tdl)).tdAttributes in
-      let ll = plugin_registry.val |> List.map (fun (name, pi) ->
-        if List.exists (is_deriving name) attrs then
-          [registered_sig_item arg pi z]
-        else []) in
+      let last_td = fst (sep_last tdl) in
+      let attrs = last_td.tdAttributes in
+      let derivings = attrs |> Pcaml.unvala |> List.map extract_deriving0 |> List.concat in
+      let ll = derivings |> List.map (fun (na, options) ->
+      if not (is_registered_plugin na) then
+        if List.mem_assoc "optional" options &&
+           Reloc.eq_expr <:expr< True >> (List.assoc "optional" options) then []
+        else failwith (Printf.sprintf "Pa_deriving.str_item: missing but mandatory plugin %s" na)
+      else
+        let pi = Registry.get na in
+        let arg = Ctxt.add_options arg pi.PI.default_options in
+        let arg = Ctxt.add_options arg options in
+          [registered_sig_item (na,pi) arg z]) in
       let l = List.concat ll in
       Some <:sig_item< declare $list:[z :: l ]$ end >>
   ] } in

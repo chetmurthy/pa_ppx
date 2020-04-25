@@ -318,7 +318,7 @@ let test_nostrict _ctxt =
                (Result.Ok { nostrict_field = 42 })
                (nostrict_of_yojson (`Assoc ["nostrict_field", (`Int 42);
                                             "some_other_field", (`Int 43)]))
-
+(*
 module Opentype :
   sig
     type 'a opentype = .. [@@deriving yojson]
@@ -352,7 +352,7 @@ let test_opentype _ctxt =
   assert_roundtrip pp_ot to_yojson of_yojson
                    (C (Opentype.A 42, 1.2)) "[\"C\", [\"A\", 42], 1.2]"
 
-
+*)
 (* This will fail at type-check if we introduce features that increase
    the default generated signatures. It is representative of user code
    (there is plenty in OPAM) that uses our generated signatures, but
@@ -533,7 +533,9 @@ let suite = "Test ppx_yojson" >::: [
     "test_custom"    >:  CustomConversions.suite;
     "test_shortcut"  >:: test_shortcut;
     "test_nostrict"  >:: test_nostrict;
+(*
     "test_opentype"  >:: test_opentype;
+*)
     "test_recursive" >:: test_recursive;
     "test_int_redefined" >:: test_int_redefined;
   ]

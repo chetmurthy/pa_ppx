@@ -175,7 +175,7 @@ value str_item_gen_make0 arg td =
 
 value loc_of_type_decl td = fst (Pcaml.unvala td.tdNam) ;
 
-value str_item_gen_make arg = fun [
+value str_item_gen_make name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->
     let loc = loc_of_type_decl (List.hd tdl) in
     let l = List.concat (List.map (str_item_gen_make0 arg) tdl) in
@@ -190,7 +190,7 @@ value sig_item_gen_make0 arg td =
   sig_item_funs arg tyname params tk
 ;
 
-value sig_item_gen_make arg = fun [
+value sig_item_gen_make name arg = fun [
   <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
     let loc = loc_of_type_decl (List.hd tdl) in
     let l = List.concat (List.map (sig_item_gen_make0 arg) tdl) in
