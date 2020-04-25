@@ -474,7 +474,7 @@ module Test_recursive_polyvariant = struct
       [@@deriving of_yojson]
   type c = [ a | b | `D of b list]
       [@@deriving of_yojson]
-  let c_of_yojson yj : c Ppx_deriving_yojson_runtime.error_or = c_of_yojson yj
+  let c_of_yojson yj : (c, string) Result.t  = c_of_yojson yj
 end
 
 type 'a recursive1 = { lhs : string ; rhs : 'a }

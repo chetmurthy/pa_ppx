@@ -25,13 +25,13 @@ module Ctxt = struct
     value is_plugin_name ctxt s = (s = plugin_name ctxt) ;
 end ;
 
-type attrmod_t = [ Nobuiltin ] ;
-
-
 value tuplepatt loc l = if List.length l = 1 then List.hd l else <:patt< ( $list:l$ ) >> ;
 value tupleexpr loc l = if List.length l = 1 then List.hd l else <:expr< ( $list:l$ ) >> ;
 
 module To = struct
+
+type attrmod_t = [ Nobuiltin ] ;
+
 value to_yojson_fname arg tyname =
   if tyname = "t" then "to_yojson"
   else tyname^"_to_yojson"
@@ -43,6 +43,7 @@ value to_expression arg ~{msg} param_map ty0 =
   <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
   let fname = to_yojson_fname arg lid in
   <:expr< $lid:fname$ >>
+
 | <:ctyp:< _ >> -> <:expr< let open Fmt in (const string "_") >>
 | <:ctyp:< Yojson.Safe.t >> -> <:expr< fun x -> x >>
 | <:ctyp:< unit >> -> <:expr< fun () -> `Null >>
@@ -64,12 +65,15 @@ value to_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
+| <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "to_yojson" ->
+    e
+
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
 
 | <:ctyp:< list $ty$ >> ->
   let fmt1 = fmtrec ty in
   <:expr< fun x ->
-        `List (List.map $fmt1$ x) >>
+        `List (safe_map $fmt1$ x) >>
 
 | <:ctyp:< array $ty$ >> ->
   let fmt1 = fmtrec ty in
@@ -210,6 +214,7 @@ value str_item_top_funs arg (loc, tyname) param_map ty =
   let tyname = Pcaml.unvala tyname in
   let to_yojsonfname = to_yojson_fname arg tyname in
   let to_e = fmt_to_top arg ~{msg=Printf.sprintf "to_yojson.%s" tyname} param_map ty in
+  let to_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $to_e$ >> in
   let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
   (to_yojsonfname, Expr.abstract_over paramfun_patts
      <:expr< fun arg -> $to_e$ arg >>)
@@ -228,6 +233,9 @@ end
 ;
 
 module Of = struct
+
+type attrmod_t = [ Nobuiltin ] ;
+
 value of_yojson_fname arg tyname =
   if tyname = "t" then "of_yojson"
   else tyname^"_of_yojson"
@@ -286,6 +294,9 @@ value of_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
+
+| <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "of_yojson" ->
+    e
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
 
@@ -494,6 +505,7 @@ value str_item_top_funs arg (loc, tyname) param_map ty =
   let tyname = Pcaml.unvala tyname in
   let of_yojsonfname = of_yojson_fname arg tyname in
   let of_e = fmt_of_top arg ~{msg=Printf.sprintf "of_yojson.%s" tyname} param_map ty in
+  let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $of_e$ >> in
   let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
   (of_yojsonfname, Expr.abstract_over paramfun_patts
      <:expr< fun arg -> $of_e$ arg >>)
@@ -617,6 +629,7 @@ value expr_yojson arg = fun [
     let loc = loc_of_ctyp ty in
     let param_map = build_param_map ty in
     let e = To.fmt_to_top arg ~{msg="to_yojson"} param_map ty in
+    let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
     let parampats = List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map in
     Expr.abstract_over parampats e
 
@@ -624,6 +637,7 @@ value expr_yojson arg = fun [
     let loc = loc_of_ctyp ty in
     let param_map = build_param_map ty in
     let e = Of.fmt_of_top ~{msg="of_yojson"} arg param_map ty in
+    let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
     let parampats = List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map in
     Expr.abstract_over parampats e
 | _ -> assert False ]
@@ -634,7 +648,7 @@ Pa_deriving.(Registry.add PI.{
 ; alternates = ["to_yojson"; "of_yojson"]
 ; options = ["optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
-; alg_attributes = ["nobuiltin"; "key"; "name"; "encodin"; "default"]
+; alg_attributes = ["nobuiltin"; "key"; "name"; "encodin"; "default"; "to_yojson"; "of_yojson"]
 ; expr_extensions = ["to_yojson"; "of_yojson"]
 ; expr = expr_yojson
 ; str_item = str_item_gen_yojson

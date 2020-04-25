@@ -12,6 +12,8 @@ test_deriving_fold.cmo :
 test_deriving_fold.cmx :
 test_deriving_iter.cmo :
 test_deriving_iter.cmx :
+test_deriving_make.cmo :
+test_deriving_make.cmx :
 test_deriving_map.cmo :
 test_deriving_map.cmx :
 test_deriving_ord.cmo :
@@ -46,6 +48,8 @@ test_ppx_import.cmo : \
 test_ppx_import.cmx : \
     test_self_import.cmx \
     stuff.cmx
+test_ppx_yojson.cmo :
+test_ppx_yojson.cmx :
 test_self_import.cmo : \
     test_self_import.cmi
 test_self_import.cmx : \

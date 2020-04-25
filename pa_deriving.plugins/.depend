@@ -6,9 +6,13 @@ pa_deriving_fold.cmo :
 pa_deriving_fold.cmx :
 pa_deriving_iter.cmo :
 pa_deriving_iter.cmx :
+pa_deriving_make.cmo :
+pa_deriving_make.cmx :
 pa_deriving_map.cmo :
 pa_deriving_map.cmx :
 pa_deriving_ord.cmo :
 pa_deriving_ord.cmx :
 pa_deriving_show.cmo :
 pa_deriving_show.cmx :
+pa_deriving_yojson.cmo :
+pa_deriving_yojson.cmx :
