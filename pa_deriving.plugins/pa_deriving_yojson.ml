@@ -38,8 +38,8 @@ value to_expression arg ~{msg} param_map ty0 =
   <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
   let fname = to_yojson_fname arg lid in
   <:expr< $lid:fname$ >>
-
 | <:ctyp:< _ >> -> <:expr< let open Fmt in (const string "_") >>
+| <:ctyp:< Yojson.Safe.t >> -> <:expr< fun x -> x >>
 | <:ctyp:< unit >> -> <:expr< fun () -> `Null >>
 | <:ctyp:< int >> -> <:expr< fun x -> `Int x >>
 | <:ctyp:< bool >> -> <:expr< fun x -> `Bool x >>
@@ -201,6 +201,7 @@ value of_expression arg ~{msg} param_map ty0 =
   <:expr< $lid:fname$ >>
 
 | <:ctyp:< _ >> -> <:expr< let open Fmt in (const string "_") >>
+| <:ctyp:< Yojson.Safe.t >> -> <:expr< fun x -> Result.Ok x >>
 | <:ctyp:< unit >> -> <:expr< fun [ `Null -> Result.Ok () | _ -> Result.Error $str:msg$ ] >>
 | <:ctyp:< int >> -> <:expr< fun [`Int x -> Result.Ok x | _ -> Result.Error $str:msg$ ] >>
 | <:ctyp:< bool >> -> <:expr< fun [
@@ -252,7 +253,7 @@ value of_expression arg ~{msg} param_map ty0 =
   let fmt1 = fmtrec ty in
   <:expr< fun [
         `List xs ->
-          Ppxutil.map_bind
+          Pa_ppx_runtime.map_bind
             $fmt1$ [] xs
       | _ -> Result.Error $str:msg$ ] >>
 
@@ -260,7 +261,7 @@ value of_expression arg ~{msg} param_map ty0 =
   let fmt1 = fmtrec ty in
   <:expr< fun [
         `List xs ->
-          Rresult.R.bind (Ppxutil.map_bind
+          Rresult.R.bind (Pa_ppx_runtime.map_bind
              $fmt1$ [] xs)
              (fun x -> Result.Ok (Array.of_list x))
       | _ -> Result.Error $str:msg$ ] >>

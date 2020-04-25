@@ -7,7 +7,6 @@
 
 open Asttools;
 open MLast;
-open Rresult.R ;
 
 value fst3 (a,_,_) = a ;
 value snd3 (_,b,_) = b ;
@@ -167,10 +166,3 @@ value rec is_generative_type t =
   | _ -> False ] 
 ;
 
-
-value rec map_bind f acc xs =
-  match xs with [
-    [x :: xs] -> f x >>= fun x -> map_bind f [x :: acc] xs
-  | [] -> Result.Ok (List.rev acc) ]
-;
-    
