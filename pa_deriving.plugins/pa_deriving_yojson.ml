@@ -15,15 +15,14 @@ open Surveil ;
 module Ctxt = struct
   include Pa_passthru.Ctxt ;
 
-value has_direction ctxt d  =
-  match option ctxt "direction" with [
-    <:expr< $str:d0$ >> when d = d0 -> True
-  | <:expr< $str:d0$ >> when d <> d0 -> False
-  | _ -> True
-  | exception Failure _ -> True
-  ]
-;
-
+  value plugin_name ctxt = do {
+    assert (List.mem_assoc "plugin_name" ctxt.options) ;
+    match List.assoc "plugin_name" ctxt.options with [
+      <:expr< $str:na$ >> -> na
+    | _ -> assert False
+    ]}
+    ;
+    value is_plugin_name ctxt s = (s = plugin_name ctxt) ;
 end ;
 
 value to_yojson_fname arg tyname =
@@ -469,41 +468,56 @@ value fmt_of_top arg ~{msg} params = fun [
 
 value str_item_top_funs arg (loc, tyname) param_map ty =
   let tyname = Pcaml.unvala tyname in
-  let (to_fname, to_exp) =
-    let to_yojsonfname = to_yojson_fname arg tyname in
-    let to_e = fmt_to_top arg ~{msg=Printf.sprintf "to_yojson.%s" tyname} param_map ty in
-    let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
-    (to_yojsonfname, Expr.abstract_over paramfun_patts
-       <:expr< fun arg -> $to_e$ arg >>) in
 
-  let (of_fname, of_exp) =
+  let rv = [] in
+  let rv =
+    if Ctxt.is_plugin_name arg "yojson" || Ctxt.is_plugin_name arg "to_yojson" then
+      let to_yojsonfname = to_yojson_fname arg tyname in
+      let to_e = fmt_to_top arg ~{msg=Printf.sprintf "to_yojson.%s" tyname} param_map ty in
+      let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
+      let e = (to_yojsonfname, Expr.abstract_over paramfun_patts
+               <:expr< fun arg -> $to_e$ arg >>) in
+      rv @ [e]
+    else rv in
+
+  let rv =
+    if Ctxt.is_plugin_name arg "yojson" || Ctxt.is_plugin_name arg "of_yojson" then
     let of_yojsonfname = of_yojson_fname arg tyname in
     let of_e = fmt_of_top arg ~{msg=Printf.sprintf "of_yojson.%s" tyname} param_map ty in
     let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
-    (of_yojsonfname, Expr.abstract_over paramfun_patts
+    let e = (of_yojsonfname, Expr.abstract_over paramfun_patts
        <:expr< fun arg -> $of_e$ arg >>) in
-  [(to_fname, to_exp); (of_fname, of_exp)]
+    rv @ [e]
+    else rv in
+  rv
 ;
 
 value sig_item_top_funs arg (loc, tyname) param_map ty =
   let tyname = Pcaml.unvala tyname in
 
-  let (to_fname, to_type) =
-    let to_yojsonfname = to_yojson_fname arg tyname in
-    let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
-    let argfmttys = List.map (fun pty -> <:ctyp< $pty$ -> Yojson.Safe.t >>) paramtys in  
-    let ty = <:ctyp< $lid:tyname$ >> in
-    let toftype = Ctyp.arrows_list loc argfmttys <:ctyp< $(Ctyp.applist ty paramtys)$ -> Yojson.Safe.t >> in
-    (to_yojsonfname, toftype) in
+  let rv = [] in
+  let rv =
+    if Ctxt.is_plugin_name arg "yojson" || Ctxt.is_plugin_name arg "to_yojson" then
+      let to_yojsonfname = to_yojson_fname arg tyname in
+      let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
+      let argfmttys = List.map (fun pty -> <:ctyp< $pty$ -> Yojson.Safe.t >>) paramtys in  
+      let ty = <:ctyp< $lid:tyname$ >> in
+      let toftype = Ctyp.arrows_list loc argfmttys <:ctyp< $(Ctyp.applist ty paramtys)$ -> Yojson.Safe.t >> in
+      let e = (to_yojsonfname, toftype) in
+      rv @ [e]
+    else rv in
 
-  let (of_fname, of_type) =
-    let of_yojsonfname = of_yojson_fname arg tyname in
-    let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
-    let argfmttys = List.map (fun pty -> <:ctyp< Yojson.Safe.t -> Rresult.result $pty$ string >>) paramtys in  
-    let ty = <:ctyp< $lid:tyname$ >> in
-    let offtype = Ctyp.arrows_list loc argfmttys <:ctyp< Yojson.Safe.t -> Rresult.result $(Ctyp.applist ty paramtys)$ string >> in
-    (of_yojsonfname, offtype) in
-    [(of_fname, of_type); (to_fname, to_type)]
+  let rv =
+    if Ctxt.is_plugin_name arg "yojson" || Ctxt.is_plugin_name arg "of_yojson" then
+      let of_yojsonfname = of_yojson_fname arg tyname in
+      let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
+      let argfmttys = List.map (fun pty -> <:ctyp< Yojson.Safe.t -> Rresult.result $pty$ string >>) paramtys in  
+      let ty = <:ctyp< $lid:tyname$ >> in
+      let offtype = Ctyp.arrows_list loc argfmttys <:ctyp< Yojson.Safe.t -> Rresult.result $(Ctyp.applist ty paramtys)$ string >> in
+      let e = (of_yojsonfname, offtype) in
+      rv @ [e]
+    else rv in
+  rv
 ;
 
 value str_item_funs arg ((loc,_) as tyname) params ty =

@@ -186,6 +186,7 @@ let ef = EF.{ (ef) with
         let pi = Registry.get na in
         let arg = Ctxt.add_options arg pi.PI.default_options in
         let arg = Ctxt.add_options arg options in
+        let arg = Ctxt.add_options arg [("plugin_name", <:expr< $str:na$ >>)] in
           [registered_str_item (na,pi) arg z]) in
       let l = List.concat ll in
       let z =
@@ -222,6 +223,7 @@ let ef = EF.{ (ef) with
         let pi = Registry.get na in
         let arg = Ctxt.add_options arg pi.PI.default_options in
         let arg = Ctxt.add_options arg options in
+        let arg = Ctxt.add_options arg [("plugin_name", <:expr< $str:na$ >>)] in
           [registered_sig_item (na,pi) arg z]) in
       let l = List.concat ll in
       Some <:sig_item< declare $list:[z :: l ]$ end >>
