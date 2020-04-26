@@ -71,7 +71,7 @@ value to_expression arg ~{msg} param_map ty0 =
   let fname = to_yojson_fname arg lid in
   <:expr< $lid:fname$ >>
 
-| <:ctyp:< _ >> -> <:expr< let open Fmt in (const string "_") >>
+| <:ctyp:< _ >> -> failwith "cannot derive yojson for type <<_>>"
 | <:ctyp:< Yojson.Safe.t >> -> <:expr< fun x -> x >>
 | <:ctyp:< unit >> -> <:expr< fun () -> `Null >>
 | <:ctyp:< int >> -> <:expr< fun x -> `Int x >>
@@ -113,24 +113,11 @@ value to_expression arg ~{msg} param_map ty0 =
   let fmt1 = fmtrec ty in
   <:expr< fun x -> $fmt1$ x.val >>
 
-| <:ctyp:< lazy_t $ty$ >> ->
-  let fmt1 = fmtrec ty in
-  <:expr< fun (ofmt : Format.formatter) arg ->
-    if Lazy.is_val arg then
-      $fmt1$ ofmt (Lazy.force arg)
-    else let open Fmt in (const string "<not evaluated>") ofmt () >>
-
 | <:ctyp:< option $ty$ >> ->
   let fmt1 = fmtrec ty in
   <:expr< fun [
         None -> `Null
       | Some x -> $fmt1$ x ] >>
-
-| (<:ctyp:< result $ty1$ $ty2$ >> | <:ctyp:< Result.result $ty1$ $ty2$ >>) ->
-  <:expr< fun ofmt -> fun [
-          Result.Ok ok -> let open Fmt in (pf ofmt "(Ok %a)" $(fmtrec ty1)$ ok)
-        | Result.Error e -> let open Fmt in (pf ofmt "(Error %a)" $(fmtrec ty2)$ e)
-      ] >>
 
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 
@@ -306,7 +293,6 @@ value of_expression arg ~{msg} param_map ty0 =
   let fname = of_yojson_fname arg lid in
   <:expr< $lid:fname$ >>
 
-| <:ctyp:< _ >> -> <:expr< let open Fmt in (const string "_") >>
 | <:ctyp:< Yojson.Safe.t >> -> <:expr< fun x -> Result.Ok x >>
 | <:ctyp:< unit >> -> <:expr< fun [ `Null -> Result.Ok () | _ -> Result.Error $str:msg$ ] >>
 | <:ctyp:< int >> -> <:expr< fun [`Int x -> Result.Ok x | _ -> Result.Error $str:msg$ ] >>
@@ -380,26 +366,12 @@ value of_expression arg ~{msg} param_map ty0 =
   <:expr< fun x ->
         Rresult.R.bind ($fmt1$ x) (fun x -> Result.Ok (ref x)) >>
 
-| <:ctyp:< lazy_t $ty$ >> ->
-  let fmt1 = fmtrec ty in
-  <:expr< fun (ofmt : Format.formatter) arg ->
-    if Lazy.is_val arg then
-      $fmt1$ ofmt (Lazy.force arg)
-    else let open Fmt in (const string "<not evaluated>") ofmt () >>
-
 | <:ctyp:< option $ty$ >> ->
   let fmt1 = fmtrec ty in
   <:expr< (fun [
         `Null -> Result.Ok None
       | x ->
           Result.bind ($fmt1$ x) (fun x -> Result.Ok (Some x)) ]) >>
-
-| (<:ctyp:< result $ty1$ $ty2$ >> | <:ctyp:< Result.result $ty1$ $ty2$ >>) ->
-  <:expr< fun ofmt -> fun [
-          Result.Ok ok -> let open Fmt in (pf ofmt "(Ok %a)" $(fmtrec ty1)$ ok)
-        | Result.Error e -> let open Fmt in (pf ofmt "(Error %a)" $(fmtrec ty2)$ e)
-      ] >>
-
 
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 
