@@ -149,15 +149,21 @@ value to_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, None, _) ->
+    (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
     let cid = Pcaml.unvala cid in
+    let jscid = match extract_allowed_attribute_expr arg "name" (Pcaml.unvala attrs) with [
+      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
+    ] in
     let (recpat, body) = fmt_record loc arg (Pcaml.unvala fields) in
 
     let conspat = <:patt< $uid:cid$ $recpat$ >> in
-    (conspat, <:vala< None >>, body)
+    (conspat, <:vala< None >>, <:expr< `List [ (`String $str:jscid$) ;  $body$ ] >>)
 
   | (loc, cid, tyl, None, attrs) ->
     let cid = Pcaml.unvala cid in
+    let jscid = match extract_allowed_attribute_expr arg "name" (Pcaml.unvala attrs) with [
+      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
+    ] in
     let tyl = Pcaml.unvala tyl in
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
@@ -168,7 +174,7 @@ value to_expression arg ~{msg} param_map ty0 =
     let liste = List.fold_right2 (fun f v liste -> <:expr< [$f$ $lid:v$ :: $liste$] >>)
         fmts vars <:expr< [] >> in
 
-    (conspat, <:vala< None >>, <:expr< `List [ (`String $str:cid$) :: $liste$ ] >>)
+    (conspat, <:vala< None >>, <:expr< `List [ (`String $str:jscid$) :: $liste$ ] >>)
 
   | (_, _, _, Some _, _) -> assert False
   ]) l in
@@ -176,18 +182,31 @@ value to_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< [= $list:l$ ] >> ->
   let branches = List.map (fun [
-    PvTag loc cid _ tyl _ ->
+    PvTag loc cid _ tyl attrs -> do {
     let cid = Pcaml.unvala cid in
+    let jscid = match extract_allowed_attribute_expr arg "name" (Pcaml.unvala attrs) with [
+      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
+    ] in
     let tyl = Pcaml.unvala tyl in
+    assert (List.length tyl <= 1) ;
+    let tyl = match tyl with [
+      [] -> []
+    | [<:ctyp< ( $list:l$ ) >>] -> l
+    | [t] -> [t]
+    | [_::_] -> assert False ] in
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
     let fmts = List.map fmtrec tyl in
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
-    let conspat = List.fold_left (fun p vp -> <:patt< $p$ $vp$ >>)
-        <:patt< ` $cid$ >> varpats in
+    let conspat = if varpats = [] then
+        <:patt< ` $cid$ >>
+      else
+        let tuplepat = tuplepatt loc varpats in
+        <:patt< ` $cid$ $tuplepat$ >> in
     let liste = List.fold_right2 (fun f v liste -> <:expr< [$f$ $lid:v$ :: $liste$] >>)
         fmts vars <:expr< [] >> in
-    let liste = <:expr< `List [`String $str:cid$ :: $liste$] >> in
+    let liste = <:expr< `List [`String $str:jscid$ :: $liste$] >> in
     (conspat, <:vala< None >>, liste)
+  }
 
   | PvInh _ ty ->
     let lili = match fst (Ctyp.unapplist ty) with [
@@ -216,17 +235,26 @@ value to_expression arg ~{msg} param_map ty0 =
 | [%unmatched_vala] -> failwith "pa_deriving_yojson.to_expression"
 ]
 and fmt_record loc arg fields = 
-  let labels_vars_fmts_defaults = List.map (fun (_, fname, _, ty, attrs) ->
+  let labels_vars_fmts_defaults_jskeys = List.map (fun (_, fname, _, ty, attrs) ->
         let ty = ctyp_wrap_attrs ty (Pcaml.unvala attrs) in
         let attrs = snd(Ctyp.unwrap_attrs ty) in
         let default = extract_allowed_attribute_expr arg "default" attrs in
-        (fname, Printf.sprintf "v_%s" fname, fmtrec ty, default)) fields in
+        let key = extract_allowed_attribute_expr arg "key" attrs in
+        let jskey = match key with [
+          Some <:expr< $str:k$ >> -> k
+        | Some _ -> failwith "@key attribute without string payload"
+        | None -> fname ] in
+        (fname, Printf.sprintf "v_%s" fname, fmtrec ty, default, jskey)) fields in
 
-  let liste = List.fold_right (fun (f,v,fmtf,_) rhs ->
-      <:expr< let fields = $rhs$ in
-              [($str:f$, $fmtf$ $lid:v$) :: fields ] >>) labels_vars_fmts_defaults <:expr< [] >> in
+  let liste = List.fold_right (fun (f,v,fmtf,dflt, jskey) rhs ->
+      match dflt with [
+        Some d -> <:expr< let fields = if $lid:v$ = $d$ then fields
+                           else [($str:jskey$, $fmtf$ $lid:v$) :: fields ] in $rhs$ >>
+      | None -> <:expr< let fields = [($str:jskey$, $fmtf$ $lid:v$) :: fields ] in $rhs$ >>
+      ]) (List.rev labels_vars_fmts_defaults_jskeys) <:expr< fields >> in
+  let liste = <:expr< let fields = [] in $liste$ >> in
 
-  let pl = List.map (fun (f, v, _, _) -> (<:patt< $lid:f$ >>, <:patt< $lid:v$ >>)) labels_vars_fmts_defaults in
+  let pl = List.map (fun (f, v, _, _, _) -> (<:patt< $lid:f$ >>, <:patt< $lid:v$ >>)) labels_vars_fmts_defaults_jskeys in
   (<:patt< { $list:pl$ } >>, <:expr< `Assoc $liste$ >>)
 
 in fmtrec ty0
@@ -390,15 +418,21 @@ value of_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, None, _) ->
+    (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
     let cid = Pcaml.unvala cid in
+    let jscid = match extract_allowed_attribute_expr arg "name" (Pcaml.unvala attrs) with [
+      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
+    ] in
     let (recpat, body) = fmt_record ~{cid=Some cid} loc arg (Pcaml.unvala fields) in
 
-    let conspat = <:patt< `List [ `String $str:cid$ ; $recpat$ ] >> in
+    let conspat = <:patt< `List [ `String $str:jscid$ ; $recpat$ ] >> in
     (conspat, <:vala< None >>, body)
 
   | (loc, cid, tyl, None, attrs) ->
     let cid = Pcaml.unvala cid in
+    let jscid = match extract_allowed_attribute_expr arg "name" (Pcaml.unvala attrs) with [
+      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
+    ] in
     let tyl = Pcaml.unvala tyl in
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
     let varexps = List.map (fun v -> <:expr< $lid:v$ >>) vars in
@@ -406,7 +440,7 @@ value of_expression arg ~{msg} param_map ty0 =
 
     let conspat = List.fold_right (fun v rhs -> <:patt< [ $lid:v$ :: $rhs$ ] >>)
         vars <:patt< [] >> in
-    let conspat = <:patt< `List [ (`String $str:cid$) :: $conspat$ ] >> in
+    let conspat = <:patt< `List [ (`String $str:jscid$) :: $conspat$ ] >> in
 
     let consexp = Expr.applist <:expr< $uid:cid$ >> varexps in
     let consexp = <:expr< Result.Ok $consexp$ >> in
@@ -422,24 +456,38 @@ value of_expression arg ~{msg} param_map ty0 =
   let branches = branches @ [catch_branch] in
   <:expr< fun [ $list:branches$ ] >>
 
-| <:ctyp:< [= $list:l$ ] >> as ty0 ->
+| <:ctyp:< [= $list:l$ ] >> as ty0 -> 
   let branches = List.map (fun [
-    PvTag loc cid _ tyl _ ->
+    PvTag loc cid _ tyl attrs -> do {
     let cid = Pcaml.unvala cid in
+    let jscid = match extract_allowed_attribute_expr arg "name" (Pcaml.unvala attrs) with [
+      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
+    ] in
     let tyl = Pcaml.unvala tyl in
+    assert (List.length tyl <= 1) ;
+    let tyl = match tyl with [
+      [] -> []
+    | [<:ctyp< ( $list:l$ ) >>] -> l
+    | [t] -> [t]
+    | [_::_] -> assert False ] in
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
     let fmts = List.map fmtrec tyl in
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
     let listpat = List.fold_right (fun vp listpat -> <:patt< [ $vp$ :: $listpat$ ] >>)
         varpats <:patt< [] >> in
-    let conspat = <:patt< `List [(`String $str:cid$) :: $listpat$] >> in
-    let consexp = List.fold_left (fun e v -> <:expr< $e$ $lid:v$ >>)
-        <:expr< ` $cid$ >> vars in
+    let conspat = <:patt< `List [(`String $str:jscid$) :: $listpat$] >> in
+    let consexp = if List.length vars = 0 then
+        <:expr< ` $cid$ >>
+      else
+        let varexps = List.map (fun v -> <:expr< $lid:v$ >>) vars in
+        let tup = tupleexpr loc varexps in
+        <:expr< ` $cid$ $tup$ >> in
     let consexp = <:expr< Result.Ok $consexp$ >> in
     let unmarshe = List.fold_right2 (fun fmte v rhs ->
         <:expr< Rresult.R.bind ($fmte$ $lid:v$) (fun $lid:v$ -> $rhs$) >>) fmts vars consexp in
 
     Left (conspat, <:vala< None >>, unmarshe)
+  }
 
   | PvInh _ ty ->
     let fmtf = fmtrec ty in
@@ -481,33 +529,38 @@ value of_expression arg ~{msg} param_map ty0 =
 | [%unmatched_vala] -> failwith "pa_deriving_yojson.of_expression"
 ]
 and fmt_record ~{cid} loc arg fields = 
-  let labels_vars_fmts_defaults = List.map (fun (_, fname, _, ty, attrs) ->
+  let labels_vars_fmts_defaults_jskeys = List.map (fun (_, fname, _, ty, attrs) ->
         let ty = ctyp_wrap_attrs ty (Pcaml.unvala attrs) in
         let attrs = snd(Ctyp.unwrap_attrs ty) in
         let default = extract_allowed_attribute_expr arg "default" attrs in
-        (fname, Printf.sprintf "v_%s" fname, fmtrec ty, default)) fields in
+        let key = extract_allowed_attribute_expr arg "key" attrs in
+        let jskey = match key with [
+          Some <:expr< $str:k$ >> -> k
+        | Some _ -> failwith "@key attribute without string payload"
+        | None -> fname ] in
+        (fname, Printf.sprintf "v_%s" fname, fmtrec ty, default, jskey)) fields in
 
   let varrow_except (i,iexp) =
-    List.mapi (fun j (f,v,fmt,_) ->
+    List.mapi (fun j (f,v,fmt,_,_) ->
         if i <> j then <:expr< $lid:v$ >> else iexp)
-      labels_vars_fmts_defaults in
+      labels_vars_fmts_defaults_jskeys in
 
-  let branch1 i (f, v, fmt,_) =
+  let branch1 i (f, v, fmt,_, jskey) =
     let l = varrow_except (i, <:expr< $fmt$ $lid:v$ >>) in
     let cons1exp = tupleexpr loc l in
-    (<:patt< [($str:f$, $lid:v$) :: xs] >>, <:vala< None >>,
+    (<:patt< [($str:jskey$, $lid:v$) :: xs] >>, <:vala< None >>,
      <:expr< loop xs $cons1exp$ >>) in
 
-  let branches = List.mapi branch1 labels_vars_fmts_defaults in
+  let branches = List.mapi branch1 labels_vars_fmts_defaults_jskeys in
 
   let finish_branch =
     let recexp =
-      let lel = List.map (fun (f,v,_,_) -> (<:patt< $lid:f$ >>, <:expr< $lid:v$ >>)) labels_vars_fmts_defaults in
+      let lel = List.map (fun (f,v,_,_,_) -> (<:patt< $lid:f$ >>, <:expr< $lid:v$ >>)) labels_vars_fmts_defaults_jskeys in
       <:expr< { $list:lel$ } >> in
     let consexp = match cid with [ None -> recexp | Some cid -> <:expr< $uid:cid$ $recexp$ >> ] in
     let consexp = <:expr< Result.Ok $consexp$ >> in
-    let e = List.fold_right (fun (_,v,_,_) rhs -> 
-        <:expr< Rresult.R.bind $lid:v$ (fun $lid:v$ -> $rhs$) >>) labels_vars_fmts_defaults consexp in
+    let e = List.fold_right (fun (_,v,_,_,_) rhs -> 
+        <:expr< Rresult.R.bind $lid:v$ (fun $lid:v$ -> $rhs$) >>) labels_vars_fmts_defaults_jskeys consexp in
     (<:patt< [] >>, <:vala< None >>, e) in
 
   let catch_branch =
@@ -516,19 +569,19 @@ and fmt_record ~{cid} loc arg fields =
   else
     let varrow = varrow_except (-1, <:expr< . >>) in
     let cons1exp = tupleexpr loc varrow in
-    (<:patt< [_ :: _] >>, <:vala< None >>, <:expr< loop xs $cons1exp$ >>) in
+    (<:patt< [_ :: xs] >>, <:vala< None >>, <:expr< loop xs $cons1exp$ >>) in
 
   let branches = branches @ [finish_branch; catch_branch] in
 
   let e = 
-    let varpats = List.map (fun (_,v,_,_) -> <:patt< $lid:v$ >>) labels_vars_fmts_defaults in
+    let varpats = List.map (fun (_,v,_,_,_) -> <:patt< $lid:v$ >>) labels_vars_fmts_defaults_jskeys in
     let tuplevars = tuplepatt loc varpats in
-    let initexps = List.map (fun (f,_,_,dflt) ->
+    let initexps = List.map (fun (f,_,_,dflt,_) ->
         match dflt with [
           None ->
           let msg = msg^"."^f in
           <:expr< Result.Error $str:msg$ >>
-        | Some d -> <:expr< Result.Ok $d$ >> ]) labels_vars_fmts_defaults in
+        | Some d -> <:expr< Result.Ok $d$ >> ]) labels_vars_fmts_defaults_jskeys in
     let tupleinit = tupleexpr loc initexps in
     <:expr< let rec loop xs $tuplevars$ = match xs with [ $list:branches$ ]
             in loop xs $tupleinit$ >> in
