@@ -99,8 +99,8 @@ value with_input_file fname f arg =
 
 module PAPR = struct
 module Implem = struct
-value pa strm = let (ast, _) = with_input_file "-" Pcaml.parse_implem.val strm in ast ;
-value pa1 s = let ast = pa (Stream.of_string s) in ast ;
+value pa ?{input_file="-"} strm = let (ast, _) = with_input_file input_file Pcaml.parse_implem.val strm in ast ;
+value pa1 ?{input_file="-"} s = let ast = pa ~{input_file=input_file} (Stream.of_string s) in ast ;
 value pa_all s =
   let strm = Stream.of_string s in
   let rec pall = parser [
