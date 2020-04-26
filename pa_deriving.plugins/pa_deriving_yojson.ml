@@ -761,7 +761,7 @@ Pa_deriving.(Registry.add PI.{
 ; options = ["optional"; "strict"; "exn"]
 ; default_options = let loc = Ploc.dummy in
     [ ("optional", <:expr< False >>); ("strict", <:expr< False >>); ("exn", <:expr< False >>) ]
-; alg_attributes = ["nobuiltin"; "key"; "name"; "encodin"; "default"; "to_yojson"; "of_yojson"]
+; alg_attributes = ["nobuiltin"; "key"; "name"; "encoding"; "default"; "to_yojson"; "of_yojson"]
 ; expr_extensions = ["to_yojson"; "of_yojson"]
 ; expr = expr_yojson
 ; str_item = str_item_gen_yojson
