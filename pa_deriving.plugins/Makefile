@@ -23,6 +23,7 @@ CMO=\
 	pa_deriving_fold.cmo \
 	pa_deriving_make.cmo \
 	pa_deriving_yojson.cmo \
+	pa_deriving_sexp.cmo \
 
 CMI=$(CMO:.cmo=.cmi)
 

@@ -12,6 +12,8 @@ pa_deriving_map.cmo :
 pa_deriving_map.cmx :
 pa_deriving_ord.cmo :
 pa_deriving_ord.cmx :
+pa_deriving_sexp.cmo :
+pa_deriving_sexp.cmx :
 pa_deriving_show.cmo :
 pa_deriving_show.cmx :
 pa_deriving_yojson.cmo :

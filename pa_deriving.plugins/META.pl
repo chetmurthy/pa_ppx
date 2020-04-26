@@ -138,4 +138,17 @@ package "yojson" (
   archive(byte) = "pa_deriving_yojson.cmo"
 )
 
+package "sexp" (
+  requires(syntax,toploop) = "camlp5,pa_ppx_deriving"
+  archive(syntax,toploop) = "pa_deriving_sexp.cmo"
+
+  package "syntax" (
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving.syntax"
+    archive(syntax,preprocessor) = "pa_deriving_sexp.cmo"
+  )
+
+  requires(byte) = "camlp5,pa_ppx_deriving"
+  archive(byte) = "pa_deriving_sexp.cmo"
+)
+
 EOF
