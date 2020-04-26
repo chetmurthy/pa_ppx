@@ -271,7 +271,7 @@ value fmt_to_top arg ~{msg} params = fun [
 value str_item_top_funs arg (loc, tyname) param_map ty =
   let tyname = Pcaml.unvala tyname in
   let to_yojsonfname = to_yojson_fname arg tyname in
-  let to_e = fmt_to_top arg ~{msg=Printf.sprintf "to_yojson.%s" tyname} param_map ty in
+  let to_e = fmt_to_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
   let to_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $to_e$ >> in
   let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
   (to_yojsonfname, Expr.abstract_over paramfun_patts
@@ -603,7 +603,7 @@ value str_item_top_funs arg (loc, tyname) param_map ty =
   let of_yojsonfname = of_yojson_fname arg tyname in
   let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
   let paramfun_exprs = List.map (fun (_,ppf) -> <:expr< $lid:ppf$ >>) param_map in
-  let body = fmt_of_top arg ~{msg=Printf.sprintf "of_yojson.%s" tyname} param_map ty in
+  let body = fmt_of_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
   let e = 
     let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $body$ >> in
     (of_yojsonfname, Expr.abstract_over paramfun_patts
@@ -740,7 +740,7 @@ value expr_yojson arg = fun [
   <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "to_yojson" || id = "derive.to_yojson" ->
     let loc = loc_of_ctyp ty in
     let param_map = build_param_map ty in
-    let e = To.fmt_to_top arg ~{msg="to_yojson"} param_map ty in
+    let e = To.fmt_to_top arg ~{msg=Printf.sprintf "%s.to_yojson"  (Ctxt.module_path_s arg)} param_map ty in
     let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
     let parampats = List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map in
     Expr.abstract_over parampats e
@@ -748,7 +748,7 @@ value expr_yojson arg = fun [
 | <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "of_yojson" || id = "derive.of_yojson" ->
     let loc = loc_of_ctyp ty in
     let param_map = build_param_map ty in
-    let e = Of.fmt_of_top ~{msg="of_yojson"} arg param_map ty in
+    let e = Of.fmt_of_top ~{msg=Printf.sprintf "%s.of_yojson"  (Ctxt.module_path_s arg)} arg param_map ty in
     let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
     let parampats = List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map in
     Expr.abstract_over parampats e
