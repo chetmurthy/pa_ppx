@@ -46,6 +46,15 @@ end ;
 value tuplepatt loc l = if List.length l = 1 then List.hd l else <:patt< ( $list:l$ ) >> ;
 value tupleexpr loc l = if List.length l = 1 then List.hd l else <:expr< ( $list:l$ ) >> ;
 
+value extract_allowed_attribute_expr arg attrna attrs =
+  match try_find (fun a -> match Pcaml.unvala a with [ <:attribute_body< $attrid:id$ $exp:e$ ; >>
+                   when id = DC.allowed_attribute (DC.get arg) "yojson" attrna ->
+                   e
+                 | _ -> failwith "extract_allowed_attribute_expr" ]) attrs with [
+    e -> Some e
+  | exception Failure _ -> None ]
+;
+
 module To = struct
 
 type attrmod_t = [ Nobuiltin ] ;
@@ -207,14 +216,17 @@ value to_expression arg ~{msg} param_map ty0 =
 | [%unmatched_vala] -> failwith "pa_deriving_yojson.to_expression"
 ]
 and fmt_record loc arg fields = 
-  let labels_vars_fmts = List.map (fun (_, fname, _, ty, attrs) ->
+  let labels_vars_fmts_defaults = List.map (fun (_, fname, _, ty, attrs) ->
         let ty = ctyp_wrap_attrs ty (Pcaml.unvala attrs) in
-        (fname, Printf.sprintf "v_%s" fname, fmtrec ty)) fields in
+        let attrs = snd(Ctyp.unwrap_attrs ty) in
+        let default = extract_allowed_attribute_expr arg "default" attrs in
+        (fname, Printf.sprintf "v_%s" fname, fmtrec ty, default)) fields in
 
-  let liste = List.fold_right (fun (f,v,fmtf) rhs ->
-      <:expr< [($str:f$, $fmtf$ $lid:v$) :: $rhs$ ] >>) labels_vars_fmts <:expr< [] >> in
+  let liste = List.fold_right (fun (f,v,fmtf,_) rhs ->
+      <:expr< let fields = $rhs$ in
+              [($str:f$, $fmtf$ $lid:v$) :: fields ] >>) labels_vars_fmts_defaults <:expr< [] >> in
 
-  let pl = List.map (fun (f, v, _) -> (<:patt< $lid:f$ >>, <:patt< $lid:v$ >>)) labels_vars_fmts in
+  let pl = List.map (fun (f, v, _, _) -> (<:patt< $lid:f$ >>, <:patt< $lid:v$ >>)) labels_vars_fmts_defaults in
   (<:patt< { $list:pl$ } >>, <:expr< `Assoc $liste$ >>)
 
 in fmtrec ty0
@@ -469,46 +481,57 @@ value of_expression arg ~{msg} param_map ty0 =
 | [%unmatched_vala] -> failwith "pa_deriving_yojson.of_expression"
 ]
 and fmt_record ~{cid} loc arg fields = 
-  let labels_vars_fmts = List.map (fun (_, fname, _, ty, attrs) ->
+  let labels_vars_fmts_defaults = List.map (fun (_, fname, _, ty, attrs) ->
         let ty = ctyp_wrap_attrs ty (Pcaml.unvala attrs) in
-        (fname, Printf.sprintf "v_%s" fname, fmtrec ty)) fields in
+        let attrs = snd(Ctyp.unwrap_attrs ty) in
+        let default = extract_allowed_attribute_expr arg "default" attrs in
+        (fname, Printf.sprintf "v_%s" fname, fmtrec ty, default)) fields in
 
-  let branch1 i (f, v, fmt) =
-    let l = List.mapi (fun j (f,v,fmt) ->
-        if i <> j then <:expr< $lid:v$ >> else <:expr< $fmt$ $lid:v$ >>)
-        labels_vars_fmts in
+  let varrow_except (i,iexp) =
+    List.mapi (fun j (f,v,fmt,_) ->
+        if i <> j then <:expr< $lid:v$ >> else iexp)
+      labels_vars_fmts_defaults in
+
+  let branch1 i (f, v, fmt,_) =
+    let l = varrow_except (i, <:expr< $fmt$ $lid:v$ >>) in
     let cons1exp = tupleexpr loc l in
     (<:patt< [($str:f$, $lid:v$) :: xs] >>, <:vala< None >>,
      <:expr< loop xs $cons1exp$ >>) in
 
-  let branches = List.mapi branch1 labels_vars_fmts in
+  let branches = List.mapi branch1 labels_vars_fmts_defaults in
 
   let finish_branch =
     let recexp =
-      let lel = List.map (fun (f,v,_) -> (<:patt< $lid:f$ >>, <:expr< $lid:v$ >>)) labels_vars_fmts in
+      let lel = List.map (fun (f,v,_,_) -> (<:patt< $lid:f$ >>, <:expr< $lid:v$ >>)) labels_vars_fmts_defaults in
       <:expr< { $list:lel$ } >> in
     let consexp = match cid with [ None -> recexp | Some cid -> <:expr< $uid:cid$ $recexp$ >> ] in
     let consexp = <:expr< Result.Ok $consexp$ >> in
-    let e = List.fold_right (fun (_,v,_) rhs -> 
-        <:expr< Rresult.R.bind $lid:v$ (fun $lid:v$ -> $rhs$) >>) labels_vars_fmts consexp in
+    let e = List.fold_right (fun (_,v,_,_) rhs -> 
+        <:expr< Rresult.R.bind $lid:v$ (fun $lid:v$ -> $rhs$) >>) labels_vars_fmts_defaults consexp in
     (<:patt< [] >>, <:vala< None >>, e) in
 
   let catch_branch =
     if Ctxt.is_strict arg then
-      [(<:patt< [_ :: _] >>, <:vala< None >>, <:expr< Result.Error $str:msg$ >>)]
-  else [] in
+      (<:patt< [_ :: _] >>, <:vala< None >>, <:expr< Result.Error $str:msg$ >>)
+  else
+    let varrow = varrow_except (-1, <:expr< . >>) in
+    let cons1exp = tupleexpr loc varrow in
+    (<:patt< [_ :: _] >>, <:vala< None >>, <:expr< loop xs $cons1exp$ >>) in
 
-  let branches = branches @ [finish_branch] @ catch_branch in
+  let branches = branches @ [finish_branch; catch_branch] in
 
   let e = 
-    let varpats = List.map (fun (_,v,_) -> <:patt< $lid:v$ >>) labels_vars_fmts in
+    let varpats = List.map (fun (_,v,_,_) -> <:patt< $lid:v$ >>) labels_vars_fmts_defaults in
     let tuplevars = tuplepatt loc varpats in
-    let errorexps = List.map (fun (f,_,_) ->
-      let msg = msg^"."^f in
-      <:expr< Result.Error $str:msg$ >>) labels_vars_fmts in
-    let tupleerrors = tupleexpr loc errorexps in
+    let initexps = List.map (fun (f,_,_,dflt) ->
+        match dflt with [
+          None ->
+          let msg = msg^"."^f in
+          <:expr< Result.Error $str:msg$ >>
+        | Some d -> <:expr< Result.Ok $d$ >> ]) labels_vars_fmts_defaults in
+    let tupleinit = tupleexpr loc initexps in
     <:expr< let rec loop xs $tuplevars$ = match xs with [ $list:branches$ ]
-            in loop xs $tupleerrors$ >> in
+            in loop xs $tupleinit$ >> in
 
   (<:patt< `Assoc xs >>, e)
 
@@ -538,7 +561,7 @@ value str_item_top_funs arg (loc, tyname) param_map ty =
     let body = <:expr< match $body$ arg with [ Rresult.Ok x -> x | Result.Error s -> failwith s ] >> in
     let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $body$ >> in
     let e' = (exn_name, Expr.abstract_over paramfun_patts
-       <:expr< fun arg -> $of_e$ arg >>) in
+       <:expr< fun arg -> $of_e$ >>) in
     [e; e']
 ;
 
