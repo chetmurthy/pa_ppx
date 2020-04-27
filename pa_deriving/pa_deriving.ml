@@ -162,7 +162,7 @@ value is_registered_deriving attr =
   List.exists (fun (name, _) -> is_deriving name attr) plugin_registry.val ;
 
 value is_registered_extension attr =
-  List.mem_assoc (Pcaml.unvala (fst attr)) extension2plugin.val ;
+  List.mem_assoc (attr_id attr) extension2plugin.val ;
 
 value is_registered_plugin na =
   List.mem_assoc na plugin_registry.val || List.mem_assoc na alternate2plugin.val ;
@@ -196,8 +196,9 @@ let ef = EF.{ (ef) with
             (([] | [_ ; _ :: _]), _) -> failwith "should only be one @@deriving attribute"
           | ([a], others) -> (a, others)
           ] in
-        let payload = snd (Pcaml.unvala deriving_attr) in
-        let newattr = (<:vala< "deriving_inline" >>, payload) in
+        let (loc_attrid, payload) = Pcaml.unvala deriving_attr in
+        let idloc = fst (Pcaml.unvala loc_attrid) in
+        let newattr = (<:vala< (idloc, "deriving_inline") >>, payload) in
         let attrs = other_attrs @ [ <:vala< newattr >> ] in
         let last = { (last) with tdAttributes = <:vala< attrs >> } in
         let tdl = tdl @ [ last ] in
@@ -231,7 +232,7 @@ let ef = EF.{ (ef) with
 
 let ef = EF.{ (ef) with
   expr = extfun ef.expr with [
-    <:expr:< [% $extension:e$ ] >> as z when is_registered_extension e ->
+    <:expr:< [% $_extension:e$ ] >> as z when is_registered_extension e ->
       fun arg ->
         registered_expr_extension arg z
   ] } in

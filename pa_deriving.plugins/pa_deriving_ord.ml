@@ -39,10 +39,10 @@ value fmt_expression arg param_map ty0 =
   | <:ctyp:< string >> -> <:expr< fun a b -> Stdlib.compare a b >>
   | <:ctyp:< bytes >> -> <:expr< fun a b -> Stdlib.compare a b >>
 
-| <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "ord" "nobuiltin" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "ord" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
-  | <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "ord" "compare" -> e
+  | <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "ord" "compare" -> e
 
   | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec t
 
@@ -365,7 +365,7 @@ value sig_item_gen_ord name arg = fun [
 ;
 
 value expr_ord arg = fun [
-  <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "ord" || id = "derive.ord" ->
+  <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "ord" || id = "derive.ord" ->
     let loc = loc_of_ctyp ty in
     let e = fmt_top arg [] ty in
     <:expr< fun a b ->  $e$ a b >>

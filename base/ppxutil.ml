@@ -47,7 +47,7 @@ value count p l = List.length (filter p l) ;
 
 value push r v = r.val := [v :: r.val] ;
 
-value attr_id attr = Pcaml.unvala (fst (Pcaml.unvala attr)) ;
+value attr_id attr = snd (Pcaml.unvala (fst (Pcaml.unvala attr))) ;
 
 module Expr = struct
 

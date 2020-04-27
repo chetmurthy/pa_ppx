@@ -14,15 +14,15 @@ end
 
 let%test_module _ = (module F(struct let arg = true end))
 let%test_module "busted-mod" = (module F(struct let arg = false end))
-(*
-let%expect_test "addition" =
+
+let%expect_test _ =
   Printf.printf "%d" (1 + 2);
   [%expect {| 3 |}]
 
 let%expect_test "busted-addition" =
   Printf.printf "%d" (1 + 2);
   [%expect {| 5 |}]
-
+(*
 type position = [%import: Lexing.position] [@@deriving show]
 
 let%expect_test "here" =

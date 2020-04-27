@@ -47,7 +47,7 @@ value tuplepatt loc l = if List.length l = 1 then List.hd l else <:patt< ( $list
 value tupleexpr loc l = if List.length l = 1 then List.hd l else <:expr< ( $list:l$ ) >> ;
 
 value extract_allowed_attribute_expr arg attrna attrs =
-  match try_find (fun a -> match Pcaml.unvala a with [ <:attribute_body< $attrid:id$ $exp:e$ ; >>
+  match try_find (fun a -> match Pcaml.unvala a with [ <:attribute_body< $attrid:(_, id)$ $exp:e$ ; >>
                    when id = DC.allowed_attribute (DC.get arg) "sexp" attrna ->
                    e
                  | _ -> failwith "extract_allowed_attribute_expr" ]) attrs with [
@@ -89,10 +89,10 @@ value to_expression arg ~{msg} param_map ty0 =
     <:expr< fun x -> `String (Nativeint.to_string x) >>
 | <:ctyp:< float >> -> <:expr< fun x -> `Float x >>
 
-| <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "nobuiltin" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
-| <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "to_sexp" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "to_sexp" ->
     e
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
@@ -336,10 +336,10 @@ value of_expression arg ~{msg} param_map ty0 =
       | `Float x -> Result.Ok x
       | _ -> Result.Error $str:msg$ ] >>
 
-| <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "nobuiltin" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
-| <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "of_sexp" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "of_sexp" ->
     e
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
@@ -709,7 +709,7 @@ value build_param_map t =
 ;
 
 value expr_sexp arg = fun [
-  <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "to_sexp" || id = "derive.to_sexp" ->
+  <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "to_sexp" || id = "derive.to_sexp" ->
     let loc = loc_of_ctyp ty in
     let param_map = build_param_map ty in
     let e = To.fmt_to_top arg ~{msg=Printf.sprintf "%s.to_sexp"  (Ctxt.module_path_s arg)} param_map ty in
@@ -717,7 +717,7 @@ value expr_sexp arg = fun [
     let parampats = List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map in
     Expr.abstract_over parampats e
 
-| <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "of_sexp" || id = "derive.of_sexp" ->
+| <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "of_sexp" || id = "derive.of_sexp" ->
     let loc = loc_of_ctyp ty in
     let param_map = build_param_map ty in
     let e = Of.fmt_of_top ~{msg=Printf.sprintf "%s.of_sexp"  (Ctxt.module_path_s arg)} arg param_map ty in

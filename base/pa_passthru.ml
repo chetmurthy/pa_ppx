@@ -113,6 +113,7 @@ end
 
 and Ctxt : sig
   type t = {
+    filename : string ;
     _module_path : list string; 
     options : list (string * expr) ;
     ef : EF.t ;
@@ -123,12 +124,15 @@ and Ctxt : sig
   value module_path : t -> list string ;
   value module_path_s : t -> string ;
   value set_module_path : t -> list string -> t ;
+  value filename : t -> string ;
+  value set_filename : t -> string -> t ;
   value add_options : t -> list (string * expr) -> t ;
   value option : t -> string -> expr ;
   value scratchdata : t -> string -> scratchdata_t ;
   value init_scratchdata : t -> string -> scratchdata_t -> unit ;
 end = struct
   type t = {
+    filename : string ;
     _module_path : list string;
     options : list (string * expr) ;
     ef : EF.t ;
@@ -141,7 +145,11 @@ value mk ef loc =
   let base = match String.split_on_char '.' last with [
     [base :: _] -> base | _ -> assert False ] in
   let modname = String.capitalize_ascii base in
-  { _module_path = [modname] ; options = [] ; ef = ef ; scratch = ref []  }
+  { filename = fname ;
+    _module_path = [modname] ;
+    options = [] ;
+    ef = ef ;
+    scratch = ref []  }
 ;
 value append_module ctxt s =
   { (ctxt) with _module_path = ctxt._module_path @ [s] }
@@ -151,6 +159,10 @@ value set_module_path ctxt s =
 
 value module_path ctxt = ctxt._module_path ;
 value module_path_s ctxt = String.concat "." ctxt._module_path ;
+
+value set_filename ctxt s =
+  { (ctxt) with filename = s } ;
+value filename ctxt = ctxt.filename ;
 
 value add_options ctxt l = { (ctxt) with options = l @ ctxt.options } ;
 
@@ -164,7 +176,7 @@ value option ctxt name =
 
 value scratchdata ctxt name =
   if not (List.mem_assoc name ctxt.scratch.val) then
-    failwith "scratchdata: no scratch found"
+    failwith (Printf.sprintf "scratchdata: no scratch found for parsing kit <<%s>>" name)
   else List.assoc name ctxt.scratch.val
 ;
 

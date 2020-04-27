@@ -77,13 +77,13 @@ value fmt_expression arg param_map ty0 =
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%an" nativeint arg) >>
 | <:ctyp:< float >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%F" arg) >>
 
-| <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "nobuiltin" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
-| <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "opaque" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "opaque" ->
     <:expr< let open Fmt in (const string "<opaque>") >>
-| <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "show" "printer" -> e
-| <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "show" "polyprinter" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "show" "printer" -> e
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "show" "polyprinter" ->
   let (t0, argtys) = Ctyp.unapplist t in
   let argfmts = List.map fmtrec argtys in
   Expr.applist <:expr< $e$ >> argfmts
@@ -366,7 +366,7 @@ value sig_item_gen_show name arg = fun [
 ;
 
 value expr_show arg = fun [
-  <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "show" || id = "derive.show" ->
+  <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "show" || id = "derive.show" ->
     let loc = loc_of_ctyp ty in
     let e = fmt_top arg [] ty in
     <:expr< fun arg -> Format.asprintf "%a" $e$ arg >>

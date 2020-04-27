@@ -14,7 +14,9 @@ our %pkgmap = (
   'pa_ppx_base' => 'pa_ppx.base',
   'pa_ppx_import' => 'pa_ppx.import',
   'pa_ppx_unmatched_vala' => 'pa_ppx.unmatched_vala',
-  'pa_ppx_hashrecons' => 'pa_ppx.hashrecons',
+  'pa_ppx_here' => 'pa_ppx.here',
+  'pa_ppx_inline_test' => 'pa_ppx.inline_test',
+  'pa_ppx_expect_test' => 'pa_ppx.expect_test',
   
     );
 
@@ -25,7 +27,9 @@ our %pkgmap = (
   my $hrmeta = indent(2, fixdeps(capturex("./pa_hashrecons/META.pl"))) ;
   my $dermeta = indent(2, fixdeps(capturex("./pa_deriving/META.pl"))) ;
   my $derpmeta = indent(2, fixdeps(capturex("./pa_deriving.plugins/META.pl"))) ;
-  my $impmeta = indent(2, fixdeps(capturex("./pa_import/META.pl"))) ;
+  my $heremeta = indent(2, fixdeps(capturex("./pa_here/META.pl"))) ;
+  my $inlmeta = indent(2, fixdeps(capturex("./pa_inline_test/META.pl"))) ;
+  my $expmeta = indent(2, fixdeps(capturex("./pa_expect_test/META.pl"))) ;
 
   print <<"EOF";
 version = "0.01"
@@ -51,6 +55,15 @@ $derpmeta
 )
 package "import" (
 $impmeta
+)
+package "here" (
+$heremeta
+)
+package "inline_test" (
+$inlmeta
+)
+package "expect_test" (
+$expmeta
 )
 
 EOF

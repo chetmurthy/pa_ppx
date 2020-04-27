@@ -91,9 +91,9 @@ value fmt_expression arg param_map ty0 =
   ] in
   <:expr< $lid:fmtf$ >>
 
-  | <:ctyp:< $t$ [@ $attrid:id$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "eq" "equal" -> e
+  | <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "eq" "equal" -> e
 
-| <:ctyp:< $t$ [@ $attrid:id$ ] >> when id = DC.allowed_attribute (DC.get arg) "eq" "nobuiltin" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "eq" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec t
@@ -307,7 +307,7 @@ value sig_item_gen_eq name arg = fun [
 ;
 
 value expr_eq arg = fun [
-  <:expr:< [% $attrid:id$: $type:ty$ ] >> when id = "eq" || id = "derive.eq" ->
+  <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "eq" || id = "derive.eq" ->
     let loc = loc_of_ctyp ty in
     let e = fmt_top arg [] ty in
     <:expr< fun a b ->  $e$ a b >>
