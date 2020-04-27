@@ -22,13 +22,12 @@ let%expect_test _ =
 let%expect_test "busted-addition" =
   Printf.printf "%d" (1 + 2);
   [%expect {| 5 |}]
-(*
+
 type position = [%import: Lexing.position] [@@deriving show]
 
 let%expect_test "here" =
-  pp_position Ppx_deriving_runtime.Format.std_formatter [%here] ;
+  pp_position Format.std_formatter [%here] ;
   [%expect {|
     { Lexing.pos_fname = "test_inline_test.ml"; pos_lnum = 28; pos_bol = 611;
       pos_cnum = 667 } |}]
 
-*)

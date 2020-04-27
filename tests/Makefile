@@ -43,6 +43,7 @@ TESTS= \
 	test_ppx_import.ppx.byte \
 	test_hashrecons.byte \
 	test_passthru_hashrecons.byte \
+	test_inline_test.byte \
 	test_inline_test.ppx.byte \
 	test_ppx_yojson.byte \
 	test_ppx_yojson.ppx.byte \
