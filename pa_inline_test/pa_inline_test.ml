@@ -15,8 +15,7 @@ open Ppxutil ;
 
 value libname = ref "" ;
 
-value bool_test arg descr e =
-  let loc = loc_of_expr e in
+value bool_test arg loc descr e =
   let startpos = start_position_of_loc loc in
   let endpos = end_position_of_loc loc in
   let filename = startpos.Lexing.pos_fname in
@@ -31,8 +30,7 @@ value bool_test arg descr e =
   >>
 ;
 
-value unit_test arg descr e =
-  let loc = loc_of_expr e in
+value unit_test arg loc descr e =
   let startpos = start_position_of_loc loc in
   let endpos = end_position_of_loc loc in
   let filename = startpos.Lexing.pos_fname in
@@ -47,8 +45,7 @@ value unit_test arg descr e =
   >>
 ;
 
-value module_test arg descr me =
-  let loc = loc_of_module_expr me in
+value module_test arg loc descr me =
   let startpos = start_position_of_loc loc in
   let endpos = end_position_of_loc loc in
   let filename = startpos.Lexing.pos_fname in
@@ -67,15 +64,15 @@ value rewrite_str_item arg = fun [
   <:str_item:< [%%test $exp:e$ ; ] >>
   ->
   let descr = Printf.sprintf ": <<%s>>" (prettyprint_expr e) in
-  bool_test arg descr e
+  bool_test arg loc descr e
 
 | <:str_item:< [%%test_unit $exp:e$ ; ] >>
   ->
   let descr = Printf.sprintf ": <<%s>>" (prettyprint_expr e) in
-  unit_test arg descr e
+  unit_test arg loc descr e
 
 | <:str_item:< [%%test_module (module $mexp:me$) ; ] >> ->
-  module_test arg "" me
+  module_test arg loc "" me
 
 | <:str_item:< [%%test value $flag:False$ $list:[(p,e,_)]$ ; ] >> ->
   let descr = match p with [
@@ -83,7 +80,7 @@ value rewrite_str_item arg = fun [
   | <:patt< $str:descr$ >> -> ": "^descr
   | _ -> failwith "pa_inline_test.rewrite_str_item: bad lhs of let"
   ] in
-  bool_test arg descr e
+  bool_test arg loc descr e
 
 | <:str_item:< [%%test_unit value $flag:False$ $list:[(p,e,_)]$ ; ] >> ->
   let descr = match p with [
@@ -91,7 +88,7 @@ value rewrite_str_item arg = fun [
   | <:patt< $str:descr$ >> -> ": "^descr
   | _ -> failwith "pa_inline_test.rewrite_str_item: bad lhs of let"
   ] in
-  unit_test arg descr e
+  unit_test arg loc descr e
 
 | <:str_item:< [%%test_module value $flag:False$ $list:[(p,e,_)]$ ; ] >> ->
   let descr = match p with [
@@ -102,7 +99,7 @@ value rewrite_str_item arg = fun [
   let me = match e with [
     <:expr< (module $mexp:me$) >> -> me
   | _ -> failwith "module_test without module payload" ] in
-  module_test arg descr me
+  module_test arg loc descr me
 ]
 ;
 
