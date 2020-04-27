@@ -15,13 +15,8 @@ open Ppxutil ;
 
 value rewrite_expr arg = fun [
   <:expr:< [%here] >> ->
-  let pos_fname = Ploc.file_name loc in
-  let pos_lnum = string_of_int (Ploc.line_nb loc) in
-  let pos_bol = string_of_int (Ploc.bol_pos loc) in
-  let pos_cnum = string_of_int (Ploc.first_pos loc) in
-  <:expr< let open Lexing in {
-  pos_fname = $str:pos_fname$ ; pos_lnum = $int:pos_lnum$ ;
-  pos_bol = $int:pos_bol$ ; pos_cnum = $int:pos_cnum$ } >>
+    let pos = start_position_of_loc loc in
+    quote_position loc pos
 | _ -> assert False
 ]
 ;

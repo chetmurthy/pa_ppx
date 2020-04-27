@@ -14,6 +14,7 @@ all:
 	$(MAKE) -C base all
 	$(MAKE) -C pa_here all
 	$(MAKE) -C pa_unmatched_vala all
+	$(MAKE) -C pa_inline_test all
 	$(MAKE) -C pa_hashrecons all
 	$(MAKE) -C pa_deriving all
 	$(MAKE) -C pa_deriving.plugins all
@@ -23,6 +24,7 @@ all:
 PACKAGES := pa_ppx_base
 PACKAGES := $(PACKAGES),pa_ppx_here
 PACKAGES := $(PACKAGES),pa_ppx_unmatched_vala
+PACKAGES := $(PACKAGES),pa_ppx_inline_test
 PACKAGES := $(PACKAGES),pa_ppx_deriving
 PACKAGES := $(PACKAGES),pa_ppx_deriving_plugins.std
 PACKAGES := $(PACKAGES),pa_ppx_deriving_plugins.yojson
@@ -50,6 +52,7 @@ clean::
 	$(MAKE) -C base clean
 	$(MAKE) -C pa_here clean
 	$(MAKE) -C pa_unmatched_vala clean
+	$(MAKE) -C pa_inline_test clean
 	$(MAKE) -C pa_hashrecons clean
 	$(MAKE) -C pa_deriving clean
 	$(MAKE) -C pa_deriving.plugins clean
@@ -61,6 +64,7 @@ depend:
 	$(MAKE) -C base depend
 	$(MAKE) -C pa_here depend
 	$(MAKE) -C pa_unmatched_vala depend
+	$(MAKE) -C pa_inline_test depend
 	$(MAKE) -C pa_hashrecons depend
 	$(MAKE) -C pa_deriving depend
 	$(MAKE) -C pa_deriving.plugins depend

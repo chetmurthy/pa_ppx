@@ -166,3 +166,44 @@ value rec is_generative_type t =
   | _ -> False ] 
 ;
 
+value ocaml_location (fname, lnum, bolp, lnuml, bolpl, bp, ep) =
+    let loc_at n lnum bolp =
+      {Lexing.pos_fname = if lnum = -1 then "" else fname;
+       Lexing.pos_lnum = lnum; Lexing.pos_bol = bolp; Lexing.pos_cnum = n}
+    in
+    {Location.loc_start = loc_at bp lnum bolp;
+     Location.loc_end = loc_at ep lnuml bolpl;
+     Location.loc_ghost = bp = 0 && ep = 0}
+;
+
+value mkloc loc =
+  let fname = Ploc.file_name loc in
+  let bp = Ploc.first_pos loc in
+  let ep = Ploc.last_pos loc in
+  let lnum = Ploc.line_nb loc in
+  let bolp = Ploc.bol_pos loc in
+  let lnuml = Ploc.line_nb_last loc in
+  let bolpl = Ploc.bol_pos_last loc in
+  ocaml_location (fname, lnum, bolp, lnuml, bolpl, bp, ep)
+;
+
+value start_position_of_loc loc =
+  let loc = mkloc loc in
+  loc.Location.loc_start
+;
+
+value end_position_of_loc loc =
+  let loc = mkloc loc in
+  loc.Location.loc_end
+;
+
+value quote_position loc p =
+  let open Lexing in
+  <:expr< let open Lexing in {
+  pos_fname = $str:p.pos_fname$ ;
+  pos_lnum = $int:string_of_int p.pos_lnum$ ;
+  pos_bol = $int:string_of_int p.pos_bol$ ;
+  pos_cnum = $int:string_of_int p.pos_cnum$ } >>
+;
+
+value prettyprint_expr e = Eprinter.apply Pcaml.pr_expr Pprintf.empty_pc e ;

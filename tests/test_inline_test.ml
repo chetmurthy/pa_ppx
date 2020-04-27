@@ -2,6 +2,7 @@
 let is_even n = n mod 2 = 0
 
 let%test _ = is_even 2
+
 let%test _ = not (is_even 1)
 let%test "busted" = not (is_even 10)
 let%test_unit _ = ()

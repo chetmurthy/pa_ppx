@@ -76,29 +76,48 @@ PPXINLINEPACKAGES:=$(PPXINLINEPACKAGES),ppx_expect
 PPXINLINEPACKAGES:=$(PPXINLINEPACKAGES),ppx_inline_test.runner.lib
 PPXINLINEPACKAGES:=$(PPXINLINEPACKAGES),ppx_expect.evaluator
 
-PPXOPT = -ppxopt ppx_expect,-inline-test-lib  -ppxopt ppx_expect,foo
+PPXINLINEOPT = -ppxopt ppx_expect,-inline-test-lib  -ppxopt ppx_expect,foo
 
-PAPACKAGES=$(PACKAGEPREFIX)runtime
+PAPACKAGES:=$(PACKAGEPREFIX)runtime
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import.syntax
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std.syntax
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.yojson.syntax
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)hashrecons.syntax
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here.syntax
 
+PAINLINEPACKAGES:=$(PAPACKAGES)
+PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)inline_test.syntax
+
 test_%.byte: test_%.ml testutil.cmo testutil2.cmo
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),yojson,$(PAPACKAGES) \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
 
 test_%.ppx.byte: test_%.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES) $(PPXOPT) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@
 
 test_inline_test.ppx.byte: test_inline_test.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXINLINEPACKAGES) $(PPXOPT) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< ppx_inline_test_epilogue.ml -o $@
-
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< ppx_inline_test_epilogue.ml -o $@
 
 test_inline_test.ppx: test_inline_test.ppx.byte
 	./$< inline-test-runner foo -source-tree-root . -diff-cmd - || \
 	/usr/bin/git diff --no-index -u test_inline_test.ml test_inline_test.ml.corrected | cat
+
+
+test_boo.ppx.byte: test_boo.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< ppx_inline_test_epilogue.ml -o $@
+
+test_boo.ppx: test_boo.ppx.byte
+	./$< inline-test-runner foo -verbose -source-tree-root . -diff-cmd - || \
+	/usr/bin/git diff --no-index -u test_boo.ml test_boo.ml.corrected | cat
+
+PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
+test_boo.byte: test_boo.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PAINLINEPACKAGES),camlp5.pr_o.syntax,ppx_inline_test.runtime-lib,ppx_inline_test.runner.lib -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< ppx_inline_test_epilogue.ml -o $@
+
+test_boo: test_boo.byte
+	./$< inline-test-runner foo -verbose -source-tree-root . -diff-cmd - || \
+	/usr/bin/git diff --no-index -u test_boo.ml test_boo.ml.corrected | cat
+
 
 
 test_passthru_hashrecons.byte: test_passthru_hashrecons.ml testutil.cmo testutil2.cmo hCPassthru.cmo
