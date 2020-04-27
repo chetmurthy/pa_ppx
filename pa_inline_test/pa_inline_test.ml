@@ -15,11 +15,8 @@ open Ppxutil ;
 
 value libname = ref "" ;
 
-value rewrite_str_item arg = fun [
-  <:str_item:< [%%test value _ = $exp:e$ ; ] >>
-| <:str_item:< [%%test $exp:e$ ; ] >>
- as z ->
-  let descr = Printf.sprintf ": <<%s>>" (prettyprint_expr e) in
+value bool_test arg descr e =
+  let loc = loc_of_expr e in
   let startpos = start_position_of_loc loc in
   let endpos = end_position_of_loc loc in
   let filename = startpos.Lexing.pos_fname in
@@ -32,6 +29,21 @@ value rewrite_str_item arg = fun [
     ~{line_number= $int:line_number$} ~{start_pos = $int:start_pos$} ~{end_pos = $int:end_pos$}
      (fun () -> $exp:e$)
   >>
+;
+
+value rewrite_str_item arg = fun [
+  <:str_item:< [%%test $exp:e$ ; ] >>
+  ->
+  let descr = Printf.sprintf ": <<%s>>" (prettyprint_expr e) in
+  bool_test arg descr e
+
+| <:str_item:< [%%test value $flag:False$ $list:[(p,e,_)]$ ; ] >> ->
+  let descr = match p with [
+    <:patt< _ >> -> Printf.sprintf ": <<%s>>" (prettyprint_expr e)
+  | <:patt< $str:descr$ >> -> descr
+  | _ -> failwith "pa_inline_test.rewrite_str_item: bad lhs of let"
+  ] in
+  bool_test arg descr e
 ]
 ;
 
@@ -47,12 +59,24 @@ value wrap_implem arg z = do {
 }
 ;
 
+value is_string_patt = fun [ <:patt< $str:_$ >> -> True | _ -> False ] ;
+
+value is_named_bool_test = fun [
+  <:str_item:< [%%test value $flag:False$ $list:[(p,_,_)]$ ; ] >> when is_string_patt p -> True
+| _ -> False
+]
+;
+
 value install () = 
 let ef = EF.mk () in 
 let ef = EF.{ (ef) with
             str_item = extfun ef.str_item with [
-    <:str_item:< [%%test value _ = $exp:_$ ; ] >>
-  | <:str_item:< [%%test $exp:_$ ; ] >> as z ->
+    <:str_item:< [%%test $exp:_$ ; ] >> as z ->
+    fun arg ->
+      Some (rewrite_str_item arg z)
+
+  | <:str_item:< [%%test value $flag:False$ $list:_$ ; ] >>
+   as z when is_named_bool_test z ->
     fun arg ->
       Some (rewrite_str_item arg z)
   ] } in
