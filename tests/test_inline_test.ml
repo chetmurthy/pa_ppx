@@ -28,6 +28,6 @@ type position = [%import: Lexing.position] [@@deriving show]
 let%expect_test "here" =
   pp_position Format.std_formatter [%here] ;
   [%expect {|
-    { Lexing.pos_fname = "test_inline_test.ml"; pos_lnum = 28; pos_bol = 611;
-      pos_cnum = 667 } |}]
+    { Lexing.pos_fname = "test_inline_test.ml"; pos_lnum = 29; pos_bol = 639;
+      pos_cnum = 674 } |}]
 
