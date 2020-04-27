@@ -103,6 +103,14 @@ test_inline_test.ppx: test_inline_test.ppx.byte
 	/usr/bin/git diff --no-index -u test_inline_test.ml test_inline_test.ml.corrected | cat
 
 
+PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
+test_inline_test.byte: test_inline_test.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PAINLINEPACKAGES),camlp5.pr_o.syntax,ppx_inline_test.runtime-lib,ppx_inline_test.runner.lib -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< ppx_inline_test_epilogue.ml -o $@
+
+test_inline_test: test_inline_test.byte
+	./$< inline-test-runner foo -verbose -source-tree-root . -diff-cmd - || \
+	/usr/bin/git diff --no-index -u test_inline_test.ml test_inline_test.ml.corrected | cat
+
 test_boo.ppx.byte: test_boo.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< ppx_inline_test_epilogue.ml -o $@
 

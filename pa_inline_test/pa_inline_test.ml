@@ -47,6 +47,22 @@ value unit_test arg descr e =
   >>
 ;
 
+value module_test arg descr me =
+  let loc = loc_of_module_expr me in
+  let startpos = start_position_of_loc loc in
+  let endpos = end_position_of_loc loc in
+  let filename = startpos.Lexing.pos_fname in
+  let line_number = string_of_int startpos.Lexing.pos_lnum in
+  let start_pos = string_of_int (startpos.Lexing.pos_cnum - startpos.Lexing.pos_bol) in
+  let end_pos = string_of_int (endpos.Lexing.pos_cnum - endpos.Lexing.pos_bol) in
+  <:str_item< 
+  Ppx_inline_test_lib.Runtime.test_module ~{config=(module Inline_test_config)}
+    ~{descr = $str:descr$} ~{tags=[]} ~{filename = $str:filename$}
+    ~{line_number= $int:line_number$} ~{start_pos = $int:start_pos$} ~{end_pos = $int:end_pos$}
+     (fun () -> let module M = $mexp:me$ in ())
+  >>
+;
+
 value rewrite_str_item arg = fun [
   <:str_item:< [%%test $exp:e$ ; ] >>
   ->
@@ -57,6 +73,9 @@ value rewrite_str_item arg = fun [
   ->
   let descr = Printf.sprintf ": <<%s>>" (prettyprint_expr e) in
   unit_test arg descr e
+
+| <:str_item:< [%%test_module (module $mexp:me$) ; ] >> ->
+  module_test arg "" me
 
 | <:str_item:< [%%test value $flag:False$ $list:[(p,e,_)]$ ; ] >> ->
   let descr = match p with [
@@ -73,6 +92,17 @@ value rewrite_str_item arg = fun [
   | _ -> failwith "pa_inline_test.rewrite_str_item: bad lhs of let"
   ] in
   unit_test arg descr e
+
+| <:str_item:< [%%test_module value $flag:False$ $list:[(p,e,_)]$ ; ] >> ->
+  let descr = match p with [
+    <:patt< _ >> -> Printf.sprintf ": <<%s>>" (prettyprint_expr e)
+  | <:patt< $str:descr$ >> -> ": "^descr
+  | _ -> failwith "pa_inline_test.rewrite_str_item: bad lhs of let"
+  ] in
+  let me = match e with [
+    <:expr< (module $mexp:me$) >> -> me
+  | _ -> failwith "module_test without module payload" ] in
+  module_test arg descr me
 ]
 ;
 
@@ -102,6 +132,12 @@ value is_named_unit_test = fun [
 ]
 ;
 
+value is_named_module_test = fun [
+  <:str_item:< [%%test_module value $flag:False$ $list:[(p,_,_)]$ ; ] >> when is_string_patt p -> True
+| _ -> False
+]
+;
+
 value install () = 
 let ef = EF.mk () in 
 let ef = EF.{ (ef) with
@@ -114,6 +150,10 @@ let ef = EF.{ (ef) with
     fun arg ->
       Some (rewrite_str_item arg z)
 
+  | <:str_item:< [%%test_module (module $mexp:_$) ; ] >> as z ->
+    fun arg ->
+      Some (rewrite_str_item arg z)
+
   | <:str_item:< [%%test value $flag:False$ $list:_$ ; ] >>
    as z when is_named_bool_test z ->
     fun arg ->
@@ -123,6 +163,12 @@ let ef = EF.{ (ef) with
    as z when is_named_unit_test z ->
     fun arg ->
       Some (rewrite_str_item arg z)
+
+  | <:str_item:< [%%test_module value $flag:False$ $list:_$ ; ] >>
+   as z when is_named_module_test z ->
+    fun arg ->
+      Some (rewrite_str_item arg z)
+
   ] } in
 
 let ef = EF.{ (ef) with
