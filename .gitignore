@@ -8,3 +8,4 @@ local-install
 */.depend.NEW
 META
 camlp5o.pa_ppx
+tests/*.corrected

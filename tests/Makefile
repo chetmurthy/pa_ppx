@@ -13,7 +13,7 @@ RM=rm
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),ounit2,pcre,rresult,compiler-libs.common,$(PACKAGEPREFIX)runtime
+PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common
 
 CMO=
 CMI=$(CMO:.cmo=.cmi)
@@ -43,8 +43,12 @@ TESTS= \
 	test_ppx_import.ppx.byte \
 	test_hashrecons.byte \
 	test_passthru_hashrecons.byte \
+	test_inline_test.ppx.byte \
 	test_ppx_yojson.byte \
 	test_ppx_yojson.ppx.byte \
+
+#	test_inline_test.byte \
+
 
 all: $(CMO) $(TESTS) test
 
@@ -53,16 +57,49 @@ test: $(TESTS:.byte=)
 % : %.byte
 	./$<
 
-PPXPACKAGES=ppx_import,ppx_deriving.show,ppx_deriving.eq,ppx_deriving.ord,ppx_deriving.enum,ppx_deriving.iter,ppx_deriving.map,ppx_deriving.fold,ppx_deriving.make,ppx_deriving_yojson,ppx_here
+PPXPACKAGES:=ppx_import
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.show
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.eq
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.ord
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.enum
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.iter
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.map
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.fold
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.make
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving_yojson
+PPXPACKAGES:=$(PPXPACKAGES),ppx_here
 
-PAPACKAGES=$(PACKAGEPREFIX)import.syntax,$(PACKAGEPREFIX)deriving_plugins.std.syntax,$(PACKAGEPREFIX)deriving_plugins.yojson.syntax,$(PACKAGEPREFIX)hashrecons.syntax,$(PACKAGEPREFIX)here.syntax
+
+PPXINLINEPACKAGES:=ppx_inline_test.runtime-lib
+PPXINLINEPACKAGES:=$(PPXINLINEPACKAGES),$(PPXPACKAGES)
+PPXINLINEPACKAGES:=$(PPXINLINEPACKAGES),ppx_expect
+PPXINLINEPACKAGES:=$(PPXINLINEPACKAGES),ppx_inline_test.runner.lib
+PPXINLINEPACKAGES:=$(PPXINLINEPACKAGES),ppx_expect.evaluator
+
+PPXOPT = -ppxopt ppx_expect,-inline-test-lib  -ppxopt ppx_expect,foo
+
+PAPACKAGES=$(PACKAGEPREFIX)runtime
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import.syntax
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std.syntax
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.yojson.syntax
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)hashrecons.syntax
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here.syntax
 
 test_%.byte: test_%.ml testutil.cmo testutil2.cmo
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),yojson,$(PAPACKAGES) \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
 
 test_%.ppx.byte: test_%.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
-	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES) $(PPXOPT) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@
+
+test_inline_test.ppx.byte: test_inline_test.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXINLINEPACKAGES) $(PPXOPT) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< ppx_inline_test_epilogue.ml -o $@
+
+
+test_inline_test.ppx: test_inline_test.ppx.byte
+	./$< inline-test-runner foo -source-tree-root . -diff-cmd - || \
+	/usr/bin/git diff --no-index -u test_inline_test.ml test_inline_test.ml.corrected | cat
+
 
 test_passthru_hashrecons.byte: test_passthru_hashrecons.ml testutil.cmo testutil2.cmo hCPassthru.cmo
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),camlp5.pa_o,camlp5.pr_o,$(PACKAGEPREFIX)base,$(PACKAGEPREFIX)hashrecons.syntax \
@@ -104,6 +141,9 @@ testutil2.cmo: testutil2.ml
 
 stuff.cmo: stuff.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o -c $<
+
+clean::
+	rm -f *.corrected
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o testutil2.ml stuff.ml test_*.ml > .depend.NEW
