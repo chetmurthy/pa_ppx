@@ -48,10 +48,18 @@ value expect_location loc =
   } >>
 ;
 
-value expect_test arg loc descr e (expect_loc, expect) =
+value expect_test arg extension_loc attrid_loc (descr_loc, descr) test_e expect_e =
+  let (expect_loc, expectid_loc, expect_s_loc, expect_s) = match expect_e with [
+    <:expr:< [% $attrid:(expectid_loc, "expect")$ $exp:paye$ ; ] >> ->
+      let (sloc, s) = match paye with [ <:expr:< $str:s$ >> -> (loc, s) ] in
+      (loc, expectid_loc, sloc, s)
+  ] in
   let digest = (EC.get arg).EC.md5 in
   let filename = Ctxt.filename arg in
-  let q_descr = match descr with [ None -> <:expr< None >> | Some s -> <:expr< Some $str:s$ >> ] in
+  let q_descr =
+    let loc = descr_loc in
+    match descr with [ None -> <:expr< None >> | Some s -> <:expr< Some $str:s$ >> ] in
+  let loc = extension_loc in
   <:str_item<
   let module Expect_test_collector =
     (Expect_test_collector.Make)(Expect_test_config) in
@@ -63,14 +71,14 @@ value expect_test arg loc descr e (expect_loc, expect) =
       ~{tags = []}
       ~{expectations = [({
                         tag = (Some "");
-                        body = (Pretty $str:expect$);
-                        extid_location = $expect_location expect_loc$;
-                        body_location = $expect_location (loc_of_expr e)$
+                        body = (Pretty $str:expect_s$);
+                        extid_location = $expect_location expectid_loc$;
+                        body_location = $expect_location expect_s_loc$
                       } : Expect_test_common.Std.Expectation.t string)]}
       ~{uncaught_exn_expectation = None} ~{inline_test_config = (module Inline_test_config)}
       (fun () -> do {
-         $e$;
-         Expect_test_collector.save_output $expect_location expect_loc$
+         $test_e$;
+         Expect_test_collector.save_output $expect_location expectid_loc$
            })
   >>
 ;
@@ -88,29 +96,41 @@ value is_named_expect_test = fun [
 
 value rewrite_str_item arg = fun [
   <:str_item:< [%%expect_test do { $exp:e$ ; [%expect $str:expect$ ; ] } ; ] >> as z ->
-  let expect_loc = match z with [
-    <:str_item:< [%%expect_test do { $exp:e$ ; $expect_e$ } ; ] >> -> loc_of_expr expect_e
-  | _ -> assert False
+  let (extension_loc, extension) = match z with [
+    <:str_item:< [%% $extension:e$ ] >> -> (loc, e)
   ] in
-  expect_test arg loc None e (expect_loc, expect)
+  let attrid_loc = match extension with [
+    <:attribute_body< $attrid:(loc,_)$ $structure:_$ >> -> loc
+  ] in
+  let rhs = match z with [
+    <:str_item:< [%%expect_test $exp:rhs$ ; ] >> -> rhs
+  ] in
+  let (test_e, expect_e) = match z with [
+    <:str_item:< [%%expect_test do { $exp:test_e$ ; $expect_e$ } ; ] >> -> (test_e, expect_e)
+  ] in
 
-  | <:str_item:< [%%expect_test value $flag:False$ $list:[(p,e,_)]$ ; ] >> as z -> do {
+  expect_test arg extension_loc attrid_loc (loc_of_expr rhs, None) test_e expect_e
+
+  | <:str_item:< [%%expect_test value $flag:False$ $list:[(p,rhs,_)]$ ; ] >> as z -> do {
     assert (is_named_expect_test z) ;
   let descr = match p with [
-    <:patt< _ >> -> None
-  | <:patt< $str:descr$ >> -> Some descr
+    <:patt:< _ >> -> (loc, None)
+  | <:patt:< $str:descr$ >> -> (loc, Some descr)
   | _ -> failwith "pa_expect_test.rewrite_str_item: bad lhs of let"
   ] in
-  let (e, expect_e) = match e with [
-    <:expr< do { $e$ ; $expect_e$ } >> -> (e, expect_e)
-  | _ -> failwith "pa_expect_test.rewrite_str_item: bad rhs of let"
+
+  let (extension_loc, extension) = match z with [
+    <:str_item:< [%% $extension:e$ ] >> -> (loc, e)
   ] in
-  let expect = match expect_e with [
-    <:expr< [%expect $str:expect$ ; ] >> -> expect
-  | _ -> failwith "pa_expect_test.rewrite_str_item: bad rhs of let"
+  let attrid_loc = match extension with [
+    <:attribute_body< $attrid:(loc,_)$ $structure:_$ >> -> loc
   ] in
-  let expect_loc = loc_of_expr expect_e in
-    expect_test arg loc descr e (expect_loc, expect)
+
+  let (test_e, expect_e) = match rhs with [
+    <:expr:< do { $exp:test_e$ ; $expect_e$ } >> -> (test_e, expect_e)
+  ] in
+
+    expect_test arg extension_loc attrid_loc descr test_e expect_e
   }
 ]
 ;
