@@ -55,16 +55,16 @@ PAINLINEPACKAGES:=$(PAINLINEPACKAGES),ppx_inline_test.runtime-lib,ppx_inline_tes
 
 PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
 
-test_inline_test.ppx.byte: test_inline_test.ml
+%.ppx.byte: %.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
-test_inline_test.ppx: test_inline_test.ppx.byte
+%.ppx: %.ppx.byte
 	./test-runner $< foo
 
-test_inline_test.byte: test_inline_test.ml
+%.byte: %.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES),camlp5.pr_o.syntax -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
-test_inline_test: test_inline_test.byte
+%: %.byte
 	./test-runner $< foo
 
 clean::
