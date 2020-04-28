@@ -19,15 +19,13 @@ CMO=
 CMI=$(CMO:.cmo=.cmi)
 
 TESTS= \
-	test_inline_test.byte \
-	test_inline_test.ppx.byte \
+	test_inline_test.TEST failures.TEST order.TEST random_state.TEST \
 
-all: $(CMO) $(TESTS) test
+all: $(CMO) test-executables
 
-test: $(TESTS:.byte=)
+test-executables: $(TESTS:.TEST=.pa.byte) $(TESTS:.TEST=.ppx.byte)
 
-% : %.byte
-	./$<
+test: $(TESTS)
 
 PPXPACKAGES:=ppx_import
 PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.std
@@ -58,14 +56,13 @@ PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
 %.ppx.byte: %.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
-%.ppx: %.ppx.byte
-	./test-runner $< foo
-
-%.byte: %.ml
+%.pa.byte: %.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES),camlp5.pr_o.syntax -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
-%: %.byte
-	./test-runner $< foo
+%.TEST: %.pa.byte %.ppx.byte
+	./test-runner $^ foo $(VERBOSE)
+
+.SUFFIXES: .TEST
 
 clean::
 	rm -f *.corrected

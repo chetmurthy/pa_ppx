@@ -8,15 +8,32 @@ use File::Basename;
 our $verbose = 1;
 
 {
-  my $test = shift @ARGV;
-  my $lib = shift @ARGV;
-  my @args = @ARGV ;
+  my @exes = () ;
+  while (-x $ARGV[0]) { push(@exes, shift @ARGV) ; }
+  foreach my $exe (@exes) {
+    die "$exe does not exist" unless -x $exe ;
+  } 
+  my @rc ;
+  foreach my $exe (@exes) {
+    my $rc = runtest($exe, @ARGV) ;
+    push(@rc, $rc) ;
+  }
+  foreach my $rc (@rc) {
+    if ($rc) { exit(1) ; }
+  } 
+  exit(0) ;
+}
+
+sub runtest {
+  my $test = shift ;
+  my $lib = shift ;
+  my @args = @_;
 
   my $src ;
   if ($test =~ /(.*)\.ppx\.byte$/) {
     $src = "$1.ml" ;
   }
-  elsif ($test =~ /(.*)\.byte$/) {
+  elsif ($test =~ /(.*)\.pa\.byte$/) {
     $src = "$1.ml" ;
   }
   else { die "malformed test $test"; }
@@ -28,9 +45,9 @@ our $verbose = 1;
 			       "-diff-cmd", "-",
 			       @args]);
   if ($rc > 0 && -r $corr) {
-    v_systemx([0], ["git", "--no-pager", "diff", "--no-index", "-u", $src, $corr]);
+    v_systemx([0,1], ["git", "--no-pager", "diff", "--no-index", "-u", $src, $corr]);
   }
-  exit($rc);
+  return $rc;
 }
 
 sub v_systemx {
