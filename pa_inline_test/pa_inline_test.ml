@@ -84,12 +84,12 @@ value rewrite_str_item arg z =
   match Pa_passthru.str_item0 arg z with [
   <:str_item:< [%%test $exp:e$ ; ] >>
   ->
-  let descr = Printf.sprintf ": <<%s>>" (prettyprint_expr e) in
-  bool_test arg [] loc descr e
+  let descr = String.escaped (Printf.sprintf ": <<%s>>" (prettyprint_expr e)) in
+  bool_test arg [] loc \descr e
 
 | <:str_item:< [%%test_unit $exp:e$ ; ] >>
   ->
-  let descr = Printf.sprintf ": <<%s>>" (prettyprint_expr e) in
+  let descr = String.escaped (Printf.sprintf ": <<%s>>" (prettyprint_expr e)) in
   unit_test arg [] loc descr e
 
 | <:str_item:< [%%test_module (module $mexp:me$) ; ] >> ->
@@ -99,7 +99,7 @@ value rewrite_str_item arg z =
   let (p, attrs) = Patt.unwrap_attrs p in
   let tags = attrs_to_tags attrs in
   let descr = match p with [
-    <:patt< _ >> -> Printf.sprintf ": <<%s>>" (prettyprint_expr e)
+    <:patt< _ >> -> String.escaped (Printf.sprintf ": <<%s>>" (prettyprint_expr e))
   | <:patt< $str:descr$ >> -> ": "^descr
   | _ -> failwith "pa_inline_test.rewrite_str_item: bad lhs of let"
   ] in
@@ -109,7 +109,7 @@ value rewrite_str_item arg z =
   let (p, attrs) = Patt.unwrap_attrs p in
   let tags = attrs_to_tags attrs in
   let descr = match p with [
-    <:patt< _ >> -> Printf.sprintf ": <<%s>>" (prettyprint_expr e)
+    <:patt< _ >> -> String.escaped (Printf.sprintf ": <<%s>>" (prettyprint_expr e))
   | <:patt< $str:descr$ >> -> ": "^descr
   | _ -> failwith "pa_inline_test.rewrite_str_item: bad lhs of let"
   ] in
@@ -119,7 +119,7 @@ value rewrite_str_item arg z =
   let (p, attrs) = Patt.unwrap_attrs p in
   let tags = attrs_to_tags attrs in
   let descr = match p with [
-    <:patt< _ >> -> Printf.sprintf ": <<%s>>" (prettyprint_expr e)
+    <:patt< _ >> -> String.escaped (Printf.sprintf ": <<%s>>" (prettyprint_expr e))
   | <:patt< $str:descr$ >> -> ": "^descr
   | _ -> failwith "pa_inline_test.rewrite_str_item: bad lhs of let"
   ] in
