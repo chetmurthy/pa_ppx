@@ -98,6 +98,20 @@ value unapplist e =
   ] in unrec [] e
 ;
 
+value wrap_attrs ty al =
+  let loc = loc_of_patt ty in
+  List.fold_left (fun ty attr -> <:patt< $ty$  [@ $_attribute:attr$ ] >>)
+    ty al
+;
+
+
+value unwrap_attrs e =
+  let rec unrec acc = fun [
+    <:patt< $t$  [@ $_attribute:attr$ ] >> -> unrec [attr::acc] t
+  | t -> (t,acc)
+  ] in unrec [] e
+;
+
 end ;
 
 module Ctyp = struct

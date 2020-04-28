@@ -15,7 +15,11 @@ open Ppxutil ;
 
 value libname = ref "" ;
 
-value bool_test arg loc descr e =
+value quote_string_list loc l =
+  List.fold_right (fun s rhs -> <:expr< [ $str:s$ :: $rhs$ ] >>) l <:expr< [] >>
+;
+
+value bool_test arg tags loc descr e =
   let startpos = start_position_of_loc loc in
   let endpos = end_position_of_loc loc in
   let filename = startpos.Lexing.pos_fname in
@@ -24,13 +28,13 @@ value bool_test arg loc descr e =
   let end_pos = string_of_int (endpos.Lexing.pos_cnum - endpos.Lexing.pos_bol) in
   <:str_item< 
   Ppx_inline_test_lib.Runtime.test ~{config=(module Inline_test_config)}
-    ~{descr = $str:descr$} ~{tags=[]} ~{filename = $str:filename$}
+    ~{descr = $str:descr$} ~{tags = $quote_string_list loc tags$} ~{filename = $str:filename$}
     ~{line_number= $int:line_number$} ~{start_pos = $int:start_pos$} ~{end_pos = $int:end_pos$}
      (fun () -> $exp:e$)
   >>
 ;
 
-value unit_test arg loc descr e =
+value unit_test arg tags loc descr e =
   let startpos = start_position_of_loc loc in
   let endpos = end_position_of_loc loc in
   let filename = startpos.Lexing.pos_fname in
@@ -39,13 +43,13 @@ value unit_test arg loc descr e =
   let end_pos = string_of_int (endpos.Lexing.pos_cnum - endpos.Lexing.pos_bol) in
   <:str_item< 
   Ppx_inline_test_lib.Runtime.test_unit ~{config=(module Inline_test_config)}
-    ~{descr = $str:descr$} ~{tags=[]} ~{filename = $str:filename$}
+    ~{descr = $str:descr$} ~{tags = $quote_string_list loc tags$} ~{filename = $str:filename$}
     ~{line_number= $int:line_number$} ~{start_pos = $int:start_pos$} ~{end_pos = $int:end_pos$}
      (fun () -> $exp:e$)
   >>
 ;
 
-value module_test arg loc descr me =
+value module_test arg tags loc descr me =
   let startpos = start_position_of_loc loc in
   let endpos = end_position_of_loc loc in
   let filename = startpos.Lexing.pos_fname in
@@ -54,43 +58,66 @@ value module_test arg loc descr me =
   let end_pos = string_of_int (endpos.Lexing.pos_cnum - endpos.Lexing.pos_bol) in
   <:str_item< 
   Ppx_inline_test_lib.Runtime.test_module ~{config=(module Inline_test_config)}
-    ~{descr = $str:descr$} ~{tags=[]} ~{filename = $str:filename$}
+    ~{descr = $str:descr$} ~{tags = $quote_string_list loc tags$} ~{filename = $str:filename$}
     ~{line_number= $int:line_number$} ~{start_pos = $int:start_pos$} ~{end_pos = $int:end_pos$}
      (fun () -> let module M = $mexp:me$ in ())
   >>
 ;
 
-value rewrite_str_item arg = fun [
+value extract_tags attr =
+ let l = match Pcaml.unvala attr with [
+   <:attribute_body< tags ( $list:l$ ) ; >> -> l
+ | <:attribute_body< tags $exp:e$ ; >> -> [e]
+ | _ -> failwith "pa_inline_test.extract_tags: bad attribute"
+ ] in
+ List.map (fun [ <:expr< $str:s$ >> -> s | _ -> failwith "extract_tags: bad tag" ]) l
+;
+
+value attrs_to_tags = fun [
+  [] -> []
+| [a] -> extract_tags a
+| _ -> failwith "pa_inline_test.rewrite_str_item: at most one attr allowed"
+]
+;
+
+value rewrite_str_item arg z =
+  match Pa_passthru.str_item0 arg z with [
   <:str_item:< [%%test $exp:e$ ; ] >>
   ->
   let descr = Printf.sprintf ": <<%s>>" (prettyprint_expr e) in
-  bool_test arg loc descr e
+  bool_test arg [] loc descr e
 
 | <:str_item:< [%%test_unit $exp:e$ ; ] >>
   ->
   let descr = Printf.sprintf ": <<%s>>" (prettyprint_expr e) in
-  unit_test arg loc descr e
+  unit_test arg [] loc descr e
 
 | <:str_item:< [%%test_module (module $mexp:me$) ; ] >> ->
-  module_test arg loc "" me
+  module_test arg [] loc "" me
 
 | <:str_item:< [%%test value $flag:False$ $list:[(p,e,_)]$ ; ] >> ->
+  let (p, attrs) = Patt.unwrap_attrs p in
+  let tags = attrs_to_tags attrs in
   let descr = match p with [
     <:patt< _ >> -> Printf.sprintf ": <<%s>>" (prettyprint_expr e)
   | <:patt< $str:descr$ >> -> ": "^descr
   | _ -> failwith "pa_inline_test.rewrite_str_item: bad lhs of let"
   ] in
-  bool_test arg loc descr e
+  bool_test arg tags loc descr e
 
 | <:str_item:< [%%test_unit value $flag:False$ $list:[(p,e,_)]$ ; ] >> ->
+  let (p, attrs) = Patt.unwrap_attrs p in
+  let tags = attrs_to_tags attrs in
   let descr = match p with [
     <:patt< _ >> -> Printf.sprintf ": <<%s>>" (prettyprint_expr e)
   | <:patt< $str:descr$ >> -> ": "^descr
   | _ -> failwith "pa_inline_test.rewrite_str_item: bad lhs of let"
   ] in
-  unit_test arg loc descr e
+  unit_test arg tags loc descr e
 
 | <:str_item:< [%%test_module value $flag:False$ $list:[(p,e,_)]$ ; ] >> ->
+  let (p, attrs) = Patt.unwrap_attrs p in
+  let tags = attrs_to_tags attrs in
   let descr = match p with [
     <:patt< _ >> -> Printf.sprintf ": <<%s>>" (prettyprint_expr e)
   | <:patt< $str:descr$ >> -> ": "^descr
@@ -99,7 +126,7 @@ value rewrite_str_item arg = fun [
   let me = match e with [
     <:expr< (module $mexp:me$) >> -> me
   | _ -> failwith "module_test without module payload" ] in
-  module_test arg loc descr me
+  module_test arg tags loc descr me
 ]
 ;
 
@@ -116,21 +143,25 @@ value wrap_implem arg z = do {
 ;
 
 value is_string_patt = fun [ <:patt< $str:_$ >> -> True | _ -> False ] ;
+value is_unnamed_patt = fun [ <:patt< _ >> -> True | _ -> False ] ;
 
-value is_named_bool_test = fun [
-  <:str_item:< [%%test value $flag:False$ $list:[(p,_,_)]$ ; ] >> when is_string_patt p -> True
+value is_patt_bool_test = fun [
+  <:str_item:< [%%test value $flag:False$ $list:[(p,_,_)]$ ; ] >>
+  when is_string_patt (fst (Patt.unwrap_attrs p)) ||  is_unnamed_patt (fst (Patt.unwrap_attrs p)) -> True
 | _ -> False
 ]
 ;
 
-value is_named_unit_test = fun [
-  <:str_item:< [%%test_unit value $flag:False$ $list:[(p,_,_)]$ ; ] >> when is_string_patt p -> True
+value is_patt_unit_test = fun [
+  <:str_item:< [%%test_unit value $flag:False$ $list:[(p,_,_)]$ ; ] >>
+  when is_string_patt (fst (Patt.unwrap_attrs p)) ||  is_unnamed_patt (fst (Patt.unwrap_attrs p)) -> True
 | _ -> False
 ]
 ;
 
-value is_named_module_test = fun [
-  <:str_item:< [%%test_module value $flag:False$ $list:[(p,_,_)]$ ; ] >> when is_string_patt p -> True
+value is_patt_module_test = fun [
+  <:str_item:< [%%test_module value $flag:False$ $list:[(p,_,_)]$ ; ] >>
+  when is_string_patt (fst (Patt.unwrap_attrs p)) ||  is_unnamed_patt (fst (Patt.unwrap_attrs p)) -> True
 | _ -> False
 ]
 ;
@@ -152,17 +183,17 @@ let ef = EF.{ (ef) with
       Some (rewrite_str_item arg z)
 
   | <:str_item:< [%%test value $flag:False$ $list:_$ ; ] >>
-   as z when is_named_bool_test z ->
+   as z when is_patt_bool_test z ->
     fun arg ->
       Some (rewrite_str_item arg z)
 
   | <:str_item:< [%%test_unit value $flag:False$ $list:_$ ; ] >>
-   as z when is_named_unit_test z ->
+   as z when is_patt_unit_test z ->
     fun arg ->
       Some (rewrite_str_item arg z)
 
   | <:str_item:< [%%test_module value $flag:False$ $list:_$ ; ] >>
-   as z when is_named_module_test z ->
+   as z when is_patt_module_test z ->
     fun arg ->
       Some (rewrite_str_item arg z)
 

@@ -31,3 +31,10 @@ let%expect_test "here" =
     { Lexing.pos_fname = "test_inline_test.ml"; pos_lnum = 29; pos_bol = 639;
       pos_cnum = 674 } |}]
 
+let%test "name" [@tags "no-js"] = false
+let%test "name" [@tags "no-js", "64-bits-only"] = false
+let%test _ [@tags "no-js"] = false
+let%test _ [@tags "js-only"] = false
+let%test_module "name" [@tags "no-js"] = (module struct
+  let %test "b" = false
+end)
