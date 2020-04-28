@@ -59,17 +59,13 @@ test_inline_test.ppx.byte: test_inline_test.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 test_inline_test.ppx: test_inline_test.ppx.byte
-	./$< inline-test-runner foo -source-tree-root . -diff-cmd - || \
-	/usr/bin/git diff --no-index -u test_inline_test.ml test_inline_test.ml.corrected | cat
-
+	./test-runner $< foo
 
 test_inline_test.byte: test_inline_test.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES),camlp5.pr_o.syntax -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 test_inline_test: test_inline_test.byte
-	./$< inline-test-runner foo -source-tree-root . -diff-cmd - || \
-	/usr/bin/git diff --no-index -u test_inline_test.ml test_inline_test.ml.corrected | cat
-
+	./test-runner $< foo
 
 clean::
 	rm -f *.corrected

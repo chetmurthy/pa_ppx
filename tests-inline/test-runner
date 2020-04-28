@@ -1,0 +1,46 @@
+#!/usr/bin/env perl
+
+use strict ;
+use IPC::System::Simple qw(systemx runx capturex $EXITVAL);
+use String::ShellQuote ;
+use File::Basename;
+
+our $verbose = 1;
+
+{
+  my $test = shift @ARGV;
+  my $lib = shift @ARGV;
+  my @args = @ARGV ;
+
+  my $src ;
+  if ($test =~ /(.*)\.ppx\.byte$/) {
+    $src = "$1.ml" ;
+  }
+  elsif ($test =~ /(.*)\.byte$/) {
+    $src = "$1.ml" ;
+  }
+  else { die "malformed test $test"; }
+
+  my $corr = "$src.corrected" ;
+  v_systemx([0], ["rm","-f",$corr]);
+  my $rc = v_systemx([0,1,2], ["./$test", "inline-test-runner", $lib,
+			       "-source-tree-root", ".",
+			       "-diff-cmd", "-",
+			       @args]);
+  if ($rc > 0 && -r $corr) {
+    v_systemx([0], ["git", "--no-pager", "diff", "--no-index", "-u", $src, $corr]);
+  }
+  exit($rc);
+}
+
+sub v_systemx {
+  croak( "v_systemx: must specify exit codes") unless (ref($_[0]) eq 'ARRAY') ;
+  my $codes = shift ;
+  my @cmd = @{ shift @_ } ;
+  my %args = @_ ;
+
+  print STDERR join(' ', map { shell_quote($_) } @cmd)."\n" if $main::verbose ;
+
+  return runx($codes, @cmd) ;
+}
+
