@@ -30,15 +30,7 @@ test: $(TESTS:.byte=)
 	./$<
 
 PPXPACKAGES:=ppx_import
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.show
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.eq
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.ord
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.enum
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.iter
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.map
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.fold
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.make
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving_yojson
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.std
 PPXPACKAGES:=$(PPXPACKAGES),ppx_here
 
 
@@ -53,29 +45,29 @@ PPXINLINEOPT = -ppxopt ppx_expect,-inline-test-lib  -ppxopt ppx_expect,foo
 PAPACKAGES:=$(PACKAGEPREFIX)runtime
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import.syntax
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.yojson.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)hashrecons.syntax
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here.syntax
 
 PAINLINEPACKAGES:=$(PAPACKAGES)
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)expect_test.syntax
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)inline_test.syntax
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),ppx_expect.evaluator
+PAINLINEPACKAGES:=$(PAINLINEPACKAGES),ppx_inline_test.runtime-lib,ppx_inline_test.runner.lib
+
+PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
 
 test_inline_test.ppx.byte: test_inline_test.ml
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 test_inline_test.ppx: test_inline_test.ppx.byte
 	./$< inline-test-runner foo -source-tree-root . -diff-cmd - || \
 	/usr/bin/git diff --no-index -u test_inline_test.ml test_inline_test.ml.corrected | cat
 
 
-PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
 test_inline_test.byte: test_inline_test.ml
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PAINLINEPACKAGES),camlp5.pr_o.syntax,ppx_inline_test.runtime-lib,ppx_inline_test.runner.lib -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES),camlp5.pr_o.syntax -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 test_inline_test: test_inline_test.byte
-	./$< inline-test-runner foo -verbose -require-tag js-only -source-tree-root . -diff-cmd - || \
+	./$< inline-test-runner foo -source-tree-root . -diff-cmd - || \
 	/usr/bin/git diff --no-index -u test_inline_test.ml test_inline_test.ml.corrected | cat
 
 
