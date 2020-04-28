@@ -1,11 +1,11 @@
 */*.cm*
 */*.byte
 */camlp5.*
-tests/_build
+tests-*/_build
 */*.o
 */*.a
 local-install
 */.depend.NEW
 META
 camlp5o.pa_ppx
-tests/*.corrected
+tests-*/*.corrected

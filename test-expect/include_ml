@@ -7,23 +7,19 @@
 #require "pcre";;
 #require "bos";;
 
-(*
-#require "camlp5.pa_op";;
-Pcaml.inter_phrases := Some ";;\n";;
-*)
-#require "camlp5.pa_o";;
-Pcaml.inter_phrases := Some ";\n";;
 
+#require "camlp5.pa_o";;
+Pcaml.inter_phrases := Some ";;\n";;
 (*
-#require "camlp5.pr_o";;
+#require "camlp5.pa_r";;
+Pcaml.inter_phrases := Some ";\n";;
 *)
+
 #require "camlp5.pr_o";;
 
 (*
 #require "camlp5.pr_r";;
-Pcaml.inter_phrases := Some ";\n";;
 *)
-
 #require "camlp5.quotations";;
 #require "camlp5.extfun";;
 (*
@@ -78,29 +74,33 @@ let pp_lexbuf lb =
 ;;
 #install_printer pp_lexbuf ;;
 
-print_string "================ START ================\n";; flush stdout ;;
-
-#require "pa_ppx_pa_import";;
-
-#require "pa_ppx_pa_deriving_plugins.show";;
-
 open Asttypes ;;
 open Parsetree ;;
 open Longident ;;
 
-#trace Pa_import.import_type ;;
-#trace Pa_import.find_type ;;
-#trace Pa_import.lookup_file ;;
+print_string "================ START ================\n";; flush stdout ;;
+
+
+#require "pa_ppx_expect_test";;
+#require "pa_ppx_inline_test";;
+
+#install_printer Fpath.pp ;;
 #trace Bos.OS.File.exists ;;
-#trace Pa_import.substitute_ctyp ;;
-#trace Pa_import.string_list_of_expr ;;
-#trace Pa_import.extend_renmap ;;
+(*
+#trace Pa_inline_test.rewrite_str_item ;;
+#trace Pa_inline_test.wrap_implem ;;
+*)
+Pa_inline_test.libname := "foo" ;;
 
-let dirs = [".";"/home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/ocaml/compiler-libs";"/home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/ocaml/compiler-libs";"/home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/rresult";"/home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/result";"/home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/pcre";"/home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/fmt";"/home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/seq";"/home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/ounit2";"/home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/ounit2/advanced";"/home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/ocaml";"/home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/stdlib-shims";"/home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/bytes";"/home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5"];;
-List.iter Pa_import.add_include (List.rev dirs) ;;
+#trace Pa_expect_test.expect_test ;;
+(*
+#trace Pa_expect_test.wrap_implem ;;
+*)
+#trace Pa_expect_test.rewrite_str_item ;;
 
-
-"test_ppx_import.ml" |> Fpath.v|> Bos.OS.File.read |> Rresult.R.get_ok |> PAPR.Implem.pa1 |> PAPR.Implem.pr |> print_string ;;
+"test_inline_test.ml" |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> PAPR.Implem.pa1 ~input_file:"test_boo.ml"
+  |> PAPR.Implem.pr |> print_string ;;
 
 (*
 ;;; Local Variables: ***

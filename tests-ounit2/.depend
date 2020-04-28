@@ -1,7 +1,5 @@
 stuff.cmo :
 stuff.cmx :
-test_boo.cmo :
-test_boo.cmx :
 test_deriving_enum.cmo : \
     testutil2.cmo
 test_deriving_enum.cmx : \
@@ -42,8 +40,6 @@ test_import_camlp5.cmo : \
     testutil2.cmo
 test_import_camlp5.cmx : \
     testutil2.cmx
-test_inline_test.cmo :
-test_inline_test.cmx :
 test_passthru_hashrecons.cmo : \
     testutil2.cmo \
     hCPassthru.cmo

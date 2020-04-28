@@ -20,7 +20,9 @@ all:
 	$(MAKE) -C pa_deriving all
 	$(MAKE) -C pa_deriving.plugins all
 	$(MAKE) -C pa_import all
-#	$(MAKE) -C tests all
+	$(MAKE) -C tests-ounit2 all
+	$(MAKE) -C tests-inline all
+	$(MAKE) -C tests-expect all
 
 PACKAGES := pa_ppx_base
 PACKAGES := $(PACKAGES),pa_ppx_here
@@ -60,7 +62,9 @@ clean::
 	$(MAKE) -C pa_deriving clean
 	$(MAKE) -C pa_deriving.plugins clean
 	$(MAKE) -C pa_import clean
-	$(MAKE) -C tests clean
+	$(MAKE) -C tests-ounit2 clean
+	$(MAKE) -C tests-inline clean
+	$(MAKE) -C tests-expect clean
 
 depend:
 	$(MAKE) -C runtime depend
@@ -73,4 +77,6 @@ depend:
 	$(MAKE) -C pa_deriving depend
 	$(MAKE) -C pa_deriving.plugins depend
 	$(MAKE) -C pa_import depend
-	$(MAKE) -C tests depend
+	$(MAKE) -C tests-ounit2 depend
+	$(MAKE) -C tests-inline depend
+	$(MAKE) -C tests-expect depend
