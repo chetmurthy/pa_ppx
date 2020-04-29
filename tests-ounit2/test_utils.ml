@@ -43,7 +43,7 @@ let tsort_tests = "tsort tests" >:::
     (fun ctxt ->
        let adj = ["a", ["b"; "c"]; "b", ["d"]; "c", ["d"]] in
        let sorted = Tsort.tsort  (fun v l -> v::l) adj [] in
-       assert_equal sorted ["d"; "b"; "c"; "a"] 
+       assert_equal sorted ["d"; "c"; "b"; "a"] 
     )
   ]
 

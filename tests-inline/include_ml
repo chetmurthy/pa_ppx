@@ -14,22 +14,23 @@ Pcaml.inter_phrases := Some ";;\n";;
 #require "camlp5.pa_r";;
 Pcaml.inter_phrases := Some ";\n";;
 *)
-
-#require "camlp5.pr_o";;
-
 (*
-#require "camlp5.pr_r";;
+#require "camlp5.pr_o";;
 *)
+
+#require "camlp5.pr_r";;
+
 #require "camlp5.quotations";;
 #require "camlp5.extfun";;
 (*
 #require "camlp5.extend";;
-#require "camlp5.phony_quotations" ;;
+#require "camlp5.phony_quotations" ;;> 
 *)
 
 #directory "../../camlp5/main";;
 Exparser.optim := false ;;
 
+#directory "../tests-ounit2";;
 #load "testutil.cmo";;
 #load "testutil2.cmo";;
 
@@ -80,25 +81,26 @@ open Longident ;;
 
 print_string "================ START ================\n";; flush stdout ;;
 
-
+(*
 #require "pa_ppx_expect_test";;
 #require "pa_ppx_inline_test";;
+#require "pa_ppx_assert";;
 
 #install_printer Fpath.pp ;;
 #trace Bos.OS.File.exists ;;
-(*
-#trace Pa_inline_test.rewrite_str_item ;;
-#trace Pa_inline_test.wrap_implem ;;
-*)
 Pa_inline_test.libname := "foo" ;;
 
-#trace Pa_expect_test.expect_test ;;
-(*
-#trace Pa_expect_test.wrap_implem ;;
-*)
-#trace Pa_expect_test.rewrite_str_item ;;
+#trace Pa_assert.rewrite_expr ;;
 
-"test_inline_test.ml" |> Fpath.v |> Bos.OS.File.read
+"ppx_assert_test.ml" |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> PAPR.Implem.pa1 ~input_file:"ppx_assert_test.ml"
+  |> PAPR.Implem.pr |> print_string ;;
+*)
+
+#require "pa_ppx_assert";;
+#trace Pa_assert.rewrite_expr ;;
+
+"test_boo.ml" |> Fpath.v |> Bos.OS.File.read
   |> Rresult.R.get_ok |> PAPR.Implem.pa1 ~input_file:"test_boo.ml"
   |> PAPR.Implem.pr |> print_string ;;
 

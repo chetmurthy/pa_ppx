@@ -13,13 +13,14 @@ RM=rm
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common
+PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,sexplib0,sexplib,str
 
 CMO=
 CMI=$(CMO:.cmo=.cmi)
 
 TESTS= \
 	test_inline_test.TEST failures.TEST order.TEST random_state.TEST \
+	ppx_assert_test.TEST
 
 all: $(CMO) test-executables
 
@@ -33,6 +34,7 @@ PPXPACKAGES:=$(PPXPACKAGES),ppx_here
 
 
 PPXINLINEPACKAGES:=ppx_inline_test.runtime-lib
+PPXINLINEPACKAGES:=$(PPXINLINEPACKAGES),ppx_assert
 PPXINLINEPACKAGES:=$(PPXINLINEPACKAGES),$(PPXPACKAGES)
 PPXINLINEPACKAGES:=$(PPXINLINEPACKAGES),ppx_expect
 PPXINLINEPACKAGES:=$(PPXINLINEPACKAGES),ppx_inline_test.runner.lib
@@ -44,6 +46,7 @@ PAPACKAGES:=$(PACKAGEPREFIX)runtime
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import.syntax
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std.syntax
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here.syntax
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)assert.syntax
 
 PAINLINEPACKAGES:=$(PAPACKAGES)
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)inline_test.syntax
@@ -57,7 +60,7 @@ PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 %.pa.byte: %.ml
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES),camlp5.pr_o.syntax -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 %.TEST: %.pa.byte %.ppx.byte
 	./test-runner $^ foo $(VERBOSE)

@@ -9,6 +9,15 @@ open Pa_ppx_utils;
 open Asttools;
 open MLast;
 
+value with_buffer_formatter f arg = do {
+  let b = Buffer.create 23 in
+  let bfmt = Format.formatter_of_buffer b in
+  f bfmt arg ;
+  Format.pp_print_flush bfmt () ;
+  Buffer.contents b
+}
+;
+
 value duplicated (l : list string) =
   let l = List.sort Stdlib.compare l in
   let rec duprec = fun [
@@ -32,7 +41,9 @@ value attr_id attr = snd (Pcaml.unvala (fst (Pcaml.unvala attr))) ;
 
 module Expr = struct
 
-value print e = Eprinter.apply Pcaml.pr_expr Pprintf.empty_pc e ;
+value print e =
+  let e = Ast2pt.expr e in
+  Pprintast.string_of_expression e ;
 
 value to_string_list e =
   let rec srec = fun [
@@ -99,7 +110,9 @@ end ;
 
 module Ctyp = struct
 
-value print e = Eprinter.apply Pcaml.pr_ctyp Pprintf.empty_pc e ;
+value print cty =
+  let cty = Ast2pt.ctyp cty in
+  with_buffer_formatter Pprintast.core_type cty ;
 
 value arrows_list loc l ty =
   List.fold_right (fun argty ty -> <:ctyp< $argty$ -> $ty$ >>)
