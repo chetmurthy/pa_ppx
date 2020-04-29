@@ -11,17 +11,18 @@ CAMLP5R=camlp5r -I $(CAMLP5LIB)
 INCLUDES=-I $(CAMLP5LIB)
 OCAMLCFLAGS=$(DEBUG) $(WARNERR) $(INCLUDES)
 PACKAGES=camlp5,compiler-libs.common
+SYNTAX = camlp5r
 
 top: all
 
 .mli.cmi:
-	$(OCAMLFIND) ocamlc $(OCAMLCFLAGS) -package $(PACKAGES) -syntax camlp5r -c $<
+	$(OCAMLFIND) ocamlc $(OCAMLCFLAGS) -package $(PACKAGES) -syntax $(SYNTAX) -c $<
 
 .ml.cmo:
-	$(OCAMLFIND) ocamlc $(OCAMLCFLAGS) -package $(PACKAGES) -syntax camlp5r -c $<
+	$(OCAMLFIND) ocamlc $(OCAMLCFLAGS) -package $(PACKAGES) -syntax $(SYNTAX) -c $<
 
 .ml.cmx:
-	$(OCAMLFIND) ocamlopt $(OCAMLCFLAGS) -package $(PACKAGES) -syntax camlp5r -c $<
+	$(OCAMLFIND) ocamlopt $(OCAMLCFLAGS) -package $(PACKAGES) -syntax $(SYNTAX) -c $<
 
 .SUFFIXES: .cmo .cmi .ml .mli .cmx .cma .cmxa
 
