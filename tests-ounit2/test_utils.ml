@@ -33,6 +33,12 @@ let tsort_tests = "tsort tests" >:::
        let sorted = Tsort.tsort  (fun v l -> v::l) adj [] in
        assert_equal sorted ["b"; "a"] 
     )
+  ; "merge_adj" >::
+    (fun ctxt ->
+       let adj1 = ["a", ["b"; "c"]; "b", []; "e", []] in
+       let adj2 = ["a", ["d"]; "b", ["c"]] in
+       assert_equal (Tsort.merge_adj adj1 adj2)  ["a", ["b"; "c";"d"]; "b", ["c"]; "e", []; "c", []; "d", []]
+    )
   ; "diamond" >::
     (fun ctxt ->
        let adj = ["a", ["b"; "c"]; "b", ["d"]; "c", ["d"]] in
