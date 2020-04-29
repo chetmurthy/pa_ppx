@@ -32,6 +32,8 @@ value attr_id attr = snd (Pcaml.unvala (fst (Pcaml.unvala attr))) ;
 
 module Expr = struct
 
+value print e = Eprinter.apply Pcaml.pr_expr Pprintf.empty_pc e ;
+
 value to_string_list e =
   let rec srec = fun [
     <:expr< $lid:i$ >> -> [i]
@@ -96,6 +98,8 @@ value unwrap_attrs e =
 end ;
 
 module Ctyp = struct
+
+value print e = Eprinter.apply Pcaml.pr_ctyp Pprintf.empty_pc e ;
 
 value arrows_list loc l ty =
   List.fold_right (fun argty ty -> <:ctyp< $argty$ -> $ty$ >>)
@@ -200,5 +204,3 @@ value quote_position loc p =
   pos_bol = $int:string_of_int p.pos_bol$ ;
   pos_cnum = $int:string_of_int p.pos_cnum$ } >>
 ;
-
-value prettyprint_expr e = Eprinter.apply Pcaml.pr_expr Pprintf.empty_pc e ;
