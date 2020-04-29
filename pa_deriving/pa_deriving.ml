@@ -11,6 +11,7 @@
 open Asttools;
 open MLast;
 open Pa_ppx_base ;
+open Pa_ppx_utils ;
 open Pa_passthru ;
 open Ppxutil ;
 
@@ -46,7 +47,7 @@ value is_deriving_attribute (attr : attribute) = attr_id attr = "deriving" ;
 value extract_deriving name attr =
   if not (is_deriving_attribute attr) then None
   else let l = attr |> extract_deriving0
-               |> filter (fun (s,_) -> name = s) in
+               |> Std.filter (fun (s,_) -> name = s) in
     if l = [] then None
     else  Some (l |> List.map snd |> List.concat)
 ;
@@ -78,10 +79,10 @@ type t = {
 
 value attributes pi = pi.alg_attributes ;
 
-value is_medium_form_attribute pi attr = starts_with ~{pat=pi.name} (attr_id attr) ;
+value is_medium_form_attribute pi attr = Std.starts_with ~{pat=pi.name} (attr_id attr) ;
 value is_long_form_attribute pi attr =
   let name = Printf.sprintf "deriving.%s" pi.name in
- starts_with ~{pat=name} (attr_id attr) ;
+ Std.starts_with ~{pat=name} (attr_id attr) ;
 
 value medium_form_attributes pi =
   List.map (fun n -> Printf.sprintf "%s.%s" pi.name n) (attributes pi)
@@ -101,7 +102,7 @@ value algattr2plugin = ref [] ;
 value checked_add_assoc ~{mapping} r (k,v) =
   if List.mem_assoc k r.val then
     failwith (Printf.sprintf "%s %s already registered" mapping k)
-  else push r (k,v)
+  else Std.push r (k,v)
 ;
 
 module Registry = struct
@@ -110,12 +111,12 @@ value add t = do {
   t.PI.alternates |> List.iter (fun s ->
       checked_add_assoc ~{mapping="plugin-alternates"} alternate2plugin (s, t.PI.name)) ;
   t.expr_extensions |> List.iter (fun e ->
-      push extension2plugin (e, t.name)) ;
+      Std.push extension2plugin (e, t.name)) ;
 
   t.expr_extensions |> List.iter (fun e ->
-      push extension2plugin (Printf.sprintf "derive.%s" t.name, t.name)) ;
+      Std.push extension2plugin (Printf.sprintf "derive.%s" t.name, t.name)) ;
 
-  List.iter (fun aname -> push algattr2plugin (aname, t.name)) t.alg_attributes
+  List.iter (fun aname -> Std.push algattr2plugin (aname, t.name)) t.alg_attributes
 }
 ;
 

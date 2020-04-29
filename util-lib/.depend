@@ -1,0 +1,41 @@
+coll.cmo : \
+    std.cmi
+coll.cmx : \
+    std.cmx
+std.cmo : \
+    std.cmi
+std.cmx : \
+    std.cmi
+std.cmi :
+std2.cmo : \
+    coll.cmo \
+    std2.cmi
+std2.cmx : \
+    coll.cmx \
+    std2.cmi
+std2.cmi :
+tsort.cmo : \
+    tsort0.cmi \
+    std2.cmi \
+    std.cmi \
+    coll.cmo
+tsort.cmx : \
+    tsort0.cmx \
+    std2.cmx \
+    std.cmx \
+    coll.cmx
+tsort0.cmo : \
+    uf.cmi \
+    tsort0.cmi
+tsort0.cmx : \
+    uf.cmx \
+    tsort0.cmi
+tsort0.cmi : \
+    uf.cmi
+uf.cmo : \
+    std.cmi \
+    uf.cmi
+uf.cmx : \
+    std.cmx \
+    uf.cmi
+uf.cmi :

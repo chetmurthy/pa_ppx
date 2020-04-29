@@ -10,8 +10,9 @@ RM=rm
 
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
+MKCAMLP5 := $(LAUNCH) $(MKCAMLP5)
 
-PACKAGES := $(PACKAGES),rresult,fmt
+PACKAGES := $(PACKAGES),rresult,fmt,pa_ppx_utils
 TARGET := pa_ppx_base.cma
 CMO := ppxutil.cmo pa_passthru.cmo
 CMI := $(CMO:.cmo=.cmi)
@@ -26,7 +27,7 @@ pa_ppx_base.cmx: $(CMO:.cmo=.cmx)
 	$(OCAMLFIND) ocamlopt $(DEBUG) -pack -o pa_ppx_base.cmx $^
 
 camlp5.pa_ppx_base: $(TARGET)
-	$(MKCAMLP5) -verbose -package fmt,rresult,camlp5.pa_r,camlp5.pr_r $(TARGET) -o $@
+	$(MKCAMLP5) -verbose -package fmt,rresult,camlp5.pa_r,camlp5.pr_r,pa_ppx_utils $(TARGET) -o $@
 
 META: META.pl
 	./META.pl > META

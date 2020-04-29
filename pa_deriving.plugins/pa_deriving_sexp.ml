@@ -7,6 +7,7 @@
 
 open Asttools;
 open MLast;
+open Pa_ppx_utils ;
 open Pa_ppx_base ;
 open Pa_passthru ;
 open Ppxutil ;
@@ -691,7 +692,7 @@ value sig_item_gen_sexp name arg = fun [
 
 value type_params t =
   let acc = ref [] in
-  let add1 tv = if not (List.mem tv acc.val) then push acc tv else () in
+  let add1 tv = if not (List.mem tv acc.val) then Std.push acc tv else () in
   let rec brec = fun [
     <:ctyp< ' $tv$ >> -> add1 tv
   | <:ctyp< $a$ $b$ >> -> do { brec a; brec b }

@@ -10,6 +10,7 @@
 
 open Asttools;
 open MLast;
+open Pa_ppx_utils ;
 open Pa_ppx_base ;
 open Pa_passthru ;
 open Ppxutil ;
@@ -19,21 +20,21 @@ value lookup_path = ref [] ;
 
 value add_predicates s =
   let l = String.split_on_char ',' s in
-  let l = filter (fun s -> s <> "") l in
-  List.iter (push predicates) l
+  let l = Std.filter (fun s -> s <> "") l in
+  List.iter (Std.push predicates) l
 ;
 
 value add_package s =
   let l = String.split_on_char ',' s in
-  let l = filter (fun s -> s <> "") l in
+  let l = Std.filter (fun s -> s <> "") l in
   let pl = Findlib.package_deep_ancestors predicates.val l in
   List.iter (fun p ->
       let d = Findlib.package_directory p in
-      push lookup_path d) pl
+      Std.push lookup_path d) pl
 ;
 
 value add_include s =
-  push lookup_path (Findlib.resolve_path s)
+  Std.push lookup_path (Findlib.resolve_path s)
 ;
 
 value report () =

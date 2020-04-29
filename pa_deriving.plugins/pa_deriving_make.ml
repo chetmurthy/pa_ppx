@@ -7,6 +7,7 @@
 
 open Asttools;
 open MLast;
+open Pa_ppx_utils ;
 open Pa_ppx_base ;
 open Pa_passthru ;
 open Ppxutil ;
@@ -80,11 +81,11 @@ value fmt_expression arg : ctyp -> expr = fun [
   let (has_main, fields) = reorder_fields arg fields in
   
   let req_consfields_funpats = List.map (field2req_consfields_funpats loc) fields in
-  let all_required = List.for_all fst3 req_consfields_funpats in
+  let all_required = List.for_all Std.fst3 req_consfields_funpats in
 
-  let funpats = List.concat (List.map third3 req_consfields_funpats) in
+  let funpats = List.concat (List.map Std.third3 req_consfields_funpats) in
 
-  let efields = List.concat (List.map snd3 req_consfields_funpats) in
+  let efields = List.concat (List.map Std.snd3 req_consfields_funpats) in
 
   let body = <:expr< { $list:efields$ } >> in
   let body = if has_main || all_required then body else <:expr< fun () -> $body$ >> in

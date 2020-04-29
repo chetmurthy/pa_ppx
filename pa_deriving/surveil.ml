@@ -7,6 +7,7 @@
 
 open Asttools;
 open MLast;
+open Pa_ppx_utils ;
 open Pa_ppx_base ;
 open Pa_passthru ;
 open Ppxutil ;
@@ -51,7 +52,7 @@ After scanning, Surveil computes the following:
 
 module DerivingConfig = struct
 value addset r s =
-  if not (List.mem s r.val) then push r s else ()
+  if not (List.mem s r.val) then Std.push r s else ()
 ;
 value addsetl r l = List.iter (addset r) l ;
 type form_t = [ Short | Medium | Long ] ;
@@ -102,7 +103,7 @@ value start_decl dc plugins = do {
       if not (legitimate_plugin_reference dc r) then
         failwith (Printf.sprintf "ill-formed plugin reference %s" na)
       else ()) plugins ;
-  let plugins = filter (fun (na,_) -> Registry.mem na) plugins in
+  let plugins = Std.filter (fun (na,_) -> Registry.mem na) plugins in
   dc.current_plugins.val := List.map fst plugins ;
   plugins
 }
@@ -171,7 +172,7 @@ value add_current_attribute arg id =
 
 value add_deriving_attributes ctxt attrs = do {
     let dc = DC.get ctxt in
-    let attrs = filter is_deriving_attribute attrs in
+    let attrs = Std.filter is_deriving_attribute attrs in
     let plugins = extract_deriving0 (List.hd attrs) in
     if plugins = [] then failwith "Surveil.str_item: @@deriving with no plugins"
     else DC.addsetl dc.all_plugins (List.map fst plugins) ;
@@ -207,9 +208,9 @@ value sig_item arg = fun [
       |> List.map PI.long_form_attributes
       |> List.concat in
 
-    let short_form_attributes = intersect attributes reg_short_form_attributes in
-    let medium_form_attributes = intersect attributes reg_medium_form_attributes in
-    let long_form_attributes = intersect attributes reg_long_form_attributes in
+    let short_form_attributes = Std.intersect attributes reg_short_form_attributes in
+    let medium_form_attributes = Std.intersect attributes reg_medium_form_attributes in
+    let long_form_attributes = Std.intersect attributes reg_long_form_attributes in
 
     if not (match (short_form_attributes<>[], medium_form_attributes<>[], long_form_attributes<>[]) with [
       (True, False, False) -> True
@@ -260,9 +261,9 @@ value str_item arg = fun [
       |> List.map PI.long_form_attributes
       |> List.concat in
 
-    let used_short_form_attributes = filter (fun s -> List.mem s attributes) reg_short_form_attributes in
-    let used_medium_form_attributes = filter (fun s -> List.mem s attributes) reg_medium_form_attributes in
-    let used_long_form_attributes = filter (fun s -> List.mem s attributes) reg_long_form_attributes in
+    let used_short_form_attributes = Std.filter (fun s -> List.mem s attributes) reg_short_form_attributes in
+    let used_medium_form_attributes = Std.filter (fun s -> List.mem s attributes) reg_medium_form_attributes in
+    let used_long_form_attributes = Std.filter (fun s -> List.mem s attributes) reg_long_form_attributes in
 
     if not (match (used_short_form_attributes<>[],
                    used_medium_form_attributes<>[],

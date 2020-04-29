@@ -10,6 +10,7 @@ RM=rm
 
 all:
 	$(RM) -rf local-install && mkdir -p local-install/lib
+	$(MAKE) -C util-lib all
 	$(MAKE) -C runtime all
 	$(MAKE) -C base all
 	$(MAKE) -C pa_here all
@@ -24,7 +25,8 @@ all:
 	$(MAKE) -C tests-inline all
 	$(MAKE) -C tests-expect all
 
-PACKAGES := pa_ppx_base
+PACKAGES := pa_ppx_utils
+PACKAGES := $(PACKAGES),pa_ppx_base
 PACKAGES := $(PACKAGES),pa_ppx_here
 PACKAGES := $(PACKAGES),pa_ppx_unmatched_vala
 PACKAGES := $(PACKAGES),pa_ppx_inline_test
@@ -52,6 +54,7 @@ uninstall:
 
 clean::
 	rm -rf META local-install camlp5o.pa_ppx
+	$(MAKE) -C util-lib clean
 	$(MAKE) -C runtime clean
 	$(MAKE) -C base clean
 	$(MAKE) -C pa_here clean
@@ -67,6 +70,7 @@ clean::
 	$(MAKE) -C tests-expect clean
 
 depend:
+	$(MAKE) -C util-lib depend
 	$(MAKE) -C runtime depend
 	$(MAKE) -C base depend
 	$(MAKE) -C pa_here depend

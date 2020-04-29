@@ -5,17 +5,9 @@
 #load "pa_extend.cmo";
 #load "q_MLast.cmo";
 
+open Pa_ppx_utils;
 open Asttools;
 open MLast;
-
-value fst3 (a,_,_) = a ;
-value snd3 (_,b,_) = b ;
-value third3 (_,_,c) = c ;
-
-value starts_with ~{pat} s =
-  let patlen = String.length pat in
-  (String.length s >= patlen) && pat = String.sub s 0 patlen
-;
 
 value duplicated (l : list string) =
   let l = List.sort Stdlib.compare l in
@@ -34,18 +26,7 @@ value filter_split p l =
   in filtrec [] [] l
 ;
 
-value filter p =
-  let rec filter_aux = fun [
-      [] -> []
-    | [x::l] -> if p x then [x::filter_aux l] else filter_aux l ]
-  in filter_aux
-;
-
-value intersect l1 l2 = filter (fun x -> List.mem x l2) l1 ;
-
-value count p l = List.length (filter p l) ;
-
-value push r v = r.val := [v :: r.val] ;
+value count p l = List.length (Std.filter p l) ;
 
 value attr_id attr = snd (Pcaml.unvala (fst (Pcaml.unvala attr))) ;
 

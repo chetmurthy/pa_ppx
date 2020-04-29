@@ -11,7 +11,7 @@ RM=rm
 LAUNCH=$(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),fmt,pa_ppx_base,pa_ppx_base.syntax
+PACKAGES := $(PACKAGES),fmt,pa_ppx_utils,pa_ppx_base,pa_ppx_base.syntax
 
 TARGET=pa_deriving.cma
 CMO=pa_deriving.cmo surveil.cmo deriving_harness.cmo

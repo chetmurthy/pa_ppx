@@ -8,6 +8,7 @@
 #load "pa_macro_gram.cmo";
 #load "pa_extfun.cmo";
 
+open Pa_ppx_utils;
 open Asttools;
 open MLast;
 open Ppxutil ;
@@ -901,7 +902,7 @@ value eflist = ref [] ;
 
 value install ((na, _) as x) = do {
   Fmt.(pf stderr "[install %s]\n%!" na) ;
-  push eflist x
+  Std.push eflist x
 }
 ;
 value before = Pcaml.parse_implem.val ;
