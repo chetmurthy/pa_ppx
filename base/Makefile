@@ -53,6 +53,9 @@ $(TARGET:.cma=.cmxa): pa_ppx_base.cmx
 $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
+$(CMO): $(EXTERNAL)
+
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli > .depend.NEW \
 		&& mv .depend.NEW .depend

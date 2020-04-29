@@ -15,6 +15,28 @@ OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
 PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common
 
+PPXPACKAGES:=ppx_import
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.show
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.eq
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.ord
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.enum
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.iter
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.map
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.fold
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.make
+PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving_yojson
+PPXPACKAGES:=$(PPXPACKAGES),ppx_here
+
+PAPACKAGES:=$(PACKAGEPREFIX)utils
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)runtime
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import.syntax
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std.syntax
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.yojson.syntax
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)hashrecons.syntax
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here.syntax
+
+ALL_PACKAGES := $(PACKAGES),$(PAPACKAGES),$(PPXPACKAGES)
+
 CMO=
 CMI=$(CMO:.cmo=.cmi)
 
@@ -54,26 +76,6 @@ test: $(TESTS:.byte=)
 
 % : %.byte
 	./$<
-
-PPXPACKAGES:=ppx_import
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.show
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.eq
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.ord
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.enum
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.iter
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.map
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.fold
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.make
-PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving_yojson
-PPXPACKAGES:=$(PPXPACKAGES),ppx_here
-
-PAPACKAGES:=$(PACKAGEPREFIX)utils
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)runtime
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.yojson.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)hashrecons.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here.syntax
 
 test_%.byte: test_%.ml testutil.cmo testutil2.cmo
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),yojson,$(PAPACKAGES) \
@@ -125,6 +127,9 @@ stuff.cmo: stuff.ml
 
 clean::
 	rm -f *.corrected
+
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(ALL_PACKAGES))
+$(CMO): $(EXTERNAL)
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o testutil2.ml stuff.ml test_*.ml > .depend.NEW

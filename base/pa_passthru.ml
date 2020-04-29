@@ -894,7 +894,24 @@ value onepass (ctxt,arg) pass = do {
     }
 ;
 
+value tsort_passes passes =
+  let open Tsort in
+  let pass_map = List.map (fun p -> (p.name, p)) passes in
+  let unsorted = List.map fst pass_map in
+  let before_adj = List.map (fun p -> (p.name, p.before)) passes in
+  let after_adj = List.map (fun p -> (p.name, p.after)) passes in
+  let adj = merge_adj (invert_adj (nodes before_adj) before_adj) after_adj in
+  let space = Fmt.(const string " ") in
+  let sorted = Tsort.tsort  (fun v l -> [v::l]) adj [] in do {
+    Fmt.(pf stderr "[tsort: <<%a>> -> <<%a>>]\n%!" (list ~{sep=space} string) unsorted (list ~{sep=space} string) sorted) ;
+    sorted
+    |> List.map (fun n -> match List.assoc n pass_map with [ x -> [x] | exception Not_found -> [] ])
+    |> List.concat
+  }
+;
+
 value passthru passes pa_before arg = do {
+  let passes = tsort_passes passes in
   let rv = pa_before arg in
   let (l, status) = rv in
   assert (l <> []) ;
