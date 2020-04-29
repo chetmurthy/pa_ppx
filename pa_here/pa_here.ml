@@ -30,7 +30,7 @@ let ef = EF.{ (ef) with
     fun arg ->
       Some (rewrite_expr arg z)
   ] } in
-  Pa_passthru.install ("pa_here", ef)
+  Pa_passthru.(install { name = "pa_here"; ef =  ef ; before = [] ; after = [] })
 ;
 
 install();

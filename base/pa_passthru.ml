@@ -880,28 +880,35 @@ and implem0 arg (l, status) =
     (List.map (fun (si, loc) -> (str_item arg si, loc)) l, status)
 ;
 
-value onepass (ctxt,arg) (na, ef) = do {
-      Printf.(fprintf stderr "[pass %s]\n%!" na) ;
-      let ctxt = Ctxt.{ (ctxt) with ef = ef } in
+type pass_t = {
+  name : string ;
+  before : list string ;
+  after : list string ;
+  ef : EF.t
+} ;
+
+value onepass (ctxt,arg) pass = do {
+      Printf.(fprintf stderr "[pass %s]\n%!" pass.name) ;
+      let ctxt = Ctxt.{ (ctxt) with ef = pass.ef } in
       (ctxt, implem ctxt arg)
     }
 ;
 
-value passthru eflist pa_before arg = do {
+value passthru passes pa_before arg = do {
   let rv = pa_before arg in
   let (l, status) = rv in
   assert (l <> []) ;
   let (_, loc) = List.hd l in
   let ctxt = Ctxt.mk (EF.mk()) loc in
-  let (_, rv) = List.fold_left onepass (ctxt,(l,status)) eflist in
+  let (_, rv) = List.fold_left onepass (ctxt,(l,status)) passes in
   rv
 }
 ;
 
 value eflist = ref [] ;
 
-value install ((na, _) as x) = do {
-  Fmt.(pf stderr "[install %s]\n%!" na) ;
+value install x = do {
+  Fmt.(pf stderr "[install %s]\n%!" x.name) ;
   Std.push eflist x
 }
 ;

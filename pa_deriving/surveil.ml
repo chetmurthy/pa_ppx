@@ -331,5 +331,5 @@ let ef = EF.{ (ef) with
         let rv = implem arg z in do {
         Fmt.(DC.dump stderr (DC.get arg)) ; rv }
   ] } in
-  Pa_passthru.install ("surveil", ef)
+  Pa_passthru.(install { name = "surveil" ; ef = ef ; before = [] ; after = [] })
 ;

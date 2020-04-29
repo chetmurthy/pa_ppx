@@ -163,7 +163,7 @@ let ef = EF.{ (ef) with
     fun arg ->
       Some (expr0 arg (rewrite_expr arg z))
   ] } in
-  Pa_passthru.install ("pa_unmatched_vala", ef)
+  Pa_passthru.(install { name = "pa_unmatched_vala" ; ef = ef ; before = [] ; after = [] })
 ;
 
 install();
