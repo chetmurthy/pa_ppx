@@ -19,6 +19,7 @@ CMO=
 CMI=$(CMO:.cmo=.cmi)
 
 TESTS= \
+	test_utils.byte \
 	test_deriving_show.byte \
 	test_deriving_show.ppx.byte \
 	test_deriving_eq.byte \

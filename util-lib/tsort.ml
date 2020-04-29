@@ -39,14 +39,24 @@ let uniquize ?(compare=Stdlib.compare) l =
   urec ([], l)
 
 (* a graph as an adjacency list *)
-type 'a graph_t = ('a * 'a list) list
+type 'a list_adj_t = ('a * 'a list) list
 
-let nodes (succadj : 'a graph_t) =
-  let acc = ref [] in
-  List.iter (fun (s,dlist) -> push acc s; List.iter (push acc) dlist) succadj ;
-  uniquize ~compare !acc
+let nodes (succadj : 'a list_adj_t) =
+  let l = (List.map fst succadj) @
+          (List.concat (List.map snd succadj)) in
+  hash_uniq l
 
-let invert_adj ?(compare=Stdlib.compare) nodes succadj =
+let merge_adj (succadj1 : 'a list_adj_t) (succadj2 : 'a list_adj_t) =
+  let nodes1 = nodes succadj1 in 
+  let nodes2 = nodes succadj2 in 
+  let allnodes = hash_union nodes1 nodes2 in
+  List.map (fun n ->
+      let l =
+        hash_union (match List.assoc n succadj1 with x -> x | exception Not_found -> [])
+          (match List.assoc n succadj2 with x -> x | exception Not_found -> []) in
+      (n, l)) allnodes
+
+let invert_adj ?(compare=Stdlib.compare) nodes (succadj : 'a list_adj_t) =
   let pred = Hashtbl.create 97 in
   List.iter (fun (s,dlist) ->
       List.iter (fun d ->
@@ -59,13 +69,13 @@ let invert_adj ?(compare=Stdlib.compare) nodes succadj =
         push acc (n, Hashtbl.find_all pred n)) nodes ;
   List.sort (fun (n, _) (m, _) -> compare n m) !acc
 
-let succ2hash nodes (succadj : 'a graph_t) =
+let succ2hash nodes (succadj : 'a list_adj_t) =
   let succ = Hashtbl.create 97 in
   List.iter (fun n -> Hashtbl.add succ n []) nodes ;
   List.iter (fun (s,dlist) -> Hashtbl.replace succ s dlist) succadj ;
   succ
 
-let make_indegree nodes (succadj : 'a graph_t) =
+let make_indegree nodes (succadj : 'a list_adj_t) =
   let indegree = Hashtbl.create 97 in
   List.iter (fun v -> Hashtbl.add indegree v 0) nodes ;
   List.iter (fun (s, dlist) ->
@@ -78,7 +88,7 @@ let make_indegree nodes (succadj : 'a graph_t) =
 
 let canon (l : 'a list) = List.sort compare l
 
-let tsort ?(compare=Stdlib.compare) ?(invertadj=false) f (succadj : 'a graph_t) acc =
+let tsort ?(compare=Stdlib.compare) ?(invertadj=false) f (succadj : 'a list_adj_t) acc =
   let nodes = nodes succadj in
 
   let adj =
@@ -127,7 +137,7 @@ let tsort ?(compare=Stdlib.compare) ?(invertadj=false) f (succadj : 'a graph_t) 
 
   in dorec acc
 
-let cycles (succadj : 'a graph_t) =
+let cycles (succadj : 'a list_adj_t) =
   let edge_adj =
     succadj
     |> List.map (fun (s, dl) -> List.map (fun d -> (s,d)) dl)
@@ -136,7 +146,7 @@ let cycles (succadj : 'a graph_t) =
   let hadj = Tsort0.mkadj edge_adj in
   Tsort0.cycles nodes hadj
 
-let collapse_cycles (succadj : 'a graph_t) =
+let collapse_cycles (succadj : 'a list_adj_t) =
   let _, cyl = cycles succadj in
   let cymap =
     cyl
@@ -160,7 +170,7 @@ let collapse_cycles (succadj : 'a graph_t) =
       )
   in cyl, collapsed_succadj
 
-let tsort_cyclic ?(compare=Stdlib.compare) ?(invertadj=false) (succadj : 'a graph_t) =
+let tsort_cyclic ?(compare=Stdlib.compare) ?(invertadj=false) (succadj : 'a list_adj_t) =
   let cyl, collapsed = collapse_cycles succadj in
   let cyl = List.map (fun (rep, nl) -> (rep, List.sort compare nl)) cyl in
   let order = tsort ~compare ~invertadj (fun v l -> v::l) collapsed [] in

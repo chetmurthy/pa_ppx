@@ -1,5 +1,6 @@
 
 type 'a edges_t = {mutable edges: 'a list}
+type 'a hash_adj_t = ('a, 'a edges_t) Hashtbl.t
 
 let nodes edgl =
   let s = Hashtbl.create 23 in

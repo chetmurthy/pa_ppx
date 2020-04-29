@@ -13,6 +13,17 @@ let hash_uniq l =
        )
   in unirec [] l
 
+let hash_union l1 l2 =
+  let s = MHS.mk 23 in
+  let rec urec acc = function
+      [] -> acc
+    | h::t -> if not (MHS.mem h s) then
+        (MHS.add h s ; urec (h::acc) t)
+      else urec acc t in
+  let acc = urec [] l1 in
+  let acc = urec acc l2 in
+  List.rev acc
+
 let hash_list_repeats l =
   let seen = MHS.mk 23 in
   let reported = MHS.mk 23 in
