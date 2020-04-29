@@ -1,5 +1,6 @@
 open OUnit2
 
+open Pa_ppx_base
 open HCPassthru
 
 let pa entry s = s |> Stream.of_string |> Grammar.Entry.parse entry

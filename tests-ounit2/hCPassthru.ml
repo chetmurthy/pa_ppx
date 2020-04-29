@@ -4,6 +4,7 @@
 
 open Asttools;
 open MLast;
+open Pa_ppx_base ;
 open Ppxutil ;
 open Pa_passthru ;
 

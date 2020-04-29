@@ -10,6 +10,7 @@
 
 open Asttools;
 open MLast;
+open Pa_ppx_base ;
 open Pa_passthru ;
 open Ppxutil ;
 open Surveil ;

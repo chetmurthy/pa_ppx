@@ -15,13 +15,13 @@ PACKAGES=camlp5,compiler-libs.common
 top: all
 
 .mli.cmi:
-	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES) -syntax camlp5r -c $<
+	$(OCAMLFIND) ocamlc $(OCAMLCFLAGS) -package $(PACKAGES) -syntax camlp5r -c $<
 
 .ml.cmo:
-	$(OCAMLFIND) ocamlc $(DEBUG) -package $(PACKAGES) -syntax camlp5r -c $<
+	$(OCAMLFIND) ocamlc $(OCAMLCFLAGS) -package $(PACKAGES) -syntax camlp5r -c $<
 
 .ml.cmx:
-	$(OCAMLFIND) ocamlopt $(DEBUG) -package $(PACKAGES) -syntax camlp5r -c $<
+	$(OCAMLFIND) ocamlopt $(OCAMLCFLAGS) -package $(PACKAGES) -syntax camlp5r -c $<
 
 .SUFFIXES: .cmo .cmi .ml .mli .cmx .cma .cmxa
 
