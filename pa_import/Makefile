@@ -14,9 +14,8 @@ MKCAMLP5=$(LAUNCH) mkcamlp5
 PACKAGES := $(PACKAGES),pa_ppx_base,fmt,bos,compiler-libs.common,findlib.internal
 
 TARGET=pa_import.cma
-CMO=pa_import.cmo import_harness.cmo
+CMO=pa_import.cmo
 CMI=$(CMO:.cmo=.cmi)
-INSTALL_CMI=$(filter-out import_harness.cmi,$(CMI))
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_import local-install
 
@@ -30,7 +29,7 @@ install::
 	./META.pl $(DESTDIR)/lib > META
 	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_import || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_import -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(INSTALL_CMI)
+	$(OCAMLFIND) install pa_ppx_import -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(CMI)
 	$(RM) -f META
 
 local-install::

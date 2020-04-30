@@ -451,3 +451,5 @@ Pcaml.add_option "-pa_import-I" (Arg.String add_include)
 
 (* calls lazy_init() so we're sure of being inited *)
 add_include (Findlib.ocaml_stdlib());
+
+install();

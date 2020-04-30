@@ -96,12 +96,12 @@ value legitimate_plugin_reference dc (na, options) =
   ]
 ;
 
-value start_decl dc plugins = do {
+value start_decl loc dc plugins = do {
   assert ([] = dc.current_plugins.val) ;
   assert ([] = dc.current_attributes.val) ;
   List.iter (fun ((na, _) as r) ->
       if not (legitimate_plugin_reference dc r) then
-        failwith (Printf.sprintf "ill-formed plugin reference %s" na)
+        Ploc.raise loc (Failure (Printf.sprintf "ill-formed plugin reference %s" na))
       else ()) plugins ;
   let plugins = Std.filter (fun (na,_) -> Registry.mem na) plugins in
   dc.current_plugins.val := List.map fst plugins ;
@@ -185,7 +185,7 @@ value sig_item arg = fun [
     let td = fst (sep_last tdl) in
     let plugins = add_deriving_attributes arg (Pcaml.unvala td.tdAttributes) in
     let dc = DC.get arg in
-    let plugins = DC.start_decl dc plugins in
+    let plugins = DC.start_decl loc dc plugins in
     let rv = Pa_passthru.sig_item0 arg z in
     let attributes = DC.end_decl dc in
     let reg_short_form_attributes =
@@ -239,7 +239,7 @@ value str_item arg = fun [
     let td = fst (sep_last tdl) in
     let plugins = add_deriving_attributes arg (Pcaml.unvala td.tdAttributes) in
     let dc = DC.get arg in
-    let plugins = DC.start_decl dc plugins in
+    let plugins = DC.start_decl loc dc plugins in
     let rv = Pa_passthru.str_item0 arg z in
     let attributes = DC.end_decl dc in
     let reg_short_form_attributes =

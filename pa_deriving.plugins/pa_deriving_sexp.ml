@@ -62,8 +62,8 @@ module To = struct
 type attrmod_t = [ Nobuiltin ] ;
 
 value to_sexp_fname arg tyname =
-  if tyname = "t" then "to_sexp"
-  else tyname^"_to_sexp"
+  if tyname = "t" then "sexp_of"
+  else tyname^"_sexp_of"
 ;
 
 value to_expression arg ~{msg} param_map ty0 =
@@ -94,7 +94,7 @@ value to_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "to_sexp" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "sexp_of" ->
     e
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
@@ -125,7 +125,9 @@ value to_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< '$i$ >> ->
   let fmtf = match List.assoc i param_map with [
-    x -> x | exception Not_found -> failwith "pa_deriving.sexp: unrecognized param-var in type-decl"
+    x -> x
+  | exception Not_found ->
+    Ploc.raise loc (Failure "pa_deriving.sexp: unrecognized param-var in type-decl")
   ] in
   <:expr< $lid:fmtf$ >>
 
@@ -379,7 +381,9 @@ value of_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< '$i$ >> ->
   let fmtf = match List.assoc i param_map with [
-    x -> x | exception Not_found -> failwith "pa_deriving.sexp: unrecognized param-var in type-decl"
+    x -> x
+  | exception Not_found ->
+    Ploc.raise loc (Failure "pa_deriving.sexp: unrecognized param-var in type-decl")
   ] in
   <:expr< $lid:fmtf$ >>
 
@@ -611,7 +615,7 @@ end
 ;
 
 value str_item_top_funs arg tyname param_map ty =
-  (if Ctxt.is_plugin_name arg "to_sexp" || Ctxt.is_plugin_name arg "sexp" then
+  (if Ctxt.is_plugin_name arg "sexp_of" || Ctxt.is_plugin_name arg "sexp" then
     [To.str_item_top_funs arg tyname param_map ty]
   else []) @
   (if Ctxt.is_plugin_name arg "of_sexp" || Ctxt.is_plugin_name arg "sexp" then
@@ -620,7 +624,7 @@ value str_item_top_funs arg tyname param_map ty =
 ;
 
 value sig_item_top_funs arg tyname param_map ty =
-  (if Ctxt.is_plugin_name arg "to_sexp" || Ctxt.is_plugin_name arg "sexp" then
+  (if Ctxt.is_plugin_name arg "sexp_of" || Ctxt.is_plugin_name arg "sexp" then
     [To.sig_item_top_funs arg tyname param_map ty]
   else []) @
   (if Ctxt.is_plugin_name arg "of_sexp" || Ctxt.is_plugin_name arg "sexp" then
@@ -711,10 +715,10 @@ value build_param_map t =
 ;
 
 value expr_sexp arg = fun [
-  <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "to_sexp" || id = "derive.to_sexp" ->
+  <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "sexp_of" || id = "derive.sexp_of" ->
     let loc = loc_of_ctyp ty in
     let param_map = build_param_map ty in
-    let e = To.fmt_to_top arg ~{msg=Printf.sprintf "%s.to_sexp"  (Ctxt.module_path_s arg)} param_map ty in
+    let e = To.fmt_to_top arg ~{msg=Printf.sprintf "%s.sexp_of"  (Ctxt.module_path_s arg)} param_map ty in
     let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
     let parampats = List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map in
     Expr.abstract_over parampats e
@@ -731,12 +735,12 @@ value expr_sexp arg = fun [
 
 Pa_deriving.(Registry.add PI.{
   name = "sexp"
-; alternates = ["to_sexp"; "of_sexp"]
+; alternates = ["of_sexp"; "sexp_of"; "sexp_poly"]
 ; options = ["optional"; "strict"; "exn"]
 ; default_options = let loc = Ploc.dummy in
     [ ("optional", <:expr< False >>); ("strict", <:expr< False >>); ("exn", <:expr< False >>) ]
-; alg_attributes = ["nobuiltin"; "key"; "name"; "encoding"; "default"; "to_sexp"; "of_sexp"]
-; expr_extensions = ["to_sexp"; "of_sexp"]
+; alg_attributes = ["nobuiltin"; "key"; "name"; "encoding"; "default"; "sexp_of"; "of_sexp"]
+; expr_extensions = ["of_sexp"; "sexp_of"]
 ; expr = expr_sexp
 ; str_item = str_item_gen_sexp
 ; sig_item = sig_item_gen_sexp
