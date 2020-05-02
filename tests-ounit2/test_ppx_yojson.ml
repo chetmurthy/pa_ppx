@@ -1,4 +1,7 @@
 open OUnit2
+open Sexplib.Sexp
+open Sexplib.Std
+open Sexplib0.Sexp_conv
 
 type json =
   [ `Assoc of (string * json) list
@@ -25,53 +28,62 @@ let assert_roundtrip pp_obj to_json of_json obj str =
   assert_equal ~printer:show_json json (cleanup (to_json obj));
   assert_equal ~printer:(show_error_or pp_obj) (Result.Ok obj) (of_json json)
 
+let assert_roundtrip_sexp pp_obj to_sexp of_sexp obj str =
+  let sexp = Sexplib.Sexp.of_string str in
+  assert_equal ~printer:to_string_hum sexp (to_sexp obj);
+  assert_equal ~printer:pp_obj obj (of_sexp sexp)
+
 let assert_failure pp_obj of_json err str =
   let json = Yojson.Safe.from_string str in
   assert_equal ~printer:(show_error_or pp_obj) (Result.Error err) (of_json json)
 
-type u = unit         [@@deriving show, yojson]
-type i1 = int         [@@deriving show, yojson]
-type i2 = int32       [@@deriving show, yojson]
+type u = unit         [@@deriving show, yojson, sexp]
+type i1 = int         [@@deriving show, yojson, sexp]
+type i2 = int32       [@@deriving show, yojson, sexp]
 type i3 = Int32.t     [@@deriving show, yojson]
-type i4 = int64       [@@deriving show, yojson]
+type i4 = int64       [@@deriving show, yojson, sexp]
 type i5 = Int64.t     [@@deriving show, yojson]
-type i6 = nativeint   [@@deriving show, yojson]
+type i6 = nativeint   [@@deriving show, yojson, sexp]
 type i7 = Nativeint.t [@@deriving show, yojson]
 type i8 = int64       [@encoding `string] [@@deriving show, yojson]
 type i9 = nativeint   [@encoding `string] [@@deriving show, yojson]
-type f  = float       [@@deriving show, yojson]
-type b  = bool        [@@deriving show, yojson]
-type c  = char        [@@deriving show, yojson]
-type s  = string      [@@deriving show, yojson]
-type y  = bytes       [@@deriving show, yojson]
-type xr = int ref     [@@deriving show, yojson]
-type xo = int option  [@@deriving show, yojson]
-type xl = int list    [@@deriving show, yojson]
-type xa = int array   [@@deriving show, yojson]
-type xt = int * int   [@@deriving show, yojson]
+type f  = float       [@@deriving show, yojson, sexp]
+type b  = bool        [@@deriving show, yojson, sexp]
+type c  = char        [@@deriving show, yojson, sexp]
+type s  = string      [@@deriving show, yojson, sexp]
+type y  = bytes       [@@deriving show, yojson, sexp]
+type xr = int ref     [@@deriving show, yojson, sexp]
+type xo = int option  [@@deriving show, yojson, sexp]
+type xl = int list    [@@deriving show, yojson, sexp]
+type xa = int array   [@@deriving show, yojson, sexp]
+type xt = int * int   [@@deriving show, yojson, sexp]
 type 'a p = 'a option
-[@@deriving show, yojson]
+[@@deriving show, yojson, sexp]
 type pv = [ `A | `B of int | `C of int * string ]
-[@@deriving show, yojson]
+[@@deriving show, yojson, sexp]
 type pva = [ `A ] and pvb = [ `B ]
-[@@deriving show, yojson]
+[@@deriving show, yojson, sexp]
 type 'a pvc = [ `C of 'a ]
-[@@deriving show, yojson]
+[@@deriving show, yojson, sexp]
 type pvd = [ pva | `A1 | `B1 of int | `C1 of int * string | pvb | int pvc ]
-[@@deriving show, yojson]
+[@@deriving show, yojson, sexp]
 type v  = A | B of int | C of int * string
-[@@deriving show, yojson]
+[@@deriving show, yojson, sexp]
 type r  = { x : int; y : string }
-[@@deriving show, yojson]
+[@@deriving show, yojson, sexp]
 
 type rv = RA | RB of int | RC of int * string | RD of { z : string }
-[@@deriving show, yojson]
+[@@deriving show, yojson, sexp]
 
 let test_unit _ctxt =
   assert_roundtrip pp_u u_to_yojson u_of_yojson
-    () "null"
+    () "null" ;
+  assert_roundtrip_sexp show_u sexp_of_u u_of_sexp
+    () "()"
 
 let test_int _ctxt =
+  assert_roundtrip_sexp show_i1 sexp_of_i1 i1_of_sexp
+    1 "1" ;
   assert_roundtrip pp_i1 i1_to_yojson i1_of_yojson
                    42 "42";
   assert_roundtrip pp_i2 i2_to_yojson i2_of_yojson
@@ -235,10 +247,15 @@ let test_id _ctxt =
   assert_roundtrip pp_json id_to_yojson id_of_yojson
                    (`Int 42) "42"
 
+type id2 = Sexplib.Sexp.t [@@deriving sexp]
+let test_id2 _ctxt =
+  assert_roundtrip_sexp to_string_hum sexp_of_id2 id2_of_sexp
+                   (Atom "42") "42"
+
 type custvar =
 | Tea   of string [@name "tea"]
 | Vodka [@name "vodka"]
-[@@deriving yojson, show]
+[@@deriving yojson, show, sexp]
 let test_custvar _ctxt =
   assert_roundtrip pp_custvar custvar_to_yojson custvar_of_yojson
                    (Tea "oolong") "[\"tea\", \"oolong\"]";
@@ -276,7 +293,7 @@ let test_shortcut _ctxt =
 
 module CustomConversions = struct
 
-  module IntMap = Map.Make(struct type t = int let compare = compare end)
+  module IntMap = Map.Make(struct type t = int let compare = Stdlib.Int.compare end)
   type mapEncoding = (int * string) list [@@deriving yojson]
   let map_to_yojson m = mapEncoding_to_yojson @@ IntMap.bindings m 
   let map_of_yojson json = 
@@ -515,7 +532,9 @@ let suite = "Test ppx_yojson" >::: [
     "test_ref"       >:: test_ref;
     "test_option"    >:: test_option;
     "test_poly"      >:: test_poly;
+(*
     "test_list"      >:: test_list;
+*)
     "test_array"     >:: test_array;
     "test_tuple"     >:: test_tuple;
     "test_ptyp"      >:: test_ptyp;

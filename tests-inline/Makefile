@@ -24,7 +24,7 @@ TESTS= \
 
 all: $(CMO) test-executables
 
-utest-executables: $(TESTS:.TEST=.pa.byte) $(TESTS:.TEST=.ppx.byte)
+test-executables: $(TESTS:.TEST=.pa.byte) $(TESTS:.TEST=.ppx.byte)
 
 test: $(TESTS)
 

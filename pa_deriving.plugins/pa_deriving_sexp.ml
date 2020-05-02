@@ -62,8 +62,8 @@ module To = struct
 type attrmod_t = [ Nobuiltin ] ;
 
 value to_sexp_fname arg tyname =
-  if tyname = "t" then "sexp_of"
-  else tyname^"_sexp_of"
+  (*if tyname = "t" then "sexp_of"
+    else *)"sexp_of_"^tyname
 ;
 
 value to_expression arg ~{msg} param_map ty0 =
@@ -74,22 +74,17 @@ value to_expression arg ~{msg} param_map ty0 =
   <:expr< $lid:fname$ >>
 
 | <:ctyp:< _ >> -> failwith "cannot derive sexp for type <<_>>"
-| <:ctyp:< Sexp.Safe.t >> -> <:expr< fun x -> x >>
-| <:ctyp:< unit >> -> <:expr< fun () -> `Null >>
-| <:ctyp:< int >> -> <:expr< fun x -> `Int x >>
-| <:ctyp:< bool >> -> <:expr< fun x -> `Bool x >>
-| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< fun x -> `Intlit (Int32.to_string x) >>
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< fun x -> `Intlit (Int64.to_string x) >>
-| <:ctyp:< int64 [@encoding `string ; ] >> | <:ctyp:< Int64.t [@encoding `string ; ] >> ->
-    <:expr< fun x -> `String (Int64.to_string x) >>
+| <:ctyp:< unit >> -> <:expr< sexp_of_unit >>
+| <:ctyp:< int >> -> <:expr< sexp_of_int >>
+| <:ctyp:< bool >> -> <:expr< sexp_of_bool >>
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< sexp_of_int32 >>
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< sexp_of_int64 >>
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  <:expr< fun x -> `String x >>
-| <:ctyp:< bytes >> -> <:expr< fun x -> `String (Bytes.to_string x) >>
-| <:ctyp:< char >> -> <:expr< fun x -> `String (String.make 1 x) >>
-| <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun x -> `Intlit (Nativeint.to_string x) >>
-| <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> ->
-    <:expr< fun x -> `String (Nativeint.to_string x) >>
-| <:ctyp:< float >> -> <:expr< fun x -> `Float x >>
+  <:expr< sexp_of_string >>
+| <:ctyp:< bytes >> -> <:expr< Sexplib0.Sexp_conv.sexp_of_bytes >>
+| <:ctyp:< char >> -> <:expr< sexp_of_char >>
+| <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< sexp_of_nativeint >>
+| <:ctyp:< float >> -> <:expr< sexp_of_float >>
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
@@ -101,25 +96,19 @@ value to_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< list $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun x ->
-        `List (safe_map $fmt1$ x) >>
+  <:expr< sexp_of_list $fmt1$ >>
 
 | <:ctyp:< array $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun x ->
-        `List
-          (Array.to_list
-             (Array.map $fmt1$ x)) >>
+  <:expr< sexp_of_array $fmt1$ >>
 
 | (<:ctyp:< ref $ty$ >> | <:ctyp:< Pervasives.ref $ty$ >>) ->
   let fmt1 = fmtrec ty in
-  <:expr< fun x -> $fmt1$ x.val >>
+  <:expr< sexp_of_ref $fmt1$ >>
 
 | <:ctyp:< option $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun [
-        None -> `Null
-      | Some x -> $fmt1$ x ] >>
+  <:expr< sexp_of_option $fmt1$ >>
 
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 
@@ -148,7 +137,7 @@ value to_expression arg ~{msg} param_map ty0 =
     let (recpat, body) = fmt_record loc arg (Pcaml.unvala fields) in
 
     let conspat = <:patt< $uid:cid$ $recpat$ >> in
-    (conspat, <:vala< None >>, <:expr< `List [ (`String $str:jscid$) ;  $body$ ] >>)
+    (conspat, <:vala< None >>, <:expr< List [ (Atom $str:jscid$) ;  $body$ ] >>)
 
   | (loc, cid, tyl, None, attrs) ->
     let cid = Pcaml.unvala cid in
@@ -165,7 +154,7 @@ value to_expression arg ~{msg} param_map ty0 =
     let liste = List.fold_right2 (fun f v liste -> <:expr< [$f$ $lid:v$ :: $liste$] >>)
         fmts vars <:expr< [] >> in
 
-    (conspat, <:vala< None >>, <:expr< `List [ (`String $str:jscid$) :: $liste$ ] >>)
+    (conspat, <:vala< None >>, <:expr< List [ (Atom $str:jscid$) :: $liste$ ] >>)
 
   | (_, _, _, Some _, _) -> assert False
   ]) l in
@@ -195,7 +184,7 @@ value to_expression arg ~{msg} param_map ty0 =
         <:patt< ` $cid$ $tuplepat$ >> in
     let liste = List.fold_right2 (fun f v liste -> <:expr< [$f$ $lid:v$ :: $liste$] >>)
         fmts vars <:expr< [] >> in
-    let liste = <:expr< `List [`String $str:jscid$ :: $liste$] >> in
+    let liste = <:expr< List [Atom $str:jscid$ :: $liste$] >> in
     (conspat, <:vala< None >>, liste)
   }
 
@@ -217,7 +206,7 @@ value to_expression arg ~{msg} param_map ty0 =
     let liste = List.fold_right2 (fun f v liste -> <:expr< [$f$ $lid:v$ :: $liste$] >>)
         fmts vars <:expr< [] >> in
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
-    <:expr< fun ($list:varpats$) -> `List ($liste$) >>
+    <:expr< fun ($list:varpats$) -> List $liste$ >>
 
 | <:ctyp:< { $list:fields$ } >> ->
   let (recpat, body) = fmt_record loc arg fields in
@@ -240,13 +229,13 @@ and fmt_record loc arg fields =
   let liste = List.fold_right (fun (f,v,fmtf,dflt, jskey) rhs ->
       match dflt with [
         Some d -> <:expr< let fields = if $lid:v$ = $d$ then fields
-                           else [($str:jskey$, $fmtf$ $lid:v$) :: fields ] in $rhs$ >>
-      | None -> <:expr< let fields = [($str:jskey$, $fmtf$ $lid:v$) :: fields ] in $rhs$ >>
+                           else [ List [ Atom $str:jskey$ ; $fmtf$ $lid:v$ ] :: fields ] in $rhs$ >>
+      | None -> <:expr< let fields = [ List [ Atom $str:jskey$ ; $fmtf$ $lid:v$ ] :: fields ] in $rhs$ >>
       ]) (List.rev labels_vars_fmts_defaults_jskeys) <:expr< fields >> in
   let liste = <:expr< let fields = [] in $liste$ >> in
 
   let pl = List.map (fun (f, v, _, _, _) -> (<:patt< $lid:f$ >>, <:patt< $lid:v$ >>)) labels_vars_fmts_defaults_jskeys in
-  (<:patt< { $list:pl$ } >>, <:expr< `Assoc $liste$ >>)
+  (<:patt< { $list:pl$ } >>, <:expr< List $liste$ >>)
 
 in fmtrec ty0
 ;
@@ -273,9 +262,9 @@ value sig_item_top_funs arg (loc, tyname) param_map ty =
   let tyname = Pcaml.unvala tyname in
   let to_sexpfname = to_sexp_fname arg tyname in
   let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
-  let argfmttys = List.map (fun pty -> <:ctyp< $pty$ -> Sexp.Safe.t >>) paramtys in  
+  let argfmttys = List.map (fun pty -> <:ctyp< $pty$ -> Sexplib.Sexp.t >>) paramtys in  
   let ty = <:ctyp< $lid:tyname$ >> in
-  let toftype = Ctyp.arrows_list loc argfmttys <:ctyp< $(Ctyp.applist ty paramtys)$ -> Sexp.Safe.t >> in
+  let toftype = Ctyp.arrows_list loc argfmttys <:ctyp< $(Ctyp.applist ty paramtys)$ -> Sexplib.Sexp.t >> in
   (to_sexpfname, toftype)
 ;
 end
@@ -286,8 +275,8 @@ module Of = struct
 type attrmod_t = [ Nobuiltin ] ;
 
 value of_sexp_fname arg tyname =
-  if tyname = "t" then "of_sexp"
-  else tyname^"_of_sexp"
+  (*if tyname = "t" then "of_sexp"
+    else*) tyname^"_of_sexp"
 ;
 
 value of_expression arg ~{msg} param_map ty0 =
@@ -297,48 +286,17 @@ value of_expression arg ~{msg} param_map ty0 =
   let fname = of_sexp_fname arg lid in
   <:expr< $lid:fname$ >>
 
-| <:ctyp:< Sexp.Safe.t >> -> <:expr< fun x -> Result.Ok x >>
-| <:ctyp:< unit >> -> <:expr< fun [ `Null -> Result.Ok () | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< int >> -> <:expr< fun [`Int x -> Result.Ok x | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< bool >> -> <:expr< fun [
-        `Bool x -> Result.Ok x
-      | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< fun [
-        `Int x -> Result.Ok (Int32.of_int x)
-      | `Intlit x -> Result.Ok (Int32.of_string x)
-      | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< fun [
-      `Int x -> Result.Ok (Int64.of_int x)
-      | `Intlit x -> Result.Ok (Int64.of_string x)
-      | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< int64 [@encoding `string ; ] >> | <:ctyp:< Int64.t [@encoding `string ; ] >> ->
- <:expr< fun [
-        `String x -> Result.Ok (Int64.of_string x)
-      | _ -> Result.Error $str:msg$ ] >>
+| <:ctyp:< unit >> -> <:expr< unit_of_sexp >>
+| <:ctyp:< int >> -> <:expr< int_of_sexp >>
+| <:ctyp:< bool >> -> <:expr< bool_of_sexp >>
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< int32_of_sexp >>
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< int64_of_sexp >>
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  <:expr< fun [
-        `String x -> Result.Ok x
-      | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< bytes >> -> <:expr< fun [
-        `String x -> Result.Ok (Bytes.of_string x)
-      | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< char >> -> <:expr< fun [ `String x ->
-          if (String.length x) = 1
-          then Result.Ok (x.[0])
-          else Result.Error $str:msg$
-      | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun [
-        `Int x -> Result.Ok (Nativeint.of_int x)
-      | `Intlit x -> Result.Ok (Nativeint.of_string x)
-      | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> -> <:expr< fun [
-        `String x -> Result.Ok (Nativeint.of_string x)
-      | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< float >> -> <:expr< fun [
-        `Int x -> Result.Ok (float_of_int x)
-      | `Intlit x -> Result.Ok (float_of_string x)
-      | `Float x -> Result.Ok x
-      | _ -> Result.Error $str:msg$ ] >>
+  <:expr< string_of_sexp >>
+| <:ctyp:< bytes >> -> <:expr< Sexplib0.Sexp_conv.bytes_of_sexp >>
+| <:ctyp:< char >> -> <:expr< char_of_sexp >>
+| <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< nativeint_of_sexp >>
+| <:ctyp:< float >> -> <:expr< float_of_sexp >>
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
@@ -350,32 +308,19 @@ value of_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< list $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun [
-        `List xs ->
-          Pa_ppx_runtime.map_bind
-            $fmt1$ [] xs
-      | _ -> Result.Error $str:msg$ ] >>
+  <:expr< list_of_sexp $fmt1$ >>
 
 | <:ctyp:< array $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun [
-        `List xs ->
-          Rresult.R.bind (Pa_ppx_runtime.map_bind
-             $fmt1$ [] xs)
-             (fun x -> Result.Ok (Array.of_list x))
-      | _ -> Result.Error $str:msg$ ] >>
+  <:expr< array_of_sexp $fmt1$ >>
 
 | (<:ctyp:< ref $ty$ >> | <:ctyp:< Pervasives.ref $ty$ >>) ->
   let fmt1 = fmtrec ty in
-  <:expr< fun x ->
-        Rresult.R.bind ($fmt1$ x) (fun x -> Result.Ok (ref x)) >>
+  <:expr< ref_of_sexp $fmt1$ >>
 
 | <:ctyp:< option $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< (fun [
-        `Null -> Result.Ok None
-      | x ->
-          Result.bind ($fmt1$ x) (fun x -> Result.Ok (Some x)) ]) >>
+  <:expr< option_of_sexp $fmt1$ >>
 
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 
@@ -403,7 +348,7 @@ value of_expression arg ~{msg} param_map ty0 =
     ] in
     let (recpat, body) = fmt_record ~{cid=Some cid} loc arg (Pcaml.unvala fields) in
 
-    let conspat = <:patt< `List [ `String $str:jscid$ ; $recpat$ ] >> in
+    let conspat = <:patt< List [ Atom $str:jscid$ ; $recpat$ ] >> in
     (conspat, <:vala< None >>, body)
 
   | (loc, cid, tyl, None, attrs) ->
@@ -413,24 +358,20 @@ value of_expression arg ~{msg} param_map ty0 =
     ] in
     let tyl = Pcaml.unvala tyl in
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
-    let varexps = List.map (fun v -> <:expr< $lid:v$ >>) vars in
     let fmts = List.map fmtrec tyl in
 
     let conspat = List.fold_right (fun v rhs -> <:patt< [ $lid:v$ :: $rhs$ ] >>)
         vars <:patt< [] >> in
-    let conspat = <:patt< `List [ (`String $str:jscid$) :: $conspat$ ] >> in
+    let conspat = <:patt< List [ (Atom $str:jscid$) :: $conspat$ ] >> in
 
+    let varexps = List.map2 (fun fmt v -> <:expr< $fmt$ $lid:v$ >>) fmts vars in
     let consexp = Expr.applist <:expr< $uid:cid$ >> varexps in
-    let consexp = <:expr< Result.Ok $consexp$ >> in
-    let rhs = List.fold_right2 (fun v fmt rhs ->
-        <:expr< Rresult.R.bind ($fmt$ $lid:v$) (fun $lid:v$ -> $rhs$) >>)
-        vars fmts consexp in
 
-    (conspat, <:vala< None >>, rhs)
+    (conspat, <:vala< None >>, consexp)
 
   | (_, _, _, Some _, _) -> assert False
   ]) l in
-  let catch_branch = (<:patt< _ >>, <:vala< None >>, <:expr< Result.Error $str:msg$ >>) in
+  let catch_branch = (<:patt< _ >>, <:vala< None >>, <:expr< failwith $str:msg$ >>) in
   let branches = branches @ [catch_branch] in
   <:expr< fun [ $list:branches$ ] >>
 
@@ -453,18 +394,14 @@ value of_expression arg ~{msg} param_map ty0 =
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
     let listpat = List.fold_right (fun vp listpat -> <:patt< [ $vp$ :: $listpat$ ] >>)
         varpats <:patt< [] >> in
-    let conspat = <:patt< `List [(`String $str:jscid$) :: $listpat$] >> in
+    let conspat = <:patt< List [(Atom $str:jscid$) :: $listpat$] >> in
     let consexp = if List.length vars = 0 then
         <:expr< ` $cid$ >>
       else
-        let varexps = List.map (fun v -> <:expr< $lid:v$ >>) vars in
+        let varexps = List.map2 (fun fmt v -> <:expr< $fmt$ $lid:v$ >>) fmts vars in
         let tup = tupleexpr loc varexps in
         <:expr< ` $cid$ $tup$ >> in
-    let consexp = <:expr< Result.Ok $consexp$ >> in
-    let unmarshe = List.fold_right2 (fun fmte v rhs ->
-        <:expr< Rresult.R.bind ($fmte$ $lid:v$) (fun $lid:v$ -> $rhs$) >>) fmts vars consexp in
-
-    Left (conspat, <:vala< None >>, unmarshe)
+    Left (conspat, <:vala< None >>, consexp)
   }
 
   | PvInh _ ty ->
@@ -476,12 +413,10 @@ value of_expression arg ~{msg} param_map ty0 =
   let rights = List.map (mustRight "of_sexp") rights in
 
   let righte = List.fold_right (fun fmtf rhs ->
-    <:expr< match $fmtf$ json with [
-                     Result.Ok result -> Result.Ok (result :> $ty0$)
-                   | Result.Error _ -> $rhs$ ] >>)
-    rights <:expr< Result.Error $str:msg$ >> in
+    <:expr< try ( $fmtf$ sexp :> $ty0$ ) with [ Failure _ -> $rhs$ ] >>)
+    rights <:expr< failwith $str:msg$ >> in
 
-  let last_branch = (<:patt< json >>, <:vala< None >>,
+  let last_branch = (<:patt< sexp >>, <:vala< None >>,
                      righte) in
 
   let branches = lefts @ [ last_branch ] in
@@ -495,16 +430,19 @@ value of_expression arg ~{msg} param_map ty0 =
     let tuplevars = tupleexpr loc varexps in
     let consexp = <:expr< Result.Ok $tuplevars$ >> in
     let fmts = List.map fmtrec tyl in
-    let unmarshe = List.fold_right2 (fun fmte v rhs ->
-        <:expr< Rresult.R.bind ($fmte$ $lid:v$) (fun $lid:v$ -> $rhs$) >>) fmts vars consexp in
-    <:expr< fun [ `List $listpat$ -> $unmarshe$
-                | _ -> Result.Error $str:msg$ ] >>
+    let unmarshe =
+      let unmarshexps = List.map2 (fun fmte v -> <:expr< $fmte$ $lid:v$ >>) fmts vars in
+      <:expr< ( $list:unmarshexps$ ) >> in
+    <:expr< fun [ List $listpat$ -> $unmarshe$
+                | _ -> failwith "wrong number of members in list" ] >>
 
 | <:ctyp:< { $list:fields$ } >> ->
   let (recpat, body) = fmt_record ~{cid=None} loc arg fields in
-  <:expr< fun [ $recpat$ -> $body$ | _ -> Result.Error $str:msg$ ] >>
+  <:expr< fun [ $recpat$ -> $body$ | _ -> failwith $str:msg$ ] >>
 
 | [%unmatched_vala] -> failwith "pa_deriving_sexp.of_expression"
+| ty ->
+  Ploc.raise (loc_of_ctyp ty) (Failure (Printf.sprintf "pa_deriving_sexp.of_expression: %s" (Pp_MLast.show_ctyp ty)))
 ]
 and fmt_record ~{cid} loc arg fields = 
   let labels_vars_fmts_defaults_jskeys = List.map (fun (_, fname, _, ty, attrs) ->
@@ -524,9 +462,9 @@ and fmt_record ~{cid} loc arg fields =
       labels_vars_fmts_defaults_jskeys in
 
   let branch1 i (f, v, fmt,_, jskey) =
-    let l = varrow_except (i, <:expr< $fmt$ $lid:v$ >>) in
+    let l = varrow_except (i, <:expr< Result.Ok ( $fmt$ $lid:v$ ) >>) in
     let cons1exp = tupleexpr loc l in
-    (<:patt< [($str:jskey$, $lid:v$) :: xs] >>, <:vala< None >>,
+    (<:patt< [ List [ Atom $str:jskey$ ; $lid:v$ ] :: xs] >>, <:vala< None >>,
      <:expr< loop xs $cons1exp$ >>) in
 
   let branches = List.mapi branch1 labels_vars_fmts_defaults_jskeys in
@@ -543,7 +481,7 @@ and fmt_record ~{cid} loc arg fields =
 
   let catch_branch =
     if Ctxt.is_strict arg then
-      (<:patt< [_ :: _] >>, <:vala< None >>, <:expr< Result.Error $str:msg$ >>)
+      (<:patt< [_ :: _] >>, <:vala< None >>, <:expr< failwith $str:msg$ >>)
   else
     let varrow = varrow_except (-1, <:expr< . >>) in
     let cons1exp = tupleexpr loc varrow in
@@ -562,9 +500,9 @@ and fmt_record ~{cid} loc arg fields =
         | Some d -> <:expr< Result.Ok $d$ >> ]) labels_vars_fmts_defaults_jskeys in
     let tupleinit = tupleexpr loc initexps in
     <:expr< let rec loop xs $tuplevars$ = match xs with [ $list:branches$ ]
-            in loop xs $tupleinit$ >> in
+            in match loop xs $tupleinit$ with [ Result.Ok r -> r | Result.Error msg -> failwith msg ] >> in
 
-  (<:patt< `Assoc xs >>, e)
+  (<:patt< List xs >>, e)
 
 in fmtrec ty0
 ;
@@ -586,29 +524,18 @@ value str_item_top_funs arg (loc, tyname) param_map ty =
     let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $body$ >> in
     (of_sexpfname, Expr.abstract_over paramfun_patts
        <:expr< fun arg -> $of_e$ arg >>) in
-  if not (Ctxt.is_exn arg) then [e] else
-    let exn_name = of_sexpfname^"_exn" in
-    let body = Expr.applist <:expr< $lid:of_sexpfname$ >> paramfun_exprs in
-    let body = <:expr< match $body$ arg with [ Rresult.Ok x -> x | Result.Error s -> failwith s ] >> in
-    let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $body$ >> in
-    let e' = (exn_name, Expr.abstract_over paramfun_patts
-       <:expr< fun arg -> $of_e$ >>) in
-    [e; e']
+  [e]
 ;
 
 value sig_item_top_funs arg (loc, tyname) param_map ty =
   let tyname = Pcaml.unvala tyname in
   let of_sexpfname = of_sexp_fname arg tyname in
   let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
-  let argfmttys = List.map (fun pty -> <:ctyp< Sexp.Safe.t -> Rresult.result $pty$ string >>) paramtys in  
+  let argfmttys = List.map (fun pty -> <:ctyp< Sexplib.Sexp.t -> $pty$ >>) paramtys in  
   let ty = <:ctyp< $lid:tyname$ >> in
-  let offtype = Ctyp.arrows_list loc argfmttys <:ctyp< Sexp.Safe.t -> Rresult.result $(Ctyp.applist ty paramtys)$ string >> in
+  let offtype = Ctyp.arrows_list loc argfmttys <:ctyp< Sexplib.Sexp.t -> $(Ctyp.applist ty paramtys)$ >> in
   let e = (of_sexpfname, offtype) in
-  if not (Ctxt.is_exn arg) then [e] else
-  let exn_name = of_sexpfname^"_exn" in
-  let exnftype = Ctyp.arrows_list loc argfmttys <:ctyp< Sexp.Safe.t -> $(Ctyp.applist ty paramtys)$ >> in
-  let e' = (exn_name, exnftype) in
-  [e; e']
+  [e]
 ;
 
 end

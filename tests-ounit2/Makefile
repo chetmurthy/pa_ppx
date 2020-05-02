@@ -84,6 +84,16 @@ test_%.byte: test_%.ml testutil.cmo testutil2.cmo
 test_%.ppx.byte: test_%.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@
 
+test_ppx_yojson.byte: test_ppx_yojson.ml testutil.cmo testutil2.cmo
+	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),yojson,sexplib,$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp.syntax \
+	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
+
+test_ppx_yojson.ppx.byte: test_ppx_yojson.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES),sexplib,ppx_sexp_conv -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@
+
+
+
+
 test_passthru_hashrecons.byte: test_passthru_hashrecons.ml testutil.cmo testutil2.cmo hCPassthru.cmo
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),camlp5.pa_o,camlp5.pr_o,$(PACKAGEPREFIX)base,$(PACKAGEPREFIX)hashrecons.syntax \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo hCPassthru.cmo $< -o $@
