@@ -48,10 +48,12 @@ module rec EF : sig
     case_branch : extension_point case_branch ;
     expr : extension_point expr ;
     module_type : extension_point module_type ;
+    signature : extension_point (list sig_item) ;
     sig_item : extension_point sig_item ;
     with_constr : extension_point with_constr ;
     longid : extension_point longid ;
     module_expr : extension_point module_expr ;
+    structure : extension_point (list str_item) ;
     str_item : extension_point str_item ;
     type_decl : extension_point type_decl ;
     type_extension : extension_point type_extension ;
@@ -61,7 +63,8 @@ module rec EF : sig
     class_expr : extension_point class_expr ;
     class_str_item : extension_point class_str_item ;
     attribute_body : extension_point attribute_body ;
-    implem : extension_point (list (MLast.str_item * MLast.loc) * Pcaml.status)
+    implem : extension_point (list (MLast.str_item * MLast.loc) * Pcaml.status) ;
+    interf : extension_point (list (MLast.sig_item * MLast.loc) * Pcaml.status)
   } ;
   value mk : unit -> t ;
 end = struct
@@ -73,10 +76,12 @@ end = struct
     case_branch : extension_point case_branch ;
     expr : extension_point expr ;
     module_type : extension_point module_type ;
+    signature : extension_point (list sig_item) ;
     sig_item : extension_point sig_item ;
     with_constr : extension_point with_constr ;
     longid : extension_point longid ;
     module_expr : extension_point module_expr ;
+    structure : extension_point (list str_item) ;
     str_item : extension_point str_item ;
     type_decl : extension_point type_decl ;
     type_extension : extension_point type_extension ;
@@ -86,7 +91,8 @@ end = struct
     class_expr : extension_point class_expr ;
     class_str_item : extension_point class_str_item ;
     attribute_body : extension_point attribute_body ;
-    implem : extension_point (list (MLast.str_item * MLast.loc) * Pcaml.status)
+    implem : extension_point (list (MLast.str_item * MLast.loc) * Pcaml.status) ;
+    interf : extension_point (list (MLast.sig_item * MLast.loc) * Pcaml.status)
   } ;
   value mk () = {
     ctyp = Extfun.empty ;
@@ -95,10 +101,12 @@ end = struct
     case_branch = Extfun.empty ;
     expr = Extfun.empty ;
     module_type = Extfun.empty ;
+    signature = Extfun.empty ;
     sig_item = Extfun.empty ;
     with_constr = Extfun.empty ;
     longid = Extfun.empty ;
     module_expr = Extfun.empty ;
+    structure = Extfun.empty ;
     str_item = Extfun.empty ;
     type_decl = Extfun.empty ;
     type_extension = Extfun.empty ;
@@ -108,7 +116,8 @@ end = struct
     class_expr = Extfun.empty ;
     class_str_item = Extfun.empty ;
     attribute_body = Extfun.empty ;
-    implem = Extfun.empty 
+    implem = Extfun.empty ;
+    interf = Extfun.empty 
   } ;
 end
 
@@ -485,7 +494,7 @@ and module_type0 arg =
     | MtQuo loc x1 →
         MtQuo loc x1
     | MtSig loc x1 →
-        MtSig loc (vala_map (List.map (sig_item arg)) x1)
+        MtSig loc (vala_map (signature arg) x1)
     | MtTyo loc x1 →
         MtTyo loc (module_expr arg x1)
     | MtWit loc x1 x2 →
@@ -496,6 +505,13 @@ and module_type0 arg =
         MtExten loc (attribute arg exten)
     ] in
     self0
+and signature arg x =
+  match Extfun.apply arg.Ctxt.ef.EF.signature x arg with [
+    Some x -> x
+  | None -> signature0 arg x
+  | exception Extfun.Failure -> signature0 arg x
+  ]
+and signature0 arg l = (List.map (sig_item arg)) l
 and sig_item arg x =
   match Extfun.apply arg.Ctxt.ef.EF.sig_item x arg with [
     Some x -> x
@@ -513,7 +529,7 @@ and sig_item0 arg =
         SgClt loc
           (vala_map (List.map (class_infos_map arg ~{attributes=attributes} (class_type arg))) x1)
     | SgDcl loc x1 →
-        SgDcl loc (vala_map (List.map self) x1)
+        SgDcl loc (vala_map (signature arg) x1)
     | SgDir loc x1 x2 →
         SgDir loc x1 (vala_map (option_map (expr arg)) x2)
     | SgExc loc x1 x2 →
@@ -607,7 +623,7 @@ and module_expr0 arg =
         let farg = vala_map (option_map (fun (idopt, m) -> (idopt, module_type arg m))) farg in
         MeFun loc farg (self x3)
     | MeStr loc x1 →
-        MeStr loc (vala_map (List.map (str_item arg)) x1)
+        MeStr loc (vala_map (structure arg) x1)
     | MeTyc loc x1 x2 →
         MeTyc loc (self x1) (module_type arg x2)
     | MeUid loc x1 →
@@ -620,6 +636,13 @@ and module_expr0 arg =
         MeExten loc (attribute arg exten)
     ] in
     self0
+and structure arg x =
+  match Extfun.apply arg.Ctxt.ef.EF.structure x arg with [
+    Some x -> x
+  | None -> structure0 arg x
+  | exception Extfun.Failure -> structure0 arg x
+  ]
+and structure0 arg l = (List.map (str_item arg)) l
 and str_item arg x =
   match Extfun.apply arg.Ctxt.ef.EF.str_item x arg with [
     Some x -> x
@@ -637,7 +660,7 @@ and str_item0 arg =
         StClt loc
           (vala_map (List.map (class_infos_map arg ~{attributes=attributes} (class_type arg))) x1)
     | StDcl loc x1 →
-        StDcl loc (vala_map (List.map self) x1)
+        StDcl loc (vala_map (structure arg) x1)
     | StDir loc x1 x2 →
         StDir loc x1 (vala_map (option_map (expr arg)) x2)
     | StExc loc x1 x2 →
@@ -859,9 +882,9 @@ and attribute_body arg x =
 and attribute_body0 arg (s, p) =
     let p = match p with [
       StAttr loc x1 ->
-      StAttr loc (vala_map (List.map (str_item arg)) x1)
+      StAttr loc (vala_map (structure arg) x1)
     | SiAttr loc x1 ->
-      SiAttr loc (vala_map (List.map (sig_item arg)) x1)
+      SiAttr loc (vala_map (signature arg) x1)
     | TyAttr loc x1 ->
       TyAttr loc (vala_map (ctyp arg) x1)
     | PaAttr loc x1 x2 ->
@@ -878,6 +901,14 @@ and implem arg x =
   ]
 and implem0 arg (l, status) =
     (List.map (fun (si, loc) -> (str_item arg si, loc)) l, status)
+and interf arg x =
+  match Extfun.apply arg.Ctxt.ef.EF.interf x arg with [
+    Some x -> x
+  | None -> interf0 arg x
+  | exception Extfun.Failure -> interf0 arg x
+  ]
+and interf0 arg (l, status) =
+    (List.map (fun (si, loc) -> (sig_item arg si, loc)) l, status)
 ;
 
 type pass_t = {
@@ -887,7 +918,7 @@ type pass_t = {
   ef : EF.t
 } ;
 
-value onepass (ctxt,arg) pass = do {
+value onepass implem (ctxt,arg) pass = do {
       Printf.(fprintf stderr "[pass %s]\n%!" pass.name) ;
       let ctxt = Ctxt.{ (ctxt) with ef = pass.ef } in
       (ctxt, implem ctxt arg)
@@ -910,14 +941,14 @@ value tsort_passes passes =
   }
 ;
 
-value passthru passes pa_before arg = do {
+value passthru implem passes pa_before arg = do {
   let passes = tsort_passes passes in
   let rv = pa_before arg in
   let (l, status) = rv in
   assert (l <> []) ;
   let (_, loc) = List.hd l in
   let ctxt = Ctxt.mk (EF.mk()) loc in
-  let (_, rv) = List.fold_left onepass (ctxt,(l,status)) passes in
+  let (_, rv) = List.fold_left (onepass implem) (ctxt,(l,status)) passes in
   rv
 }
 ;
@@ -929,5 +960,7 @@ value install x = do {
   Std.push eflist x
 }
 ;
-value before = Pcaml.parse_implem.val ;
-Pcaml.parse_implem.val := (fun arg -> passthru (List.rev eflist.val) before arg);
+value before_implem = Pcaml.parse_implem.val ;
+Pcaml.parse_implem.val := (fun arg -> passthru implem (List.rev eflist.val) before_implem arg);
+value before_interf = Pcaml.parse_interf.val ;
+Pcaml.parse_interf.val := (fun arg -> passthru interf (List.rev eflist.val) before_interf arg);

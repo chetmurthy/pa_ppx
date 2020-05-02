@@ -165,6 +165,12 @@ value implem arg x = do {
 }
 ;
 
+value interf arg x = do {
+  DC.init arg ;
+  Some (Pa_passthru.interf0 arg x)
+}
+;
+
 value add_current_attribute arg id =
   let dc = DC.get arg in
   DC.addset dc.current_attributes id
@@ -329,6 +335,13 @@ let ef = EF.{ (ef) with
     z ->
       fun arg ->
         let rv = implem arg z in do {
+        Fmt.(DC.dump stderr (DC.get arg)) ; rv }
+  ] } in
+let ef = EF.{ (ef) with
+  interf = extfun ef.interf with [
+    z ->
+      fun arg ->
+        let rv = interf arg z in do {
         Fmt.(DC.dump stderr (DC.get arg)) ; rv }
   ] } in
   Pa_passthru.(install { name = "surveil" ; ef = ef ; before = [] ; after = [] })

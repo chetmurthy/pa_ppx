@@ -14,6 +14,7 @@ all:
 	$(MAKE) -C runtime all
 	$(MAKE) -C base all
 	$(MAKE) -C pa_here all
+	$(MAKE) -C pa_undo_deriving all
 	$(MAKE) -C pa_assert all
 	$(MAKE) -C pa_unmatched_vala all
 	$(MAKE) -C pa_inline_test all
@@ -59,7 +60,7 @@ clean::
 	$(MAKE) -C util-lib clean
 	$(MAKE) -C runtime clean
 	$(MAKE) -C base clean
-	$(MAKE) -C pa_here clean
+	$(MAKE) -C pa_undo_deriving clean
 	$(MAKE) -C pa_assert clean
 	$(MAKE) -C pa_unmatched_vala clean
 	$(MAKE) -C pa_inline_test clean
@@ -76,7 +77,7 @@ depend:
 	$(MAKE) -C util-lib depend
 	$(MAKE) -C runtime depend
 	$(MAKE) -C base depend
-	$(MAKE) -C pa_here depend
+	$(MAKE) -C pa_undo_deriving depend
 	$(MAKE) -C pa_assert depend
 	$(MAKE) -C pa_unmatched_vala depend
 	$(MAKE) -C pa_inline_test depend

@@ -14,7 +14,7 @@ MKCAMLP5 := $(LAUNCH) $(MKCAMLP5)
 
 PACKAGES := $(PACKAGES),rresult,fmt,pa_ppx_utils,compiler-libs.common
 TARGET := pa_ppx_base.cma
-CMO := ppxutil.cmo pa_passthru.cmo
+CMO := ppxutil.cmo pp_MLast.cmo pa_passthru.cmo
 CMI := $(CMO:.cmo=.cmi)
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_base
 
@@ -25,6 +25,42 @@ pa_ppx_base.cmo: $(CMO)
 
 pa_ppx_base.cmx: $(CMO:.cmo=.cmx)
 	$(OCAMLFIND) ocamlopt $(DEBUG) -pack -o pa_ppx_base.cmx $^
+
+initialize-pp-i:: pp_MLast.ORIG.mli
+	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax -syntax camlp5o $< > $@.NEW
+	mv $@.NEW pp_MLast.mli
+
+bootstrap-pp-i: pp_MLast.ORIG.mli
+	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax,pa_ppx_import.syntax,pa_ppx_deriving_plugins.std.syntax \
+	-syntax camlp5o -ppopt -D -ppopt BOOTSTRAP \
+	-ppopt -pa_import-package -ppopt $(PACKAGES) \
+	-ppopt -pa_import-I -ppopt . \
+	$< > $@.NEW
+	mv $@.NEW  pp_MLast.mli
+
+refold-pp-i: pp_MLast.mli
+	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r.syntax,pa_ppx_undo_deriving.syntax \
+	-syntax camlp5r \
+	$< > $@.NEW
+	mv $@.NEW  pp_MLast.REFOLD.mli
+
+initialize-pp:: pp_MLast.ORIG.ml
+	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax -syntax camlp5o $< > $@.NEW
+	mv $@.NEW pp_MLast.ml
+
+bootstrap-pp: pp_MLast.ORIG.ml
+	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax,pa_ppx_import.syntax,pa_ppx_deriving_plugins.std.syntax \
+	-syntax camlp5o -ppopt -D -ppopt BOOTSTRAP \
+	-ppopt -pa_import-package -ppopt $(PACKAGES) \
+	-ppopt -pa_import-I -ppopt . \
+	$< > $@.NEW
+	mv $@.NEW  pp_MLast.ml
+
+refold-pp: pp_MLast.ml
+	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r.syntax,pa_ppx_undo_deriving.syntax \
+	-syntax camlp5r \
+	$< > $@.NEW
+	mv $@.NEW  pp_MLast.REFOLD.ml
 
 camlp5.pa_ppx_base: $(TARGET)
 	$(MKCAMLP5) -verbose -package fmt,rresult,camlp5.pa_r,camlp5.pr_r,pa_ppx_utils,compiler-libs.common $(TARGET) -o $@
@@ -57,7 +93,7 @@ EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
 $(CMO): $(EXTERNAL)
 
 depend::
-	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli > .depend.NEW \
-		&& mv .depend.NEW .depend
+	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r pa_passthru.ml ppxutil.ml pp_MLast.ml pp_MLast.mli > .depend.NEW
+	mv .depend.NEW .depend
 
 -include .depend

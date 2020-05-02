@@ -1,0 +1,6 @@
+import_harness.cmo : \
+    pa_import.cmo
+import_harness.cmx : \
+    pa_import.cmx
+pa_import.cmo :
+pa_import.cmx :

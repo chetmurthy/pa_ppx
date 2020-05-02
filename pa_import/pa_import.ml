@@ -410,6 +410,27 @@ value registered_str_item_extension arg = fun [
 ]
 ;
 
+value registered_sig_item_extension arg = fun [
+  <:sig_item:< type $flag:nrfl$ $list:tdl$ >> ->
+    let tdl = List.map (fun td ->
+        match td.tdDef with [
+          <:ctyp< [% import: $type:t$ ] >> ->
+          let tname = Pcaml.unvala td.tdNam in
+          let l = Pcaml.unvala td.tdPrm in
+          let ct = import_type arg (tname,l) t in
+          { (td) with tdDef = ct }
+        | _ -> td
+        ]
+      ) tdl in
+    <:sig_item< type $flag:nrfl$ $list:tdl$ >>
+
+  | <:sig_item:< [%% import: $type:t$ ] $itemattrs:item_attrs$ >> ->
+    let (nrfl, tdl) = import_typedecl_group arg t item_attrs in
+    <:sig_item< type $flag:nrfl$ $list:tdl$ >>
+| _ -> assert False
+]
+;
+
 value registered_module_type_extension arg = fun [
   <:module_type:< [% import: $type:t$ ] >> ->
     Some (import_module_type arg t)
@@ -428,6 +449,18 @@ let ef = EF.{ (ef) with
   | <:str_item< [%% import: $type:_$ ] $itemattrs:_$ >> as z -> 
       fun arg ->
         Some (registered_str_item_extension arg z)
+
+  ] } in
+
+let ef = EF.{ (ef) with
+  sig_item = extfun ef.sig_item with [
+    <:sig_item:< type $flag:_$ $list:_$ >> as z ->
+      fun arg ->
+        Some (registered_sig_item_extension arg z)
+
+  | <:sig_item< [%% import: $type:_$ ] $itemattrs:_$ >> as z -> 
+      fun arg ->
+        Some (registered_sig_item_extension arg z)
 
   ] } in
 

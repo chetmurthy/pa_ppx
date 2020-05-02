@@ -1,7 +1,20 @@
 open OUnit2
 
+module T : sig
 
-module Ploc = struct
+module Ploc : sig
+include (module type of Ploc with type t = Ploc.t)
+
+val pp : t Fmt.t
+type 'a vala = [%import: 'a Ploc.vala] [@@deriving show]
+end
+
+type loc = [%import: MLast.loc] [@@deriving show]
+type type_var = [%import: MLast.type_var] [@@deriving show]
+
+[%%import: MLast.expr] [@@deriving show]
+  end = struct
+module Ploc= struct
 include Ploc
 
 let pp ppf x = Fmt.(const string "<loc>" ppf ())
@@ -13,6 +26,7 @@ type loc = [%import: MLast.loc] [@@deriving show]
 type type_var = [%import: MLast.type_var] [@@deriving show]
 
 [%%import: MLast.expr] [@@deriving show]
+end
 
 let test_simplest ctxt =
   ()
