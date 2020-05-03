@@ -65,6 +65,14 @@ PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
 %.pa.byte: %.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
+ppx_sexp_test.ppx.byte: ppx_sexp_test.ml
+	cppo ppx_sexp_test.ml > ppx_sexp_test.ppx.ml
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg ppx_sexp_test.ppx.ml ppx_inline_test_epilogue.ml -o $@
+
+ppx_sexp_test.pa.byte: ppx_sexp_test.ml
+	cppo -D PAPPX ppx_sexp_test.ml > ppx_sexp_test.pappx.ml
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg ppx_sexp_test.pappx.ml ppx_inline_test_epilogue.ml -o $@
+
 %.TEST: %.ppx.byte %.pa.byte
 	./test-runner $^ foo $(VERBOSE)
 
