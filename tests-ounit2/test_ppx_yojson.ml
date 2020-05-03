@@ -1,3 +1,8 @@
+#ifdef PAPPX
+let filemod = "Test_ppx_yojson"
+#else
+let filemod = "Test_ppx_yojson.ppx"
+#endif
 open OUnit2
 open Sexplib.Sexp
 open Sexplib.Std
@@ -130,7 +135,7 @@ let test_char _ctxt =
   assert_roundtrip pp_c c_to_yojson c_of_yojson
                    'c' "\"c\"";
   assert_failure   pp_c c_of_yojson
-                   "Test_ppx_yojson.c" "\"xxx\""
+                   (filemod^".c") "\"xxx\""
 
 let test_string _ctxt =
   assert_roundtrip pp_s s_to_yojson s_of_yojson
@@ -202,7 +207,7 @@ let test_pvar _ctxt =
   assert_roundtrip pp_pvd pvd_to_yojson pvd_of_yojson
                    (`C 1) "[\"C\", 1]";
   assert_equal ~printer:(show_error_or pp_pvd)
-               (Result.Error "Test_ppx_yojson.pvd")
+               (Result.Error (filemod^".pvd"))
                (pvd_of_yojson (`List [`String "D"]))
 
 let test_var _ctxt =
@@ -239,7 +244,7 @@ let test_key _ctxt =
 
 let test_field_err _ctxt =
   assert_equal ~printer:(show_error_or pp_geo)
-               (Result.Error "Test_ppx_yojson.geo.lat")
+               (Result.Error (filemod^".geo.lat"))
                (geo_of_yojson (`Assoc ["Longitude", (`Float 42.0)]))
 
 type id = Yojson.Safe.t [@@deriving yojson]
@@ -252,16 +257,39 @@ let test_id2 _ctxt =
   assert_roundtrip_sexp to_string_hum sexp_of_id2 id2_of_sexp
                    (Atom "42") "42"
 
+module Custvar1 = struct
 type custvar =
 | Tea   of string [@name "tea"]
 | Vodka [@name "vodka"]
-[@@deriving yojson, show, sexp]
+[@@deriving yojson, show]
 let test_custvar _ctxt =
   assert_roundtrip pp_custvar custvar_to_yojson custvar_of_yojson
                    (Tea "oolong") "[\"tea\", \"oolong\"]";
   assert_roundtrip pp_custvar custvar_to_yojson custvar_of_yojson
                    Vodka "[\"vodka\"]"
+end
 
+module Custvar2 = struct
+type custvar =
+| Tea   of string [@name "tea"]
+| Vodka [@name "vodka"]
+[@@deriving sexp, show]
+#ifdef PAPPX
+let test_custvar _ctxt =
+  assert_roundtrip_sexp show_custvar sexp_of_custvar custvar_of_sexp
+                   (Tea "oolong") "(tea oolong)";
+  assert_roundtrip_sexp show_custvar sexp_of_custvar custvar_of_sexp
+                   Vodka "(vodka)"
+#else
+let test_custvar _ctxt =
+  assert_roundtrip_sexp show_custvar sexp_of_custvar custvar_of_sexp
+                   (Tea "oolong") "(Tea oolong)";
+  assert_roundtrip_sexp show_custvar sexp_of_custvar custvar_of_sexp
+                   Vodka "Vodka"
+#endif
+end
+
+module Custpvar1 = struct
 type custpvar =
 [ `Tea   of string [@name "tea"]
 | `Beer  of string * float [@name "beer"]
@@ -274,52 +302,113 @@ let test_custpvar _ctxt =
                    (`Beer ("guinness", 3.3)) "[\"beer\", \"guinness\", 3.3]";
   assert_roundtrip pp_custpvar custpvar_to_yojson custpvar_of_yojson
                    `Vodka "[\"vodka\"]"
+end
 
+module Custpvar2 = struct
+type custpvar =
+[ `Tea   of string [@name "tea"]
+| `Beer  of string * float [@name "beer"]
+| `Vodka [@name "vodka"]
+] [@@deriving sexp, show]
+#ifdef PAPPX
+let test_custpvar _ctxt =
+  assert_roundtrip_sexp show_custpvar sexp_of_custpvar custpvar_of_sexp
+                   (`Tea "earl_grey") "(tea earl_grey)";
+  assert_roundtrip_sexp show_custpvar sexp_of_custpvar custpvar_of_sexp
+                   (`Beer ("guinness", 3.3)) "(beer guinness 3.3)";
+  assert_roundtrip_sexp show_custpvar sexp_of_custpvar custpvar_of_sexp
+                   `Vodka "(vodka)"
+#else
+let test_custpvar _ctxt =
+  assert_roundtrip_sexp show_custpvar sexp_of_custpvar custpvar_of_sexp
+                   (`Tea "earl_grey") "(Tea earl_grey)";
+  assert_roundtrip_sexp show_custpvar sexp_of_custpvar custpvar_of_sexp
+                   (`Beer ("guinness", 3.3)) "(Beer (guinness 3.3))";
+  assert_roundtrip_sexp show_custpvar sexp_of_custpvar custpvar_of_sexp
+                   `Vodka "Vodka"
+
+#endif
+end
+
+module Default1 = struct
 type default = {
   def : int [@default 42];
 } [@@deriving yojson, show]
 let test_default _ctxt =
   assert_roundtrip pp_default default_to_yojson default_of_yojson
                    { def = 42 } "{}"
+end
 
-type bidi = int [@@deriving show, to_yojson, of_yojson]
+module Default2 = struct
+type default = {
+  def : int [@default 42][@sexp_drop_default (=)];
+} [@@deriving sexp, show]
+let test_default _ctxt =
+  assert_roundtrip_sexp show_default sexp_of_default default_of_sexp
+                   { def = 42 } "()"
+end
+
+type bidi = int [@@deriving show, to_yojson, of_yojson, of_sexp, sexp_of]
 let test_bidi _ctxt =
   assert_roundtrip pp_bidi bidi_to_yojson bidi_of_yojson
+                   42 "42" ;
+  assert_roundtrip_sexp show_bidi sexp_of_bidi bidi_of_sexp
                    42 "42"
 
 let test_shortcut _ctxt =
   assert_roundtrip pp_i1 [%to_yojson: int] [%of_yojson: int]
+                   42 "42" ;
+  assert_roundtrip_sexp show_i1 [%sexp_of: int] [%of_sexp: int]
                    42 "42"
 
 module CustomConversions = struct
 
-  module IntMap = Map.Make(struct type t = int let compare = Stdlib.Int.compare end)
-  type mapEncoding = (int * string) list [@@deriving yojson]
-  let map_to_yojson m = mapEncoding_to_yojson @@ IntMap.bindings m 
+  module IntMap0 = Map.Make(struct type t = int let compare = Stdlib.Int.compare end)
+  type mapEncoding = (int * string) list [@@deriving yojson, sexp]
+  let map_to_yojson m = mapEncoding_to_yojson @@ IntMap0.bindings m 
   let map_of_yojson json = 
     Result.(match mapEncoding_of_yojson json with
-              | Ok lst -> Ok (List.fold_left (fun m (k, v) -> IntMap.add k v m) IntMap.empty lst)
+              | Ok lst -> Ok (List.fold_left (fun m (k, v) -> IntMap0.add k v m) IntMap0.empty lst)
               | Error s -> Error s)
 
+  let sexp_of_map m = sexp_of_mapEncoding @@ IntMap0.bindings m 
+  let map_of_sexp sexp = 
+    List.fold_left (fun m (k, v) -> IntMap0.add k v m) IntMap0.empty (mapEncoding_of_sexp sexp)
+  module IntMap = struct
+    include IntMap0
+    let t_of_sexp _ = map_of_sexp
+    let sexp_of_t _ = sexp_of_map
+  end
+  
   type k = string IntMap.t [@to_yojson map_to_yojson]
                            [@of_yojson map_of_yojson]
+                           [@sexp_of sexp_of_map]
+                           [@of_sexp map_of_sexp]
                            [@printer fun fmt a -> ()]
-                           [@@deriving show, yojson]
+                           [@@deriving show, yojson, sexp]
   let test_bare _ctxt =
     assert_roundtrip pp_k k_to_yojson k_of_yojson
                      IntMap.(add 6 "foo" @@ empty)
-                     {|[[6,"foo"]]|}
+                     {|[[6,"foo"]]|} ;
+    assert_roundtrip_sexp show_k sexp_of_k k_of_sexp
+                     IntMap.(add 6 "foo" @@ empty)
+                     {|((6 "foo"))|}
 
   type crecord = {
     mapping : string IntMap.t [@to_yojson map_to_yojson]
                               [@of_yojson map_of_yojson]
+                              [@sexp_of sexp_of_map]
+                              [@of_sexp map_of_sexp]
                               [@printer fun fmt a -> ()]
-  } [@@deriving yojson, show]
+  } [@@deriving yojson, show, sexp]
 
   let test_record _ctxt =
     assert_roundtrip pp_crecord crecord_to_yojson crecord_of_yojson
                      IntMap.{ mapping = add 6 "foo" @@ empty }
-                     {|{"mapping":[[6,"foo"]]}|}
+                     {|{"mapping":[[6,"foo"]]}|} ;
+    assert_roundtrip_sexp show_crecord sexp_of_crecord crecord_of_sexp
+                     IntMap.{ mapping = add 6 "foo" @@ empty }
+                     {|((mapping ((6 foo))))|}
   
   let suite = "Custom conversion attributes" >:::
     [ "test_record"      >:: test_record
@@ -329,12 +418,19 @@ end
 type nostrict = {
   nostrict_field : int;
 }
-[@@deriving show, yojson { strict = false }]
+#ifdef PAPPX
+[@@deriving show, yojson { strict = false }, sexp { strict = false }]
+#else
+[@@deriving show, yojson { strict = false }, sexp] [@@sexp.allow_extra_fields]
+#endif
 let test_nostrict _ctxt =
   assert_equal ~printer:(show_error_or pp_nostrict)
                (Result.Ok { nostrict_field = 42 })
                (nostrict_of_yojson (`Assoc ["nostrict_field", (`Int 42);
-                                            "some_other_field", (`Int 43)]))
+                                            "some_other_field", (`Int 43)])) ;
+  assert_equal ~printer:show_nostrict
+               { nostrict_field = 42 }
+               (nostrict_of_sexp (of_string "((nostrict_field 42))"))
 (*
 module Opentype :
   sig
@@ -377,13 +473,15 @@ let test_opentype _ctxt =
 
    For example, the unconditional addition of of_yojson_exn has broken
    this test. *)
-type outer_t = int [@@deriving yojson]
+type outer_t = int [@@deriving yojson, sexp]
 module Automatic_deriving_in_signature_only
-  : sig type t [@@deriving yojson] end
+  : sig type t [@@deriving yojson, sexp] end
   = struct
     type t = int
     let of_yojson = outer_t_of_yojson
     let to_yojson = outer_t_to_yojson
+    let t_of_sexp = outer_t_of_sexp
+    let sexp_of_t = sexp_of_outer_t
   end
 
 module Warnings = struct
@@ -393,16 +491,16 @@ module Warnings = struct
     [@@@ocaml.warning "@34"]
 
 
-    module M1 : sig type u [@@deriving yojson] end = struct
-      type internal = int list [@@deriving yojson]
-      type u = int list    [@@deriving yojson]
+    module M1 : sig type u [@@deriving yojson, sexp] end = struct
+      type internal = int list [@@deriving yojson, sexp]
+      type u = int list    [@@deriving yojson, sexp]
     end
 (* the deriver for type [u] supposedly use the derivier of type
        [internal]. Consider for instance the case where [u] is a map,
        and internal is a list of bindings. *)
-    module M2 : sig type 'a u [@@deriving yojson] end = struct
-      type 'a internal = 'a list [@@deriving yojson]
-      type 'a u = 'a list    [@@deriving yojson]
+    module M2 : sig type 'a u [@@deriving yojson, sexp] end = struct
+      type 'a internal = 'a list [@@deriving yojson, sexp]
+      type 'a u = 'a list    [@@deriving yojson, sexp]
     end
 
     (* the deriver for type [u] supposedly use the derivier of type
@@ -423,7 +521,7 @@ module TestShadowing = struct
     let map () = ()
   end
 
-  type t = int list [@@deriving yojson]
+  type t = int list [@@deriving yojson, sexp]
 
   module Array = struct
     let to_list () = ()
@@ -433,7 +531,7 @@ module TestShadowing = struct
     let to_string () = ()
   end
 
-  type v = bytes [@@deriving yojson]
+  type v = bytes [@@deriving yojson, sexp]
 
 end
 
@@ -470,6 +568,48 @@ module Test_extension_forms = struct
           [%of_yojson: [ pva | pvb | int pvc ]]
 end
 
+module Test_extension_forms2 = struct
+  let _ = [%sexp_of: unit], [%of_sexp: unit]
+  let _ = [%sexp_of: int], [%of_sexp: int]
+  let _ = [%sexp_of: int32], [%of_sexp: int32]
+#ifdef PAPPX
+  let _ = [%sexp_of: Int32.t], [%of_sexp: Int32.t]
+#endif
+  let _ = [%sexp_of: int64], [%of_sexp: int64]
+#ifdef PAPPX
+  let _ = [%sexp_of: Int64.t], [%of_sexp: Int64.t]
+#endif
+  let _ = [%sexp_of: nativeint], [%of_sexp: nativeint]
+#ifdef PAPPX
+  let _ = [%sexp_of: Nativeint.t], [%of_sexp: Nativeint.t]
+#endif
+  let _ = [%sexp_of: int64], [%of_sexp: int64]
+  let _ = [%sexp_of: nativeint], [%of_sexp: nativeint]
+  let _ = [%sexp_of: float], [%of_sexp: float]
+  let _ = [%sexp_of: bool], [%of_sexp: bool]
+  let _ = [%sexp_of: char], [%of_sexp: char]
+  let _ = [%sexp_of: string], [%of_sexp: string]
+  let _ = [%sexp_of: bytes], [%of_sexp: bytes]
+  let _ = [%sexp_of: int], [%of_sexp: int]
+  let _ = [%sexp_of: int ref], [%of_sexp: int ref]
+  let _ = [%sexp_of: int option], [%of_sexp: int option]
+  let _ = [%sexp_of: int list], [%of_sexp: int list]
+  let _ = [%sexp_of: int array], [%of_sexp: int array]
+  let _ = [%sexp_of: int * int], [%of_sexp: int * int]
+#ifdef PAPPX
+  let _ =  [%sexp_of: 'a option],
+          [%of_sexp: 'a option]
+#endif
+  let _ = [%sexp_of: [ `A | `B of int | `C of int * string ]],
+          [%of_sexp: [ `A | `B of int | `C of int * string ]]
+#ifdef PAPPX
+  let _ = [%sexp_of: [ `C of 'a ]],
+          [%of_sexp: [ `C of 'a ]]
+#endif
+  let _ = [%sexp_of: [ pva | pvb | int pvc ]],
+          [%of_sexp: [ pva | pvb | int pvc ]]
+end
+
 (* this test checks that we can derive an _exn deserializer
    even if we use sub-types that are derived with {exn = false} *)
 module Test_exn_depends_on_non_exn = struct
@@ -486,40 +626,50 @@ module Test_recursive_polyvariant = struct
   (* Regression test for
      https://github.com/whitequark/ppx_deriving_yojson/issues/24 *)
   type a = [ `B of string ]
-      [@@deriving of_yojson]
+      [@@deriving of_yojson, sexp]
   type b = [a | `C of b list]
-      [@@deriving of_yojson]
+      [@@deriving of_yojson, sexp]
   type c = [ a | b | `D of b list]
-      [@@deriving of_yojson]
+      [@@deriving of_yojson, sexp]
   let c_of_yojson yj : (c, string) Result.t  = c_of_yojson yj
 end
 
 type 'a recursive1 = { lhs : string ; rhs : 'a }
  and foo = unit recursive1
  and bar = int recursive1
-               [@@deriving show, yojson]
+               [@@deriving show, yojson, sexp]
 
 let test_recursive _ctxt =
-  assert_roundtrip (pp_recursive1 pp_i1)
+  assert_roundtrip pp_bar
                    (recursive1_to_yojson i1_to_yojson)
                    (recursive1_of_yojson i1_of_yojson)
                    {lhs="x"; rhs=42} "{\"lhs\":\"x\",\"rhs\":42}";
+  assert_roundtrip_sexp show_bar
+                   (sexp_of_recursive1 sexp_of_i1)
+                   (recursive1_of_sexp i1_of_sexp)
+                   {lhs="x"; rhs=42} "((lhs x) (rhs 42))";
 
   assert_roundtrip pp_foo foo_to_yojson foo_of_yojson
                    {lhs="x"; rhs=()} "{\"lhs\":\"x\",\"rhs\":null}" ;
+  assert_roundtrip_sexp show_foo sexp_of_foo foo_of_sexp
+                   {lhs="x"; rhs=()} "((lhs x) (rhs ()))" ;
 
   assert_roundtrip pp_bar bar_to_yojson bar_of_yojson
-                   {lhs="x"; rhs=42} "{\"lhs\":\"x\",\"rhs\":42}"
+                   {lhs="x"; rhs=42} "{\"lhs\":\"x\",\"rhs\":42}" ;
+  assert_roundtrip_sexp show_bar sexp_of_bar bar_of_sexp
+                   {lhs="x"; rhs=42} "((lhs x) (rhs 42))"
 
 let test_int_redefined ctxt =
   let module M = struct
     type int = Break_things
 
     let x = [%to_yojson: int] 1
+    let x' = [%sexp_of: int] 1
   end
   in
   let expected = `Int 1 in
-  assert_equal ~ctxt ~printer:show_json expected M.x
+  assert_equal ~ctxt ~printer:show_json expected M.x ;
+  assert_equal ~ctxt ~printer:to_string_hum (Atom"1") M.x'
 
 let suite = "Test ppx_yojson" >::: [
     "test_unit"      >:: test_unit;
@@ -544,10 +694,13 @@ let suite = "Test ppx_yojson" >::: [
     "test_recvar"    >:: test_recvar;
     "test_key"       >:: test_key;
     "test_id"        >:: test_id;
-    "test_custvar"   >:: test_custvar;
-    "test_custpvar"  >:: test_custpvar;
+    "test_custvar.yojson"   >:: Custvar1.test_custvar;
+    "test_custvar.sexp"   >:: Custvar2.test_custvar;
+    "test_custpvar.yojson"  >:: Custpvar1.test_custpvar;
+    "test_custpvar.sexp"  >:: Custpvar2.test_custpvar;
     "test_field_err" >:: test_field_err;
-    "test_default"   >:: test_default;
+    "test_default.yojson"   >:: Default1.test_default;
+    "test_default.sexp"   >:: Default2.test_default;
     "test_bidi"      >:: test_bidi;
     "test_custom"    >:  CustomConversions.suite;
     "test_shortcut"  >:: test_shortcut;

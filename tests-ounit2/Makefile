@@ -85,11 +85,13 @@ test_%.ppx.byte: test_%.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@
 
 test_ppx_yojson.byte: test_ppx_yojson.ml testutil.cmo testutil2.cmo
+	cppo -D PAPPX test_ppx_yojson.ml > test_ppx_yojson.pappx.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),yojson,sexplib,$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp.syntax \
-	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
+	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo test_ppx_yojson.pappx.ml -o $@
 
 test_ppx_yojson.ppx.byte: test_ppx_yojson.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES),sexplib,ppx_sexp_conv -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@
+	cppo test_ppx_yojson.ml > test_ppx_yojson.ppx.ml
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES),sexplib,ppx_sexp_conv -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo test_ppx_yojson.ppx.ml -o $@
 
 
 
