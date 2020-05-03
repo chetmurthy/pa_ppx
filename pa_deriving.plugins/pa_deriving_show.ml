@@ -65,24 +65,24 @@ value fmt_expression arg param_map ty0 =
   let fname = pp_fname arg lid in
   <:expr< $lid:fname$ >>
 
-| <:ctyp:< _ >> -> <:expr< let open Fmt in (const string "_") >>
-| <:ctyp:< unit >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "()") >>
-| <:ctyp:< int >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%d" arg) >>
+| <:ctyp:< _ >> -> <:expr< let open Pa_ppx_runtime.Fmt in (const string "_") >>
+| <:ctyp:< unit >> -> <:expr< fun ofmt arg -> let open Pa_ppx_runtime.Fmt in (pf ofmt "()") >>
+| <:ctyp:< int >> -> <:expr< fun ofmt arg -> let open Pa_ppx_runtime.Fmt in (pf ofmt "%d" arg) >>
 | <:ctyp:< bool >> -> <:expr<  Fmt.bool >>
-| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%ldl" arg) >>
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%LdL" arg) >>
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< fun ofmt arg -> let open Pa_ppx_runtime.Fmt in (pf ofmt "%ldl" arg) >>
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< fun ofmt arg -> let open Pa_ppx_runtime.Fmt in (pf ofmt "%LdL" arg) >>
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" arg) >>
-| <:ctyp:< bytes >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%S" (Bytes.to_string arg)) >>
-| <:ctyp:< char >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%C" arg) >>
-| <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%an" nativeint arg) >>
-| <:ctyp:< float >> -> <:expr< fun ofmt arg -> let open Fmt in (pf ofmt "%F" arg) >>
+  <:expr< fun ofmt arg -> let open Pa_ppx_runtime.Fmt in (pf ofmt "%S" arg) >>
+| <:ctyp:< bytes >> -> <:expr< fun ofmt arg -> let open Pa_ppx_runtime.Fmt in (pf ofmt "%S" (Bytes.to_string arg)) >>
+| <:ctyp:< char >> -> <:expr< fun ofmt arg -> let open Pa_ppx_runtime.Fmt in (pf ofmt "%C" arg) >>
+| <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun ofmt arg -> let open Pa_ppx_runtime.Fmt in (pf ofmt "%an" nativeint arg) >>
+| <:ctyp:< float >> -> <:expr< fun ofmt arg -> let open Pa_ppx_runtime.Fmt in (pf ofmt "%F" arg) >>
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "opaque" ->
-    <:expr< let open Fmt in (const string "<opaque>") >>
+    <:expr< let open Pa_ppx_runtime.Fmt in (const string "<opaque>") >>
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "show" "printer" -> e
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "show" "polyprinter" ->
   let (t0, argtys) = Ctyp.unapplist t in
@@ -93,34 +93,34 @@ value fmt_expression arg param_map ty0 =
 
 | <:ctyp:< list $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun (ofmt : Format.formatter) arg -> let open Fmt in (pf ofmt $str:"@[<2>[%a@,]@]"$ (list ~{sep=semi} $fmt1$) arg) >>
+  <:expr< fun (ofmt : Format.formatter) arg -> let open Pa_ppx_runtime.Fmt in (pf ofmt $str:"@[<2>[%a@,]@]"$ (list ~{sep=semi} $fmt1$) arg) >>
 
 | <:ctyp:< array $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun (ofmt : Format.formatter) arg -> let open Fmt in (pf ofmt $str:"@[<2>[|%a@,|]@]"$ (array ~{sep=semi} $fmt1$) arg) >>
+  <:expr< fun (ofmt : Format.formatter) arg -> let open Pa_ppx_runtime.Fmt in (pf ofmt $str:"@[<2>[|%a@,|]@]"$ (array ~{sep=semi} $fmt1$) arg) >>
 
 | (<:ctyp:< ref $ty$ >> | <:ctyp:< Pervasives.ref $ty$ >>) ->
   let fmt1 = fmtrec ty in
-  <:expr< fun (ofmt : Format.formatter) arg -> let open Fmt in (pf ofmt $str:"ref (%a)"$ $fmt1$ arg.val) >>
+  <:expr< fun (ofmt : Format.formatter) arg -> let open Pa_ppx_runtime.Fmt in (pf ofmt $str:"ref (%a)"$ $fmt1$ arg.val) >>
 
 | <:ctyp:< lazy_t $ty$ >> ->
   let fmt1 = fmtrec ty in
   <:expr< fun (ofmt : Format.formatter) arg ->
     if Lazy.is_val arg then
       $fmt1$ ofmt (Lazy.force arg)
-    else let open Fmt in (const string "<not evaluated>") ofmt () >>
+    else let open Pa_ppx_runtime.Fmt in (const string "<not evaluated>") ofmt () >>
 
 | <:ctyp:< option $ty$ >> ->
   let fmt1 = fmtrec ty in
   <:expr< fun ofmt -> fun [
-          None -> let open Fmt in (const string "None") ofmt ()
-        | Some arg -> let open Fmt in (pf ofmt "(Some %a)" $fmt1$ arg)
+          None -> let open Pa_ppx_runtime.Fmt in (const string "None") ofmt ()
+        | Some arg -> let open Pa_ppx_runtime.Fmt in (pf ofmt "(Some %a)" $fmt1$ arg)
       ] >>
 
 | (<:ctyp:< result $ty1$ $ty2$ >> | <:ctyp:< Result.result $ty1$ $ty2$ >>) ->
   <:expr< fun ofmt -> fun [
-          Result.Ok ok -> let open Fmt in (pf ofmt "(Ok %a)" $(fmtrec ty1)$ ok)
-        | Result.Error e -> let open Fmt in (pf ofmt "(Error %a)" $(fmtrec ty2)$ e)
+          Result.Ok ok -> let open Pa_ppx_runtime.Fmt in (pf ofmt "(Ok %a)" $(fmtrec ty1)$ ok)
+        | Result.Error e -> let open Pa_ppx_runtime.Fmt in (pf ofmt "(Error %a)" $(fmtrec ty2)$ e)
       ] >>
 
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
@@ -138,7 +138,7 @@ value fmt_expression arg param_map ty0 =
   let fname = pp_fname arg lid in
   Expr.prepend_longident li <:expr< $lid:fname$ >>
 
-| <:ctyp:< $_$ -> $_$ >> -> <:expr< let open Fmt in (const string "<fun>") >>
+| <:ctyp:< $_$ -> $_$ >> -> <:expr< let open Pa_ppx_runtime.Fmt in (const string "<fun>") >>
 
 | <:ctyp:< ( $list:tyl$ ) >> ->
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
@@ -148,7 +148,7 @@ value fmt_expression arg param_map ty0 =
     let e = List.fold_left2 (fun e f v -> <:expr< $e$ $f$ $lid:v$ >>)
         <:expr< pf ofmt $str:fmtstring$ >> fmts vars in
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
-    <:expr< fun (ofmt : Format.formatter) ($list:varpats$) -> let open Fmt in ($e$) >>
+    <:expr< fun (ofmt : Format.formatter) ($list:varpats$) -> let open Pa_ppx_runtime.Fmt in ($e$) >>
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
@@ -190,7 +190,7 @@ value fmt_expression arg param_map ty0 =
     in
     let e = List.fold_left2 (fun e f v -> <:expr< $e$ $f$ $lid:v$ >>)
         <:expr< pf ofmt $str:fmtstring$ >> fmts vars in
-    (conspat, <:vala< None >>, <:expr< let open Fmt in ($e$) >>)
+    (conspat, <:vala< None >>, <:expr< let open Pa_ppx_runtime.Fmt in ($e$) >>)
     ]
   | (_, _, _, Some _, _) -> assert False
   ]) l in
@@ -218,7 +218,7 @@ value fmt_expression arg param_map ty0 =
         <:patt< ` $cid$ >> varpats in
     let e = List.fold_left2 (fun e f v -> <:expr< $e$ $f$ $lid:v$ >>)
         <:expr< pf ofmt $str:fmtstring$ >> fmts vars in
-    (conspat, <:vala< None >>, <:expr< let open Fmt in ($e$) >>)
+    (conspat, <:vala< None >>, <:expr< let open Pa_ppx_runtime.Fmt in ($e$) >>)
 
   | PvInh _ ty ->
     let lili = match fst (Ctyp.unapplist ty) with [
@@ -228,7 +228,7 @@ value fmt_expression arg param_map ty0 =
      ] in
     let conspat = <:patt< ( # $lilongid:lili$ as z ) >> in
     let fmtf = fmtrec ty in
-    (conspat, <:vala< None >>, <:expr< let open Fmt in ($fmtf$ ofmt z) >>)
+    (conspat, <:vala< None >>, <:expr< let open Pa_ppx_runtime.Fmt in ($fmtf$ ofmt z) >>)
   ]) l in
   <:expr< fun ofmt -> fun [ $list:branches$ ] >>
 
@@ -257,7 +257,7 @@ and fmt_record ~{without_path} ~{prefix_txt} ~{bracket_space} loc arg fields =
       <:expr< $e$ $fmtf$ $lid:v$ >>)
       <:expr< pf ofmt $str:fmt$ >> labels_vars_fmts in
   let pl = List.map (fun (f, v, _) -> (<:patt< $lid:f$ >>, <:patt< $lid:v$ >>)) labels_vars_fmts in
-  (<:patt< { $list:pl$ } >>, <:expr< let open Fmt in ($e$) >>)
+  (<:patt< { $list:pl$ } >>, <:expr< let open Pa_ppx_runtime.Fmt in ($e$) >>)
 in fmtrec ty0
 ;
 

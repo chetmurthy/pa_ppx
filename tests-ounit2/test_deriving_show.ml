@@ -28,6 +28,7 @@ let test_alias ctxt =
   assert_equal ~printer "true"    (show_a6 true);
   assert_equal ~printer "'a'"     (show_a7 'a');
   assert_equal ~printer "\"foo\"" (show_a8 "foo");
+  assert_equal ~printer "\"foo\"" ([%show: string] "foo");
   assert_equal ~printer "\"foo\"" (show_a9 (Bytes.of_string "foo"));
   assert_equal ~printer "ref (1)" (show_r (ref 1));
   assert_equal ~printer "ref (1)" (show_r2 (ref 1));

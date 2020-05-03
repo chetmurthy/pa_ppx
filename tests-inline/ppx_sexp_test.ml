@@ -1,5 +1,7 @@
 open Ppx_sexp_conv_lib
 open Conv
+open Sexplib.Sexp
+open Sexplib.Std
 
 
 module Sum_and_polymorphic_variants = struct
@@ -216,7 +218,11 @@ module Polymorphic_variant_inclusion = struct
   ;;
 
   type sub1_alias = sub1
+#ifdef PAPPX
+  [@@deriving sexp]
+#else
   [@@deriving sexp_poly]
+#endif
   type u = [ `A | sub1_alias | `D ]
   [@@deriving sexp]
 
@@ -504,7 +510,7 @@ module True_and_false = struct
   let%test _ = Sexp.to_string (sexp_of_v `True) = "True"
   let%test _ = Sexp.to_string (sexp_of_v (`False 2)) = "(False 2)"
 end
-
+#ifndef PAPPX
 module Gadt = struct
   let is_eq sexp str =
     let sexp2 = Sexplib.Sexp.of_string str in
@@ -567,7 +573,7 @@ module Anonymous_variable = struct
     type 'a t = 'a [@@deriving sexp]
   end
 end
-
+#endif
 module Record_field_disambiguation = struct
 
   type a = { fl: float; b : b }
@@ -749,11 +755,11 @@ module Magic_types = struct
   let%test _ = v_of_sexp sexp = v
   let%test _ = sexp_of_v v = sexp
 end
-
+#ifndef PAPPX
 module Variance = struct
   type (+'a, -'b, 'c, +_, -_, _) t [@@deriving sexp]
 end
-
+#endif
 module Clash = struct
   (* Same name for type-var and type-name; must be careful when introducing rigid type names. *)
   type 'hey hey = Hey of 'hey [@@deriving sexp]
@@ -761,7 +767,7 @@ module Clash = struct
   type ('foo,'rigid_foo) foo = Foo of 'foo [@@deriving sexp]
   type 'rigid_bar rigid_rigid_bar = Bar [@@deriving sexp]
 end
-
+#ifndef PAPPX
 module Applicative_functor_types = struct
   module Bidirectional_map = struct
     type ('k1, 'k2) t
@@ -790,7 +796,7 @@ module Applicative_functor_types = struct
     type t = Bidirectional_map.S(String)(Int).t [@@deriving of_sexp]
   end
 end
-
+#endif
 module Type_extensions = struct
   let _ = ([%sexp_of: int] : [%sexp_of: int])
   let _ = ([%of_sexp: int] : [%of_sexp: int])
@@ -839,7 +845,7 @@ module Allow_extra_fields = struct
     let%test _ = should_raise t1_of_sexp sexp_extra
  end
 end
-
+#ifndef PAPPX
 module Default_values_and_polymorphism = struct
   type t =
     { a : int list
@@ -847,3 +853,4 @@ module Default_values_and_polymorphism = struct
     }
   [@@deriving of_sexp]
 end
+#endif

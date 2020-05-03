@@ -14,7 +14,7 @@ MKCAMLP5 := $(LAUNCH) $(MKCAMLP5)
 
 PACKAGES := $(PACKAGES),rresult,fmt,pa_ppx_utils,compiler-libs.common
 TARGET := pa_ppx_base.cma
-CMO := ppxutil.cmo pp_MLast.cmo pa_passthru.cmo
+CMO := pp_MLast.cmo ppxutil.cmo pa_passthru.cmo
 CMI := $(CMO:.cmo=.cmi)
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_base
 

@@ -564,10 +564,11 @@ value sig_item_top_funs arg tyname param_map ty =
 value str_item_funs arg ((loc,_) as tyname) params ty =
   let param_map = List.mapi (fun i p ->
     match Pcaml.unvala (fst p) with [
-      None -> failwith "cannot derive sexp-functions for type decl with unnamed type-vars"
+      None -> Ploc.raise loc (Failure "cannot derive sexp-functions for type decl with unnamed type-vars")
     | Some na -> (na, Printf.sprintf "tp_%d" i)
     ]) params in
   let l = str_item_top_funs arg tyname param_map ty in
+  if l = [] then Ploc.raise loc (Failure "no functions generated") else
   let types = sig_item_top_funs arg tyname param_map ty in
   List.map (fun (fname, body) ->
       let fty = List.assoc fname types in

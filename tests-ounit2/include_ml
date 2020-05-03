@@ -7,19 +7,19 @@
 #require "pcre";;
 #require "bos";;
 
-
+(*
 #require "camlp5.pa_o";;
 Pcaml.inter_phrases := Some ";;\n";;
-(*
+*)
 #require "camlp5.pa_r";;
 Pcaml.inter_phrases := Some ";\n";;
-*)
-
-#require "camlp5.pr_o";;
 
 (*
-#require "camlp5.pr_r";;
+#require "camlp5.pr_o";;
 *)
+
+#require "camlp5.pr_r";;
+
 #require "camlp5.quotations";;
 #require "camlp5.extfun";;
 (*
@@ -81,27 +81,17 @@ open Longident ;;
 print_string "================ START ================\n";; flush stdout ;;
 
 
-#require "pa_ppx_expect_test";;
-#require "pa_ppx_inline_test";;
+#require "pa_ppx_base";;
+(*
+#require "pa_ppx_undo_deriving";;
 
 #install_printer Fpath.pp ;;
 #trace Bos.OS.File.exists ;;
-(*
-#trace Pa_inline_test.rewrite_str_item ;;
-#trace Pa_inline_test.wrap_implem ;;
+
+"../base/pp_MLast.mli" |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> PAPR.Interf.pa1
+  |> PAPR.Interf.pr |> print_string ;;
 *)
-Pa_inline_test.libname := "foo" ;;
-
-#trace Pa_expect_test.expect_test ;;
-(*
-#trace Pa_expect_test.wrap_implem ;;
-*)
-#trace Pa_expect_test.rewrite_str_item ;;
-
-"test_inline_test.ml" |> Fpath.v |> Bos.OS.File.read
-  |> Rresult.R.get_ok |> PAPR.Implem.pa1 ~input_file:"test_boo.ml"
-  |> PAPR.Implem.pr |> print_string ;;
-
 (*
 ;;; Local Variables: ***
 ;;; mode:tuareg ***

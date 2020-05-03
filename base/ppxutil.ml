@@ -58,7 +58,7 @@ value prepend_longident li e =
   let rec prerec li e = match li with [
     <:longident:< $uid:uid$ >> -> <:expr< $uid:uid$ . $e$ >>
   | <:longident:< $longid:li$ . $uid:uid$ >> -> prerec li <:expr< $uid:uid$ . $e$ >>
-  | _ -> assert False
+  | li -> Ploc.raise (loc_of_longid li) (Failure (Printf.sprintf "unexpected longid: %s" (Pp_MLast.show_longid li)))
   ] in
   prerec li e
 ;

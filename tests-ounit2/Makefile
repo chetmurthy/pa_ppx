@@ -104,13 +104,13 @@ hCPassthru.cmo: hCPassthru.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PACKAGEPREFIX)base,$(PACKAGEPREFIX)hashrecons.syntax -syntax camlp5r -c $<
 
 test_import0.byte: test_import0.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmi
-	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PACKAGEPREFIX)deriving_plugins.show.syntax,$(PACKAGEPREFIX)import.syntax,camlp5.pr_o.syntax \
+	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PACKAGEPREFIX)runtime,$(PACKAGEPREFIX)deriving_plugins.show.syntax,$(PACKAGEPREFIX)import.syntax,camlp5.pr_o.syntax \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
 
 test_import_camlp5.byte: test_import_camlp5.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmi
-	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PACKAGEPREFIX)import.syntax,$(PACKAGEPREFIX)deriving_plugins.show.syntax \
+	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PACKAGEPREFIX)runtime,$(PACKAGEPREFIX)import.syntax,$(PACKAGEPREFIX)deriving_plugins.show.syntax \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
@@ -126,7 +126,7 @@ test_self_import.cmi: test_self_import.mli
 	-syntax camlp5o -c $< -o $@
 
 test_ppx_import.byte: test_ppx_import.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
-	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PACKAGEPREFIX)import.syntax,$(PACKAGEPREFIX)deriving_plugins.show.syntax \
+	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PACKAGEPREFIX)runtime,$(PACKAGEPREFIX)import.syntax,$(PACKAGEPREFIX)deriving_plugins.show.syntax \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@
