@@ -213,6 +213,8 @@ value to_expression arg ~{msg} param_map ty0 =
   <:expr< fun $recpat$ -> $body$ >>
 
 | [%unmatched_vala] -> failwith "pa_deriving_sexp.to_expression"
+| ty ->
+  Ploc.raise (loc_of_ctyp ty) (Failure (Printf.sprintf "pa_deriving_sexp.to_expression: %s" (Pp_MLast.show_ctyp ty)))
 ]
 and fmt_record loc arg fields = 
   let labels_vars_fmts_defaults_jskeys = List.map (fun (_, fname, _, ty, attrs) ->

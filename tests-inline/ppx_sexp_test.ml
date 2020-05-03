@@ -162,7 +162,7 @@ module Uses_of_exn = struct
   type t = int * exn
   [@@deriving sexp_of]
 end
-
+#ifndef PAPPX
 module Function_types : sig
   type t1 = int -> unit [@@deriving sexp]
   type t2 = label:int -> ?optional:int -> unit -> unit [@@deriving sexp]
@@ -173,7 +173,7 @@ end = struct
   type t2 = label:int -> ?optional:int -> unit -> unit
   [@@deriving sexp]
 end
-
+#endif
 module No_unused_rec = struct
   type r = { r : int } [@@deriving sexp]
 end
@@ -235,7 +235,7 @@ module Polymorphic_variant_inclusion = struct
     ) cases
   ;;
 end
-
+#ifndef PAPPX
 module Polymorphic_record_field = struct
   type 'x t =
     { poly : 'a 'b. 'a list
@@ -249,7 +249,7 @@ module Polymorphic_record_field = struct
     assert (sexp_of_t sexp_of_int (t 1) = sexp);
   ;;
 end
-
+#endif
 module No_unused_value_warnings : sig end = struct
   module No_warning : sig
     type t = [ `A ] [@@deriving sexp]
@@ -276,7 +276,7 @@ module No_unused_value_warnings : sig end = struct
       (M1 : sig type t [@@deriving sexp] end)
       (M2 : sig type t [@@deriving sexp] end) = struct
   end
-
+#ifndef PAPPX
   let () =
     let module M : sig
       type t [@@deriving sexp]
@@ -284,7 +284,7 @@ module No_unused_value_warnings : sig end = struct
       type t [@@deriving sexp]
     end in
     ()
-
+#endif
   module Include = struct
     include (struct
       type t = int [@@deriving sexp]
@@ -463,12 +463,12 @@ module Omit_nil = struct
   let%test_unit _ = check sexp_of_t2 t2_of_sexp "(A (a (1)))" (A { a = [ 1 ] })
 
 end
-
+#ifndef PAPPX
 module No_unused_rec_warning = struct
   type r = { field : r -> unit }
   [@@deriving sexp_of]
 end
-
+#endif
 module True_and_false = struct
   type t =
     | True
