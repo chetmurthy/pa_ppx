@@ -76,6 +76,12 @@ value transform_body e =
     let l = vala_map (List.map (fun (p,e,a) -> (p, trec e, a))) l in
     <:expr< let $_flag:r$ $_list:l$ in $trec body$ >>
 
+  | <:expr:< if $e1$ then $e2$ else $e3$ >> ->
+    let e1 = trec e1 in
+    let e2 = trec e2 in
+    let e3 = trec e3 in
+    <:expr:< if $e1$ then $e2$ else $e3$ >>
+
   | e -> e
   ] in
   let te = trec e in

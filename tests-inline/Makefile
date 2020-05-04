@@ -20,7 +20,7 @@ CMI=$(CMO:.cmo=.cmi)
 
 TESTS= \
 	test_inline_test.TEST failures.TEST order.TEST random_state.TEST \
-	test_stderr.TEST test_output.TEST \ uncaught_exn.TEST \
+	test_stderr.TEST test_output.TEST uncaught_exn.TEST unreachable.TEST \
 	ppx_assert_test.TEST ppx_sexp_test.TEST
 
 all: $(CMO) test-executables
@@ -66,17 +66,6 @@ PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
 
 %.pa.byte: %.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
-
-
-uncaught_exn.ppx.byte: uncaught_exn.ml
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
-
-uncaught_exn.pa.byte: uncaught_exn.ml
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
-
-
-uncaught_exn.pappx.ppo.cmo: uncaught_exn.pappx.ppo.ml
-	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),ppx_expect.evaluator,ppx_inline_test.runtime-lib,ppx_inline_test.runner.lib -syntax camlp5o $<
 
 ppx_sexp_test.ppx.byte: ppx_sexp_test.ml
 	cppo ppx_sexp_test.ml > ppx_sexp_test.ppx.ml
