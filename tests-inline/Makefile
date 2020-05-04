@@ -20,7 +20,7 @@ CMI=$(CMO:.cmo=.cmi)
 
 TESTS= \
 	test_inline_test.TEST failures.TEST order.TEST random_state.TEST \
-	test_stderr.TEST \
+	test_stderr.TEST test_output.TEST \
 	ppx_assert_test.TEST ppx_sexp_test.TEST
 
 all: $(CMO) test-executables
