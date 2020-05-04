@@ -67,6 +67,11 @@ value transform_body e =
     <:expr< Expect_test_collector.save_and_return_output $expect_location expectid_loc$ >>
   }
 
+  | <:expr:< [% $attrid:(expectid_loc, "expect.unreachable")$ ] >> -> do {
+    Std.push expectations (expectid_loc, expectid_loc, <:expr< Unreachable >>) ;
+    <:expr< Expect_test_collector.save_output $expect_location expectid_loc$ >>
+  }
+
   | <:expr:< let $_flag:r$ $_list:l$ in $body$ >> ->
     let l = vala_map (List.map (fun (p,e,a) -> (p, trec e, a))) l in
     <:expr< let $_flag:r$ $_list:l$ in $trec body$ >>
@@ -77,7 +82,15 @@ value transform_body e =
   (te, expectations.val)
 ;
 
-value expect_test arg extension_loc attrid_loc (descr_loc, descr) test_body =
+value extract_uncaught_exn attr = match Pcaml.unvala attr with [
+  <:attribute_body:< $attrid:(expectid_loc, "expect.uncaught_exn")$ $exp:paye$ ; >> ->
+    let (loc, s) = match paye with [ <:expr:< $str:s$ >> -> (loc, s) ] in
+    Some (expectid_loc, loc, <:expr< (Pretty $str:s$) >>)
+| _ -> None
+]
+;
+
+value expect_test arg extension_loc attrid_loc (descr_loc, descr) test_body attrs =
   let (transformed_body, expectations) = transform_body test_body in
 
   let digest = (EC.get arg).EC.md5 in
@@ -95,6 +108,17 @@ value expect_test arg extension_loc attrid_loc (descr_loc, descr) test_body =
                         body_location = $expect_location expect_s_loc$
                       } : Expect_test_common.Std.Expectation.t string ) :: $rhs$ ] >>)
       expectations <:expr< [] >> in
+  let uncaught = List.find_map extract_uncaught_exn attrs in
+  let uncaught = match uncaught with [
+    None -> <:expr< None >> 
+  | Some (expectid_loc, expect_s_loc, expected) ->
+    <:expr< Some ({
+                        tag = (Some "");
+                        body = $expected$;
+                        extid_location = $expect_location expectid_loc$;
+                        body_location = $expect_location expect_s_loc$
+                      } : Expect_test_common.Std.Expectation.t string ) >>
+  ] in
 
   <:str_item<
   let module Expect_test_collector =
@@ -106,7 +130,7 @@ value expect_test arg extension_loc attrid_loc (descr_loc, descr) test_body =
       ~{description = $q_descr$}
       ~{tags = []}
       ~{expectations = $expectations_list$}
-      ~{uncaught_exn_expectation = None} ~{inline_test_config = (module Inline_test_config)}
+      ~{uncaught_exn_expectation = $uncaught$} ~{inline_test_config = (module Inline_test_config)}
       (fun () -> $transformed_body$)
   >>
 ;
@@ -122,7 +146,7 @@ value is_named_expect_test = fun [
 ;
 
 value rewrite_str_item arg = fun [
-  <:str_item:< [%%expect_test $exp:rhs$; ] >> as z ->
+  <:str_item:< [%%expect_test $exp:rhs$ $itemattrs:attrs$; ] >> as z ->
   let (extension_loc, extension) = match z with [
     <:str_item:< [%% $extension:e$ ] >> -> (loc, e)
   ] in
@@ -130,9 +154,9 @@ value rewrite_str_item arg = fun [
     <:attribute_body< $attrid:(loc,_)$ $structure:_$ >> -> loc
   ] in
 
-  expect_test arg extension_loc attrid_loc (loc_of_expr rhs, None) rhs
+  expect_test arg extension_loc attrid_loc (loc_of_expr rhs, None) rhs attrs
 
-  | <:str_item:< [%%expect_test value $flag:False$ $list:[(p,rhs,_)]$ ; ] >> as z -> do {
+  | <:str_item:< [%%expect_test value $flag:False$ $list:[(p,rhs,ia)]$ ; ] >> as z -> do {
     assert (is_named_expect_test z) ;
   let descr = match p with [
     <:patt:< _ >> -> (loc, None)
@@ -147,7 +171,7 @@ value rewrite_str_item arg = fun [
     <:attribute_body< $attrid:(loc,_)$ $structure:_$ >> -> loc
   ] in
 
-    expect_test arg extension_loc attrid_loc descr rhs
+    expect_test arg extension_loc attrid_loc descr rhs (Pcaml.unvala ia)
   }
 ]
 ;
@@ -167,7 +191,7 @@ value install () =
 let ef = EF.mk () in 
 let ef = EF.{ (ef) with
             str_item = extfun ef.str_item with [
-    <:str_item:< [%%expect_test $exp:_$ ; ] >> as z ->
+    <:str_item:< [%%expect_test $exp:_$ $itemattrs:_$ ; ] >> as z ->
     fun arg ->
       Some (rewrite_str_item arg z)
 
