@@ -671,6 +671,8 @@ let test_int_redefined ctxt =
   assert_equal ~ctxt ~printer:show_json expected M.x ;
   assert_equal ~ctxt ~printer:to_string_hum (Atom"1") M.x'
 
+type ('a, 'b) t = ('a, 'b) Hashtbl.t [@@deriving sexp]
+
 let suite = "Test ppx_yojson" >::: [
     "test_unit"      >:: test_unit;
     "test_int"       >:: test_int;

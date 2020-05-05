@@ -86,6 +86,9 @@ value to_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< sexp_of_nativeint >>
 | <:ctyp:< float >> -> <:expr< sexp_of_float >>
 
+| <:ctyp:< Hashtbl.t >> ->
+  <:expr< sexp_of_hashtbl >>
+
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
@@ -299,6 +302,9 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< char >> -> <:expr< char_of_sexp >>
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< nativeint_of_sexp >>
 | <:ctyp:< float >> -> <:expr< float_of_sexp >>
+
+| <:ctyp:< Hashtbl.t >> ->
+  <:expr< hashtbl_of_sexp >>
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
