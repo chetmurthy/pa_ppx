@@ -91,6 +91,9 @@ value to_expression arg ~{msg} param_map ty0 =
     <:expr< fun x -> `String (Nativeint.to_string x) >>
 | <:ctyp:< float >> -> <:expr< fun x -> `Float x >>
 
+| <:ctyp:< Hashtbl.t >> ->
+  <:expr< hashtbl_to_yojson >>
+
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
@@ -337,6 +340,9 @@ value of_expression arg ~{msg} param_map ty0 =
       | `Intlit x -> Result.Ok (float_of_string x)
       | `Float x -> Result.Ok x
       | _ -> Result.Error $str:msg$ ] >>
+
+| <:ctyp:< Hashtbl.t >> ->
+  <:expr< hashtbl_of_yojson >>
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t

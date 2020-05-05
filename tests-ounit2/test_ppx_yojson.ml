@@ -671,7 +671,68 @@ let test_int_redefined ctxt =
   assert_equal ~ctxt ~printer:show_json expected M.x ;
   assert_equal ~ctxt ~printer:to_string_hum (Atom"1") M.x'
 
-type ('a, 'b) t = ('a, 'b) Hashtbl.t [@@deriving sexp]
+#ifdef PAPPX
+module HT = struct
+type ('a, 'b) t = ('a, 'b) Hashtbl.t [@@deriving sexp, yojson]
+let test_hashtbl_sexp ctxt =
+  let canon = function
+    List l -> List (List.sort Stdlib.compare l)
+  | e -> e
+  in
+  let open Hashtbl in
+  begin
+    let ht = create 23 in
+    add ht 1 2 ;
+    add ht 2 3 ;
+    add ht 3 4 ;
+    add ht 3 5 ;
+    assert_equal ~ctxt ~printer:to_string_hum
+      (canon (of_string "((1 2) (2 3) (3 4) (3 5))"))
+      (canon (sexp_of_t sexp_of_i1 sexp_of_i1 ht))
+  end ;
+  begin
+    let ht = t_of_sexp i1_of_sexp i1_of_sexp  (of_string "((1 2) (2 3) (3 5))") in
+    assert_equal 2 (Hashtbl.find ht 1)  ;
+    assert_equal 3 (Hashtbl.find ht 2)  ;
+    assert_equal 5 (Hashtbl.find ht 3)  ;
+  end
+let test_hashtbl_yojson ctxt =
+  let canon (json : json) = match json with
+    `List l -> `List (List.sort Stdlib.compare l)
+  | e -> e
+  in
+  let open Hashtbl in
+  begin
+  let (json : json) = (`List[`List[`Int 1; `Int 2]; `List[`Int 2; `Int 3]; `List[`Int 3; `Int 4]; `List[`Int 3; `Int 5]]) in
+    let ht = create 23 in
+    add ht 1 2 ;
+    add ht 2 3 ;
+    add ht 3 4 ;
+    add ht 3 5 ;
+    assert_equal ~ctxt ~printer:show_json
+      (canon json)
+      (canon (to_yojson i1_to_yojson i1_to_yojson ht))
+  end ;
+  begin
+  let (json : json) = (`List[`List[`Int 1; `Int 2]; `List[`Int 2; `Int 3]; `List[`Int 3; `Int 5]]) in
+    let ht = of_yojson i1_of_yojson i1_of_yojson json in
+    assert_bool "of_yojson" (Rresult.R.is_ok ht) ;
+    let ht = Rresult.R.get_ok ht in
+    assert_equal ~ctxt ~printer:show_json
+      (canon json)
+      (canon (to_yojson i1_to_yojson i1_to_yojson ht)) ;
+
+    assert_equal 2 (Hashtbl.find ht 1)  ;
+    assert_equal 3 (Hashtbl.find ht 2)  ;
+    assert_equal 5 (Hashtbl.find ht 3)  ;
+  end
+end
+#else
+module HT = struct
+let test_hashtbl_sexp ctxt = ()
+let test_hashtbl_yojson ctxt = ()
+end
+#endif
 
 let suite = "Test ppx_yojson" >::: [
     "test_unit"      >:: test_unit;
@@ -712,7 +773,11 @@ let suite = "Test ppx_yojson" >::: [
 *)
     "test_recursive" >:: test_recursive;
     "test_int_redefined" >:: test_int_redefined;
+    "test_hashtbl_sexp" >:: HT.test_hashtbl_sexp;
+    "test_hashtbl_yojson" >:: HT.test_hashtbl_yojson;
   ]
 
-let _ =
+let _ = 
+if not !Sys.interactive then
   run_test_tt_main suite
+else ()

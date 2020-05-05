@@ -11,7 +11,7 @@ RM=rm
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 
-PACKAGES := rresult,fmt,camlp5
+PACKAGES := rresult,fmt,camlp5,yojson
 TARGET := pa_ppx_runtime.cma
 CMO := pa_ppx_runtime.cmo
 CMI := $(CMO:.cmo=.cmi)

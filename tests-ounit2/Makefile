@@ -88,6 +88,7 @@ test_ppx_yojson.byte: test_ppx_yojson.ml testutil.cmo testutil2.cmo
 	cppo -D PAPPX test_ppx_yojson.ml > test_ppx_yojson.pappx.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),yojson,sexplib,$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp.syntax \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo test_ppx_yojson.pappx.ml -o $@
+	$(OCAMLFIND)2 preprocess -package $(PACKAGES),yojson,sexplib,$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp.syntax,camlp5.pr_o.syntax  -syntax camlp5o  test_ppx_yojson.pappx.ml > test_ppx_yojson.pappx.ml.ppo
 
 test_ppx_yojson.ppx.byte: test_ppx_yojson.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
 	cppo test_ppx_yojson.ml > test_ppx_yojson.ppx.ml
