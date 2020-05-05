@@ -63,9 +63,11 @@ PAINLINEPACKAGES:=$(PAINLINEPACKAGES),ppx_inline_test.runtime-lib,ppx_inline_tes
 PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
 
 %.ppx.byte: %.ml
+	$(OCAMLFIND)2 preprocess -package $(PACKAGES),$(PPXINLINEPACKAGES) $(PPXINLINEOPT) $< > $<.ppx.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 %.pa.byte: %.ml
+	$(OCAMLFIND)2 preprocess -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) camlp5/papr_official.exe -binary-input -impl > $<.pappx.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 ppx_sexp_test.ppx.byte: ppx_sexp_test.ml
@@ -82,7 +84,7 @@ ppx_sexp_test.pa.byte: ppx_sexp_test.ml
 .SUFFIXES: .TEST
 
 clean::
-	rm -f *.corrected
+	rm -f *.corrected *.ppo
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o test_*.ml > .depend.NEW
