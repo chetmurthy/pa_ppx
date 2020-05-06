@@ -431,7 +431,7 @@ let test_nostrict _ctxt =
   assert_equal ~printer:show_nostrict
                { nostrict_field = 42 }
                (nostrict_of_sexp (of_string "((nostrict_field 42))"))
-(*
+#ifndef PAPPX
 module Opentype :
   sig
     type 'a opentype = .. [@@deriving yojson]
@@ -464,8 +464,8 @@ let test_opentype _ctxt =
                    (Opentype.B ["one"; "two"]) "[\"B\", [ \"one\", \"two\"] ]";
   assert_roundtrip pp_ot to_yojson of_yojson
                    (C (Opentype.A 42, 1.2)) "[\"C\", [\"A\", 42], 1.2]"
+#endif
 
-*)
 (* This will fail at type-check if we introduce features that increase
    the default generated signatures. It is representative of user code
    (there is plenty in OPAM) that uses our generated signatures, but
@@ -768,9 +768,9 @@ let suite = "Test ppx_yojson" >::: [
     "test_custom"    >:  CustomConversions.suite;
     "test_shortcut"  >:: test_shortcut;
     "test_nostrict"  >:: test_nostrict;
-(*
+#ifndef PAPPX
     "test_opentype"  >:: test_opentype;
-*)
+#endif
     "test_recursive" >:: test_recursive;
     "test_int_redefined" >:: test_int_redefined;
     "test_hashtbl_sexp" >:: HT.test_hashtbl_sexp;
