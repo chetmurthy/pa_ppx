@@ -49,7 +49,7 @@ value tuplepatt loc l = if List.length l = 1 then List.hd l else <:patt< ( $list
 value tupleexpr loc l = if List.length l = 1 then List.hd l else <:expr< ( $list:l$ ) >> ;
 
 value extract_allowed_attribute_expr arg attrna attrs =
-  match try_find (fun a -> match Pcaml.unvala a with [ <:attribute_body< $attrid:(_, id)$ $exp:e$ ; >>
+  match try_find (fun a -> match uv a with [ <:attribute_body< $attrid:(_, id)$ $exp:e$ ; >>
                    when id = DC.allowed_attribute (DC.get arg) "yojson" attrna ->
                    e
                  | _ -> failwith "extract_allowed_attribute_expr" ]) attrs with [
@@ -142,21 +142,21 @@ value to_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
     (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
-    let cid = Pcaml.unvala cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (Pcaml.unvala attrs) with [
+    let cid = uv cid in
+    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
-    let (recpat, body) = fmt_record loc arg (Pcaml.unvala fields) in
+    let (recpat, body) = fmt_record loc arg (uv fields) in
 
     let conspat = <:patt< $uid:cid$ $recpat$ >> in
     (conspat, <:vala< None >>, <:expr< `List [ (`String $str:jscid$) ;  $body$ ] >>)
 
   | (loc, cid, tyl, None, attrs) ->
-    let cid = Pcaml.unvala cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (Pcaml.unvala attrs) with [
+    let cid = uv cid in
+    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
-    let tyl = Pcaml.unvala tyl in
+    let tyl = uv tyl in
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
     let conspat = List.fold_left (fun p vp -> <:patt< $p$ $vp$ >>)
@@ -175,11 +175,11 @@ value to_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< [= $list:l$ ] >> ->
   let branches = List.map (fun [
     PvTag loc cid _ tyl attrs -> do {
-    let cid = Pcaml.unvala cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (Pcaml.unvala attrs) with [
+    let cid = uv cid in
+    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
-    let tyl = Pcaml.unvala tyl in
+    let tyl = uv tyl in
     assert (List.length tyl <= 1) ;
     let tyl = match tyl with [
       [] -> []
@@ -228,7 +228,7 @@ value to_expression arg ~{msg} param_map ty0 =
 ]
 and fmt_record loc arg fields = 
   let labels_vars_fmts_defaults_jskeys = List.map (fun (_, fname, _, ty, attrs) ->
-        let ty = ctyp_wrap_attrs ty (Pcaml.unvala attrs) in
+        let ty = ctyp_wrap_attrs ty (uv attrs) in
         let attrs = snd(Ctyp.unwrap_attrs ty) in
         let default = extract_allowed_attribute_expr arg "default" attrs in
         let key = extract_allowed_attribute_expr arg "key" attrs in
@@ -261,7 +261,7 @@ value fmt_to_top arg ~{msg} params = fun [
 ;
 
 value sig_item_fun0 arg (loc, tyname) param_map ty =
-  let tyname = Pcaml.unvala tyname in
+  let tyname = uv tyname in
   let to_yojsonfname = to_yojson_fname arg tyname in
   let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
   let argfmttys = List.map (fun pty -> <:ctyp< $pty$ -> Yojson.Safe.t >>) paramtys in  
@@ -293,7 +293,7 @@ value sig_items arg (loc, tyname) param_map ty =
 ;
 
 value str_item_funs arg (loc, tyname) param_map ty =
-  let tyname = Pcaml.unvala tyname in
+  let tyname = uv tyname in
   let to_yojsonfname = to_yojson_fname arg tyname in
   let to_e = fmt_to_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
   let to_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $to_e$ >> in
@@ -422,21 +422,21 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
     (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
-    let cid = Pcaml.unvala cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (Pcaml.unvala attrs) with [
+    let cid = uv cid in
+    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
-    let (recpat, body) = fmt_record ~{cid=Some cid} loc arg (Pcaml.unvala fields) in
+    let (recpat, body) = fmt_record ~{cid=Some cid} loc arg (uv fields) in
 
     let conspat = <:patt< `List [ `String $str:jscid$ ; $recpat$ ] >> in
     (conspat, <:vala< None >>, body)
 
   | (loc, cid, tyl, None, attrs) ->
-    let cid = Pcaml.unvala cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (Pcaml.unvala attrs) with [
+    let cid = uv cid in
+    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
-    let tyl = Pcaml.unvala tyl in
+    let tyl = uv tyl in
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
     let varexps = List.map (fun v -> <:expr< $lid:v$ >>) vars in
     let fmts = List.map fmtrec tyl in
@@ -462,11 +462,11 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< [= $list:l$ ] >> as ty0 -> 
   let branches = List.map (fun [
     PvTag loc cid _ tyl attrs -> do {
-    let cid = Pcaml.unvala cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (Pcaml.unvala attrs) with [
+    let cid = uv cid in
+    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
-    let tyl = Pcaml.unvala tyl in
+    let tyl = uv tyl in
     assert (List.length tyl <= 1) ;
     let tyl = match tyl with [
       [] -> []
@@ -533,7 +533,7 @@ value of_expression arg ~{msg} param_map ty0 =
 ]
 and fmt_record ~{cid} loc arg fields = 
   let labels_vars_fmts_defaults_jskeys = List.map (fun (_, fname, _, ty, attrs) ->
-        let ty = ctyp_wrap_attrs ty (Pcaml.unvala attrs) in
+        let ty = ctyp_wrap_attrs ty (uv attrs) in
         let attrs = snd(Ctyp.unwrap_attrs ty) in
         let default = extract_allowed_attribute_expr arg "default" attrs in
         let key = extract_allowed_attribute_expr arg "key" attrs in
@@ -602,7 +602,7 @@ value fmt_of_top arg ~{msg} params = fun [
 ;
 
 value sig_item_fun0 arg (loc, tyname) param_map ty =
-  let tyname = Pcaml.unvala tyname in
+  let tyname = uv tyname in
   let of_yojsonfname = of_yojson_fname arg tyname in
   let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
   let argfmttys = List.map (fun pty -> <:ctyp< Yojson.Safe.t -> Rresult.result $pty$ string >>) paramtys in  
@@ -641,7 +641,7 @@ value sig_items arg (loc, tyname) param_map ty =
 ;
 
 value str_item_funs arg (loc, tyname) param_map ty =
-  let tyname = Pcaml.unvala tyname in
+  let tyname = uv tyname in
   let of_yojsonfname = of_yojson_fname arg tyname in
   let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
   let paramfun_exprs = List.map (fun (_,ppf) -> <:expr< $lid:ppf$ >>) param_map in
@@ -692,7 +692,7 @@ value sig_items arg tyname param_map ty =
 
 value make_param_map params =
   List.mapi (fun i p ->
-    match Pcaml.unvala (fst p) with [
+    match uv (fst p) with [
       None -> failwith "cannot derive yojson-functions for type decl with unnamed type-vars"
     | Some na -> (na, Printf.sprintf "tp_%d" i)
     ]) params
@@ -710,13 +710,13 @@ value str_item_funs arg ((loc,_) as tyname) params ty =
 ;
 
 value str_item_gen_yojson0 arg td =
-  let tyname = Pcaml.unvala td.tdNam
-  and params = Pcaml.unvala td.tdPrm
+  let tyname = uv td.tdNam
+  and params = uv td.tdPrm
   and tk = td.tdDef in
   str_item_funs arg tyname params tk
 ;
 
-value loc_of_type_decl td = fst (Pcaml.unvala td.tdNam) ;
+value loc_of_type_decl td = fst (uv td.tdNam) ;
 
 value str_item_gen_yojson name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->
@@ -727,8 +727,8 @@ value str_item_gen_yojson name arg = fun [
 ;
 
 value sig_item_gen_yojson0 arg td =
-  let tyname = Pcaml.unvala td.tdNam
-  and params = Pcaml.unvala td.tdPrm
+  let tyname = uv td.tdNam
+  and params = uv td.tdPrm
   and tk = td.tdDef in
   sig_items arg tyname (make_param_map params) tk
 ;
@@ -749,7 +749,7 @@ value type_params t =
   | <:ctyp< $a$ $b$ >> -> do { brec a; brec b }
   | <:ctyp< ( $list:l$ ) >> -> List.iter brec l
   | <:ctyp< [= $list:branches$ ] >> ->
-    List.iter (fun [ PvTag _ _ _ tyl _ -> List.iter brec (Pcaml.unvala tyl) | PvInh _ ty -> brec ty ])  branches
+    List.iter (fun [ PvTag _ _ _ tyl _ -> List.iter brec (uv tyl) | PvInh _ ty -> brec ty ])  branches
   | _ -> ()
   ] in do {
     brec t ; List.rev acc.val

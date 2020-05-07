@@ -501,8 +501,8 @@ and str_item0 arg =
     | StMod loc x1 x2[@hashrecons z;] →
         StMod loc x1
           (vala_map (List.map (fun (x1, x2, x3)[@hashrecons z;] →
-           let arg = match Pcaml.unvala x1  with [
-             Some s -> Ctxt.append_module arg (Pcaml.unvala s)
+           let arg = match uv x1  with [
+             Some s -> Ctxt.append_module arg (uv s)
            | None -> arg
            ] in
            (x1, module_expr arg x2, attributes arg x3)[@hashrecons z;]))

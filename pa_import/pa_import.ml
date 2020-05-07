@@ -75,7 +75,7 @@ value lookup_file suffix fmod =
 
 value find1lid lid = fun [
   <:sig_item:< type $flag:nrfl$ $list:tdl$ >> ->
-  try_find (fun td -> if Pcaml.unvala (snd (Pcaml.unvala td.tdNam)) = lid then (td,(nrfl, tdl)) else failwith "caught") tdl
+  try_find (fun td -> if uv (snd (uv td.tdNam)) = lid then (td,(nrfl, tdl)) else failwith "caught") tdl
 | _ -> failwith "caught"
 ]
 ;
@@ -90,8 +90,8 @@ value find_lid lid sil =
 value find1mod mname = fun [
   <:sig_item< module $_flag:rf$ $list:l$ >> ->
     try_find (fun (uido, mt, _) ->
-      match (Pcaml.unvala uido, mt) with [
-        (Some uid, MtSig _ sil) when Pcaml.unvala uid = mname -> Pcaml.unvala sil
+      match (uv uido, mt) with [
+        (Some uid, MtSig _ sil) when uv uid = mname -> uv sil
       | _ -> failwith "caught"
       ]) l
 | <:sig_item< module type $i$ = sig $list:sil$ end $itemattrs:_$ >> when i = mname -> sil
@@ -266,7 +266,7 @@ value assignment_to_subst = fun [
 ;
 
 value extend_renmap attr renmap =
-  let e = match Pcaml.unvala attr with [
+  let e = match uv attr with [
     <:attribute_body<"with" $exp:e$ ; >> -> e
   | _ -> failwith "import: unrecognized attribute"
   ] in
@@ -318,19 +318,19 @@ value import_type arg (newtname,new_formals) t =
   let loc = unp.loc in
   let actuals = unp.args in
   let (td, tdl) = import_typedecl arg unp.unapp_t in
-  let formals = Pcaml.unvala td.tdPrm in
+  let formals = uv td.tdPrm in
     if List.length formals <> List.length actuals then
       failwith "import_type: type-param formal/actual list-length mismatch"
     else let renmap = List.fold_left2 (fun renmap f a ->
-        match (Pcaml.unvala (fst f), a) with [
+        match (uv (fst f), a) with [
           (None, _) -> renmap
         | (Some fid, <:ctyp< ' $id$ >>) when fid <> id ->
           let fid = <:ctyp< ' $fid$ >> in
           [ (fid, a) :: renmap ]
         | _ -> renmap
         ]) renmap formals actuals in
-    let oldtname = Pcaml.unvala (snd (Pcaml.unvala td.tdNam)) in
-    let newtname = Pcaml.unvala (snd newtname)in
+    let oldtname = uv (snd (uv td.tdNam)) in
+    let newtname = uv (snd newtname)in
     let renmap = if oldtname = newtname then
         renmap
       else [ (<:ctyp< $lid:oldtname$ >>, <:ctyp< $lid:newtname$ >>) :: renmap ] in
@@ -350,15 +350,15 @@ value import_typedecl_group arg t item_attrs =
   let (rd, (nrfl, tdl)) = import_typedecl arg unp.unapp_t in
   let tdl = List.map (fun td ->
       let imported_tycon =
-        let tyna = Pcaml.unvala (snd (Pcaml.unvala td.tdNam)) in
+        let tyna = uv (snd (uv td.tdNam)) in
         let baset = <:ctyp< $longid:unp.li$ . $lid:tyna$ >> in
         let type_var2arg (so, _) =
-          match Pcaml.unvala so with [
+          match uv so with [
             Some s -> <:ctyp< ' $s$ >>
           | None ->
             failwith "import_typedecl_group: cannot import typedecl group where some params are unnamed"
           ] in
-        let args = List.map type_var2arg (Pcaml.unvala td.tdPrm) in
+        let args = List.map type_var2arg (uv td.tdPrm) in
         Ctyp.applist baset args in
       let ct = if renmap = [] then td.tdDef
         else Ctyp.wrap_attrs (substitute_ctyp renmap td.tdDef) unp.attrs in
@@ -369,7 +369,7 @@ value import_typedecl_group arg t item_attrs =
     ) tdl in
   let (last, tdl) = sep_last tdl in
   let last =
-    let last_attrs = Pcaml.unvala last.tdAttributes in
+    let last_attrs = uv last.tdAttributes in
     let new_attrs = last_attrs@item_attrs in
     { (last) with tdAttributes = <:vala< new_attrs >> } in
   let tdl = tdl @ [last] in
@@ -394,8 +394,8 @@ value registered_str_item_extension arg = fun [
     let tdl = List.map (fun td ->
         match td.tdDef with [
           <:ctyp< [% import: $type:t$ ] >> ->
-          let tname = Pcaml.unvala td.tdNam in
-          let l = Pcaml.unvala td.tdPrm in
+          let tname = uv td.tdNam in
+          let l = uv td.tdPrm in
           let ct = import_type arg (tname,l) t in
           { (td) with tdDef = ct }
         | _ -> td
@@ -415,8 +415,8 @@ value registered_sig_item_extension arg = fun [
     let tdl = List.map (fun td ->
         match td.tdDef with [
           <:ctyp< [% import: $type:t$ ] >> ->
-          let tname = Pcaml.unvala td.tdNam in
-          let l = Pcaml.unvala td.tdPrm in
+          let tname = uv td.tdNam in
+          let l = uv td.tdPrm in
           let ct = import_type arg (tname,l) t in
           { (td) with tdDef = ct }
         | _ -> td

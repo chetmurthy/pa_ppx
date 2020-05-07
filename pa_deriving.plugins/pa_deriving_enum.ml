@@ -42,7 +42,7 @@ value extract_value (attrs : MLast.attributes_no_anti) =
   ] in
   let rec exrec = fun [
     [] -> None
-  | [h::t] -> match ex1 (Pcaml.unvala h) with [ Some x -> Some x | None -> exrec t ]
+  | [h::t] -> match ex1 (uv h) with [ Some x -> Some x | None -> exrec t ]
   ] in
   exrec attrs
 ;
@@ -58,11 +58,11 @@ value to_expression arg = fun [
 
   |*) <:ctyp:< [ $list:l$ ] >> ->
   let (_, map,revacc) = List.fold_left (fun (idx, map, revacc) (loc, cid, _, _, attrs) ->
-    let idx = match extract_value (Pcaml.unvala attrs) with [
+    let idx = match extract_value (uv attrs) with [
       None -> idx
     | Some n -> n
     ] in
-    let cid = Pcaml.unvala cid in
+    let cid = uv cid in
 
     let conspat = <:patt< $uid:cid$ >> in
     let consexpr = <:expr< $uid:cid$ >> in
@@ -77,10 +77,10 @@ value to_expression arg = fun [
   | <:ctyp:< [= $list:l$ ] >> ->
   let (_, map,revacc) = List.fold_left (fun (idx,map,revacc) -> fun [
     PvTag loc cid _ _ attrs ->
-    let idx = match extract_value (Pcaml.unvala attrs) with [
+    let idx = match extract_value (uv attrs) with [
       None -> idx | Some n -> n
     ] in
-    let cid = Pcaml.unvala cid in
+    let cid = uv cid in
     let conspat = <:patt< ` $cid$ >> in
     let consexpr = <:expr< ` $cid$ >> in
     
@@ -120,7 +120,7 @@ value fmt_top arg t =
   (toexp,ofexp,minval,maxval);
 
 value str_item_top_funs arg (loc, tyname) ty =
-  let tyname = Pcaml.unvala tyname in
+  let tyname = uv tyname in
   let tofname = to_fname arg tyname in
   let offname = of_fname arg tyname in
   let minfname = min_fname arg tyname in
@@ -133,7 +133,7 @@ value str_item_top_funs arg (loc, tyname) ty =
 ;
 
 value sig_item_top_funs arg (loc, tyname) ty =
-  let tyname = Pcaml.unvala tyname in
+  let tyname = uv tyname in
   let tofname = to_fname arg tyname in
   let offname = of_fname arg tyname in
   let minfname = min_fname arg tyname in
@@ -163,7 +163,7 @@ value sig_item_funs arg ((loc,_) as tyname) ty =
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
 
-value is_deriving_enum attr = match Pcaml.unvala attr with [
+value is_deriving_enum attr = match uv attr with [
   <:attribute_body< deriving $structure:sil$ >> ->
     List.exists (fun [
       <:str_item< enum >> -> True
@@ -179,8 +179,8 @@ value is_deriving_enum attr = match Pcaml.unvala attr with [
 ;
 
 value str_item_gen_enum0 arg td =
-  let tyname = Pcaml.unvala td.tdNam
-  and params = Pcaml.unvala td.tdPrm
+  let tyname = uv td.tdNam
+  and params = uv td.tdPrm
   and tk = td.tdDef in
   if params <> [] then
     failwith "cannot derive enum-functions for type decl with type-vars"
@@ -188,7 +188,7 @@ value str_item_gen_enum0 arg td =
     str_item_funs arg tyname tk
 ;
 
-value loc_of_type_decl td = fst (Pcaml.unvala td.tdNam) ;
+value loc_of_type_decl td = fst (uv td.tdNam) ;
 
 value str_item_gen_enum name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->
@@ -199,8 +199,8 @@ value str_item_gen_enum name arg = fun [
 ;
 
 value sig_item_gen_enum0 arg td =
-  let tyname = Pcaml.unvala td.tdNam
-  and params = Pcaml.unvala td.tdPrm
+  let tyname = uv td.tdNam
+  and params = uv td.tdPrm
   and tk = td.tdDef in
   if params <> [] then
     failwith "cannot derive enum-functions for type decl with type-vars"

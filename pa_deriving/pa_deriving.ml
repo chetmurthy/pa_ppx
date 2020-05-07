@@ -22,7 +22,7 @@ value extract_option name = (fun [
 ;
 
 value extract_deriving0 (attr : attribute) =
-  match Pcaml.unvala attr with [
+  match uv attr with [
     <:attribute_body< deriving $structure:sil$ >> ->
       let rv = [] in
       List.fold_left (fun rv -> fun [
@@ -174,11 +174,11 @@ let ef = EF.mk() in
 let ef = EF.{ (ef) with
             str_item = extfun ef.str_item with [
     <:str_item:< type $flag:nrfl$ $list:tdl$ >> as z
-    when 1 = count is_deriving_attribute (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
+    when 1 = count is_deriving_attribute (uv (fst (sep_last tdl)).tdAttributes) ->
     fun arg ->
       let last_td = fst (sep_last tdl) in
       let attrs = last_td.tdAttributes in
-      let derivings = attrs |> Pcaml.unvala |> List.map extract_deriving0 |> List.concat in
+      let derivings = attrs |> uv |> List.map extract_deriving0 |> List.concat in
       let ll = derivings |> List.map (fun (na, options) ->
       if not (is_registered_plugin na) then
         if List.mem_assoc "optional" options &&
@@ -194,12 +194,12 @@ let ef = EF.{ (ef) with
       let z =
         let (last, tdl) = sep_last tdl in
         let (deriving_attr, other_attrs) =
-          match filter_split is_deriving_attribute (Pcaml.unvala last.tdAttributes) with [
+          match filter_split is_deriving_attribute (uv last.tdAttributes) with [
             (([] | [_ ; _ :: _]), _) -> failwith "should only be one @@deriving attribute"
           | ([a], others) -> (a, others)
           ] in
-        let (loc_attrid, payload) = Pcaml.unvala deriving_attr in
-        let idloc = fst (Pcaml.unvala loc_attrid) in
+        let (loc_attrid, payload) = uv deriving_attr in
+        let idloc = fst (uv loc_attrid) in
         let newattr = (<:vala< (idloc, "deriving_inline") >>, payload) in
         let attrs = other_attrs @ [ <:vala< newattr >> ] in
         let last = { (last) with tdAttributes = <:vala< attrs >> } in
@@ -212,11 +212,11 @@ let ef = EF.{ (ef) with
 let ef = EF.{ (ef) with
             sig_item = extfun ef.sig_item with [
     <:sig_item:< type $_flag:_$ $list:tdl$ >> as z
-    when 1 = count is_deriving_attribute (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
+    when 1 = count is_deriving_attribute (uv (fst (sep_last tdl)).tdAttributes) ->
     fun arg ->
       let last_td = fst (sep_last tdl) in
       let attrs = last_td.tdAttributes in
-      let derivings = attrs |> Pcaml.unvala |> List.map extract_deriving0 |> List.concat in
+      let derivings = attrs |> uv |> List.map extract_deriving0 |> List.concat in
       let ll = derivings |> List.map (fun (na, options) ->
       if not (is_registered_plugin na) then
         if List.mem_assoc "optional" options &&

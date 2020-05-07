@@ -17,14 +17,14 @@ open Ppxutil ;
 
 value flatten_declare_str_item l =
   l |> List.map (fun [
-      StDcl _ l -> Pcaml.unvala l
+      StDcl _ l -> uv l
     | x -> [x] ])
     |> List.concat
 ;
 
 value flatten_declare_sig_item l =
   l |> List.map (fun [
-      SgDcl _ l -> Pcaml.unvala l
+      SgDcl _ l -> uv l
     | x -> [x] ])
     |> List.concat
 ;
@@ -34,12 +34,12 @@ value is_deriving_inline_attribute (attr : attribute) = attr_id attr = "deriving
 value undo_deriving_inline tdl =
   let (last, tdl) = sep_last tdl in
   let (deriving_attr, other_attrs) =
-    match filter_split is_deriving_inline_attribute (Pcaml.unvala last.tdAttributes) with [
+    match filter_split is_deriving_inline_attribute (uv last.tdAttributes) with [
       (([] | [_ ; _ :: _]), _) -> failwith "should only be one @@deriving_inline attribute"
     | ([a], others) -> (a, others)
     ] in
-  let (loc_attrid, payload) = Pcaml.unvala deriving_attr in
-  let idloc = fst (Pcaml.unvala loc_attrid) in
+  let (loc_attrid, payload) = uv deriving_attr in
+  let idloc = fst (uv loc_attrid) in
   let newattr = (<:vala< (idloc, "deriving") >>, payload) in
   let attrs = other_attrs @ [ <:vala< newattr >> ] in
   let last = { (last) with tdAttributes = <:vala< attrs >> } in
@@ -50,7 +50,7 @@ value refold_deriving_inline_structure arg l =
   let rec rerec acc = fun [
     [] -> List.rev acc
   | [ (<:str_item:< type $flag:nrfl$ $list:tdl$ >>) :: t ] 
-      when 1 = count is_deriving_inline_attribute (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
+      when 1 = count is_deriving_inline_attribute (uv (fst (sep_last tdl)).tdAttributes) ->
       let tdl = undo_deriving_inline tdl in
       consrec [ <:str_item:< type $flag:nrfl$ $list:tdl$ >> :: acc ] t
 
@@ -68,7 +68,7 @@ value refold_deriving_inline_signature arg l =
   let rec rerec acc = fun [
     [] -> List.rev acc
   | [ (<:sig_item:< type $flag:nrfl$ $list:tdl$ >>) :: t ] 
-      when 1 = count is_deriving_inline_attribute (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
+      when 1 = count is_deriving_inline_attribute (uv (fst (sep_last tdl)).tdAttributes) ->
       let tdl = undo_deriving_inline tdl in
       consrec [ <:sig_item:< type $flag:nrfl$ $list:tdl$ >> :: acc ] t
 

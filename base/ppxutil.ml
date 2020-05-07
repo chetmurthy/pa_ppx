@@ -9,6 +9,8 @@ open Pa_ppx_utils;
 open Asttools;
 open MLast;
 
+value uv = Pcaml.unvala ;
+
 value with_buffer_formatter f arg = do {
   let b = Buffer.create 23 in
   let bfmt = Format.formatter_of_buffer b in
@@ -37,7 +39,7 @@ value filter_split p l =
 
 value count p l = List.length (Std.filter p l) ;
 
-value attr_id attr = snd (Pcaml.unvala (fst (Pcaml.unvala attr))) ;
+value attr_id attr = snd (uv (fst (uv attr))) ;
 
 module Expr = struct
 

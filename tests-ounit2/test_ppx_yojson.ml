@@ -431,6 +431,12 @@ let test_nostrict _ctxt =
   assert_equal ~printer:show_nostrict
                { nostrict_field = 42 }
                (nostrict_of_sexp (of_string "((nostrict_field 42))"))
+
+module type OT =   sig
+    type 'a opentype = .. [@@deriving yojson]
+    type 'a opentype += A of 'a | B of string list [@@deriving yojson]
+  end
+
 #ifndef PAPPX
 module Opentype :
   sig

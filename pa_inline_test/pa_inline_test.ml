@@ -66,7 +66,7 @@ value module_test arg tags loc descr me =
 ;
 
 value extract_tags attr =
- let l = match Pcaml.unvala attr with [
+ let l = match uv attr with [
    <:attribute_body< tags ( $list:l$ ) ; >> -> l
  | <:attribute_body< tags $exp:e$ ; >> -> [e]
  | _ -> failwith "pa_inline_test.extract_tags: bad attribute"

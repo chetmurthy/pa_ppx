@@ -18,11 +18,11 @@ value make_fname arg base =
   else Printf.sprintf "make_%s" base
 ;
 
-value is_main_attribute a = match Pcaml.unvala a with [ <:attribute_body< main >> -> True | _ -> False ] ;
-value is_split_attribute a = match Pcaml.unvala a with [ <:attribute_body< split >> -> True | _ -> False ] ;
-value is_default_attribute a = match Pcaml.unvala a with [ <:attribute_body< default $exp:_$ ; >> -> True | _ -> False ] ;
+value is_main_attribute a = match uv a with [ <:attribute_body< main >> -> True | _ -> False ] ;
+value is_split_attribute a = match uv a with [ <:attribute_body< split >> -> True | _ -> False ] ;
+value is_default_attribute a = match uv a with [ <:attribute_body< default $exp:_$ ; >> -> True | _ -> False ] ;
 
-value extract_default_attribute a = match Pcaml.unvala a with [
+value extract_default_attribute a = match uv a with [
   <:attribute_body< default $exp:e$ ; >> -> e
 | _ -> failwith "extract_default_attribute"
 ]
@@ -30,7 +30,7 @@ value extract_default_attribute a = match Pcaml.unvala a with [
 
 value reorder_fields arg ltl =
   let (mainfields, rest) = filter_split (fun (_, _, _, _, al) ->
-      List.exists is_main_attribute (Pcaml.unvala al)) ltl in
+      List.exists is_main_attribute (uv al)) ltl in
   match mainfields with [
     [] -> (False, ltl)
   | [ _ ; _ :: _ ] -> failwith "pa_deriving.make: reorder_fields: more than one field with main attribute"
@@ -39,7 +39,7 @@ value reorder_fields arg ltl =
 ;
 
 value field2req_consfields_funpats loc = (fun (_, fname, _, ty, attrs) ->
-    let (default_attrs, attrs) = filter_split is_default_attribute (Pcaml.unvala attrs) in
+    let (default_attrs, attrs) = filter_split is_default_attribute (uv attrs) in
     let ty = ctyp_wrap_attrs ty attrs in
     match (fst (Ctyp.unwrap_attrs ty), default_attrs) with [
       (_, [ _ ; _ :: _ ]) -> failwith "pa_deriving.make: more than one @default attribute"
@@ -103,7 +103,7 @@ value fmt_top arg params = fun [
 ;
 
 value str_item_top_funs arg (loc, tyname) params ty =
-  let tyname = Pcaml.unvala tyname in
+  let tyname = uv tyname in
   let makefname = make_fname arg tyname in
   let e = fmt_top arg params ty in
 
@@ -111,7 +111,7 @@ value str_item_top_funs arg (loc, tyname) params ty =
 ;
 
 value sig_item_top_funs arg (loc, tyname) (params : list type_var) ty =
-  let tyname = Pcaml.unvala tyname in
+  let tyname = uv tyname in
   let makefname = make_fname arg tyname in
   let fields = match ty with [
     <:ctyp< { $list:ltl$ } >> -> ltl | _ -> failwith "pa_deriving_make: not called on a record type"
@@ -121,16 +121,16 @@ value sig_item_top_funs arg (loc, tyname) (params : list type_var) ty =
       (loc, name, _, (<:ctyp< option $t$ >>), _) -> (False, [TyOlb loc <:vala< name >> t])
     | (loc, name, _, (<:ctyp< list $_$ >> as ty), _) -> (False, [TyOlb loc  <:vala< name >> ty])
     | (loc, name, _, ty, attrs)
-      when 1 = count is_default_attribute (Pcaml.unvala attrs) -> (False, [TyOlb loc <:vala< name >> ty])
+      when 1 = count is_default_attribute (uv attrs) -> (False, [TyOlb loc <:vala< name >> ty])
     | (loc, name, _, <:ctyp< ( $t1$ * list $t2$ ) >>, attrs)
-      when 1 = count is_split_attribute (Pcaml.unvala attrs) &&
+      when 1 = count is_split_attribute (uv attrs) &&
       name.[String.length name - 1] = 's' ->
       let name_no_s = String.sub name 0 (String.length name - 1) in
       (False, [TyLab loc <:vala< name_no_s >> t1; TyOlb loc <:vala< name >> <:ctyp< list $t2$ >>])
     | (loc, name, _, ty, attrs)
-      when 1 < count is_default_attribute (Pcaml.unvala attrs) ->
+      when 1 < count is_default_attribute (uv attrs) ->
       failwith (Printf.sprintf "Pa_deriving.make: more than one @default attribute on field %s" name)
-    | (loc, name, _, ty, attrs) when 1 = count is_main_attribute (Pcaml.unvala attrs) -> (True, [ty])
+    | (loc, name, _, ty, attrs) when 1 = count is_main_attribute (uv attrs) -> (True, [ty])
     | (loc, name, _, ty, attrs) -> (True, [TyLab loc <:vala< name >> ty])
     ]) fields in
     let paramtys = List.concat (List.map snd req_paramtys) in
@@ -138,7 +138,7 @@ value sig_item_top_funs arg (loc, tyname) (params : list type_var) ty =
 
   let thety = Ctyp.applist <:ctyp< $lid:tyname$ >>
      (List.map (fun (pn, _) ->
-       match Pcaml.unvala pn with [ None ->
+       match uv pn with [ None ->
          failwith "Pa_deriving.make: unnamed type-params are unsupported"
        | Some id -> <:ctyp< ' $id$ >> ]) params) in
 
@@ -165,13 +165,13 @@ value sig_item_funs arg ((loc,_) as tyname) params ty =
 ;
 
 value str_item_gen_make0 arg td =
-  let tyname = Pcaml.unvala td.tdNam
-  and params = Pcaml.unvala td.tdPrm
+  let tyname = uv td.tdNam
+  and params = uv td.tdPrm
   and tk = td.tdDef in
   str_item_funs arg tyname params tk
 ;
 
-value loc_of_type_decl td = fst (Pcaml.unvala td.tdNam) ;
+value loc_of_type_decl td = fst (uv td.tdNam) ;
 
 value str_item_gen_make name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->
@@ -182,8 +182,8 @@ value str_item_gen_make name arg = fun [
 ;
 
 value sig_item_gen_make0 arg td =
-  let tyname = Pcaml.unvala td.tdNam
-  and params = Pcaml.unvala td.tdPrm
+  let tyname = uv td.tdNam
+  and params = uv td.tdPrm
   and tk = td.tdDef in
   sig_item_funs arg tyname params tk
 ;

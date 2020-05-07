@@ -103,15 +103,15 @@ value fmt_expression arg param_map ty0 =
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
     (loc, cid, <:vala< [TyRec _ fields] >>, None, _) ->
-    let cid = Pcaml.unvala cid in
-    let (rec1pat, body) = fmt_record loc arg (Pcaml.unvala fields) in
+    let cid = uv cid in
+    let (rec1pat, body) = fmt_record loc arg (uv fields) in
 
     let conspat = <:patt< ($uid:cid$ $rec1pat$) >> in
     (conspat, <:vala< None >>, body)
 
   | (loc, cid, tyl, None, attrs) ->
-    let cid = Pcaml.unvala cid in
-    let tyl = Pcaml.unvala tyl in
+    let cid = uv cid in
+    let tyl = uv tyl in
     let vars_fmts = List.mapi (fun i ty ->
         (Printf.sprintf "a_%d" i, fmtrec ty)) tyl in
 
@@ -132,8 +132,8 @@ value fmt_expression arg param_map ty0 =
 | <:ctyp:< [= $list:l$ ] >> ->
   let branches = List.map (fun [
     PvTag loc cid _ tyl _ ->
-    let cid = Pcaml.unvala cid in
-    let tyl = Pcaml.unvala tyl in
+    let cid = uv cid in
+    let tyl = uv tyl in
     let vars_fmts = List.mapi (fun i ty ->
         (Printf.sprintf "a_%d" i, fmtrec ty)) tyl in
 
@@ -165,7 +165,7 @@ value fmt_expression arg param_map ty0 =
   ]
   and fmt_record loc arg fields = 
   let labels_vars_fmts = List.map (fun (_, fname, _, ty, attrs) ->
-        let ty = ctyp_wrap_attrs ty (Pcaml.unvala attrs) in
+        let ty = ctyp_wrap_attrs ty (uv attrs) in
         (fname, Printf.sprintf "a_%s" fname, fmtrec ty)) fields in
 
   let v1_pl = List.map (fun (f, v,  _) -> (<:patt< $lid:f$ >>, <:patt< $lid:v$ >>)) labels_vars_fmts in
@@ -185,7 +185,7 @@ value fmt_top arg params = fun [
 ;
 
 value str_item_top_funs arg (loc, tyname) param_map ty =
-  let tyname = Pcaml.unvala tyname in
+  let tyname = uv tyname in
   let eqfname = fold_fname arg tyname in
   let e = fmt_top arg param_map ty in
 
@@ -195,7 +195,7 @@ value str_item_top_funs arg (loc, tyname) param_map ty =
 ;
 
 value sig_item_top_funs arg (loc, tyname) param_map ty =
-  let tyname = Pcaml.unvala tyname in
+  let tyname = uv tyname in
   let foldfname = fold_fname arg tyname in
   let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
   let argfmttys = List.map (fun pty -> <:ctyp< 'fresh -> $pty$ -> 'fresh >>) paramtys in  
@@ -207,7 +207,7 @@ value sig_item_top_funs arg (loc, tyname) param_map ty =
 
 value str_item_funs arg ((loc,_) as tyname) params ty =
   let param_map = List.mapi (fun i p ->
-    match Pcaml.unvala (fst p) with [
+    match uv (fst p) with [
       None -> failwith "cannot derive fold-functions for type decl with unnamed type-vars"
     | Some na -> (na, Printf.sprintf "tp_%d" i)
     ]) params in
@@ -224,7 +224,7 @@ value str_item_funs arg ((loc,_) as tyname) params ty =
 
 value sig_item_funs arg ((loc,_) as tyname) params ty =
   let param_map = List.mapi (fun i p ->
-    match Pcaml.unvala (fst p) with [
+    match uv (fst p) with [
       None -> failwith "cannot derive fold-functions for type decl with unnamed type-vars"
     | Some na -> (na, Printf.sprintf "tp_%d" i)
     ]) params in
@@ -234,13 +234,13 @@ value sig_item_funs arg ((loc,_) as tyname) params ty =
 ;
 
 value str_item_gen_fold0 arg td =
-  let tyname = Pcaml.unvala td.tdNam
-  and params = Pcaml.unvala td.tdPrm
+  let tyname = uv td.tdNam
+  and params = uv td.tdPrm
   and tk = td.tdDef in
   str_item_funs arg tyname params tk
 ;
 
-value loc_of_type_decl td = fst (Pcaml.unvala td.tdNam) ;
+value loc_of_type_decl td = fst (uv td.tdNam) ;
 
 value str_item_gen_fold name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->
@@ -251,8 +251,8 @@ value str_item_gen_fold name arg = fun [
 ;
 
 value sig_item_gen_fold0 arg td =
-  let tyname = Pcaml.unvala td.tdNam
-  and params = Pcaml.unvala td.tdPrm
+  let tyname = uv td.tdNam
+  and params = uv td.tdPrm
   and tk = td.tdDef in
   sig_item_funs arg tyname params tk
 ;

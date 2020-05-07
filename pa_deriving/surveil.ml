@@ -189,7 +189,7 @@ value add_deriving_attributes ctxt attrs = do {
 value sig_item arg = fun [
   <:sig_item:< type $_flag:_$ $list:tdl$ >> as z -> do {
     let td = fst (sep_last tdl) in
-    let plugins = add_deriving_attributes arg (Pcaml.unvala td.tdAttributes) in
+    let plugins = add_deriving_attributes arg (uv td.tdAttributes) in
     let dc = DC.get arg in
     let plugins = DC.start_decl loc dc plugins in
     let rv = Pa_passthru.sig_item0 arg z in
@@ -243,7 +243,7 @@ value sig_item arg = fun [
 value str_item arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> as z -> do {
     let td = fst (sep_last tdl) in
-    let plugins = add_deriving_attributes arg (Pcaml.unvala td.tdAttributes) in
+    let plugins = add_deriving_attributes arg (uv td.tdAttributes) in
     let dc = DC.get arg in
     let plugins = DC.start_decl loc dc plugins in
     let rv = Pa_passthru.str_item0 arg z in
@@ -301,13 +301,13 @@ let ef = EF.mk() in
 let ef = EF.{ (ef) with
             str_item = extfun ef.str_item with [
     <:str_item:< type $_flag:_$ $list:tdl$ >> as z
-    when  1 = count is_deriving_attribute (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
+    when  1 = count is_deriving_attribute (uv (fst (sep_last tdl)).tdAttributes) ->
     fun arg -> Some (str_item arg z)
   ] } in
 let ef = EF.{ (ef) with
             sig_item = extfun ef.sig_item with [
     <:sig_item:< type $_flag:_$ $list:tdl$ >> as z
-    when  1 = count is_deriving_attribute (Pcaml.unvala (fst (sep_last tdl)).tdAttributes) ->
+    when  1 = count is_deriving_attribute (uv (fst (sep_last tdl)).tdAttributes) ->
     fun arg -> Some (sig_item arg z)
   ] } in
 
@@ -322,7 +322,7 @@ let ef = EF.{ (ef) with
       fun arg -> do {
         List.iter (fun [
           (loc, cid, tyl, None, attrs) ->
-          List.iter (fun a -> add_current_attribute arg (attr_id a)) (Pcaml.unvala attrs)
+          List.iter (fun a -> add_current_attribute arg (attr_id a)) (uv attrs)
         | _ -> ()
         ]) l ;
         None

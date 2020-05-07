@@ -88,7 +88,7 @@ value transform_body e =
   (te, expectations.val)
 ;
 
-value extract_uncaught_exn attr = match Pcaml.unvala attr with [
+value extract_uncaught_exn attr = match uv attr with [
   <:attribute_body:< $attrid:(expectid_loc, "expect.uncaught_exn")$ $exp:paye$ ; >> ->
     let (loc, s) = match paye with [ <:expr:< $str:s$ >> -> (loc, s) ] in
     Some (expectid_loc, loc, <:expr< (Pretty $str:s$) >>)
@@ -177,7 +177,7 @@ value rewrite_str_item arg = fun [
     <:attribute_body< $attrid:(loc,_)$ $structure:_$ >> -> loc
   ] in
 
-    expect_test arg extension_loc attrid_loc descr rhs (Pcaml.unvala ia)
+    expect_test arg extension_loc attrid_loc descr rhs (uv ia)
   }
 ]
 ;
