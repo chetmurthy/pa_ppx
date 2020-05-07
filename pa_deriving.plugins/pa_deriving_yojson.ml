@@ -298,8 +298,8 @@ value str_item_funs arg (loc, tyname) param_map ty =
   let to_e = fmt_to_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
   let to_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $to_e$ >> in
   let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
-  (to_yojsonfname, Expr.abstract_over paramfun_patts
-     <:expr< fun arg -> $to_e$ arg >>)
+  [(to_yojsonfname, Expr.abstract_over paramfun_patts
+      <:expr< fun arg -> $to_e$ arg >>)]
 ;
 
 end
@@ -665,8 +665,8 @@ end
 
 value str_item_funs arg tyname param_map ty =
   (if Ctxt.is_plugin_name arg "to_yojson" || Ctxt.is_plugin_name arg "yojson" then
-    [To.str_item_funs arg tyname param_map ty]
-  else []) @
+     To.str_item_funs arg tyname param_map ty
+   else []) @
   (if Ctxt.is_plugin_name arg "of_yojson" || Ctxt.is_plugin_name arg "yojson" then
      Of.str_item_funs arg tyname param_map ty
    else [])
