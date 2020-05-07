@@ -145,7 +145,7 @@ value registered_sig_item (name,pi) arg = fun [
   <:sig_item:< type $_flag:_$ $list:_$ >> as z ->
     pi.PI.sig_item name arg z
 
-| <:sig_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ $list:_$ $itemattrs:_$ >> as z ->
+| <:sig_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ [ $list:_$ ] $itemattrs:_$ >> as z ->
     pi.PI.sig_item name arg z
 
 | _ -> assert False
@@ -216,9 +216,9 @@ value rewrite_sig_item_deriving_attribute = fun [
     let tdl = tdl @ [ last ] in
     <:sig_item:< type $flag:nrfl$ $list:tdl$ >>
 
-| <:sig_item:< type $lilongid:lili$ $_list:pl$ += $_priv:pf$ $list:ecs$ $itemattrs:attrs$ >> ->
+| <:sig_item:< type $lilongid:lili$ $_list:pl$ += $_priv:pf$ [ $list:ecs$ ] $itemattrs:attrs$ >> ->
     let attrs = rewrite_deriving_attribute attrs in
-    <:sig_item:< type $lilongid:lili$ $_list:pl$ += $_priv:pf$ $list:ecs$ $itemattrs:attrs$ >>
+    <:sig_item:< type $lilongid:lili$ $_list:pl$ += $_priv:pf$ [ $list:ecs$ ] $itemattrs:attrs$ >>
 ]
 ;
 
@@ -265,7 +265,7 @@ let ef = EF.{ (ef) with
       let l = [z :: l ] @ [ <:sig_item< [@@@"end"] >> ] in
       Some <:sig_item< declare $list:l$ end >>
 
-  | <:sig_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ $list:_$ $itemattrs:attrs$ >> as z
+  | <:sig_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ [ $list:_$ ] $itemattrs:attrs$ >> as z
     when 1 = count is_deriving_attribute attrs ->
     fun arg ->
       let derivings = attrs |> List.map extract_deriving0 |> List.concat in
