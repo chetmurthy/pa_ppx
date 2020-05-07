@@ -432,7 +432,10 @@ let test_nostrict _ctxt =
                { nostrict_field = 42 }
                (nostrict_of_sexp (of_string "((nostrict_field 42))"))
 
-module type OT =   sig
+module OT : sig
+    type 'a opentype = .. [@@deriving yojson]
+    type 'a opentype += A of 'a | B of string list [@@deriving yojson]
+  end = struct
     type 'a opentype = .. [@@deriving yojson]
     type 'a opentype += A of 'a | B of string list [@@deriving yojson]
   end

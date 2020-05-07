@@ -293,6 +293,25 @@ value sig_items arg td = do {
 }
 ;
 
+value str_item_funs arg td = do {
+  assert (not (match td.tdDef with [ <:ctyp< .. >> -> True | _ -> False ])) ;
+  let (loc, tyname) = uv td.tdNam in
+  let param_map = make_param_map (uv td.tdPrm) in
+  let ty = td.tdDef in
+  let tyname = uv tyname in
+  let to_yojsonfname = to_yojson_fname arg tyname in
+  let to_e = fmt_to_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
+  let to_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $to_e$ >> in
+  let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
+  let (_, fty) = sig_item_fun0 arg td in
+  let fty = if param_map = [] then fty
+        else <:ctyp< ! $list:(List.map fst param_map)$ . $fty$ >> in
+  [(<:patt< ( $lid:to_yojsonfname$ : $fty$ ) >>,
+    Expr.abstract_over paramfun_patts
+      <:expr< fun arg -> $to_e$ arg >>, <:vala< [] >>)]
+}
+;
+
 value extend_sig_items arg si = match si with [
   <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
     let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
@@ -313,25 +332,31 @@ value extend_sig_items arg si = match si with [
 ]
 ;
 
-value str_item_funs arg td = do {
-  assert (not (match td.tdDef with [ <:ctyp< .. >> -> True | _ -> False ])) ;
-  let (loc, tyname) = uv td.tdNam in
-  let param_map = make_param_map (uv td.tdPrm) in
-  let ty = td.tdDef in
-  let tyname = uv tyname in
-  let to_yojsonfname = to_yojson_fname arg tyname in
-  let to_e = fmt_to_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
-  let to_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $to_e$ >> in
-  let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
-  let (_, fty) = sig_item_fun0 arg td in
-  let fty = if param_map = [] then fty
-        else <:ctyp< ! $list:(List.map fst param_map)$ . $fty$ >> in
-  [(<:patt< ( $lid:to_yojsonfname$ : $fty$ ) >>,
-    Expr.abstract_over paramfun_patts
-      <:expr< fun arg -> $to_e$ arg >>, <:vala< [] >>)]
-}
-;
+value extend_str_items arg si = match si with [
+  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+    let td = match z with [ <:str_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
+    let param_map = make_param_map (uv td.tdPrm) in
+    let (to_yojsonfname, toftype) = sig_item_fun0 arg td in
+    let modname = Printf.sprintf "M_%s" to_yojsonfname in
+    let msg1 = Printf.sprintf "%s: Maybe a [@@deriving yojson] is missing when extending the type " to_yojsonfname in
+    let msg2 = td.tdNam |> uv |> snd |> uv in
 
+    let field_type = if param_map = [] then toftype
+      else <:ctyp< ! $list:(List.map fst param_map)$ . $toftype$ >> in
+    let fexp = <:expr< fun _ -> invalid_arg ($str:msg1$ ^ $str:msg2$) >> in
+    let fexp = Expr.abstract_over (List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map) fexp in
+    let fexp = Expr.abstract_over (List.map (fun (v, _) -> <:patt< ( type $lid:v$ ) >>) param_map) fexp in
+    [ <:str_item< module $uid:modname$ =
+    struct
+      type nonrec $lid:to_yojsonfname$ = { f: mutable  $field_type$ } ;
+      value f = { f = $fexp$ } ;
+    end >> ;
+      <:str_item< value $lid:to_yojsonfname$ x = $uid:modname$ . f . $uid:modname$ . f x >>
+    ]
+
+| _ -> assert False
+]
+;
 end
 ;
 
@@ -663,26 +688,6 @@ value sig_items arg td = do {
 }
 ;
 
-value extend_sig_items arg si = match si with [
-  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
-    let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
-    let (loc, tyname) = uv td.tdNam in
-    let param_map = make_param_map (uv td.tdPrm) in
-    let ty = td.tdDef in
-    let sil = gen_sig_items arg td in
-    let ((of_yojsonfname, offtype), _) = sig_item_fun0 arg td in
-    let modname = Printf.sprintf "M_%s" of_yojsonfname in
-    let field_type = if param_map = [] then offtype
-      else <:ctyp< ! $list:(List.map fst param_map)$ . $offtype$ >> in
-    [ <:sig_item< module $uid:modname$ :
-    sig
-      type nonrec $lid:of_yojsonfname$ = { f: mutable  $field_type$ } ;
-      value f : $lid:of_yojsonfname$ ;
-    end >> :: sil ]
-| _ -> assert False
-]
-;
-
 value str_item_funs arg td = do {
   assert (not (match td.tdDef with [ <:ctyp< .. >> -> True | _ -> False ])) ;
   let (loc, tyname) = uv td.tdNam in
@@ -717,6 +722,52 @@ value str_item_funs arg td = do {
 }
 ;
 
+value extend_sig_items arg si = match si with [
+  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+    let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
+    let (loc, tyname) = uv td.tdNam in
+    let param_map = make_param_map (uv td.tdPrm) in
+    let ty = td.tdDef in
+    let sil = gen_sig_items arg td in
+    let ((of_yojsonfname, offtype), _) = sig_item_fun0 arg td in
+    let modname = Printf.sprintf "M_%s" of_yojsonfname in
+    let field_type = if param_map = [] then offtype
+      else <:ctyp< ! $list:(List.map fst param_map)$ . $offtype$ >> in
+    [ <:sig_item< module $uid:modname$ :
+    sig
+      type nonrec $lid:of_yojsonfname$ = { f: mutable  $field_type$ } ;
+      value f : $lid:of_yojsonfname$ ;
+    end >> :: sil ]
+| _ -> assert False
+]
+;
+
+value extend_str_items arg si = match si with [
+  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+    let td = match z with [ <:str_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
+    let param_map = make_param_map (uv td.tdPrm) in
+    let ((of_yojsonfname, offtype), oexn) = sig_item_fun0 arg td in
+    let modname = Printf.sprintf "M_%s" of_yojsonfname in
+    let msg1 = Printf.sprintf "%s: Maybe a [@@deriving yojson] is missing when extending the type " of_yojsonfname in
+    let msg2 = td.tdNam |> uv |> snd |> uv in
+
+    let field_type = if param_map = [] then offtype
+      else <:ctyp< ! $list:(List.map fst param_map)$ . $offtype$ >> in
+    let fexp = <:expr< fun _ -> invalid_arg ($str:msg1$ ^ $str:msg2$) >> in
+    let fexp = Expr.abstract_over (List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map) fexp in
+    let fexp = Expr.abstract_over (List.map (fun (v, _) -> <:patt< ( type $lid:v$ ) >>) param_map) fexp in
+    [ <:str_item< module $uid:modname$ =
+    struct
+      type nonrec $lid:of_yojsonfname$ = { f: mutable  $field_type$ } ;
+      value f = { f = $fexp$ } ;
+    end >> ;
+      <:str_item< value $lid:of_yojsonfname$ x = $uid:modname$ . f . $uid:modname$ . f x >>
+    ]
+
+| _ -> assert False
+]
+;
+
 end
 ;
 
@@ -747,8 +798,21 @@ value extend_sig_items arg td =
    else [])
 ;
 
+value extend_str_items arg td =
+  (if Ctxt.is_plugin_name arg "to_yojson" || Ctxt.is_plugin_name arg "yojson" then
+     To.extend_str_items arg td
+  else []) @
+  (if Ctxt.is_plugin_name arg "of_yojson" || Ctxt.is_plugin_name arg "yojson" then
+     Of.extend_str_items arg td
+   else [])
+;
+
 value str_item_gen_yojson name arg = fun [
-  <:str_item:< type $_flag:_$ $list:tdl$ >> ->
+  <:str_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >> as z ->
+    let l = extend_str_items arg z in
+    <:str_item< declare $list:l$ end >>
+
+|   <:str_item:< type $_flag:_$ $list:tdl$ >> ->
     let l = List.concat (List.map (str_item_funs arg) tdl) in
     <:str_item< value rec $list:l$ >>
 | _ -> assert False ]
