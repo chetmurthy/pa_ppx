@@ -145,6 +145,9 @@ value registered_sig_item (name,pi) arg = fun [
   <:sig_item:< type $_flag:_$ $list:_$ >> as z ->
     pi.PI.sig_item name arg z
 
+| <:sig_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ $list:_$ $itemattrs:_$ >> as z ->
+    pi.PI.sig_item name arg z
+
 | _ -> assert False
 ]
 ;
@@ -169,6 +172,70 @@ value is_registered_extension attr =
 value is_registered_plugin na =
   List.mem_assoc na plugin_registry.val || List.mem_assoc na alternate2plugin.val ;
 
+value rewrite_deriving_attribute attrs =
+  let (deriving_attr, other_attrs) =
+    match filter_split is_deriving_attribute attrs with [
+      (([] | [_ ; _ :: _]), _) -> failwith "should only be one @@deriving attribute"
+    | ([a], others) -> (a, others)
+    ] in
+  let (loc_attrid, payload) = uv deriving_attr in
+  let idloc = fst (uv loc_attrid) in
+  let newattr = (<:vala< (idloc, "deriving_inline") >>, payload) in
+  other_attrs @ [ <:vala< newattr >> ]
+;
+
+value rewrite_str_item_deriving_attribute = fun [
+  <:str_item:< type $flag:nrfl$ $list:tdl$ >> as z ->
+    let (last, tdl) = sep_last tdl in
+    let attrs = rewrite_deriving_attribute (uv last.tdAttributes) in
+    let last = { (last) with tdAttributes = <:vala< attrs >> } in
+    let tdl = tdl @ [ last ] in
+    <:str_item:< type $flag:nrfl$ $list:tdl$ >>
+]
+;
+
+value invoke_str_item_plugin arg z (na, options) =
+  let loc = Ploc.dummy in 
+  if not (is_registered_plugin na) then
+    if List.mem_assoc "optional" options &&
+       Reloc.eq_expr <:expr< True >> (List.assoc "optional" options) then []
+    else failwith (Printf.sprintf "Pa_deriving.str_item: missing but mandatory plugin %s" na)
+  else
+    let pi = Registry.get na in
+    let arg = Ctxt.add_options arg pi.PI.default_options in
+    let arg = Ctxt.add_options arg options in
+    let arg = Ctxt.add_options arg [("plugin_name", <:expr< $str:na$ >>)] in
+    [registered_str_item (na,pi) arg z]
+;
+
+value rewrite_sig_item_deriving_attribute = fun [
+  <:sig_item:< type $flag:nrfl$ $list:tdl$ >> as z ->
+    let (last, tdl) = sep_last tdl in
+    let attrs = rewrite_deriving_attribute (uv last.tdAttributes) in
+    let last = { (last) with tdAttributes = <:vala< attrs >> } in
+    let tdl = tdl @ [ last ] in
+    <:sig_item:< type $flag:nrfl$ $list:tdl$ >>
+
+| <:sig_item:< type $lilongid:lili$ $_list:pl$ += $_priv:pf$ $list:ecs$ $itemattrs:attrs$ >> ->
+    let attrs = rewrite_deriving_attribute attrs in
+    <:sig_item:< type $lilongid:lili$ $_list:pl$ += $_priv:pf$ $list:ecs$ $itemattrs:attrs$ >>
+]
+;
+
+value invoke_sig_item_plugin arg z (na, options) =
+  let loc = Ploc.dummy in 
+  if not (is_registered_plugin na) then
+    if List.mem_assoc "optional" options &&
+       Reloc.eq_expr <:expr< True >> (List.assoc "optional" options) then []
+    else failwith (Printf.sprintf "Pa_deriving.str_item: missing but mandatory plugin %s" na)
+  else
+    let pi = Registry.get na in
+    let arg = Ctxt.add_options arg pi.PI.default_options in
+    let arg = Ctxt.add_options arg options in
+    let arg = Ctxt.add_options arg [("plugin_name", <:expr< $str:na$ >>)] in
+    [registered_sig_item (na,pi) arg z]
+;
+
 value install () =
 let ef = EF.mk() in
 let ef = EF.{ (ef) with
@@ -179,32 +246,8 @@ let ef = EF.{ (ef) with
       let last_td = fst (sep_last tdl) in
       let attrs = last_td.tdAttributes in
       let derivings = attrs |> uv |> List.map extract_deriving0 |> List.concat in
-      let ll = derivings |> List.map (fun (na, options) ->
-      if not (is_registered_plugin na) then
-        if List.mem_assoc "optional" options &&
-           Reloc.eq_expr <:expr< True >> (List.assoc "optional" options) then []
-        else failwith (Printf.sprintf "Pa_deriving.str_item: missing but mandatory plugin %s" na)
-      else
-        let pi = Registry.get na in
-        let arg = Ctxt.add_options arg pi.PI.default_options in
-        let arg = Ctxt.add_options arg options in
-        let arg = Ctxt.add_options arg [("plugin_name", <:expr< $str:na$ >>)] in
-          [registered_str_item (na,pi) arg z]) in
-      let l = List.concat ll in
-      let z =
-        let (last, tdl) = sep_last tdl in
-        let (deriving_attr, other_attrs) =
-          match filter_split is_deriving_attribute (uv last.tdAttributes) with [
-            (([] | [_ ; _ :: _]), _) -> failwith "should only be one @@deriving attribute"
-          | ([a], others) -> (a, others)
-          ] in
-        let (loc_attrid, payload) = uv deriving_attr in
-        let idloc = fst (uv loc_attrid) in
-        let newattr = (<:vala< (idloc, "deriving_inline") >>, payload) in
-        let attrs = other_attrs @ [ <:vala< newattr >> ] in
-        let last = { (last) with tdAttributes = <:vala< attrs >> } in
-        let tdl = tdl @ [ last ] in
-        <:str_item:< type $flag:nrfl$ $list:tdl$ >> in
+      let l = derivings |> List.map (invoke_str_item_plugin arg z) |> List.concat in
+      let z = rewrite_str_item_deriving_attribute z in
       let l = [z :: l ] @ [ <:str_item< [@@@"end"] >> ] in
       Some <:str_item< declare $list:l$ end >>
   ] } in
@@ -217,19 +260,20 @@ let ef = EF.{ (ef) with
       let last_td = fst (sep_last tdl) in
       let attrs = last_td.tdAttributes in
       let derivings = attrs |> uv |> List.map extract_deriving0 |> List.concat in
-      let ll = derivings |> List.map (fun (na, options) ->
-      if not (is_registered_plugin na) then
-        if List.mem_assoc "optional" options &&
-           Reloc.eq_expr <:expr< True >> (List.assoc "optional" options) then []
-        else failwith (Printf.sprintf "Pa_deriving.str_item: missing but mandatory plugin %s" na)
-      else
-        let pi = Registry.get na in
-        let arg = Ctxt.add_options arg pi.PI.default_options in
-        let arg = Ctxt.add_options arg options in
-        let arg = Ctxt.add_options arg [("plugin_name", <:expr< $str:na$ >>)] in
-          [registered_sig_item (na,pi) arg z]) in
-      let l = List.concat ll in
-      Some <:sig_item< declare $list:[z :: l ]$ end >>
+      let l = derivings |> List.map (invoke_sig_item_plugin arg z) |> List.concat in
+      let z = rewrite_sig_item_deriving_attribute z in
+      let l = [z :: l ] @ [ <:sig_item< [@@@"end"] >> ] in
+      Some <:sig_item< declare $list:l$ end >>
+
+  | <:sig_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ $list:_$ $itemattrs:attrs$ >> as z
+    when 1 = count is_deriving_attribute attrs ->
+    fun arg ->
+      let derivings = attrs |> List.map extract_deriving0 |> List.concat in
+      let l = derivings |> List.map (invoke_sig_item_plugin arg z) |> List.concat in
+      let z = rewrite_sig_item_deriving_attribute z in
+      let l = [z :: l ] @ [ <:sig_item< [@@@"end"] >> ] in
+      Some <:sig_item< declare $list:l$ end >>
+
   ] } in
 
 let ef = EF.{ (ef) with

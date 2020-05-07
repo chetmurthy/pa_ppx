@@ -823,6 +823,9 @@ value sig_item_gen_yojson name arg = fun [
     let l = extend_sig_items arg z in
     <:sig_item< declare $list:l$ end >>
 
+| <:sig_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ $list:_$ $_itemattrs:_$ >> as z ->
+    <:sig_item< declare $list:[]$ end >>
+
 | <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
     let l = List.concat (List.map (sig_items arg) tdl) in
     <:sig_item< declare $list:l$ end >>

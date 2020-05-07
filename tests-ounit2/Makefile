@@ -78,6 +78,8 @@ test: $(TESTS:.byte=)
 	./$<
 
 test_%.byte: test_%.ml testutil.cmo testutil2.cmo
+	$(OCAMLFIND)2 preprocess -package $(PACKAGES),yojson,$(PAPACKAGES),camlp5.pr_o.syntax \
+	-syntax camlp5o $< > $<.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),yojson,$(PAPACKAGES) \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
 
