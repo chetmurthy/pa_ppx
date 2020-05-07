@@ -233,9 +233,6 @@ value sig_item_funs arg ((loc,_) as tyname) params ty =
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
 
-value is_deriving_fold attr = Pa_deriving.is_deriving "fold" attr ;
-value apply_deriving_fold ctxt attr = Pa_deriving.apply_deriving "fold" ctxt attr ;
-
 value str_item_gen_fold0 arg td =
   let tyname = Pcaml.unvala td.tdNam
   and params = Pcaml.unvala td.tdPrm

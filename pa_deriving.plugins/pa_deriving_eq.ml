@@ -272,9 +272,6 @@ value sig_item_funs arg ((loc,_) as tyname) params ty =
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
 
-value is_deriving_eq attr = Pa_deriving.is_deriving "eq" attr ;
-value apply_deriving_eq ctxt attr = Pa_deriving.apply_deriving "eq" ctxt attr ;
-
 value str_item_gen_eq0 arg td =
   let tyname = Pcaml.unvala td.tdNam
   and params = Pcaml.unvala td.tdPrm

@@ -232,9 +232,6 @@ value sig_item_funs arg ((loc,_) as tyname) params ty =
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
 
-value is_deriving_iter attr = Pa_deriving.is_deriving "iter" attr ;
-value apply_deriving_iter ctxt attr = Pa_deriving.apply_deriving "iter" ctxt attr ;
-
 value str_item_gen_iter0 arg td =
   let tyname = Pcaml.unvala td.tdNam
   and params = Pcaml.unvala td.tdPrm

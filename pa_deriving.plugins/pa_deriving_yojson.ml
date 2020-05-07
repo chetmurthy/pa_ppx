@@ -709,11 +709,7 @@ value str_item_funs arg ((loc,_) as tyname) params ty =
       (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [] >>)) l
 ;
 
-value is_deriving_yojson attr = Pa_deriving.is_deriving "yojson" attr ;
-value apply_deriving_yojson ctxt attr = Pa_deriving.apply_deriving "yojson" ctxt attr ;
-
 value str_item_gen_yojson0 arg td =
-  let arg = List.fold_left apply_deriving_yojson arg (Pcaml.unvala td.tdAttributes) in
   let tyname = Pcaml.unvala td.tdNam
   and params = Pcaml.unvala td.tdPrm
   and tk = td.tdDef in

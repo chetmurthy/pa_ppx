@@ -242,9 +242,6 @@ value sig_item_funs arg ((loc,_) as tyname) params (ty : ctyp) =
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
 
-value is_deriving_map attr = Pa_deriving.is_deriving "map" attr ;
-value apply_deriving_map ctxt attr = Pa_deriving.apply_deriving "map" ctxt attr ;
-
 value str_item_gen_map0 arg td =
   let tyname = Pcaml.unvala td.tdNam
   and params = Pcaml.unvala td.tdPrm

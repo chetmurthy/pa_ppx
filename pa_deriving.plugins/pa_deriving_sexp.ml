@@ -594,11 +594,7 @@ value sig_item_funs arg ((loc,_) as tyname) params ty =
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
 
-value is_deriving_sexp attr = Pa_deriving.is_deriving "sexp" attr ;
-value apply_deriving_sexp ctxt attr = Pa_deriving.apply_deriving "sexp" ctxt attr ;
-
 value str_item_gen_sexp0 arg td =
-  let arg = List.fold_left apply_deriving_sexp arg (Pcaml.unvala td.tdAttributes) in
   let tyname = Pcaml.unvala td.tdNam
   and params = Pcaml.unvala td.tdPrm
   and tk = td.tdDef in

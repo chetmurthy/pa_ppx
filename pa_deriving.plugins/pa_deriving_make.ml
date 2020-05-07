@@ -164,11 +164,7 @@ value sig_item_funs arg ((loc,_) as tyname) params ty =
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
 
-value is_deriving_make attr = Pa_deriving.is_deriving "make" attr ;
-value apply_deriving_make ctxt attr = Pa_deriving.apply_deriving "make" ctxt attr ;
-
 value str_item_gen_make0 arg td =
-  let arg = List.fold_left apply_deriving_make arg (Pcaml.unvala td.tdAttributes) in
   let tyname = Pcaml.unvala td.tdNam
   and params = Pcaml.unvala td.tdPrm
   and tk = td.tdDef in
