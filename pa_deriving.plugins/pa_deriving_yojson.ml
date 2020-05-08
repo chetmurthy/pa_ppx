@@ -83,24 +83,24 @@ value to_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< _ >> -> failwith "cannot derive yojson for type <<_>>"
 | <:ctyp:< Yojson.Safe.t >> -> <:expr< fun x -> x >>
-| <:ctyp:< unit >> -> <:expr< fun () -> `Null >>
-| <:ctyp:< int >> -> <:expr< fun x -> `Int x >>
-| <:ctyp:< bool >> -> <:expr< fun x -> `Bool x >>
-| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< fun x -> `Intlit (Int32.to_string x) >>
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< fun x -> `Intlit (Int64.to_string x) >>
+| <:ctyp:< unit >> -> <:expr< Pa_ppx_runtime.Yojson.unit_to_yojson >>
+| <:ctyp:< int >> -> <:expr< Pa_ppx_runtime.Yojson.int_to_yojson >>
+| <:ctyp:< bool >> -> <:expr< Pa_ppx_runtime.Yojson.bool_to_yojson >>
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< Pa_ppx_runtime.Yojson.int32_to_yojson >>
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< Pa_ppx_runtime.Yojson.int64_to_yojson >>
 | <:ctyp:< int64 [@encoding `string ; ] >> | <:ctyp:< Int64.t [@encoding `string ; ] >> ->
-    <:expr< fun x -> `String (Int64.to_string x) >>
+    <:expr< fun x -> Pa_ppx_runtime.Yojson.string_to_yojson (Int64.to_string x) >>
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  <:expr< fun x -> `String x >>
-| <:ctyp:< bytes >> -> <:expr< fun x -> `String (Bytes.to_string x) >>
-| <:ctyp:< char >> -> <:expr< fun x -> `String (String.make 1 x) >>
-| <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun x -> `Intlit (Nativeint.to_string x) >>
+  <:expr< Pa_ppx_runtime.Yojson.string_to_yojson >>
+| <:ctyp:< bytes >> -> <:expr< fun x -> Pa_ppx_runtime.Yojson.string_to_yojson (Bytes.to_string x) >>
+| <:ctyp:< char >> -> <:expr< fun x -> Pa_ppx_runtime.Yojson.string_to_yojson (String.make 1 x) >>
+| <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< Pa_ppx_runtime.Yojson.nativeint_to_yojson >>
 | <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> ->
-    <:expr< fun x -> `String (Nativeint.to_string x) >>
-| <:ctyp:< float >> -> <:expr< fun x -> `Float x >>
+    <:expr< fun x -> Pa_ppx_runtime.Yojson.string_to_yojson (Nativeint.to_string x) >>
+| <:ctyp:< float >> -> <:expr< Pa_ppx_runtime.Yojson.float_to_yojson >>
 
 | <:ctyp:< Hashtbl.t >> ->
-  <:expr< hashtbl_to_yojson >>
+  <:expr< Pa_ppx_runtime.Yojson.hashtbl_to_yojson >>
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
@@ -112,25 +112,19 @@ value to_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< list $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun x ->
-        `List (safe_map $fmt1$ x) >>
+  <:expr< Pa_ppx_runtime.Yojson.list_to_yojson $fmt1$ >>
 
 | <:ctyp:< array $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun x ->
-        `List
-          (Array.to_list
-             (Array.map $fmt1$ x)) >>
+  <:expr< Pa_ppx_runtime.Yojson.array_to_yojson $fmt1$ >>
 
 | (<:ctyp:< ref $ty$ >> | <:ctyp:< Pervasives.ref $ty$ >>) ->
   let fmt1 = fmtrec ty in
-  <:expr< fun x -> $fmt1$ x.val >>
+  <:expr< Pa_ppx_runtime.Yojson.ref_to_yojson $fmt1$ >>
 
 | <:ctyp:< option $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun [
-        None -> `Null
-      | Some x -> $fmt1$ x ] >>
+  <:expr< Pa_ppx_runtime.Yojson.option_to_yojson $fmt1$ >>
 
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 
@@ -410,27 +404,17 @@ value of_expression arg ~{msg} param_map ty0 =
   <:expr< $lid:fname$ >>
 
 | <:ctyp:< Yojson.Safe.t >> -> <:expr< fun x -> Result.Ok x >>
-| <:ctyp:< unit >> -> <:expr< fun [ `Null -> Result.Ok () | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< int >> -> <:expr< fun [`Int x -> Result.Ok x | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< bool >> -> <:expr< fun [
-        `Bool x -> Result.Ok x
-      | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< fun [
-        `Int x -> Result.Ok (Int32.of_int x)
-      | `Intlit x -> Result.Ok (Int32.of_string x)
-      | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< fun [
-      `Int x -> Result.Ok (Int64.of_int x)
-      | `Intlit x -> Result.Ok (Int64.of_string x)
-      | _ -> Result.Error $str:msg$ ] >>
+| <:ctyp:< unit >> -> <:expr< Pa_ppx_runtime.Yojson.unit_of_yojson $str:msg$ >>
+| <:ctyp:< int >> -> <:expr< Pa_ppx_runtime.Yojson.int_of_yojson $str:msg$ >>
+| <:ctyp:< bool >> -> <:expr< Pa_ppx_runtime.Yojson.bool_of_yojson $str:msg$ >>
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< Pa_ppx_runtime.Yojson.int32_of_yojson $str:msg$ >>
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< Pa_ppx_runtime.Yojson.int64_of_yojson $str:msg$ >>
 | <:ctyp:< int64 [@encoding `string ; ] >> | <:ctyp:< Int64.t [@encoding `string ; ] >> ->
  <:expr< fun [
         `String x -> Result.Ok (Int64.of_string x)
       | _ -> Result.Error $str:msg$ ] >>
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  <:expr< fun [
-        `String x -> Result.Ok x
-      | _ -> Result.Error $str:msg$ ] >>
+  <:expr< Pa_ppx_runtime.Yojson.string_of_yojson $str:msg$ >>
 | <:ctyp:< bytes >> -> <:expr< fun [
         `String x -> Result.Ok (Bytes.of_string x)
       | _ -> Result.Error $str:msg$ ] >>
@@ -439,21 +423,14 @@ value of_expression arg ~{msg} param_map ty0 =
           then Result.Ok (x.[0])
           else Result.Error $str:msg$
       | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun [
-        `Int x -> Result.Ok (Nativeint.of_int x)
-      | `Intlit x -> Result.Ok (Nativeint.of_string x)
-      | _ -> Result.Error $str:msg$ ] >>
+| <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< Pa_ppx_runtime.Yojson.nativeint_of_yojson $str:msg$ >>
 | <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> -> <:expr< fun [
         `String x -> Result.Ok (Nativeint.of_string x)
       | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< float >> -> <:expr< fun [
-        `Int x -> Result.Ok (float_of_int x)
-      | `Intlit x -> Result.Ok (float_of_string x)
-      | `Float x -> Result.Ok x
-      | _ -> Result.Error $str:msg$ ] >>
+| <:ctyp:< float >> -> <:expr< Pa_ppx_runtime.Yojson.float_of_yojson $str:msg$ >>
 
 | <:ctyp:< Hashtbl.t >> ->
-  <:expr< hashtbl_of_yojson >>
+  <:expr< Pa_ppx_runtime.Yojson.hashtbl_of_yojson >>
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
@@ -465,32 +442,19 @@ value of_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< list $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun [
-        `List xs ->
-          Pa_ppx_runtime.map_bind
-            $fmt1$ [] xs
-      | _ -> Result.Error $str:msg$ ] >>
+  <:expr< Pa_ppx_runtime.Yojson.list_of_yojson $str:msg$ $fmt1$ >>
 
 | <:ctyp:< array $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< fun [
-        `List xs ->
-          Rresult.R.bind (Pa_ppx_runtime.map_bind
-             $fmt1$ [] xs)
-             (fun x -> Result.Ok (Array.of_list x))
-      | _ -> Result.Error $str:msg$ ] >>
+  <:expr< Pa_ppx_runtime.Yojson.array_of_yojson $str:msg$ $fmt1$ >>
 
 | (<:ctyp:< ref $ty$ >> | <:ctyp:< Pervasives.ref $ty$ >>) ->
   let fmt1 = fmtrec ty in
-  <:expr< fun x ->
-        Rresult.R.bind ($fmt1$ x) (fun x -> Result.Ok (ref x)) >>
+  <:expr< Pa_ppx_runtime.Yojson.ref_of_yojson $fmt1$ >>
 
 | <:ctyp:< option $ty$ >> ->
   let fmt1 = fmtrec ty in
-  <:expr< (fun [
-        `Null -> Result.Ok None
-      | x ->
-          Result.bind ($fmt1$ x) (fun x -> Result.Ok (Some x)) ]) >>
+  <:expr< Pa_ppx_runtime.Yojson.option_of_yojson $fmt1$ >>
 
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 

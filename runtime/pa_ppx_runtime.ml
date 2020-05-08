@@ -22,6 +22,7 @@ value result_to_yojson pa pb = fun [
 ;
 
 open Rresult.R ;
+module Yojson = struct
 open Yojson ;
 value result_of_yojson pa pb = fun [
   `List [`String "Ok"; arg0] ->
@@ -54,3 +55,58 @@ value hashtbl_of_yojson keydemarsh valdemarsh (json : Yojson.Safe.t) = match jso
       })
 | _ -> Result.Error "list needed" ]
 ;
+
+value unit_to_yojson = fun () -> `Null ;
+value int_to_yojson = fun x -> `Int x ;
+value bool_to_yojson = fun x -> `Bool x ;
+value int32_to_yojson = fun x -> `Intlit (Int32.to_string x) ;
+value int64_to_yojson = fun x -> `Intlit (Int64.to_string x) ;
+value string_to_yojson = fun x -> `String x ;
+value nativeint_to_yojson = fun x -> `Intlit (Nativeint.to_string x) ;
+value float_to_yojson = fun x -> `Float x ;
+value list_to_yojson f = fun x -> `List (safe_map f x) ;
+value array_to_yojson f = fun x -> `List (Array.to_list (Array.map f x)) ;
+value ref_to_yojson f = fun x -> f x.val ;
+value option_to_yojson f = fun [ None -> `Null | Some x -> f x ] ;
+
+value unit_of_yojson msg = fun [ `Null -> Result.Ok () | _ -> Result.Error msg ] ;
+value int_of_yojson msg = fun [`Int x -> Result.Ok x | _ -> Result.Error msg ] ;
+value bool_of_yojson msg = fun [ `Bool x -> Result.Ok x | _ -> Result.Error msg ] ;
+value int32_of_yojson msg = fun [
+        `Int x -> Result.Ok (Int32.of_int x)
+      | `Intlit x -> Result.Ok (Int32.of_string x)
+      | _ -> Result.Error msg ] ;
+value int64_of_yojson msg = fun [
+      `Int x -> Result.Ok (Int64.of_int x)
+      | `Intlit x -> Result.Ok (Int64.of_string x)
+      | _ -> Result.Error msg ] ;
+value string_of_yojson msg = fun [
+        `String x -> Result.Ok x
+      | _ -> Result.Error msg ] ;
+
+value nativeint_of_yojson msg = fun [
+        `Int x -> Result.Ok (Nativeint.of_int x)
+      | `Intlit x -> Result.Ok (Nativeint.of_string x)
+      | _ -> Result.Error msg ] ;
+value float_of_yojson msg = fun [
+        `Int x -> Result.Ok (float_of_int x)
+      | `Intlit x -> Result.Ok (float_of_string x)
+      | `Float x -> Result.Ok x
+      | _ -> Result.Error msg ] ;
+value list_of_yojson msg f = fun [
+        `List xs -> map_bind f [] xs
+      | _ -> Result.Error msg ] ;
+value array_of_yojson msg f = fun [
+        `List xs ->
+          Rresult.R.bind (map_bind f [] xs)
+             (fun x -> Result.Ok (Array.of_list x))
+      | _ -> Result.Error msg ] ;
+value ref_of_yojson f = fun x ->
+  Rresult.R.bind (f x) (fun x -> Result.Ok (ref x)) ;
+value option_of_yojson f = fun [
+        `Null -> Result.Ok None
+      | x ->
+          Result.bind (f x) (fun x -> Result.Ok (Some x)) ] ;
+end
+;
+
