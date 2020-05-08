@@ -354,6 +354,39 @@ value extend_str_items arg si = match si with [
       <:str_item< value $lid:to_yojsonfname$ x = $uid:modname$ . f . $uid:modname$ . f x >>
     ]
 
+| <:str_item:< type $lilongid:t$ $list:params$ += $_priv:_$ [ $list:ecs$ ] $_itemattrs:_$ >> ->
+    let modname = Printf.sprintf "M_%s" (to_yojson_fname arg (uv (snd t))) in
+    let modname = match fst t with [
+      None -> <:longident< $uid:modname$ >>
+    | Some li -> <:longident< $longid:li$ . $uid:modname$ >>
+    ] in
+    let modname = module_expr_of_longident modname in
+    let param_map = make_param_map params in
+    let ec2gc = fun [
+      EcTuple gc -> gc
+    | EcRebind _ _ _ -> Ploc.raise loc (Failure "cannot derive a rebind extension-constructor (yet)")
+    ] in
+    let gcl = List.map ec2gc ecs in
+    let ty = <:ctyp< [ $list:gcl$ ] >> in
+    let e = to_expression arg ~{msg=Pp_MLast.show_longid_lident t} param_map ty in
+    let branches = match e with [
+      <:expr< fun [ $list:branches$ ] >> -> branches
+    | _ -> assert False
+    ] in
+    (* remove the catch-branch *)
+    let (_, branches) = sep_last branches in 
+    let paramexps = List.map (fun (_, f) -> <:expr< $lid:f$ >>) param_map in
+    let parampats = List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map in
+    let catch_branch = (<:patt< z >>, <:vala< None >>,
+                        Expr.applist <:expr< fallback >> (paramexps@[ <:expr< z >> ])) in
+    let branches = branches @ [ catch_branch ] in
+    let e = <:expr< fun [ $list:branches$ ] >> in
+    let e = Expr.abstract_over parampats e in
+    [ <:str_item<
+      let open $!:False$ $modname$ in
+      let fallback = f . f in
+      f.f := $e$ >> ]
+
 | _ -> assert False
 ]
 ;
@@ -763,6 +796,39 @@ value extend_str_items arg si = match si with [
     end >> ;
       <:str_item< value $lid:of_yojsonfname$ x = $uid:modname$ . f . $uid:modname$ . f x >>
     ]
+
+| <:str_item:< type $lilongid:t$ $list:params$ += $_priv:_$ [ $list:ecs$ ] $_itemattrs:_$ >> ->
+    let modname = Printf.sprintf "M_%s" (of_yojson_fname arg (uv (snd t))) in
+    let modname = match fst t with [
+      None -> <:longident< $uid:modname$ >>
+    | Some li -> <:longident< $longid:li$ . $uid:modname$ >>
+    ] in
+    let modname = module_expr_of_longident modname in
+    let param_map = make_param_map params in
+    let ec2gc = fun [
+      EcTuple gc -> gc
+    | EcRebind _ _ _ -> Ploc.raise loc (Failure "cannot derive a rebind extension-constructor (yet)")
+    ] in
+    let gcl = List.map ec2gc ecs in
+    let ty = <:ctyp< [ $list:gcl$ ] >> in
+    let e = of_expression arg ~{msg=Pp_MLast.show_longid_lident t} param_map ty in
+    let branches = match e with [
+      <:expr< fun [ $list:branches$ ] >> -> branches
+    | _ -> assert False
+    ] in
+    (* remove the catch-branch *)
+    let (_, branches) = sep_last branches in 
+    let paramexps = List.map (fun (_, f) -> <:expr< $lid:f$ >>) param_map in
+    let parampats = List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map in
+    let catch_branch = (<:patt< z >>, <:vala< None >>,
+                        Expr.applist <:expr< fallback >> (paramexps @[ <:expr< z >> ])) in
+    let branches = branches @ [ catch_branch ] in
+    let e = <:expr< fun [ $list:branches$ ] >> in
+    let e = Expr.abstract_over parampats e in
+    [ <:str_item<
+      let open $!:False$ $modname$ in
+      let fallback = f . f in
+      f.f := $e$ >> ]
 
 | _ -> assert False
 ]

@@ -41,6 +41,14 @@ value count p l = List.length (Std.filter p l) ;
 
 value attr_id attr = snd (uv (fst (uv attr))) ;
 
+value module_expr_of_longident li =
+  let rec crec = fun [
+    <:extended_longident:< $uid:m$ >> -> <:module_expr< $uid:m$ >>
+  | <:extended_longident:< $longid:li$ . $uid:m$ >> -> <:module_expr< $crec li$ . $uid:m$ >>
+  | <:extended_longident:< $longid:li1$ ( $longid:li2$ ) >> -> <:module_expr< $crec li1$ ( $crec li2$ ) >>
+  ] in
+  crec li
+;
 module Expr = struct
 
 value print e =
