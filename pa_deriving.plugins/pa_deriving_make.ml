@@ -153,13 +153,10 @@ value sig_item_top_funs arg td =
 
 value str_item_funs arg td =
   let loc = fst (uv td.tdNam) in
-  let l = str_item_top_funs arg td in
+  let param_map = PM.make "make" loc (uv td.tdPrm) in
+  let funs = str_item_top_funs arg td in
   let types = sig_item_top_funs arg td in
-  List.map (fun (fname, body) ->
-      let fty = List.assoc fname types in
-      let attrwarn39 = <:attribute_body< "ocaml.warning" "-39" ; >> in
-      let attrwarn39 = <:vala< attrwarn39 >> in
-      (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39] >>)) l
+  wrap_type_constraints loc param_map funs types
 ;
 
 value sig_items arg td =

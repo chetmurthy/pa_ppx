@@ -276,7 +276,6 @@ value fmt_top arg params = fun [
 value sig_item_top_funs arg td =
   let (loc, tyname) = uv td.tdNam in
   let param_map = PM.make "show" loc (uv td.tdPrm) in
-  let ty = td.tdDef in
   let tyname = uv tyname in
   let ppfname = pp_fname arg tyname in
   let showfname = show_fname arg tyname in
@@ -311,18 +310,9 @@ value str_item_top_funs arg td =
 value str_item_funs arg td =
   let (loc, tyname) = uv td.tdNam in
   let param_map = PM.make "show" loc (uv td.tdPrm) in
-  let ty = td.tdDef in
-  let tyname = uv tyname in
-  let l = str_item_top_funs arg td in
+  let funs = str_item_top_funs arg td in
   let types = sig_item_top_funs arg td in
-  List.map (fun (fname, body) ->
-      let fty = List.assoc fname types in
-      let fty = PM.quantify_over_ctyp param_map fty in
-      let attrwarn39 = <:attribute_body< "ocaml.warning" "-39" ; >> in
-      let attrwarn39 = <:vala< attrwarn39 >> in
-      let attrwarn33 = <:attribute_body< "ocaml.warning" "-33" ; >> in
-      let attrwarn33 = <:vala< attrwarn33 >> in
-      (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39; attrwarn33] >>)) l
+  wrap_type_constraints loc param_map funs types
 ;
 
 value sig_items arg td =

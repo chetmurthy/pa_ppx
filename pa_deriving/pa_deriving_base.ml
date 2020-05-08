@@ -31,3 +31,14 @@ end
 ;
 
 module PM = ParamMap ;
+
+value wrap_type_constraints loc param_map funs types =
+  List.map (fun (fname, body) ->
+    let fty = List.assoc fname types in
+    let fty = PM.quantify_over_ctyp param_map fty in
+    let attrwarn39 = <:attribute_body< "ocaml.warning" "-39" ; >> in
+    let attrwarn39 = <:vala< attrwarn39 >> in
+    let attrwarn33 = <:attribute_body< "ocaml.warning" "-33" ; >> in
+    let attrwarn33 = <:vala< attrwarn33 >> in
+    (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39; attrwarn33] >>)) funs
+;

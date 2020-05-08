@@ -14,6 +14,7 @@ open Pa_ppx_base ;
 open Pa_passthru ;
 open Ppxutil ;
 open Surveil ;
+open Pa_deriving_base ;
 
 value to_fname arg tyname =
   if tyname = "t" then "to_enum"
@@ -152,13 +153,9 @@ value sig_item_top_funs arg td =
 
 value str_item_funs arg td =
   let loc = fst (uv td.tdNam) in
-  let l = str_item_top_funs arg td in
+  let funs = str_item_top_funs arg td in
   let types = sig_item_top_funs arg td in
-  List.map (fun (fname, body) ->
-      let fty = List.assoc fname types in
-      let attrwarn39 = <:attribute_body< "ocaml.warning" "-39" ; >> in
-      let attrwarn39 = <:vala< attrwarn39 >> in
-      (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39] >>)) l
+  wrap_type_constraints loc [] funs types
 ;
 
 value sig_item_funs arg td =
@@ -166,21 +163,6 @@ value sig_item_funs arg td =
   let l = sig_item_top_funs arg td in
   List.map (fun (fname, ty) ->
       <:sig_item< value $lid:fname$ : $ty$>>) l
-;
-
-value is_deriving_enum attr = match uv attr with [
-  <:attribute_body< deriving $structure:sil$ >> ->
-    List.exists (fun [
-      <:str_item< enum >> -> True
-    | <:str_item< enum $_$ >> -> True
-    | <:str_item< ( $list:l$ ) >> ->
-      List.exists (fun [
-          <:expr< enum >> -> True
-        | <:expr< enum $_ $ >> -> True
-        | _ -> False ]) l
-    | _ -> False ]) sil
-| _ -> False
-]
 ;
 
 value str_item_gen_enum0 arg td =
