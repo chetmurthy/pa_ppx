@@ -57,13 +57,24 @@ value extract_allowed_attribute_expr arg attrna attrs =
   | exception Failure _ -> None ]
 ;
 
-value make_param_map params =
+module ParamMap = struct
+value make msg loc params =
   List.mapi (fun i p ->
     match uv (fst p) with [
-      None -> failwith "cannot derive yojson-functions for type decl with unnamed type-vars"
+      None -> Ploc.raise loc (Failure (Printf.sprintf "cannot derive %s-functions for type decl with unnamed type-vars" msg))
     | Some na -> (na, Printf.sprintf "tp_%d" i)
     ]) params
 ;
+
+value quantify_over_ctyp param_map fty =
+  let loc = loc_of_ctyp fty in
+  if param_map = [] then fty
+  else <:ctyp< ! $list:(List.map fst param_map)$ . $fty$ >>
+;
+end
+;
+
+module PM = ParamMap ;
 
 module To = struct
 
@@ -264,7 +275,7 @@ value fmt_to_top arg ~{msg} params = fun [
 
 value sig_item_fun0 arg td =
   let (loc, tyname) = uv td.tdNam in
-  let param_map = make_param_map (uv td.tdPrm) in
+  let param_map = PM.make "yojson" loc (uv td.tdPrm) in
   let ty = td.tdDef in
   let tyname = uv tyname in
   let to_yojsonfname = to_yojson_fname arg tyname in
@@ -290,7 +301,7 @@ value sig_items arg td = do {
 value str_item_funs arg td = do {
   assert (not (match td.tdDef with [ <:ctyp< .. >> -> True | _ -> False ])) ;
   let (loc, tyname) = uv td.tdNam in
-  let param_map = make_param_map (uv td.tdPrm) in
+  let param_map = PM.make "yojson" loc (uv td.tdPrm) in
   let ty = td.tdDef in
   let tyname = uv tyname in
   let to_yojsonfname = to_yojson_fname arg tyname in
@@ -298,8 +309,7 @@ value str_item_funs arg td = do {
   let to_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $to_e$ >> in
   let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
   let (_, fty) = sig_item_fun0 arg td in
-  let fty = if param_map = [] then fty
-        else <:ctyp< ! $list:(List.map fst param_map)$ . $fty$ >> in
+  let fty = PM.quantify_over_ctyp param_map fty in
   [(<:patt< ( $lid:to_yojsonfname$ : $fty$ ) >>,
     Expr.abstract_over paramfun_patts
       <:expr< fun arg -> $to_e$ arg >>, <:vala< [] >>)]
@@ -310,13 +320,12 @@ value extend_sig_items arg si = match si with [
   <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
     let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
     let (loc, tyname) = uv td.tdNam in
-    let param_map = make_param_map (uv td.tdPrm) in
+    let param_map = PM.make "yojson" loc (uv td.tdPrm) in
     let ty = td.tdDef in
     let (to_yojsonfname, toftype) = sig_item_fun0 arg td in
     let sil = [<:sig_item< value $lid:to_yojsonfname$ : $toftype$>>] in
     let modname = Printf.sprintf "M_%s" to_yojsonfname in
-    let field_type = if param_map = [] then toftype
-      else <:ctyp< ! $list:(List.map fst param_map)$ . $toftype$ >> in
+    let field_type = PM.quantify_over_ctyp param_map toftype in
     [ <:sig_item< module $uid:modname$ :
     sig
       type nonrec $lid:to_yojsonfname$ = { f: mutable  $field_type$ } ;
@@ -329,14 +338,13 @@ value extend_sig_items arg si = match si with [
 value extend_str_items arg si = match si with [
   <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
     let td = match z with [ <:str_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
-    let param_map = make_param_map (uv td.tdPrm) in
+    let param_map = PM.make "yojson" loc (uv td.tdPrm) in
     let (to_yojsonfname, toftype) = sig_item_fun0 arg td in
     let modname = Printf.sprintf "M_%s" to_yojsonfname in
     let msg1 = Printf.sprintf "%s: Maybe a [@@deriving yojson] is missing when extending the type " to_yojsonfname in
     let msg2 = td.tdNam |> uv |> snd |> uv in
 
-    let field_type = if param_map = [] then toftype
-      else <:ctyp< ! $list:(List.map fst param_map)$ . $toftype$ >> in
+    let field_type = PM.quantify_over_ctyp param_map toftype in
     let fexp = <:expr< fun _ -> invalid_arg ($str:msg1$ ^ $str:msg2$) >> in
     let fexp = Expr.abstract_over (List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map) fexp in
     let fexp = Expr.abstract_over (List.map (fun (v, _) -> <:patt< ( type $lid:v$ ) >>) param_map) fexp in
@@ -355,7 +363,7 @@ value extend_str_items arg si = match si with [
     | Some li -> <:longident< $longid:li$ . $uid:modname$ >>
     ] in
     let modname = module_expr_of_longident modname in
-    let param_map = make_param_map params in
+    let param_map = PM.make "yojson" loc params in
     let ec2gc = fun [
       EcTuple gc -> [gc]
     | EcRebind _ _ _ -> []
@@ -655,7 +663,7 @@ value fmt_of_top arg ~{msg} params = fun [
 
 value sig_item_fun0 arg td =
   let (loc, tyname) = uv td.tdNam in
-  let param_map = make_param_map (uv td.tdPrm) in
+  let param_map = PM.make "yojson" loc (uv td.tdPrm) in
   let ty = td.tdDef in
   let tyname = uv tyname in
   let of_yojsonfname = of_yojson_fname arg tyname in
@@ -688,7 +696,7 @@ value sig_items arg td = do {
 value str_item_funs arg td = do {
   assert (not (match td.tdDef with [ <:ctyp< .. >> -> True | _ -> False ])) ;
   let (loc, tyname) = uv td.tdNam in
-  let param_map = make_param_map (uv td.tdPrm) in
+  let param_map = PM.make "yojson" loc (uv td.tdPrm) in
   let ty = td.tdDef in
   let tyname = uv tyname in
   let of_yojsonfname = of_yojson_fname arg tyname in
@@ -699,8 +707,7 @@ value str_item_funs arg td = do {
   let e = 
     let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $body$ >> in
     let (_, fty) = fun1 in
-    let fty = if param_map = [] then fty
-      else <:ctyp< ! $list:(List.map fst param_map)$ . $fty$ >> in
+    let fty = PM.quantify_over_ctyp param_map fty in
     (<:patt< ( $lid:of_yojsonfname$ : $fty$ ) >>,
      Expr.abstract_over paramfun_patts
        <:expr< fun arg -> $of_e$ arg >>, <:vala< [] >>) in
@@ -710,8 +717,7 @@ value str_item_funs arg td = do {
     let body = <:expr< match $body$ arg with [ Rresult.Ok x -> x | Result.Error s -> failwith s ] >> in
     let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $body$ >> in
     let (_, fty) = match ofun2 with [ None -> assert False | Some x -> x ] in
-    let fty = if param_map = [] then fty
-      else <:ctyp< ! $list:(List.map fst param_map)$ . $fty$ >> in
+    let fty = PM.quantify_over_ctyp param_map fty in
     let e' = (<:patt< ( $lid:exn_name$ : $fty$ ) >>,
               Expr.abstract_over paramfun_patts
                 <:expr< fun arg -> $of_e$ >>, <:vala< [] >>) in
@@ -723,13 +729,12 @@ value extend_sig_items arg si = match si with [
   <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
     let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
     let (loc, tyname) = uv td.tdNam in
-    let param_map = make_param_map (uv td.tdPrm) in
+    let param_map = PM.make "yojson" loc (uv td.tdPrm) in
     let ty = td.tdDef in
     let sil = gen_sig_items arg td in
     let ((of_yojsonfname, offtype), _) = sig_item_fun0 arg td in
     let modname = Printf.sprintf "M_%s" of_yojsonfname in
-    let field_type = if param_map = [] then offtype
-      else <:ctyp< ! $list:(List.map fst param_map)$ . $offtype$ >> in
+    let field_type = PM.quantify_over_ctyp param_map offtype in
     [ <:sig_item< module $uid:modname$ :
     sig
       type nonrec $lid:of_yojsonfname$ = { f: mutable  $field_type$ } ;
@@ -742,14 +747,13 @@ value extend_sig_items arg si = match si with [
 value extend_str_items arg si = match si with [
   <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
     let td = match z with [ <:str_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
-    let param_map = make_param_map (uv td.tdPrm) in
+    let param_map = PM.make "yojson" loc (uv td.tdPrm) in
     let ((of_yojsonfname, offtype), oexn) = sig_item_fun0 arg td in
     let modname = Printf.sprintf "M_%s" of_yojsonfname in
     let msg1 = Printf.sprintf "%s: Maybe a [@@deriving yojson] is missing when extending the type " of_yojsonfname in
     let msg2 = td.tdNam |> uv |> snd |> uv in
 
-    let field_type = if param_map = [] then offtype
-      else <:ctyp< ! $list:(List.map fst param_map)$ . $offtype$ >> in
+    let field_type = PM.quantify_over_ctyp param_map offtype in
     let fexp = <:expr< fun _ -> invalid_arg ($str:msg1$ ^ $str:msg2$) >> in
     let fexp = Expr.abstract_over (List.map (fun (_, f) -> <:patt< $lid:f$ >>) param_map) fexp in
     let fexp = Expr.abstract_over (List.map (fun (v, _) -> <:patt< ( type $lid:v$ ) >>) param_map) fexp in
@@ -768,7 +772,7 @@ value extend_str_items arg si = match si with [
     | Some li -> <:longident< $longid:li$ . $uid:modname$ >>
     ] in
     let modname = module_expr_of_longident modname in
-    let param_map = make_param_map params in
+    let param_map = PM.make "yojson" loc params in
     let ec2gc = fun [
       EcTuple gc -> [gc]
     | EcRebind _ _ _ -> []

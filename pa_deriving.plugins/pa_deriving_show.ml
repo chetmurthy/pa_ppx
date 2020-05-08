@@ -261,6 +261,14 @@ and fmt_record ~{without_path} ~{prefix_txt} ~{bracket_space} loc arg fields =
 in fmtrec ty0
 ;
 
+value make_param_map params =
+  List.mapi (fun i p ->
+    match uv (fst p) with [
+      None -> failwith "cannot derive show-functions for type decl with unnamed type-vars"
+    | Some na -> (na, Printf.sprintf "tp_%d" i)
+    ]) params
+;
+
 value fmt_top arg params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
   let arg = match t1 with [
@@ -272,7 +280,26 @@ value fmt_top arg params = fun [
 ]
 ;
 
-value str_item_top_funs arg (loc, tyname) param_map ty =
+value sig_item_top_funs arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let param_map = make_param_map (uv td.tdPrm) in
+  let ty = td.tdDef in
+  let tyname = uv tyname in
+  let ppfname = pp_fname arg tyname in
+  let showfname = show_fname arg tyname in
+  let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
+  let argfmttys = List.map (fun pty -> <:ctyp< Fmt.t $pty$ >>) paramtys in  
+  let ty = <:ctyp< $lid:tyname$ >> in
+  let ppftype = Ctyp.arrows_list loc argfmttys <:ctyp< Fmt.t $(Ctyp.applist ty paramtys)$ >> in
+  let showftype = Ctyp.arrows_list loc argfmttys <:ctyp< $(Ctyp.applist ty paramtys)$ -> Stdlib.String.t >> in
+  [(ppfname, ppftype) ;
+   (showfname, showftype)]
+;
+
+value str_item_top_funs arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let param_map = make_param_map (uv td.tdPrm) in
+  let ty = td.tdDef in
   let tyname = uv tyname in
   let ppfname = pp_fname arg tyname in
   let showfname = show_fname arg tyname in
@@ -288,27 +315,13 @@ value str_item_top_funs arg (loc, tyname) param_map ty =
       <:expr< fun arg -> Format.asprintf "%a" $(Expr.applist ppfexp paramfun_exprs)$ arg >>)]
 ;
 
-value sig_item_top_funs arg (loc, tyname) param_map ty =
+value str_item_funs arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let param_map = make_param_map (uv td.tdPrm) in
+  let ty = td.tdDef in
   let tyname = uv tyname in
-  let ppfname = pp_fname arg tyname in
-  let showfname = show_fname arg tyname in
-  let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
-  let argfmttys = List.map (fun pty -> <:ctyp< Fmt.t $pty$ >>) paramtys in  
-  let ty = <:ctyp< $lid:tyname$ >> in
-  let ppftype = Ctyp.arrows_list loc argfmttys <:ctyp< Fmt.t $(Ctyp.applist ty paramtys)$ >> in
-  let showftype = Ctyp.arrows_list loc argfmttys <:ctyp< $(Ctyp.applist ty paramtys)$ -> Stdlib.String.t >> in
-  [(ppfname, ppftype) ;
-   (showfname, showftype)]
-;
-
-value str_item_funs arg ((loc,_) as tyname) params ty =
-  let param_map = List.mapi (fun i p ->
-    match uv (fst p) with [
-      None -> failwith "cannot derive show-functions for type decl with unnamed type-vars"
-    | Some na -> (na, Printf.sprintf "tp_%d" i)
-    ]) params in
-  let l = str_item_top_funs arg tyname param_map ty in
-  let types = sig_item_top_funs arg tyname param_map ty in
+  let l = str_item_top_funs arg td in
+  let types = sig_item_top_funs arg td in
   List.map (fun (fname, body) ->
       let fty = List.assoc fname types in
       let fty = if param_map = [] then fty
@@ -320,22 +333,15 @@ value str_item_funs arg ((loc,_) as tyname) params ty =
       (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39; attrwarn33] >>)) l
 ;
 
-value sig_item_funs arg ((loc,_) as tyname) params ty =
-  let param_map = List.mapi (fun i p ->
-    match uv (fst p) with [
-      None -> failwith "cannot derive show-functions for type decl with unnamed type-vars"
-    | Some na -> (na, Printf.sprintf "tp_%d" i)
-    ]) params in
-  let l = sig_item_top_funs arg tyname param_map ty in
+value sig_items arg td =
+  let loc = fst (uv td.tdNam) in
+  let l = sig_item_top_funs arg td in
   List.map (fun (fname, ty) ->
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
 
 value str_item_gen_show0 arg td =
-  let tyname = uv td.tdNam
-  and params = uv td.tdPrm
-  and tk = td.tdDef in
-  str_item_funs arg tyname params tk
+  str_item_funs arg td
 ;
 
 value loc_of_type_decl td = fst (uv td.tdNam) ;
@@ -348,17 +354,10 @@ value str_item_gen_show name arg = fun [
 | _ -> assert False ]
 ;
 
-value sig_item_gen_show0 arg td =
-  let tyname = uv td.tdNam
-  and params = uv td.tdPrm
-  and tk = td.tdDef in
-  sig_item_funs arg tyname params tk
-;
-
 value sig_item_gen_show name arg = fun [
   <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
     let loc = loc_of_type_decl (List.hd tdl) in
-    let l = List.concat (List.map (sig_item_gen_show0 arg) tdl) in
+    let l = List.concat (List.map (sig_items arg) tdl) in
     <:sig_item< declare $list:l$ end >>
 | _ -> assert False ]
 ;
