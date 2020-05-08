@@ -11,6 +11,7 @@ open Pa_ppx_base ;
 open Pa_passthru ;
 open Ppxutil ;
 open Surveil ;
+open Pa_deriving_base ;
 
 module Ctxt = struct
   include Pa_passthru.Ctxt ;
@@ -261,14 +262,6 @@ and fmt_record ~{without_path} ~{prefix_txt} ~{bracket_space} loc arg fields =
 in fmtrec ty0
 ;
 
-value make_param_map params =
-  List.mapi (fun i p ->
-    match uv (fst p) with [
-      None -> failwith "cannot derive show-functions for type decl with unnamed type-vars"
-    | Some na -> (na, Printf.sprintf "tp_%d" i)
-    ]) params
-;
-
 value fmt_top arg params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
   let arg = match t1 with [
@@ -282,7 +275,7 @@ value fmt_top arg params = fun [
 
 value sig_item_top_funs arg td =
   let (loc, tyname) = uv td.tdNam in
-  let param_map = make_param_map (uv td.tdPrm) in
+  let param_map = PM.make "show" loc (uv td.tdPrm) in
   let ty = td.tdDef in
   let tyname = uv tyname in
   let ppfname = pp_fname arg tyname in
@@ -298,7 +291,7 @@ value sig_item_top_funs arg td =
 
 value str_item_top_funs arg td =
   let (loc, tyname) = uv td.tdNam in
-  let param_map = make_param_map (uv td.tdPrm) in
+  let param_map = PM.make "show" loc (uv td.tdPrm) in
   let ty = td.tdDef in
   let tyname = uv tyname in
   let ppfname = pp_fname arg tyname in
@@ -317,15 +310,14 @@ value str_item_top_funs arg td =
 
 value str_item_funs arg td =
   let (loc, tyname) = uv td.tdNam in
-  let param_map = make_param_map (uv td.tdPrm) in
+  let param_map = PM.make "show" loc (uv td.tdPrm) in
   let ty = td.tdDef in
   let tyname = uv tyname in
   let l = str_item_top_funs arg td in
   let types = sig_item_top_funs arg td in
   List.map (fun (fname, body) ->
       let fty = List.assoc fname types in
-      let fty = if param_map = [] then fty
-        else <:ctyp< ! $list:(List.map fst param_map)$ . $fty$ >> in
+      let fty = PM.quantify_over_ctyp param_map fty in
       let attrwarn39 = <:attribute_body< "ocaml.warning" "-39" ; >> in
       let attrwarn39 = <:vala< attrwarn39 >> in
       let attrwarn33 = <:attribute_body< "ocaml.warning" "-33" ; >> in
@@ -340,23 +332,18 @@ value sig_items arg td =
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
 
-value str_item_gen_show0 arg td =
-  str_item_funs arg td
-;
 
 value loc_of_type_decl td = fst (uv td.tdNam) ;
 
 value str_item_gen_show name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->
-    let loc = loc_of_type_decl (List.hd tdl) in
-    let l = List.concat (List.map (str_item_gen_show0 arg) tdl) in
+    let l = List.concat (List.map (str_item_funs arg) tdl) in
     <:str_item< value rec $list:l$ >>
 | _ -> assert False ]
 ;
 
 value sig_item_gen_show name arg = fun [
   <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
-    let loc = loc_of_type_decl (List.hd tdl) in
     let l = List.concat (List.map (sig_items arg) tdl) in
     <:sig_item< declare $list:l$ end >>
 | _ -> assert False ]

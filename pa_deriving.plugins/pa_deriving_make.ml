@@ -12,6 +12,7 @@ open Pa_ppx_base ;
 open Pa_passthru ;
 open Ppxutil ;
 open Surveil ;
+open Pa_deriving_base ;
 
 value make_fname arg base =
   if base = "t" then "make"
@@ -102,15 +103,20 @@ value fmt_top arg params = fun [
 ]
 ;
 
-value str_item_top_funs arg (loc, tyname) params ty =
+value str_item_top_funs arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let ty = td.tdDef in
   let tyname = uv tyname in
   let makefname = make_fname arg tyname in
-  let e = fmt_top arg params ty in
+  let e = fmt_top arg td.tdPrm ty in
 
   [(makefname, e)]
 ;
 
-value sig_item_top_funs arg (loc, tyname) (params : list type_var) ty =
+value sig_item_top_funs arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let param_map = PM.make "make" loc (uv td.tdPrm) in
+  let ty = td.tdDef in
   let tyname = uv tyname in
   let makefname = make_fname arg tyname in
   let fields = match ty with [
@@ -137,10 +143,7 @@ value sig_item_top_funs arg (loc, tyname) (params : list type_var) ty =
     let all_required = List.for_all fst req_paramtys in
 
   let thety = Ctyp.applist <:ctyp< $lid:tyname$ >>
-     (List.map (fun (pn, _) ->
-       match uv pn with [ None ->
-         failwith "Pa_deriving.make: unnamed type-params are unsupported"
-       | Some id -> <:ctyp< ' $id$ >> ]) params) in
+     (List.map (fun (id, _) -> <:ctyp< ' $id$ >>) param_map) in
 
   let thety = if has_main || all_required then thety else <:ctyp< unit -> $thety$ >> in
   let makeftype = Ctyp.arrows_list loc paramtys thety in
@@ -148,9 +151,10 @@ value sig_item_top_funs arg (loc, tyname) (params : list type_var) ty =
 ;
 
 
-value str_item_funs arg ((loc,_) as tyname) (params : list type_var) ty =
-  let l = str_item_top_funs arg tyname params ty in
-  let types = sig_item_top_funs arg tyname params ty in
+value str_item_funs arg td =
+  let loc = fst (uv td.tdNam) in
+  let l = str_item_top_funs arg td in
+  let types = sig_item_top_funs arg td in
   List.map (fun (fname, body) ->
       let fty = List.assoc fname types in
       let attrwarn39 = <:attribute_body< "ocaml.warning" "-39" ; >> in
@@ -158,17 +162,15 @@ value str_item_funs arg ((loc,_) as tyname) (params : list type_var) ty =
       (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39] >>)) l
 ;
 
-value sig_item_funs arg ((loc,_) as tyname) params ty =
-  let l = sig_item_top_funs arg tyname params ty in
+value sig_items arg td =
+  let loc = fst (uv td.tdNam) in
+  let l = sig_item_top_funs arg td in
   List.map (fun (fname, ty) ->
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
 
 value str_item_gen_make0 arg td =
-  let tyname = uv td.tdNam
-  and params = uv td.tdPrm
-  and tk = td.tdDef in
-  str_item_funs arg tyname params tk
+  str_item_funs arg td
 ;
 
 value loc_of_type_decl td = fst (uv td.tdNam) ;
@@ -181,17 +183,10 @@ value str_item_gen_make name arg = fun [
 | _ -> assert False ]
 ;
 
-value sig_item_gen_make0 arg td =
-  let tyname = uv td.tdNam
-  and params = uv td.tdPrm
-  and tk = td.tdDef in
-  sig_item_funs arg tyname params tk
-;
-
 value sig_item_gen_make name arg = fun [
   <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
     let loc = loc_of_type_decl (List.hd tdl) in
-    let l = List.concat (List.map (sig_item_gen_make0 arg) tdl) in
+    let l = List.concat (List.map (sig_items arg) tdl) in
     <:sig_item< declare $list:l$ end >>
 | _ -> assert False ]
 ;

@@ -12,7 +12,7 @@ open Pa_ppx_base ;
 open Pa_passthru ;
 open Ppxutil ;
 open Surveil ;
-
+open Pa_deriving_base ;
 
 module Ctxt = struct
   include Pa_passthru.Ctxt ;
@@ -56,25 +56,6 @@ value extract_allowed_attribute_expr arg attrna attrs =
     e -> Some e
   | exception Failure _ -> None ]
 ;
-
-module ParamMap = struct
-value make msg loc params =
-  List.mapi (fun i p ->
-    match uv (fst p) with [
-      None -> Ploc.raise loc (Failure (Printf.sprintf "cannot derive %s-functions for type decl with unnamed type-vars" msg))
-    | Some na -> (na, Printf.sprintf "tp_%d" i)
-    ]) params
-;
-
-value quantify_over_ctyp param_map fty =
-  let loc = loc_of_ctyp fty in
-  if param_map = [] then fty
-  else <:ctyp< ! $list:(List.map fst param_map)$ . $fty$ >>
-;
-end
-;
-
-module PM = ParamMap ;
 
 module To = struct
 

@@ -14,6 +14,7 @@ open Pa_ppx_base ;
 open Pa_passthru ;
 open Ppxutil ;
 open Surveil ;
+open Pa_deriving_base ;
 
 value ord_fname arg tyname =
   if tyname = "t" then "compare"
@@ -275,7 +276,10 @@ value fmt_top arg params = fun [
 ]
 ;
 
-value str_item_top_funs arg (loc, tyname) param_map ty =
+value str_item_top_funs arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let param_map = PM.make "ord" loc (uv td.tdPrm) in
+  let ty = td.tdDef in
   let tyname = uv tyname in
   let ordfname = ord_fname arg tyname in
   let e = fmt_top arg param_map ty in
@@ -285,7 +289,9 @@ value str_item_top_funs arg (loc, tyname) param_map ty =
       <:expr< fun a b -> $e$ a b >>)]
 ;
 
-value sig_item_top_funs arg (loc, tyname) param_map ty =
+value sig_item_top_funs arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let param_map = PM.make "ord" loc (uv td.tdPrm) in
   let tyname = uv tyname in
   let ordfname = ord_fname arg tyname in
   let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
@@ -296,30 +302,22 @@ value sig_item_top_funs arg (loc, tyname) param_map ty =
   [(ordfname, ordftype)]
 ;
 
-value str_item_funs arg ((loc,_) as tyname) params ty =
-  let param_map = List.mapi (fun i p ->
-    match uv (fst p) with [
-      None -> failwith "cannot derive ord-functions for type decl with unnamed type-vars"
-    | Some na -> (na, Printf.sprintf "tp_%d" i)
-    ]) params in
-  let l = str_item_top_funs arg tyname param_map ty in
-  let types = sig_item_top_funs arg tyname param_map ty in
+value str_item_funs arg td =
+  let loc = fst (uv td.tdNam) in
+  let param_map = PM.make "ord" loc (uv td.tdPrm) in
+  let l = str_item_top_funs arg td in
+  let types = sig_item_top_funs arg td in
   List.map (fun (fname, body) ->
       let fty = List.assoc fname types in
-      let fty = if param_map = [] then fty
-        else <:ctyp< ! $list:(List.map fst param_map)$ . $fty$ >> in
+      let fty = PM.quantify_over_ctyp param_map fty in
       let attrwarn39 = <:attribute_body< "ocaml.warning" "-39" ; >> in
       let attrwarn39 = <:vala< attrwarn39 >> in
       (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39] >>)) l
 ;
 
-value sig_item_funs arg ((loc,_) as tyname) params ty =
-  let param_map = List.mapi (fun i p ->
-    match uv (fst p) with [
-      None -> failwith "cannot derive ord-functions for type decl with unnamed type-vars"
-    | Some na -> (na, Printf.sprintf "tp_%d" i)
-    ]) params in
-  let l = sig_item_top_funs arg tyname param_map ty in
+value sig_items arg td =
+  let loc = fst (uv td.tdNam) in
+  let l = sig_item_top_funs arg td in
   List.map (fun (fname, ty) ->
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
@@ -334,10 +332,7 @@ value is_deriving_ord attr = match uv attr with [
 ;
 
 value str_item_gen_ord0 arg td =
-  let tyname = uv td.tdNam
-  and params = uv td.tdPrm
-  and tk = td.tdDef in
-  str_item_funs arg tyname params tk
+  str_item_funs arg td
 ;
 
 value loc_of_type_decl td = fst (uv td.tdNam) ;
@@ -350,17 +345,10 @@ value str_item_gen_ord name arg = fun [
 | _ -> assert False ]
 ;
 
-value sig_item_gen_ord0 arg td =
-  let tyname = uv td.tdNam
-  and params = uv td.tdPrm
-  and tk = td.tdDef in
-  sig_item_funs arg tyname params tk
-;
-
 value sig_item_gen_ord name arg = fun [
   <:sig_item:< type $_flag:_$ $list:tdl$ >> as z ->
     let loc = loc_of_type_decl (List.hd tdl) in
-    let l = List.concat (List.map (sig_item_gen_ord0 arg) tdl) in
+    let l = List.concat (List.map (sig_items arg) tdl) in
     <:sig_item< declare $list:l$ end >>
 | _ -> assert False ]
 ;

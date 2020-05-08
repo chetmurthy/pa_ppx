@@ -119,7 +119,9 @@ value fmt_top arg t =
   let maxval = List.fold_left max (List.hd vals) (List.tl vals) in
   (toexp,ofexp,minval,maxval);
 
-value str_item_top_funs arg (loc, tyname) ty =
+value str_item_top_funs arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let ty = td.tdDef in
   let tyname = uv tyname in
   let tofname = to_fname arg tyname in
   let offname = of_fname arg tyname in
@@ -132,7 +134,8 @@ value str_item_top_funs arg (loc, tyname) ty =
    (maxfname, <:expr< $int:(string_of_int maxval)$ >>)]
 ;
 
-value sig_item_top_funs arg (loc, tyname) ty =
+value sig_item_top_funs arg td =
+  let (loc, tyname) = uv td.tdNam in
   let tyname = uv tyname in
   let tofname = to_fname arg tyname in
   let offname = of_fname arg tyname in
@@ -147,9 +150,10 @@ value sig_item_top_funs arg (loc, tyname) ty =
    (maxfname, <:ctyp< Stdlib.Int.t >>)]
 ;
 
-value str_item_funs arg ((loc,_) as tyname) ty =
-  let l = str_item_top_funs arg tyname ty in
-  let types = sig_item_top_funs arg tyname ty in
+value str_item_funs arg td =
+  let loc = fst (uv td.tdNam) in
+  let l = str_item_top_funs arg td in
+  let types = sig_item_top_funs arg td in
   List.map (fun (fname, body) ->
       let fty = List.assoc fname types in
       let attrwarn39 = <:attribute_body< "ocaml.warning" "-39" ; >> in
@@ -157,8 +161,9 @@ value str_item_funs arg ((loc,_) as tyname) ty =
       (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39] >>)) l
 ;
 
-value sig_item_funs arg ((loc,_) as tyname) ty =
-  let l = sig_item_top_funs arg tyname ty in
+value sig_item_funs arg td =
+  let loc = fst (uv td.tdNam) in
+  let l = sig_item_top_funs arg td in
   List.map (fun (fname, ty) ->
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
@@ -185,7 +190,7 @@ value str_item_gen_enum0 arg td =
   if params <> [] then
     failwith "cannot derive enum-functions for type decl with type-vars"
   else
-    str_item_funs arg tyname tk
+    str_item_funs arg td
 ;
 
 value loc_of_type_decl td = fst (uv td.tdNam) ;
@@ -205,7 +210,7 @@ value sig_item_gen_enum0 arg td =
   if params <> [] then
     failwith "cannot derive enum-functions for type decl with type-vars"
   else
-    sig_item_funs arg tyname tk
+    sig_item_funs arg td
 ;
 
 value sig_item_gen_enum name arg = fun [

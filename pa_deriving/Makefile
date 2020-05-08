@@ -14,7 +14,7 @@ MKCAMLP5=$(LAUNCH) mkcamlp5
 PACKAGES := $(PACKAGES),fmt,pa_ppx_utils,pa_ppx_base,pa_ppx_base.syntax
 
 TARGET=pa_deriving.cma
-CMO=pa_deriving.cmo surveil.cmo deriving_harness.cmo
+CMO=pa_deriving.cmo surveil.cmo deriving_harness.cmo pa_deriving_base.cmo
 CMI=$(CMO:.cmo=.cmi)
 INSTALL_CMI=$(filter-out deriving_harness.cmi,$(CMI))
 

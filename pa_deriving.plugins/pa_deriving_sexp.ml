@@ -12,6 +12,7 @@ open Pa_ppx_base ;
 open Pa_passthru ;
 open Ppxutil ;
 open Surveil ;
+open Pa_deriving_base ;
 
 
 module Ctxt = struct
@@ -253,7 +254,10 @@ value fmt_to_top arg ~{msg} params = fun [
 ]
 ;
 
-value str_item_top_funs arg (loc, tyname) param_map ty =
+value str_item_top_funs arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let param_map = PM.make "sexp" loc (uv td.tdPrm) in
+  let ty = td.tdDef in
   let tyname = uv tyname in
   let to_sexpfname = to_sexp_fname arg tyname in
   let to_e = fmt_to_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
@@ -263,7 +267,9 @@ value str_item_top_funs arg (loc, tyname) param_map ty =
      <:expr< fun arg -> $to_e$ arg >>)
 ;
 
-value sig_item_top_funs arg (loc, tyname) param_map ty =
+value sig_item_top_funs arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let param_map = PM.make "sexp" loc (uv td.tdPrm) in
   let tyname = uv tyname in
   let to_sexpfname = to_sexp_fname arg tyname in
   let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
@@ -436,7 +442,6 @@ value of_expression arg ~{msg} param_map ty0 =
     let listpat = List.fold_right (fun v l -> <:patt< [$v$ :: $l$] >>) varpats <:patt< [] >> in
     let varexps = List.map (fun v -> <:expr< $lid:v$ >>) vars in
     let tuplevars = tupleexpr loc varexps in
-    let consexp = <:expr< Result.Ok $tuplevars$ >> in
     let fmts = List.map fmtrec tyl in
     let unmarshe =
       let unmarshexps = List.map2 (fun fmte v -> <:expr< $fmte$ $lid:v$ >>) fmts vars in
@@ -522,11 +527,13 @@ value fmt_of_top arg ~{msg} params = fun [
 ]
 ;
 
-value str_item_top_funs arg (loc, tyname) param_map ty =
+value str_item_top_funs arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let param_map = PM.make "sexp" loc (uv td.tdPrm) in
+  let ty = td.tdDef in
   let tyname = uv tyname in
   let of_sexpfname = of_sexp_fname arg tyname in
   let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
-  let paramfun_exprs = List.map (fun (_,ppf) -> <:expr< $lid:ppf$ >>) param_map in
   let body = fmt_of_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
   let e = 
     let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $body$ >> in
@@ -535,7 +542,9 @@ value str_item_top_funs arg (loc, tyname) param_map ty =
   [e]
 ;
 
-value sig_item_top_funs arg (loc, tyname) param_map ty =
+value sig_item_top_funs arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let param_map = PM.make "sexp" loc (uv td.tdPrm) in
   let tyname = uv tyname in
   let of_sexpfname = of_sexp_fname arg tyname in
   let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
@@ -549,33 +558,30 @@ value sig_item_top_funs arg (loc, tyname) param_map ty =
 end
 ;
 
-value str_item_top_funs arg tyname param_map ty =
+value str_item_top_funs arg td =
   (if Ctxt.is_plugin_name arg "sexp_of" || Ctxt.is_plugin_name arg "sexp" then
-    [To.str_item_top_funs arg tyname param_map ty]
+    [To.str_item_top_funs arg td]
   else []) @
   (if Ctxt.is_plugin_name arg "of_sexp" || Ctxt.is_plugin_name arg "sexp" then
-     Of.str_item_top_funs arg tyname param_map ty
+     Of.str_item_top_funs arg td
    else [])
 ;
 
-value sig_item_top_funs arg tyname param_map ty =
+value sig_item_top_funs arg td =
   (if Ctxt.is_plugin_name arg "sexp_of" || Ctxt.is_plugin_name arg "sexp" then
-    [To.sig_item_top_funs arg tyname param_map ty]
+    [To.sig_item_top_funs arg td]
   else []) @
   (if Ctxt.is_plugin_name arg "of_sexp" || Ctxt.is_plugin_name arg "sexp" then
-     Of.sig_item_top_funs arg tyname param_map ty
+     Of.sig_item_top_funs arg td
    else [])
 ;
 
-value str_item_funs arg ((loc,_) as tyname) params ty =
-  let param_map = List.mapi (fun i p ->
-    match uv (fst p) with [
-      None -> Ploc.raise loc (Failure "cannot derive sexp-functions for type decl with unnamed type-vars")
-    | Some na -> (na, Printf.sprintf "tp_%d" i)
-    ]) params in
-  let l = str_item_top_funs arg tyname param_map ty in
+value str_item_funs arg td =
+  let loc = fst (uv td.tdNam) in
+  let param_map = PM.make "sexp" loc (uv td.tdPrm) in
+  let l = str_item_top_funs arg td in
   if l = [] then Ploc.raise loc (Failure "no functions generated") else
-  let types = sig_item_top_funs arg tyname param_map ty in
+  let types = sig_item_top_funs arg td in
   List.map (fun (fname, body) ->
       let fty = List.assoc fname types in
       let fty = if param_map = [] then fty
@@ -583,22 +589,15 @@ value str_item_funs arg ((loc,_) as tyname) params ty =
       (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [] >>)) l
 ;
 
-value sig_item_funs arg ((loc,_) as tyname) params ty =
-  let param_map = List.mapi (fun i p ->
-    match uv (fst p) with [
-      None -> failwith "cannot derive sexp-functions for type decl with unnamed type-vars"
-    | Some na -> (na, Printf.sprintf "tp_%d" i)
-    ]) params in
-  let l = sig_item_top_funs arg tyname param_map ty in
+value sig_items arg td =
+  let loc = fst (uv td.tdNam) in
+  let l = sig_item_top_funs arg td in
   List.map (fun (fname, ty) ->
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
 
 value str_item_gen_sexp0 arg td =
-  let tyname = uv td.tdNam
-  and params = uv td.tdPrm
-  and tk = td.tdDef in
-  str_item_funs arg tyname params tk
+  str_item_funs arg td
 ;
 
 value loc_of_type_decl td = fst (uv td.tdNam) ;
@@ -611,17 +610,10 @@ value str_item_gen_sexp name arg = fun [
 | _ -> assert False ]
 ;
 
-value sig_item_gen_sexp0 arg td =
-  let tyname = uv td.tdNam
-  and params = uv td.tdPrm
-  and tk = td.tdDef in
-  sig_item_funs arg tyname params tk
-;
-
 value sig_item_gen_sexp name arg = fun [
   <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
     let loc = loc_of_type_decl (List.hd tdl) in
-    let l = List.concat (List.map (sig_item_gen_sexp0 arg) tdl) in
+    let l = List.concat (List.map (sig_items arg) tdl) in
     <:sig_item< declare $list:l$ end >>
 | _ -> assert False ]
 ;
