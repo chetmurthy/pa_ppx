@@ -84,6 +84,7 @@ test_%.byte: test_%.ml testutil.cmo testutil2.cmo
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
 
 test_%.ppx.byte: test_%.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
+	$(OCAMLFIND)2 preprocess -package $(PACKAGES),ounit2,$(PPXPACKAGES) $< > $<.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@
 
 test_ppx_yojson.byte: test_ppx_yojson.ml testutil.cmo testutil2.cmo

@@ -432,32 +432,6 @@ let test_nostrict _ctxt =
                { nostrict_field = 42 }
                (nostrict_of_sexp (of_string "((nostrict_field 42))"))
 
-module OTT = struct
-module Opentype : sig
-    type 'a opentype = .. [@@deriving yojson]
-    type 'a opentype += A of 'a | B of string list [@@deriving yojson]
-  end = struct
-    type 'a opentype = .. [@@deriving yojson]
-    type 'a opentype += A of 'a | B of string list [@@deriving yojson]
-  end
-
-let rec pp_opentype f fmt = function
-  Opentype.A x -> Format.fprintf fmt "A(%s)" (f x)
-| Opentype.B l -> Format.fprintf fmt "B(%s)" (String.concat ", " l)
-| _ -> assert false
-
-let test_opentype _ctxt =
-  let pp_ot = pp_opentype string_of_int in
-  let to_yojson = Opentype.opentype_to_yojson i1_to_yojson in
-  let of_yojson = Opentype.opentype_of_yojson i1_of_yojson in
-  assert_roundtrip pp_ot to_yojson of_yojson
-                   (Opentype.A 0) "[\"A\", 0]";
-  assert_roundtrip pp_ot to_yojson of_yojson
-                   (Opentype.B ["one"; "two"]) "[\"B\", [ \"one\", \"two\"] ]"
-
-end
-
-#ifndef PAPPX
 module Opentype :
   sig
     type 'a opentype = .. [@@deriving yojson]
@@ -490,7 +464,6 @@ let test_opentype _ctxt =
                    (Opentype.B ["one"; "two"]) "[\"B\", [ \"one\", \"two\"] ]";
   assert_roundtrip pp_ot to_yojson of_yojson
                    (C (Opentype.A 42, 1.2)) "[\"C\", [\"A\", 42], 1.2]"
-#endif
 
 (* This will fail at type-check if we introduce features that increase
    the default generated signatures. It is representative of user code

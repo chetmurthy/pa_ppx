@@ -363,10 +363,10 @@ value extend_str_items arg si = match si with [
     let modname = module_expr_of_longident modname in
     let param_map = make_param_map params in
     let ec2gc = fun [
-      EcTuple gc -> gc
-    | EcRebind _ _ _ -> Ploc.raise loc (Failure "cannot derive a rebind extension-constructor (yet)")
+      EcTuple gc -> [gc]
+    | EcRebind _ _ _ -> []
     ] in
-    let gcl = List.map ec2gc ecs in
+    let gcl = List.concat (List.map ec2gc ecs) in
     let ty = <:ctyp< [ $list:gcl$ ] >> in
     let e = to_expression arg ~{msg=Pp_MLast.show_longid_lident t} param_map ty in
     let branches = match e with [
@@ -806,10 +806,10 @@ value extend_str_items arg si = match si with [
     let modname = module_expr_of_longident modname in
     let param_map = make_param_map params in
     let ec2gc = fun [
-      EcTuple gc -> gc
-    | EcRebind _ _ _ -> Ploc.raise loc (Failure "cannot derive a rebind extension-constructor (yet)")
+      EcTuple gc -> [gc]
+    | EcRebind _ _ _ -> []
     ] in
-    let gcl = List.map ec2gc ecs in
+    let gcl = List.concat (List.map ec2gc ecs) in
     let ty = <:ctyp< [ $list:gcl$ ] >> in
     let e = of_expression arg ~{msg=Pp_MLast.show_longid_lident t} param_map ty in
     let branches = match e with [
