@@ -72,10 +72,10 @@ value fmt_expression arg param_map ty0 =
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 
 | <:ctyp:< '$i$ >> ->
-  let fmtf = match List.assoc i param_map with [
+  let p = match PM.find i param_map with [
     x -> x | exception Not_found -> failwith "pa_deriving.map: unrecognized param-var in type-decl"
   ] in
-  <:expr< $lid:fmtf$ >>
+  <:expr< $lid:PM.param_id p$ >>
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "map" "nobuiltin" ->
   fmtrec ~{attrmod=Some Nobuiltin} t
@@ -194,7 +194,7 @@ value str_item_top_funs arg td =
   let eqfname = map_fname arg tyname in
   let e = fmt_top arg param_map ty in
 
-  let paramfun_patts = List.map (fun (_,eqf) -> <:patt< $lid:eqf$ >>) param_map in
+  let paramfun_patts = List.map (fun p -> <:patt< $lid:PM.param_id p$ >>) param_map in
   [(eqfname, Expr.abstract_over paramfun_patts
       <:expr< fun arg -> $e$ arg >>)]
 ;
@@ -205,9 +205,9 @@ value sig_item_top_funs arg td =
   let tk = td.tdDef in
   let tyname = uv tyname in
   let mapfname = map_fname arg tyname in
-  let paramvars1 = List.map (fun (tyna, _) -> tyna^"_1") param_map in
-  let paramvars2 = List.map (fun (tyna, _) -> tyna^"_2") param_map in
-  let paramtys1 = List.map (fun tyna -> <:ctyp< '$tyna$ >>) paramvars1 in
+  let paramvars1 = List.map (fun p -> (PM.type_id p)^"_1") param_map in
+  let paramvars2 = List.map (fun p -> (PM.type_id p)^"_2") param_map in
+  let paramtys1 = List.map (fun tyna -> <:ctyp< ' $tyna$ >>) paramvars1 in
   let paramtys2 = List.map (fun tyna -> <:ctyp< '$tyna$ >>) paramvars2 in
   let argfmttys = List.map2 (fun pty1 pty2 -> <:ctyp< $pty1$ -> $pty2$ >>) paramtys1 paramtys2 in  
   let basety = <:ctyp< $lid:tyname$ >> in

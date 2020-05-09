@@ -103,10 +103,10 @@ value fmt_expression arg param_map ty0 =
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 
 | <:ctyp:< '$i$ >> ->
-  let fmtf = match List.assoc i param_map with [
+  let p = match PM.find i param_map with [
     x -> x | exception Not_found -> failwith "pa_deriving.ord: unrecognized param-var in type-decl"
   ] in
-  <:expr< $lid:fmtf$ >>
+  <:expr< $lid:PM.param_id p$ >>
 
 | <:ctyp:< $lid:lid$ >> ->
   let fname = ord_fname arg lid in
@@ -284,7 +284,7 @@ value str_item_top_funs arg td =
   let ordfname = ord_fname arg tyname in
   let e = fmt_top arg param_map ty in
 
-  let paramfun_patts = List.map (fun (_,ordf) -> <:patt< $lid:ordf$ >>) param_map in
+  let paramfun_patts = List.map (fun p -> <:patt< $lid:PM.param_id p$ >>) param_map in
   [(ordfname, Expr.abstract_over paramfun_patts
       <:expr< fun a b -> $e$ a b >>)]
 ;
@@ -294,7 +294,7 @@ value sig_item_top_funs arg td =
   let param_map = PM.make "ord" loc (uv td.tdPrm) in
   let tyname = uv tyname in
   let ordfname = ord_fname arg tyname in
-  let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
+  let paramtys = List.map (fun p -> <:ctyp< ' $PM.type_id p$ >>) param_map in
   let argfmttys = List.map (fun pty -> <:ctyp< $pty$ -> $pty$ -> Stdlib.Int.t >>) paramtys in  
   let ty = <:ctyp< $lid:tyname$ >> in
   let thety = Ctyp.applist ty paramtys in

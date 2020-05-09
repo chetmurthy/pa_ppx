@@ -14,18 +14,41 @@ open Ppxutil ;
 open Surveil ;
 
 module ParamMap = struct
+
+type param_t =
+  {
+    type_id : string ;
+    param_id : string
+  }
+;
+
+value type_id p = p.type_id ;
+value param_id p = p.param_id ;
+
+value find id l =
+  match List.find_opt (fun p -> type_id p = id) l with [
+    None -> raise Not_found
+  | Some p -> p ]
+;
+
+type t = list param_t ;
+
 value make msg loc params =
   List.mapi (fun i p ->
     match uv (fst p) with [
       None -> Ploc.raise loc (Failure (Printf.sprintf "cannot derive %s-functions for type decl with unnamed type-vars" msg))
-    | Some na -> (na, Printf.sprintf "tp_%d" i)
+    | Some na -> { type_id = na ; param_id = Printf.sprintf "tp_%d" i }
     ]) params
+;
+
+value make_of_ids pvl =
+  List.mapi (fun i v -> { type_id = v ; param_id = Printf.sprintf "tp_%d" i}) pvl
 ;
 
 value quantify_over_ctyp param_map fty =
   let loc = loc_of_ctyp fty in
   if param_map = [] then fty
-  else <:ctyp< ! $list:(List.map fst param_map)$ . $fty$ >>
+  else <:ctyp< ! $list:(List.map type_id param_map)$ . $fty$ >>
 ;
 end
 ;

@@ -166,9 +166,7 @@ value sig_item_funs arg td =
 ;
 
 value str_item_gen_enum0 arg td =
-  let tyname = uv td.tdNam
-  and params = uv td.tdPrm
-  and tk = td.tdDef in
+  let params = uv td.tdPrm in
   if params <> [] then
     failwith "cannot derive enum-functions for type decl with type-vars"
   else
@@ -186,9 +184,7 @@ value str_item_gen_enum name arg = fun [
 ;
 
 value sig_item_gen_enum0 arg td =
-  let tyname = uv td.tdNam
-  and params = uv td.tdPrm
-  and tk = td.tdDef in
+  let params = uv td.tdPrm in
   if params <> [] then
     failwith "cannot derive enum-functions for type decl with type-vars"
   else

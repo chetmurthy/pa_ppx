@@ -143,7 +143,7 @@ value sig_item_top_funs arg td =
     let all_required = List.for_all fst req_paramtys in
 
   let thety = Ctyp.applist <:ctyp< $lid:tyname$ >>
-     (List.map (fun (id, _) -> <:ctyp< ' $id$ >>) param_map) in
+     (List.map (fun p -> <:ctyp< ' $PM.type_id p$ >>) param_map) in
 
   let thety = if has_main || all_required then thety else <:ctyp< unit -> $thety$ >> in
   let makeftype = Ctyp.arrows_list loc paramtys thety in

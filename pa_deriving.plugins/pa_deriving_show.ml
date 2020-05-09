@@ -127,10 +127,10 @@ value fmt_expression arg param_map ty0 =
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 
 | <:ctyp:< '$i$ >> ->
-  let fmtf = match List.assoc i param_map with [
+  let p = match PM.find i param_map with [
     x -> x | exception Not_found -> failwith "pa_deriving.show: unrecognized param-var in type-decl"
   ] in
-  <:expr< $lid:fmtf$ >>
+  <:expr< $lid:PM.param_id p$ >>
 
 | <:ctyp:< $lid:lid$ >> ->
   let fname = pp_fname arg lid in
@@ -279,7 +279,7 @@ value sig_item_top_funs arg td =
   let tyname = uv tyname in
   let ppfname = pp_fname arg tyname in
   let showfname = show_fname arg tyname in
-  let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
+  let paramtys = List.map (fun p -> <:ctyp< ' $PM.type_id p$ >>) param_map in
   let argfmttys = List.map (fun pty -> <:ctyp< Fmt.t $pty$ >>) paramtys in  
   let ty = <:ctyp< $lid:tyname$ >> in
   let ppftype = Ctyp.arrows_list loc argfmttys <:ctyp< Fmt.t $(Ctyp.applist ty paramtys)$ >> in
@@ -297,8 +297,8 @@ value str_item_top_funs arg td =
   let showfname = show_fname arg tyname in
   let e = fmt_top arg param_map ty in
 
-  let paramfun_patts = List.map (fun (_,ppf) -> <:patt< $lid:ppf$ >>) param_map in
-  let paramfun_exprs = List.map (fun (_,ppf) -> <:expr< $lid:ppf$ >>) param_map in
+  let paramfun_patts = List.map (fun p -> <:patt< $lid:PM.param_id p$ >>) param_map in
+  let paramfun_exprs = List.map (fun p -> <:expr< $lid:PM.param_id p$ >>) param_map in
   let ppfexp = <:expr< $lid:ppfname$ >> in
 
   [(ppfname, Expr.abstract_over paramfun_patts

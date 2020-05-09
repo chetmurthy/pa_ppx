@@ -88,10 +88,10 @@ value fmt_expression arg param_map ty0 =
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 
 | <:ctyp:< '$i$ >> ->
-  let fmtf = match List.assoc i param_map with [
+  let p = match PM.find i param_map with [
     x -> x | exception Not_found -> failwith "pa_deriving.eq: unrecognized param-var in type-decl"
   ] in
-  <:expr< $lid:fmtf$ >>
+  <:expr< $lid:PM.param_id p$ >>
 
   | <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "eq" "equal" -> e
 
@@ -232,7 +232,7 @@ value str_item_top_funs arg td =
   let eqfname = eq_fname arg tyname in
   let e = fmt_top arg param_map ty in
 
-  let paramfun_patts = List.map (fun (_,eqf) -> <:patt< $lid:eqf$ >>) param_map in
+  let paramfun_patts = List.map (fun p -> <:patt< $lid:PM.param_id p$ >>) param_map in
   [(eqfname, Expr.abstract_over paramfun_patts
       <:expr< fun arg -> $e$ arg >>)]
 ;
@@ -242,7 +242,7 @@ value sig_item_top_funs arg td =
   let param_map = PM.make "eq" loc (uv td.tdPrm) in
   let tyname = uv tyname in
   let eqfname = eq_fname arg tyname in
-  let paramtys = List.map (fun (tyna, _) -> <:ctyp< '$tyna$ >>) param_map in
+  let paramtys = List.map (fun p -> <:ctyp< '$PM.type_id p$ >>) param_map in
   let argfmttys = List.map (fun pty -> <:ctyp< $pty$ -> $pty$ -> Stdlib.Bool.t >>) paramtys in  
   let ty = <:ctyp< $lid:tyname$ >> in
   let thety = Ctyp.applist ty paramtys in
