@@ -75,7 +75,7 @@ value fmt_expression arg param_map ty0 =
   let p = match PM.find i param_map with [
     x -> x | exception Not_found -> failwith "pa_deriving.iter: unrecognized param-var in type-decl"
   ] in
-  <:expr< $lid:PM.param_id p$ >>
+  PM.param_expr loc p
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "iter" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
@@ -192,7 +192,7 @@ value str_item_top_funs arg td =
   let eqfname = iter_fname arg tyname in
   let e = fmt_top arg param_map ty in
 
-  let paramfun_patts = List.map (fun p -> <:patt< $lid:PM.param_id p$ >>) param_map in
+  let paramfun_patts = List.map (PM.param_patt loc) param_map in
   [(eqfname, Expr.abstract_over paramfun_patts
       <:expr< fun arg -> $e$ arg >>)]
 ;

@@ -25,6 +25,9 @@ type param_t =
 value type_id p = p.type_id ;
 value param_id p = p.param_id ;
 
+value param_expr loc p = <:expr< $lid:param_id p$ >> ;
+value param_patt loc p = <:patt< $lid:param_id p$ >> ;
+
 value find id l =
   match List.find_opt (fun p -> type_id p = id) l with [
     None -> raise Not_found
