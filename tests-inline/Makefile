@@ -13,7 +13,8 @@ RM=rm
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,sexplib0,sexplib,str,threads
+PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,sexplib0,sexplib,str,threads.posix
+OCAMLCFLAGS += -thread
 
 CMO=
 CMI=$(CMO:.cmo=.cmi)
@@ -57,6 +58,7 @@ PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)assert.syntax
 PAINLINEPACKAGES:=$(PAPACKAGES)
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)inline_test.syntax
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)expect_test.syntax
+PAINLINEPACKAGES:=$(PAINLINEPACKAGES),expect_test_helpers
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),ppx_expect.evaluator
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),ppx_inline_test.runtime-lib,ppx_inline_test.runner.lib
 
@@ -68,14 +70,18 @@ PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
 
 %.pa.byte: %.ml
 	$(OCAMLFIND)2 preprocess -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) camlp5/papr_official.exe -binary-input -impl > $<.pappx.ppo
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 ppx_sexp_test.ppx.byte: ppx_sexp_test.ml
 	cppo ppx_sexp_test.ml > ppx_sexp_test.ppx.ml
+	$(OCAMLFIND)2 preprocess -package $(PACKAGES),$(PPXINLINEPACKAGES) $(PPXINLINEOPT) ppx_sexp_test.ppx.ml > ppx_sexp_test.ppx.ml.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg ppx_sexp_test.ppx.ml ppx_inline_test_epilogue.ml -o $@
+
 
 ppx_sexp_test.pa.byte: ppx_sexp_test.ml
 	cppo -D PAPPX ppx_sexp_test.ml > ppx_sexp_test.pappx.ml
+	$(OCAMLFIND)2 preprocess -package $(PACKAGES),$(PAINLINEPACKAGES),camlp5.pr_o.syntax -ppopt -sep -ppopt ";;" -syntax camlp5o $(PAINLINEOPT) ppx_sexp_test.pappx.ml >  ppx_sexp_test.pappx.ml.ppo
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package compiler-libs.common,ounit2,fmt,pcre,rresult,compiler-libs.common,sexplib0,sexplib,str,threads,pa_ppx_runtime,expect_test_helpers,ppx_expect.evaluator,ppx_inline_test.runtime-lib,ppx_inline_test.runner.lib -c -impl ppx_sexp_test.pappx.ml.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg ppx_sexp_test.pappx.ml ppx_inline_test_epilogue.ml -o $@
 
 %.TEST: %.ppx.byte %.pa.byte
