@@ -124,7 +124,7 @@ value to_expression arg ~{msg} param_map ty0 =
   let p = match PM.find i param_map with [
     x -> x | exception Not_found -> failwith "pa_deriving.yojson: unrecognized param-var in type-decl"
   ] in
-  PM.param_expr loc p
+  PM.arg_expr loc p
 
 | <:ctyp:< $lid:lid$ >> ->
   let fname = to_yojson_fname arg lid in
@@ -287,7 +287,7 @@ value str_item_funs arg td = do {
   let to_yojsonfname = to_yojson_fname arg tyname in
   let to_e = fmt_to_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
   let to_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $to_e$ >> in
-  let paramfun_patts = List.map (PM.param_patt loc) param_map in
+  let paramfun_patts = List.map (PM.arg_patt loc) param_map in
   let (_, fty) = sig_item_fun0 arg td in
   let fty = PM.quantify_over_ctyp param_map fty in
   [(<:patt< ( $lid:to_yojsonfname$ : $fty$ ) >>,
@@ -325,7 +325,7 @@ value extend_str_items arg si = match si with [
 
     let field_type = PM.quantify_over_ctyp param_map toftype in
     let fexp = <:expr< fun _ -> invalid_arg ($str:msg1$ ^ $str:msg2$) >> in
-    let fexp = Expr.abstract_over (List.map (PM.param_patt loc) param_map) fexp in
+    let fexp = Expr.abstract_over (List.map (PM.arg_patt loc) param_map) fexp in
     let fexp = Expr.abstract_over (List.map (fun p -> <:patt< ( type $lid:PM.type_id p$ ) >>) param_map) fexp in
     [ <:str_item< module $uid:modname$ =
     struct
@@ -356,8 +356,8 @@ value extend_str_items arg si = match si with [
     ] in
     (* remove the catch-branch *)
     let (_, branches) = sep_last branches in 
-    let paramexps = List.map (PM.param_expr loc) param_map in
-    let parampats = List.map (PM.param_patt loc) param_map in
+    let paramexps = List.map (PM.arg_expr loc) param_map in
+    let parampats = List.map (PM.arg_patt loc) param_map in
     let catch_branch = (<:patt< z >>, <:vala< None >>,
                         Expr.applist <:expr< fallback >> (paramexps@[ <:expr< z >> ])) in
     let branches = branches @ [ catch_branch ] in
@@ -449,7 +449,7 @@ value of_expression arg ~{msg} param_map ty0 =
   let p = match PM.find i param_map with [
     x -> x | exception Not_found -> failwith "pa_deriving.yojson: unrecognized param-var in type-decl"
   ] in
-  PM.param_expr loc p
+  PM.arg_expr loc p
 
 | <:ctyp:< $lid:lid$ >> ->
   let fname = of_yojson_fname arg lid in
@@ -678,8 +678,8 @@ value str_item_funs arg td = do {
   let ty = td.tdDef in
   let tyname = uv tyname in
   let of_yojsonfname = of_yojson_fname arg tyname in
-  let paramfun_patts = List.map (PM.param_patt loc) param_map in
-  let paramfun_exprs = List.map (PM.param_expr loc) param_map in
+  let paramfun_patts = List.map (PM.arg_patt loc) param_map in
+  let paramfun_exprs = List.map (PM.arg_expr loc) param_map in
   let body = fmt_of_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
   let (fun1, ofun2) = sig_item_fun0 arg td in
   let e = 
@@ -732,7 +732,7 @@ value extend_str_items arg si = match si with [
 
     let field_type = PM.quantify_over_ctyp param_map offtype in
     let fexp = <:expr< fun _ -> invalid_arg ($str:msg1$ ^ $str:msg2$) >> in
-    let fexp = Expr.abstract_over (List.map (PM.param_patt loc) param_map) fexp in
+    let fexp = Expr.abstract_over (List.map (PM.arg_patt loc) param_map) fexp in
     let fexp = Expr.abstract_over (List.map (fun p -> <:patt< ( type $lid:PM.type_id p$ ) >>) param_map) fexp in
     [ <:str_item< module $uid:modname$ =
     struct
@@ -763,8 +763,8 @@ value extend_str_items arg si = match si with [
     ] in
     (* remove the catch-branch *)
     let (_, branches) = sep_last branches in 
-    let paramexps = List.map (PM.param_expr loc) param_map in
-    let parampats = List.map (PM.param_patt loc) param_map in
+    let paramexps = List.map (PM.arg_expr loc) param_map in
+    let parampats = List.map (PM.arg_patt loc) param_map in
     let catch_branch = (<:patt< z >>, <:vala< None >>,
                         Expr.applist <:expr< fallback >> (paramexps @[ <:expr< z >> ])) in
     let branches = branches @ [ catch_branch ] in
@@ -873,14 +873,14 @@ value expr_yojson arg = fun [
     let param_map = type_to_param_map ty in
     let e = To.fmt_to_top arg ~{msg=Printf.sprintf "%s.to_yojson"  (Ctxt.module_path_s arg)} param_map ty in
     let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
-    let parampats = List.map (PM.param_patt loc) param_map in
+    let parampats = List.map (PM.arg_patt loc) param_map in
     Expr.abstract_over parampats e
 
 | <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "of_yojson" || id = "derive.of_yojson" ->
     let param_map = type_to_param_map ty in
     let e = Of.fmt_of_top ~{msg=Printf.sprintf "%s.of_yojson"  (Ctxt.module_path_s arg)} arg param_map ty in
     let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
-    let parampats = List.map (PM.param_patt loc) param_map in
+    let parampats = List.map (PM.arg_patt loc) param_map in
     Expr.abstract_over parampats e
 | _ -> assert False ]
 ;

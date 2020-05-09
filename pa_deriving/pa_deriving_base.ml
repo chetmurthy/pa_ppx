@@ -18,15 +18,15 @@ module ParamMap = struct
 type param_t =
   {
     type_id : string ;
-    param_id : string
+    arg_id : string
   }
 ;
 
 value type_id p = p.type_id ;
-value param_id p = p.param_id ;
+value arg_id p = p.arg_id ;
 
-value param_expr loc p = <:expr< $lid:param_id p$ >> ;
-value param_patt loc p = <:patt< $lid:param_id p$ >> ;
+value arg_expr loc p = <:expr< $lid:arg_id p$ >> ;
+value arg_patt loc p = <:patt< $lid:arg_id p$ >> ;
 
 value find id l =
   match List.find_opt (fun p -> type_id p = id) l with [
@@ -40,12 +40,12 @@ value make msg loc params =
   List.mapi (fun i p ->
     match uv (fst p) with [
       None -> Ploc.raise loc (Failure (Printf.sprintf "cannot derive %s-functions for type decl with unnamed type-vars" msg))
-    | Some na -> { type_id = na ; param_id = Printf.sprintf "tp_%d" i }
+    | Some na -> { type_id = na ; arg_id = Printf.sprintf "tp_%d" i }
     ]) params
 ;
 
 value make_of_ids pvl =
-  List.mapi (fun i v -> { type_id = v ; param_id = Printf.sprintf "tp_%d" i}) pvl
+  List.mapi (fun i v -> { type_id = v ; arg_id = Printf.sprintf "tp_%d" i}) pvl
 ;
 
 value quantify_over_ctyp param_map fty =

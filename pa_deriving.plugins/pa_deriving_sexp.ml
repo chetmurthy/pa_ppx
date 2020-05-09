@@ -122,7 +122,7 @@ value to_expression arg ~{msg} param_map ty0 =
   | exception Not_found ->
     Ploc.raise loc (Failure "pa_deriving.sexp: unrecognized param-var in type-decl")
   ] in
-  PM.param_expr loc p
+  PM.arg_expr loc p
 
 | <:ctyp:< $lid:lid$ >> ->
   let fname = to_sexp_fname arg lid in
@@ -262,7 +262,7 @@ value str_item_top_funs arg td =
   let to_sexpfname = to_sexp_fname arg tyname in
   let to_e = fmt_to_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
   let to_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $to_e$ >> in
-  let paramfun_patts = List.map (PM.param_patt loc) param_map in
+  let paramfun_patts = List.map (PM.arg_patt loc) param_map in
   (to_sexpfname, Expr.abstract_over paramfun_patts
      <:expr< fun arg -> $to_e$ arg >>)
 ;
@@ -344,7 +344,7 @@ value of_expression arg ~{msg} param_map ty0 =
   | exception Not_found ->
     Ploc.raise loc (Failure "pa_deriving.sexp: unrecognized param-var in type-decl")
   ] in
-  PM.param_expr loc p
+  PM.arg_expr loc p
 
 | <:ctyp:< $lid:lid$ >> ->
   let fname = of_sexp_fname arg lid in
@@ -531,7 +531,7 @@ value str_item_top_funs arg td =
   let ty = td.tdDef in
   let tyname = uv tyname in
   let of_sexpfname = of_sexp_fname arg tyname in
-  let paramfun_patts = List.map (PM.param_patt loc) param_map in
+  let paramfun_patts = List.map (PM.arg_patt loc) param_map in
   let body = fmt_of_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
   let e = 
     let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $body$ >> in
@@ -642,7 +642,7 @@ value expr_sexp arg = fun [
     let param_map = build_param_map ty in
     let e = To.fmt_to_top arg ~{msg=Printf.sprintf "%s.sexp_of"  (Ctxt.module_path_s arg)} param_map ty in
     let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
-    let parampats = List.map (PM.param_patt loc) param_map in
+    let parampats = List.map (PM.arg_patt loc) param_map in
     Expr.abstract_over parampats e
 
 | <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "of_sexp" || id = "derive.of_sexp" ->
@@ -650,7 +650,7 @@ value expr_sexp arg = fun [
     let param_map = build_param_map ty in
     let e = Of.fmt_of_top ~{msg=Printf.sprintf "%s.of_sexp"  (Ctxt.module_path_s arg)} arg param_map ty in
     let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
-    let parampats = List.map (PM.param_patt loc) param_map in
+    let parampats = List.map (PM.arg_patt loc) param_map in
     Expr.abstract_over parampats e
 | _ -> assert False ]
 ;
