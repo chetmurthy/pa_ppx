@@ -43,7 +43,7 @@ let assert_failure pp_obj of_json err str =
   assert_equal ~printer:(show_error_or pp_obj) (Result.Error err) (of_json json)
 
 type u = unit         [@@deriving show, yojson, sexp]
-type i1 = int         [@@deriving show, yojson, sexp]
+type i1 = int         [@@deriving show, yojson, sexp, eq]
 type i2 = int32       [@@deriving show, yojson, sexp]
 type i3 = Int32.t     [@@deriving show, yojson]
 type i4 = int64       [@@deriving show, yojson, sexp]
@@ -436,13 +436,13 @@ module Opentype :
   sig
     type 'a opentype = ..
 #ifdef PAPPX
-  [@@deriving yojson, show]
+  [@@deriving yojson, show, eq]
 #else
   [@@deriving yojson]
 #endif
     type 'a opentype += A of 'a | B of string list
 #ifdef PAPPX
-    [@@deriving yojson, show]
+    [@@deriving yojson, show, eq]
 #else
     [@@deriving yojson]
 #endif
@@ -450,13 +450,13 @@ module Opentype :
   struct
     type 'a opentype = ..
 #ifdef PAPPX
-  [@@deriving yojson, show]
+  [@@deriving yojson, show, eq]
 #else
   [@@deriving yojson]
 #endif
     type 'a opentype += A of 'a | B of string list
 #ifdef PAPPX
-    [@@deriving yojson, show]
+    [@@deriving yojson, show, eq]
 #else
     [@@deriving yojson]
 #endif
@@ -465,7 +465,7 @@ type 'a Opentype.opentype +=
   | C of 'a Opentype.opentype * float
   | A = Opentype.A
 #ifdef PAPPX
-   [@@deriving yojson, show]
+   [@@deriving yojson, show, eq]
 #else
    [@@deriving yojson]
 #endif
@@ -490,11 +490,19 @@ let test_opentype _ctxt =
                    (C (Opentype.A 42, 1.2)) "[\"C\", [\"A\", 42], 1.2]"
 #ifdef PAPPX
   ; assert_equal ~printer:(fun x -> x)
-    "(Test_ppx_yojson.Opentype.A 0)" Opentype.(show_opentype pp_i1 (A 0))
+    "(Test_ppx_yojson.Opentype.A 0)"
+    Opentype.(show_opentype pp_i1 (A 0))
   ; assert_equal ~printer:(fun x -> x)
-    {|(Test_ppx_yojson.Opentype.B ["one"; "two"])|} Opentype.(show_opentype pp_i1 (B ["one"; "two"]))
+    {|(Test_ppx_yojson.Opentype.B ["one"; "two"])|}
+    Opentype.(show_opentype pp_i1 (B ["one"; "two"]))
   ; assert_equal ~printer:(fun x -> x)
-    "(Test_ppx_yojson.C ((Test_ppx_yojson.Opentype.A 42), 1.2))" (Opentype.show_opentype pp_i1 (C (Opentype.A 42, 1.2)))
+    "(Test_ppx_yojson.C ((Test_ppx_yojson.Opentype.A 42), 1.2))"
+    (Opentype.show_opentype pp_i1 (C (Opentype.A 42, 1.2)))
+  ; assert_bool "A=A" Opentype.(equal_opentype equal_i1 (A 0) (A 0))
+  ; assert_bool "B=B" Opentype.(equal_opentype equal_i1 (B ["foo"]) (B ["foo"]))
+  ; assert_bool "B1<>B2" (not Opentype.(equal_opentype equal_i1 (B ["foo1"]) (B ["foo2"])))
+  ; assert_bool "A<>B" (not Opentype.(equal_opentype equal_i1 (A 0) (B [])))
+  ; assert_bool "C=C" (Opentype.equal_opentype equal_i1 (C (Opentype.A 42, 1.2)) (C (Opentype.A 42, 1.2)))
 #endif
 
 (* This will fail at type-check if we introduce features that increase
