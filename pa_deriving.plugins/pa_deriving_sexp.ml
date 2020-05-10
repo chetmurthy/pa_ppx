@@ -483,6 +483,7 @@ value of_expression arg ~{msg} param_map ty0 =
   <:expr< fun [ $list:branches$ ] >>
 
 | <:ctyp:< [= $list:l$ ] >> as ty0 -> 
+  let ty0 = monomorphize_ctyp ty0 in
   let branches = List.map (fun [
     PvTag loc cid _ tyl attrs -> do {
     let cid = uv cid in
@@ -508,6 +509,7 @@ value of_expression arg ~{msg} param_map ty0 =
         let varexps = List.map2 (fun fmt v -> <:expr< $fmt$ $lid:v$ >>) fmts vars in
         let tup = tupleexpr loc varexps in
         <:expr< ` $cid$ $tup$ >> in
+    let consexp = <:expr< ( $consexp$ :> $ty0$ ) >> in
     Left (conspat, <:vala< None >>, consexp)
   }
 
@@ -854,16 +856,18 @@ value expr_sexp arg = fun [
     let param_map = ty |> type_params |> To.PM.make_of_ids in
     let e = To.fmt_to_top arg ~{msg=Printf.sprintf "%s.sexp_of"  (Ctxt.module_path_s arg)} param_map ty in
     let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
-    let parampats = List.map (To.PM.arg_patt loc) param_map in
-    Expr.abstract_over parampats e
+    let parampats = List.map (To.PM.arg_patt ~{mono=True} loc) param_map in
+    let paramtype_patts = List.map (fun p -> <:patt< (type $To.PM.type_id p$) >>) param_map in
+    Expr.abstract_over (paramtype_patts@parampats) e
 
 | <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "of_sexp" || id = "derive.of_sexp" ->
     let loc = loc_of_ctyp ty in
     let param_map = ty |> type_params |> Of.PM.make_of_ids in
     let e = Of.fmt_of_top ~{msg=Printf.sprintf "%s.of_sexp"  (Ctxt.module_path_s arg)} arg param_map ty in
     let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
-    let parampats = List.map (Of.PM.arg_patt loc) param_map in
-    Expr.abstract_over parampats e
+    let parampats = List.map (Of.PM.arg_patt ~{mono=True} loc) param_map in
+    let paramtype_patts = List.map (fun p -> <:patt< (type $Of.PM.type_id p$) >>) param_map in
+    Expr.abstract_over (paramtype_patts@parampats) e
 | _ -> assert False ]
 ;
 

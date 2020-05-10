@@ -85,3 +85,19 @@ value wrap_type_constraints loc param_map funs types =
 end
 ;
 value loc_of_type_decl td = fst (uv td.tdNam) ;
+
+value monomorphize_ctyp cty =
+  let rec mrec = fun [
+    <:ctyp:< ' $id$ >> -> <:ctyp< $lid:id$ >>
+  | <:ctyp:< $t1$ $t2$ >> -> <:ctyp< $mrec t1$ $mrec t2$ >>
+  | <:ctyp:< [= $list:l$ ] >> ->
+    let l = List.map (fun [
+          PvTag loc cid b tyl attrs -> PvTag loc cid b (vala_map (List.map mrec) tyl) attrs 
+        | PvInh loc ty -> PvInh loc (mrec ty)
+            ]) l in
+    <:ctyp:< [= $list:l$ ] >>
+  | <:ctyp:< ( $list:l$ ) >> -> <:ctyp:< ( $list:List.map mrec l$ ) >>
+  | ty -> ty
+  ]
+  in mrec cty
+;
