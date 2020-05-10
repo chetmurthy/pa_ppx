@@ -46,24 +46,24 @@ type t += A
 end
 
 module B = struct
-  type u = A.t = .. [@@deriving show, sexp]
+  type u = A.t = .. [@@deriving show, sexp, yojson]
 end
 
 
-type B.u += C [@rebind_to A.A ;] [@@deriving show, sexp]
+type B.u += C [@rebind_to A.A ;] [@@deriving show, sexp, yojson]
 
 let test_AB ctxt =
   assert_equal ~printer:(fun x -> x) "Test_extensible_variants.C" (B.show_u C)
 ; assert_equal A.A C
 
 module Exn = struct
-type t = exn = .. [@@deriving show, sexp]
+type t = exn = .. [@@deriving show, sexp, yojson]
 end
 
 type Exn.t +=
     Not_found [@rebind_to Stdlib.Not_found ;]
   | Failure of string [@rebind_to Stdlib.Failure ;]
-[@@deriving show { with_path = false }, sexp]
+[@@deriving show { with_path = false }, sexp, yojson]
 
 let test_exceptions ctxt =
   assert_equal Stdlib.Not_found Not_found
@@ -74,6 +74,10 @@ let test_exceptions ctxt =
     Not_found "(Not_found)"
 ; assert_roundtrip_sexp Exn.show Exn.sexp_of_t Exn.t_of_sexp
     (Failure"foo") {|(Failure "foo")|}
+; assert_roundtrip Exn.pp Exn.to_yojson Exn.of_yojson
+    Not_found {|["Not_found"]|}
+; assert_roundtrip Exn.pp Exn.to_yojson Exn.of_yojson
+    (Failure"foo") {|["Failure", "foo"]|}
 
 let suite = filemod >::: [
     "test_AB"  >:: test_AB;

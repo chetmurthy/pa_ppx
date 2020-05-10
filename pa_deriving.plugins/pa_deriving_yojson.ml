@@ -273,7 +273,7 @@ value sig_item_funs arg td =
 ;
 
 value sig_items arg td = do {
-  assert (not (match td.tdDef with [ <:ctyp< .. >> -> True | _ -> False ])) ;
+  assert (not (match td.tdDef with [ <:ctyp< .. >> | <:ctyp< $_$ == .. >> -> True | _ -> False ])) ;
   let (to_yojsonfname, toftype) = sig_item_fun0 arg td in
   let loc = loc_of_type_decl td in
   [ <:sig_item< value $lid:to_yojsonfname$ : $toftype$>> ]
@@ -281,7 +281,7 @@ value sig_items arg td = do {
 ;
 
 value str_item_funs arg td = do {
-  assert (not (match td.tdDef with [ <:ctyp< .. >> -> True | _ -> False ])) ;
+  assert (not (match td.tdDef with [ <:ctyp< .. >> | <:ctyp< $_$ == .. >> -> True | _ -> False ])) ;
   let (loc, tyname) = uv td.tdNam in
   let param_map = PM.make "yojson" loc (uv td.tdPrm) in
   let ty = td.tdDef in
@@ -300,7 +300,9 @@ value str_item_funs arg td = do {
 ;
 
 value extend_sig_items arg si = match si with [
-  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >>
+| <:sig_item< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
+  as z ->
     let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
     let (loc, tyname) = uv td.tdNam in
     let param_map = PM.make "yojson" loc (uv td.tdPrm) in
@@ -318,7 +320,9 @@ value extend_sig_items arg si = match si with [
 ;
 
 value extend_str_items arg si = match si with [
-  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >>
+| <:str_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
+ as z ->
     let td = match z with [ <:str_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
     let param_map = PM.make "yojson" loc (uv td.tdPrm) in
     let (to_yojsonfname, toftype) = sig_item_fun0 arg td in
@@ -671,13 +675,13 @@ value gen_sig_items arg td =
 ;
 
 value sig_items arg td = do {
-  assert (not (match td.tdDef with [ <:ctyp< .. >> -> True | _ -> False ])) ;
+  assert (not (match td.tdDef with [ <:ctyp< .. >> | <:ctyp< $_$ == .. >> -> True | _ -> False ])) ;
   gen_sig_items arg td
 }
 ;
 
 value str_item_funs arg td = do {
-  assert (not (match td.tdDef with [ <:ctyp< .. >> -> True | _ -> False ])) ;
+  assert (not (match td.tdDef with [ <:ctyp< .. >> | <:ctyp< $_$ == .. >> -> True | _ -> False ])) ;
   let (loc, tyname) = uv td.tdNam in
   let param_map = PM.make "yojson" loc (uv td.tdPrm) in
   let ty = td.tdDef in
@@ -710,7 +714,9 @@ value str_item_funs arg td = do {
 ;
 
 value extend_sig_items arg si = match si with [
-  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >>
+| <:sig_item< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
+  as z ->
     let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
     let (loc, tyname) = uv td.tdNam in
     let param_map = PM.make "yojson" loc (uv td.tdPrm) in
@@ -728,7 +734,9 @@ value extend_sig_items arg si = match si with [
 ;
 
 value extend_str_items arg si = match si with [
-  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >>
+| <:str_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
+   as z ->
     let td = match z with [ <:str_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
     let param_map = PM.make "yojson" loc (uv td.tdPrm) in
     let ((of_yojsonfname, offtype), oexn) = sig_item_fun0 arg td in
@@ -826,7 +834,9 @@ value extend_str_items arg td =
 ;
 
 value str_item_gen_yojson name arg = fun [
-  <:str_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >> as z ->
+  <:str_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >>
+| <:str_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
+  as z ->
     let l = extend_str_items arg z in
     <:str_item< declare $list:l$ end >>
 
@@ -841,7 +851,9 @@ value str_item_gen_yojson name arg = fun [
 ;
 
 value sig_item_gen_yojson name arg = fun [
-  <:sig_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >> as z ->
+  <:sig_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >>
+| <:sig_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
+  as z ->
     let l = extend_sig_items arg z in
     <:sig_item< declare $list:l$ end >>
 
