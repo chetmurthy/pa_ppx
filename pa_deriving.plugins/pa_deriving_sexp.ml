@@ -289,6 +289,82 @@ value str_item_funs arg td =
   let types = sig_item_top_funs arg td in
   PM.wrap_type_constraints loc param_map funs types
 ;
+
+value extend_sig_items arg si = match si with [
+  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+    let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
+    let (loc, tyname) = uv td.tdNam in
+    let param_map = PM.make "sexp" loc (uv td.tdPrm) in
+    let (to_sexpfname, toftype) = List.hd (sig_item_top_funs arg td) in
+    let sil = [<:sig_item< value $lid:to_sexpfname$ : $toftype$>>] in
+    let modname = Printf.sprintf "M_%s" to_sexpfname in
+    let field_type = PM.quantify_over_ctyp param_map toftype in
+    [ <:sig_item< module $uid:modname$ :
+    sig
+      type nonrec $lid:to_sexpfname$ = { f: mutable  $field_type$ } ;
+      value f : $lid:to_sexpfname$ ;
+    end >> :: sil ]
+| _ -> assert False
+]
+;
+
+value extend_str_items arg si = match si with [
+  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+    let td = match z with [ <:str_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
+    let param_map = PM.make "sexp" loc (uv td.tdPrm) in
+    let (to_sexpfname, toftype) = List.hd (sig_item_top_funs arg td) in
+    let modname = Printf.sprintf "M_%s" to_sexpfname in
+    let msg1 = Printf.sprintf "%s: Maybe a [@@deriving sexp] is missing when extending the type " to_sexpfname in
+    let msg2 = td.tdNam |> uv |> snd |> uv in
+
+    let field_type = PM.quantify_over_ctyp param_map toftype in
+    let fexp = <:expr< fun _ -> invalid_arg ($str:msg1$ ^ $str:msg2$) >> in
+    let fexp = Expr.abstract_over (List.map (PM.arg_patt ~{mono=True} loc) param_map) fexp in
+    let fexp = Expr.abstract_over (List.map (fun p -> <:patt< ( type $lid:PM.type_id p$ ) >>) param_map) fexp in
+    [ <:str_item< module $uid:modname$ =
+    struct
+      type nonrec $lid:to_sexpfname$ = { f: mutable  $field_type$ } ;
+      value f = { f = $fexp$ } ;
+    end >> ;
+      <:str_item< value $lid:to_sexpfname$ x = $uid:modname$ . f . $uid:modname$ . f x >>
+    ]
+
+| <:str_item:< type $lilongid:t$ $list:params$ += $_priv:_$ [ $list:ecs$ ] $_itemattrs:_$ >> ->
+    let modname = Printf.sprintf "M_%s" (to_sexp_fname arg (uv (snd t))) in
+    let modname = match fst t with [
+      None -> <:longident< $uid:modname$ >>
+    | Some li -> <:longident< $longid:li$ . $uid:modname$ >>
+    ] in
+    let modname = module_expr_of_longident modname in
+    let param_map = PM.make "sexp" loc params in
+    let ec2gc = fun [
+      EcTuple gc -> [gc]
+    | EcRebind _ _ _ -> []
+    ] in
+    let gcl = List.concat (List.map ec2gc ecs) in
+    let ty = <:ctyp< [ $list:gcl$ ] >> in
+    let e = to_expression arg ~{msg=String.escaped (Pp_MLast.show_longid_lident t)} param_map ty in
+    let branches = match e with [
+      <:expr< fun [ $list:branches$ ] >> -> branches
+    | _ -> assert False
+    ] in
+    let paramexps = List.map (PM.arg_expr loc) param_map in
+    let parampats = List.map (PM.arg_patt ~{mono=True} loc) param_map in
+    let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
+    let catch_branch = (<:patt< z >>, <:vala< None >>,
+                        Expr.applist <:expr< fallback >> (paramexps@[ <:expr< z >> ])) in
+    let branches = branches @ [ catch_branch ] in
+    let e = <:expr< fun [ $list:branches$ ] >> in
+    let e = Expr.abstract_over (paramtype_patts@parampats) e in
+    [ <:str_item<
+      let open $!:False$ $modname$ in
+      let fallback = f . f in
+      f.f := $e$ >> ]
+
+| _ -> assert False
+]
+;
+
 end
 ;
 
@@ -567,12 +643,95 @@ value sig_item_top_funs arg td =
   [e]
 ;
 
+value sig_items arg td =
+  let loc = loc_of_type_decl td in
+  let mk1sig (fname, fty) = <:sig_item< value $lid:fname$ : $fty$>> in
+  List.map mk1sig (sig_item_top_funs arg td)
+;
+
 value str_item_funs arg td =
   let loc = loc_of_type_decl td in
   let param_map = PM.make "sexp" loc (uv td.tdPrm) in
   let funs = str_item_top_funs arg td in
   let types = sig_item_top_funs arg td in
   PM.wrap_type_constraints loc param_map funs types
+;
+
+value extend_sig_items arg si = match si with [
+  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+    let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
+    let (loc, tyname) = uv td.tdNam in
+    let param_map = PM.make "sexp" loc (uv td.tdPrm) in
+    let sil = sig_items arg td in
+    let (of_sexpfname, offtype) = List.hd (sig_item_top_funs arg td) in
+    let modname = Printf.sprintf "M_%s" of_sexpfname in
+    let field_type = PM.quantify_over_ctyp param_map offtype in
+    [ <:sig_item< module $uid:modname$ :
+    sig
+      type nonrec $lid:of_sexpfname$ = { f: mutable  $field_type$ } ;
+      value f : $lid:of_sexpfname$ ;
+    end >> :: sil ]
+| _ -> assert False
+]
+;
+
+value extend_str_items arg si = match si with [
+  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+    let td = match z with [ <:str_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
+    let param_map = PM.make "sexp" loc (uv td.tdPrm) in
+    let (of_sexpfname, offtype) = List.hd (sig_item_top_funs arg td) in
+    let modname = Printf.sprintf "M_%s" of_sexpfname in
+    let msg1 = Printf.sprintf "%s: Maybe a [@@deriving sexp] is missing when extending the type " of_sexpfname in
+    let msg2 = td.tdNam |> uv |> snd |> uv in
+
+    let field_type = PM.quantify_over_ctyp param_map offtype in
+    let fexp = <:expr< fun _ -> invalid_arg ($str:msg1$ ^ $str:msg2$) >> in
+    let fexp = Expr.abstract_over (List.map (PM.arg_patt ~{mono=True} loc) param_map) fexp in
+    let fexp = Expr.abstract_over (List.map (fun p -> <:patt< ( type $lid:PM.type_id p$ ) >>) param_map) fexp in
+    [ <:str_item< module $uid:modname$ =
+    struct
+      type nonrec $lid:of_sexpfname$ = { f: mutable  $field_type$ } ;
+      value f = { f = $fexp$ } ;
+    end >> ;
+      <:str_item< value $lid:of_sexpfname$ x = $uid:modname$ . f . $uid:modname$ . f x >>
+    ]
+
+| <:str_item:< type $lilongid:t$ $list:params$ += $_priv:_$ [ $list:ecs$ ] $_itemattrs:_$ >> ->
+    let modname = Printf.sprintf "M_%s" (of_sexp_fname arg (uv (snd t))) in
+    let modname = match fst t with [
+      None -> <:longident< $uid:modname$ >>
+    | Some li -> <:longident< $longid:li$ . $uid:modname$ >>
+    ] in
+    let modname = module_expr_of_longident modname in
+    let param_map = PM.make "sexp" loc params in
+    let ec2gc = fun [
+      EcTuple gc -> [gc]
+    | EcRebind _ _ _ -> []
+    ] in
+    let gcl = List.concat (List.map ec2gc ecs) in
+    let ty = <:ctyp< [ $list:gcl$ ] >> in
+    let e = of_expression arg ~{msg=String.escaped (Pp_MLast.show_longid_lident t)} param_map ty in
+    let branches = match e with [
+      <:expr< fun [ $list:branches$ ] >> -> branches
+    | _ -> assert False
+    ] in
+    (* remove the catch-branch *)
+    let (_, branches) = sep_last branches in 
+    let paramexps = List.map (PM.arg_expr loc) param_map in
+    let parampats = List.map (PM.arg_patt ~{mono=True} loc) param_map in
+    let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
+    let catch_branch = (<:patt< z >>, <:vala< None >>,
+                        Expr.applist <:expr< fallback >> (paramexps @[ <:expr< z >> ])) in
+    let branches = branches @ [ catch_branch ] in
+    let e = <:expr< fun [ $list:branches$ ] >> in
+    let e = Expr.abstract_over (paramtype_patts@parampats) e in
+    [ <:str_item<
+      let open $!:False$ $modname$ in
+      let fallback = f . f in
+      f.f := $e$ >> ]
+
+| _ -> assert False
+]
 ;
 
 end
@@ -613,8 +772,34 @@ value str_item_gen_sexp0 arg td =
   str_item_funs arg td
 ;
 
+value extend_sig_items arg td =
+  (if Ctxt.is_plugin_name arg "sexp_of" || Ctxt.is_plugin_name arg "sexp" then
+     To.extend_sig_items arg td
+  else []) @
+  (if Ctxt.is_plugin_name arg "of_sexp" || Ctxt.is_plugin_name arg "sexp" then
+     Of.extend_sig_items arg td
+   else [])
+;
+
+value extend_str_items arg td =
+  (if Ctxt.is_plugin_name arg "sexp_of" || Ctxt.is_plugin_name arg "sexp" then
+     To.extend_str_items arg td
+  else []) @
+  (if Ctxt.is_plugin_name arg "of_sexp" || Ctxt.is_plugin_name arg "sexp" then
+     Of.extend_str_items arg td
+   else [])
+;
+
 value str_item_gen_sexp name arg = fun [
-  <:str_item:< type $_flag:_$ $list:tdl$ >> ->
+  <:str_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >> as z ->
+    let l = extend_str_items arg z in
+    <:str_item< declare $list:l$ end >>
+
+| <:str_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ [ $list:_$ ] $_itemattrs:_$ >> as z ->
+    let l = extend_str_items arg z in
+    <:str_item< declare $list:l$ end >>
+
+| <:str_item:< type $_flag:_$ $list:tdl$ >> ->
     let loc = loc_of_type_decl (List.hd tdl) in
     let l = List.concat (List.map (str_item_gen_sexp0 arg) tdl) in
     <:str_item< value rec $list:l$ >>
@@ -622,7 +807,14 @@ value str_item_gen_sexp name arg = fun [
 ;
 
 value sig_item_gen_sexp name arg = fun [
-  <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
+  <:sig_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >> as z ->
+    let l = extend_sig_items arg z in
+    <:sig_item< declare $list:l$ end >>
+
+| <:sig_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ [ $list:_$ ] $_itemattrs:_$ >> as z ->
+    <:sig_item< declare $list:[]$ end >>
+
+| <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
     let loc = loc_of_type_decl (List.hd tdl) in
     let l = List.concat (List.map (sig_items arg) tdl) in
     <:sig_item< declare $list:l$ end >>

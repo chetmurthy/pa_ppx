@@ -373,6 +373,7 @@ value extend_str_items arg si = match si with [
 | _ -> assert False
 ]
 ;
+
 end
 ;
 
@@ -833,7 +834,7 @@ value str_item_gen_yojson name arg = fun [
     let l = extend_str_items arg z in
     <:str_item< declare $list:l$ end >>
 
-|   <:str_item:< type $_flag:_$ $list:tdl$ >> ->
+| <:str_item:< type $_flag:_$ $list:tdl$ >> ->
     let l = List.concat (List.map (str_item_funs arg) tdl) in
     <:str_item< value rec $list:l$ >>
 | _ -> assert False ]

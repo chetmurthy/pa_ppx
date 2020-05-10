@@ -436,13 +436,13 @@ module Opentype :
   sig
     type 'a opentype = ..
 #ifdef PAPPX
-  [@@deriving yojson, show, eq]
+  [@@deriving yojson, show, eq, sexp]
 #else
   [@@deriving yojson]
 #endif
     type 'a opentype += A of 'a | B of string list
 #ifdef PAPPX
-    [@@deriving yojson, show, eq]
+    [@@deriving yojson, show, eq, sexp]
 #else
     [@@deriving yojson]
 #endif
@@ -450,13 +450,13 @@ module Opentype :
   struct
     type 'a opentype = ..
 #ifdef PAPPX
-  [@@deriving yojson, show, eq]
+  [@@deriving yojson, show, eq, sexp]
 #else
   [@@deriving yojson]
 #endif
     type 'a opentype += A of 'a | B of string list
 #ifdef PAPPX
-    [@@deriving yojson, show, eq]
+    [@@deriving yojson, show, eq, sexp]
 #else
     [@@deriving yojson]
 #endif
@@ -465,7 +465,7 @@ type 'a Opentype.opentype +=
   | C of 'a Opentype.opentype * float
   | A = Opentype.A
 #ifdef PAPPX
-   [@@deriving yojson, show, eq]
+   [@@deriving yojson, show, eq, sexp]
 #else
    [@@deriving yojson]
 #endif
@@ -503,6 +503,18 @@ let test_opentype _ctxt =
   ; assert_bool "B1<>B2" (not Opentype.(equal_opentype equal_i1 (B ["foo1"]) (B ["foo2"])))
   ; assert_bool "A<>B" (not Opentype.(equal_opentype equal_i1 (A 0) (B [])))
   ; assert_bool "C=C" (Opentype.equal_opentype equal_i1 (C (Opentype.A 42, 1.2)) (C (Opentype.A 42, 1.2)))
+  ; assert_roundtrip_sexp (Opentype.show_opentype pp_i1)
+    (Opentype.sexp_of_opentype sexp_of_i1)
+    (Opentype.opentype_of_sexp i1_of_sexp)
+    Opentype.(A 0) {|(A 0)|}
+  ; assert_roundtrip_sexp (Opentype.show_opentype pp_i1)
+    (Opentype.sexp_of_opentype sexp_of_i1)
+    (Opentype.opentype_of_sexp i1_of_sexp)
+    Opentype.(B ["foo"]) {|(B (foo))|}
+  ; assert_roundtrip_sexp (Opentype.show_opentype pp_i1)
+    (Opentype.sexp_of_opentype sexp_of_i1)
+    (Opentype.opentype_of_sexp i1_of_sexp)
+    (C (Opentype.A 42, 1.2)) {|(C (A 42) 1.2)|}
 #endif
 
 (* This will fail at type-check if we introduce features that increase
