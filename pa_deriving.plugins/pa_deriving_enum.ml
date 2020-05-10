@@ -48,6 +48,8 @@ value extract_value (attrs : MLast.attributes_no_anti) =
   exrec attrs
 ;
 
+module PM = ParamMap(struct value arg_ctyp_f loc ty = assert False ; end) ;
+
 value to_expression arg = fun [
 (*
     <:ctyp:< $lid:lid$ >> ->
@@ -155,7 +157,7 @@ value str_item_funs arg td =
   let loc = fst (uv td.tdNam) in
   let funs = str_item_top_funs arg td in
   let types = sig_item_top_funs arg td in
-  wrap_type_constraints loc [] funs types
+  PM.wrap_type_constraints loc [] funs types
 ;
 
 value sig_item_funs arg td =

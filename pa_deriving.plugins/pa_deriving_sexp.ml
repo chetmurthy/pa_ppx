@@ -62,6 +62,8 @@ module To = struct
 
 type attrmod_t = [ Nobuiltin ] ;
 
+module PM = ParamMap(struct value arg_ctyp_f loc pty = <:ctyp< $pty$ -> Sexplib.Sexp.t >> ; end) ;
+
 value to_sexp_fname arg tyname =
   (*if tyname = "t" then "sexp_of"
     else *)"sexp_of_"^tyname
@@ -262,9 +264,10 @@ value str_item_top_funs arg td =
   let to_sexpfname = to_sexp_fname arg tyname in
   let to_e = fmt_to_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
   let to_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $to_e$ >> in
-  let paramfun_patts = List.map (PM.arg_patt loc) param_map in
-  (to_sexpfname, Expr.abstract_over paramfun_patts
-     <:expr< fun arg -> $to_e$ arg >>)
+  let paramfun_patts = List.map (PM.arg_patt ~{mono=True} loc) param_map in
+  let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
+  [(to_sexpfname, Expr.abstract_over (paramtype_patts@paramfun_patts)
+     <:expr< fun arg -> $to_e$ arg >>)]
 ;
 
 value sig_item_top_funs arg td =
@@ -276,7 +279,15 @@ value sig_item_top_funs arg td =
   let argfmttys = List.map (fun pty -> <:ctyp< $pty$ -> Sexplib.Sexp.t >>) paramtys in  
   let ty = <:ctyp< $lid:tyname$ >> in
   let toftype = Ctyp.arrows_list loc argfmttys <:ctyp< $(Ctyp.applist ty paramtys)$ -> Sexplib.Sexp.t >> in
-  (to_sexpfname, toftype)
+  [(to_sexpfname, toftype)]
+;
+
+value str_item_funs arg td =
+  let loc = fst (uv td.tdNam) in
+  let param_map = PM.make "sexp" loc (uv td.tdPrm) in
+  let funs = str_item_top_funs arg td in
+  let types = sig_item_top_funs arg td in
+  PM.wrap_type_constraints loc param_map funs types
 ;
 end
 ;
@@ -284,6 +295,8 @@ end
 module Of = struct
 
 type attrmod_t = [ Nobuiltin ] ;
+
+module PM = ParamMap(struct value arg_ctyp_f loc pty = <:ctyp< Sexplib.Sexp.t -> $pty$ >> ; end) ;
 
 value of_sexp_fname arg tyname =
   (*if tyname = "t" then "of_sexp"
@@ -531,11 +544,12 @@ value str_item_top_funs arg td =
   let ty = td.tdDef in
   let tyname = uv tyname in
   let of_sexpfname = of_sexp_fname arg tyname in
-  let paramfun_patts = List.map (PM.arg_patt loc) param_map in
+  let paramfun_patts = List.map (PM.arg_patt ~{mono=True} loc) param_map in
+  let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
   let body = fmt_of_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
   let e = 
     let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $body$ >> in
-    (of_sexpfname, Expr.abstract_over paramfun_patts
+    (of_sexpfname, Expr.abstract_over (paramtype_patts@paramfun_patts)
        <:expr< fun arg -> $of_e$ arg >>) in
   [e]
 ;
@@ -553,21 +567,29 @@ value sig_item_top_funs arg td =
   [e]
 ;
 
+value str_item_funs arg td =
+  let loc = fst (uv td.tdNam) in
+  let param_map = PM.make "sexp" loc (uv td.tdPrm) in
+  let funs = str_item_top_funs arg td in
+  let types = sig_item_top_funs arg td in
+  PM.wrap_type_constraints loc param_map funs types
+;
+
 end
 ;
 
-value str_item_top_funs arg td =
+value str_item_funs arg td =
   (if Ctxt.is_plugin_name arg "sexp_of" || Ctxt.is_plugin_name arg "sexp" then
-    [To.str_item_top_funs arg td]
-  else []) @
+     To.str_item_funs arg td
+   else []) @
   (if Ctxt.is_plugin_name arg "of_sexp" || Ctxt.is_plugin_name arg "sexp" then
-     Of.str_item_top_funs arg td
+     Of.str_item_funs arg td
    else [])
 ;
 
 value sig_item_top_funs arg td =
   (if Ctxt.is_plugin_name arg "sexp_of" || Ctxt.is_plugin_name arg "sexp" then
-    [To.sig_item_top_funs arg td]
+    To.sig_item_top_funs arg td
   else []) @
   (if Ctxt.is_plugin_name arg "of_sexp" || Ctxt.is_plugin_name arg "sexp" then
      Of.sig_item_top_funs arg td
@@ -576,15 +598,8 @@ value sig_item_top_funs arg td =
 
 value str_item_funs arg td =
   let loc = fst (uv td.tdNam) in
-  let param_map = PM.make "sexp" loc (uv td.tdPrm) in
-  let l = str_item_top_funs arg td in
-  if l = [] then Ploc.raise loc (Failure "no functions generated") else
-  let types = sig_item_top_funs arg td in
-  List.map (fun (fname, body) ->
-      let fty = List.assoc fname types in
-      let fty = if param_map = [] then fty
-        else <:ctyp< ! $list:(List.map PM.type_id param_map)$ . $fty$ >> in
-      (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [] >>)) l
+  let l = str_item_funs arg td in
+  if l = [] then Ploc.raise loc (Failure "no functions generated") else l
 ;
 
 value sig_items arg td =
@@ -631,26 +646,21 @@ value type_params t =
   }
 ;
 
-value build_param_map t =
-  let pvl = type_params t in
-  PM.make_of_ids pvl
-;
-
 value expr_sexp arg = fun [
   <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "sexp_of" || id = "derive.sexp_of" ->
     let loc = loc_of_ctyp ty in
-    let param_map = build_param_map ty in
+    let param_map = ty |> type_params |> To.PM.make_of_ids in
     let e = To.fmt_to_top arg ~{msg=Printf.sprintf "%s.sexp_of"  (Ctxt.module_path_s arg)} param_map ty in
     let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
-    let parampats = List.map (PM.arg_patt loc) param_map in
+    let parampats = List.map (To.PM.arg_patt loc) param_map in
     Expr.abstract_over parampats e
 
 | <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "of_sexp" || id = "derive.of_sexp" ->
     let loc = loc_of_ctyp ty in
-    let param_map = build_param_map ty in
+    let param_map = ty |> type_params |> Of.PM.make_of_ids in
     let e = Of.fmt_of_top ~{msg=Printf.sprintf "%s.of_sexp"  (Ctxt.module_path_s arg)} arg param_map ty in
     let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
-    let parampats = List.map (PM.arg_patt loc) param_map in
+    let parampats = List.map (Of.PM.arg_patt loc) param_map in
     Expr.abstract_over parampats e
 | _ -> assert False ]
 ;

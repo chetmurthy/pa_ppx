@@ -77,6 +77,8 @@ value field2req_consfields_funpats loc = (fun (_, fname, _, ty, attrs) ->
     ])
 ;
 
+module PM = ParamMap(struct value arg_ctyp_f loc ty = assert False ; end) ;
+
 value fmt_expression arg : ctyp -> expr = fun [
   <:ctyp:< { $list:fields$ } >> ->
   let (has_main, fields) = reorder_fields arg fields in
@@ -143,7 +145,7 @@ value sig_item_top_funs arg td =
     let all_required = List.for_all fst req_paramtys in
 
   let thety = Ctyp.applist <:ctyp< $lid:tyname$ >>
-     (List.map (fun p -> <:ctyp< ' $PM.type_id p$ >>) param_map) in
+     (List.map (PM.param_ctyp loc) param_map) in
 
   let thety = if has_main || all_required then thety else <:ctyp< unit -> $thety$ >> in
   let makeftype = Ctyp.arrows_list loc paramtys thety in
@@ -156,7 +158,7 @@ value str_item_funs arg td =
   let param_map = PM.make "make" loc (uv td.tdPrm) in
   let funs = str_item_top_funs arg td in
   let types = sig_item_top_funs arg td in
-  wrap_type_constraints loc param_map funs types
+  PM.wrap_type_constraints loc param_map funs types
 ;
 
 value sig_items arg td =

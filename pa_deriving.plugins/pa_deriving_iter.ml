@@ -23,6 +23,8 @@ value iter_fname arg tyname =
 
 type attrmod_t = [ Nobuiltin ] ;
 
+module PM = ParamMap(struct value arg_ctyp_f loc pty = <:ctyp< $pty$ -> Stdlib.Unit.t >> ; end) ;
+
 value fmt_expression arg param_map ty0 =
   let rec fmtrec ?{attrmod=None} = fun [
     <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
@@ -192,8 +194,9 @@ value str_item_top_funs arg td =
   let eqfname = iter_fname arg tyname in
   let e = fmt_top arg param_map ty in
 
-  let paramfun_patts = List.map (PM.arg_patt loc) param_map in
-  [(eqfname, Expr.abstract_over paramfun_patts
+  let paramfun_patts = List.map (PM.arg_patt ~{mono=True} loc) param_map in
+  let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
+  [(eqfname, Expr.abstract_over (paramtype_patts@paramfun_patts)
       <:expr< fun arg -> $e$ arg >>)]
 ;
 
@@ -202,8 +205,8 @@ value sig_item_top_funs arg td =
   let param_map = PM.make "iter" loc (uv td.tdPrm) in
   let tyname = uv tyname in
   let iterfname = iter_fname arg tyname in
-  let paramtys = List.map (fun p -> <:ctyp< ' $PM.type_id p$ >>) param_map in
-  let argfmttys = List.map (fun pty -> <:ctyp< $pty$ -> Stdlib.Unit.t >>) paramtys in  
+  let paramtys = List.map (PM.param_ctyp loc) param_map in
+  let argfmttys = List.map (PM.arg_ctyp loc) param_map in  
   let ty = <:ctyp< $lid:tyname$ >> in
   let thety = Ctyp.applist ty paramtys in
   let iterftype = Ctyp.arrows_list loc argfmttys <:ctyp< $thety$ -> Stdlib.Unit.t >> in
@@ -215,7 +218,7 @@ value str_item_funs arg td =
   let param_map = PM.make "iter" loc (uv td.tdPrm) in
   let funs = str_item_top_funs arg td in
   let types = sig_item_top_funs arg td in
-  wrap_type_constraints loc param_map funs types
+  PM.wrap_type_constraints loc param_map funs types
 ;
 
 value sig_items arg td =

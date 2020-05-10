@@ -23,6 +23,8 @@ value map_fname arg tyname =
 
 type attrmod_t = [ Nobuiltin ] ;
 
+module PM = ParamMap(struct value arg_ctyp_f loc ty = assert False ; end) ;
+
 value fmt_expression arg param_map ty0 =
   let rec fmtrec ?{attrmod=None} = fun [
     <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
@@ -194,7 +196,7 @@ value str_item_top_funs arg td =
   let eqfname = map_fname arg tyname in
   let e = fmt_top arg param_map ty in
 
-  let paramfun_patts = List.map (PM.arg_patt loc) param_map in
+  let paramfun_patts = List.map (PM.arg_patt ~{naked=True} loc) param_map in
   [(eqfname, Expr.abstract_over paramfun_patts
       <:expr< fun arg -> $e$ arg >>)]
 ;

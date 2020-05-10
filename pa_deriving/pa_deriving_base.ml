@@ -13,7 +13,7 @@ open Pa_passthru ;
 open Ppxutil ;
 open Surveil ;
 
-module ParamMap = struct
+module ParamMap(ARG : sig value arg_ctyp_f : Ploc.t -> ctyp -> ctyp ; end) = struct
 
 type param_t =
   {
@@ -25,8 +25,25 @@ type param_t =
 value type_id p = p.type_id ;
 value arg_id p = p.arg_id ;
 
+value param_ctyp ?{mono=False} loc p =
+if mono then
+  <:ctyp< $lid:type_id p$ >>
+else
+  <:ctyp< ' $type_id p$ >>
+;
+
+value arg_ctyp ?{mono=False} loc p =
+  let param_type = param_ctyp ~{mono=mono} loc p in
+  ARG.arg_ctyp_f loc param_type
+;
 value arg_expr loc p = <:expr< $lid:arg_id p$ >> ;
-value arg_patt loc p = <:patt< $lid:arg_id p$ >> ;
+value arg_patt ?{naked=False} ?{mono=False} loc p =
+  if naked then
+    <:patt< $lid:arg_id p$ >>
+  else
+    let cty = arg_ctyp ~{mono=mono} loc p in
+    <:patt< ( $lid:arg_id p$ : $cty$ ) >>
+;
 
 value find id l =
   match List.find_opt (fun p -> type_id p = id) l with [
@@ -53,18 +70,17 @@ value quantify_over_ctyp param_map fty =
   if param_map = [] then fty
   else <:ctyp< ! $list:(List.map type_id param_map)$ . $fty$ >>
 ;
-end
-;
-
-module PM = ParamMap ;
 
 value wrap_type_constraints loc param_map funs types =
   List.map (fun (fname, body) ->
     let fty = List.assoc fname types in
-    let fty = PM.quantify_over_ctyp param_map fty in
+    let fty = quantify_over_ctyp param_map fty in
     let attrwarn39 = <:attribute_body< "ocaml.warning" "-39" ; >> in
     let attrwarn39 = <:vala< attrwarn39 >> in
     let attrwarn33 = <:attribute_body< "ocaml.warning" "-33" ; >> in
     let attrwarn33 = <:vala< attrwarn33 >> in
     (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39; attrwarn33] >>)) funs
+;
+
+end
 ;

@@ -59,6 +59,8 @@ value extract_printer (attrs : MLast.attributes_no_anti) =
 
 type attrmod_t = [ Nobuiltin ] ;
 
+module PM = ParamMap(struct value arg_ctyp_f loc ty = <:ctyp< Fmt.t $ty$ >> ; end) ;
+
 value fmt_expression arg param_map ty0 =
   let rec fmtrec ?{attrmod=None} = fun [
 
@@ -279,8 +281,8 @@ value sig_item_top_funs arg td =
   let tyname = uv tyname in
   let ppfname = pp_fname arg tyname in
   let showfname = show_fname arg tyname in
-  let paramtys = List.map (fun p -> <:ctyp< ' $PM.type_id p$ >>) param_map in
-  let argfmttys = List.map (fun pty -> <:ctyp< Fmt.t $pty$ >>) paramtys in  
+  let paramtys = List.map (PM.param_ctyp loc) param_map in
+  let argfmttys = List.map (PM.arg_ctyp loc) param_map in  
   let ty = <:ctyp< $lid:tyname$ >> in
   let ppftype = Ctyp.arrows_list loc argfmttys <:ctyp< Fmt.t $(Ctyp.applist ty paramtys)$ >> in
   let showftype = Ctyp.arrows_list loc argfmttys <:ctyp< $(Ctyp.applist ty paramtys)$ -> Stdlib.String.t >> in
@@ -297,13 +299,14 @@ value str_item_top_funs arg td =
   let showfname = show_fname arg tyname in
   let e = fmt_top arg param_map ty in
 
-  let paramfun_patts = List.map (PM.arg_patt loc) param_map in
+  let paramfun_patts = List.map (PM.arg_patt ~{mono=True} loc) param_map in
+  let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
   let paramfun_exprs = List.map (PM.arg_expr loc) param_map in
   let ppfexp = <:expr< $lid:ppfname$ >> in
 
-  [(ppfname, Expr.abstract_over paramfun_patts
+  [(ppfname, Expr.abstract_over (paramtype_patts@paramfun_patts)
       <:expr< fun (ofmt : Format.formatter) arg -> $e$ ofmt arg >>);
-   (showfname, Expr.abstract_over paramfun_patts
+   (showfname, Expr.abstract_over (paramtype_patts@paramfun_patts)
       <:expr< fun arg -> Format.asprintf "%a" $(Expr.applist ppfexp paramfun_exprs)$ arg >>)]
 ;
 
@@ -312,7 +315,7 @@ value str_item_funs arg td =
   let param_map = PM.make "show" loc (uv td.tdPrm) in
   let funs = str_item_top_funs arg td in
   let types = sig_item_top_funs arg td in
-  wrap_type_constraints loc param_map funs types
+  PM.wrap_type_constraints loc param_map funs types
 ;
 
 value sig_items arg td =
