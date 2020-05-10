@@ -434,17 +434,41 @@ let test_nostrict _ctxt =
 
 module Opentype :
   sig
-    type 'a opentype = .. [@@deriving yojson]
-    type 'a opentype += A of 'a | B of string list [@@deriving yojson]
+    type 'a opentype = ..
+#ifdef PAPPX
+  [@@deriving yojson, show]
+#else
+  [@@deriving yojson]
+#endif
+    type 'a opentype += A of 'a | B of string list
+#ifdef PAPPX
+    [@@deriving yojson, show]
+#else
+    [@@deriving yojson]
+#endif
   end =
   struct
-    type 'a opentype = .. [@@deriving yojson]
-    type 'a opentype += A of 'a | B of string list [@@deriving yojson]
+    type 'a opentype = ..
+#ifdef PAPPX
+  [@@deriving yojson, show]
+#else
+  [@@deriving yojson]
+#endif
+    type 'a opentype += A of 'a | B of string list
+#ifdef PAPPX
+    [@@deriving yojson, show]
+#else
+    [@@deriving yojson]
+#endif
   end
 type 'a Opentype.opentype +=
   | C of 'a Opentype.opentype * float
   | A = Opentype.A
+#ifdef PAPPX
+   [@@deriving yojson, show]
+#else
    [@@deriving yojson]
+#endif
 let rec pp_opentype f fmt = function
   A x -> Format.fprintf fmt "A(%s)" (f x)
 | Opentype.B l -> Format.fprintf fmt "B(%s)" (String.concat ", " l)
@@ -464,6 +488,14 @@ let test_opentype _ctxt =
                    (Opentype.B ["one"; "two"]) "[\"B\", [ \"one\", \"two\"] ]";
   assert_roundtrip pp_ot to_yojson of_yojson
                    (C (Opentype.A 42, 1.2)) "[\"C\", [\"A\", 42], 1.2]"
+#ifdef PAPPX
+  ; assert_equal ~printer:(fun x -> x)
+    "(Test_ppx_yojson.Opentype.A 0)" Opentype.(show_opentype pp_i1 (A 0))
+  ; assert_equal ~printer:(fun x -> x)
+    {|(Test_ppx_yojson.Opentype.B ["one"; "two"])|} Opentype.(show_opentype pp_i1 (B ["one"; "two"]))
+  ; assert_equal ~printer:(fun x -> x)
+    "(Test_ppx_yojson.C ((Test_ppx_yojson.Opentype.A 42), 1.2))" (Opentype.show_opentype pp_i1 (C (Opentype.A 42, 1.2)))
+#endif
 
 (* This will fail at type-check if we introduce features that increase
    the default generated signatures. It is representative of user code
@@ -767,9 +799,7 @@ let suite = "Test ppx_yojson" >::: [
     "test_custom"    >:  CustomConversions.suite;
     "test_shortcut"  >:: test_shortcut;
     "test_nostrict"  >:: test_nostrict;
-#ifndef PAPPX
     "test_opentype"  >:: test_opentype;
-#endif
     "test_recursive" >:: test_recursive;
     "test_int_redefined" >:: test_int_redefined;
     "test_hashtbl_sexp" >:: HT.test_hashtbl_sexp;

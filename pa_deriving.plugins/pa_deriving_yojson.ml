@@ -357,8 +357,6 @@ value extend_str_items arg si = match si with [
       <:expr< fun [ $list:branches$ ] >> -> branches
     | _ -> assert False
     ] in
-    (* remove the catch-branch *)
-    let (_, branches) = sep_last branches in 
     let paramexps = List.map (PM.arg_expr loc) param_map in
     let parampats = List.map (PM.arg_patt ~{mono=True} loc) param_map in
     let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in

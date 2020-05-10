@@ -326,15 +326,116 @@ value sig_items arg td =
 ;
 
 
+value extend_sig_items arg si = match si with [
+  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+    let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
+    let (loc, tyname) = uv td.tdNam in
+    let param_map = PM.make "show" loc (uv td.tdPrm) in
+    let sil = sig_items arg td in
+    let (ppfname, ppftype) = List.hd (sig_item_top_funs arg td) in
+    let modname = Printf.sprintf "M_%s" ppfname in
+    let field_type = PM.quantify_over_ctyp param_map ppftype in
+    [ <:sig_item< module $uid:modname$ :
+    sig
+      type nonrec $lid:ppfname$ = { f: mutable  $field_type$ } ;
+      value f : $lid:ppfname$ ;
+    end >> :: sil ]
+| _ -> assert False
+]
+;
+
+value extend_str_items arg si = match si with [
+  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+    let td = match z with [ <:str_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
+    let (loc, tyname) = uv td.tdNam in
+    let param_map = PM.make "show" loc (uv td.tdPrm) in
+    let (ppfname, ppftype) = List.hd (sig_item_top_funs arg td) in
+    let modname = Printf.sprintf "M_%s" ppfname in
+    let showfname = show_fname arg (uv tyname) in
+    let showfexp =
+      let paramfun_patts = List.map (PM.arg_patt ~{mono=True} loc) param_map in
+      let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
+      let paramfun_exprs = List.map (PM.arg_expr loc) param_map in
+      let ppfexp = <:expr< $uid:modname$ . f . $uid:modname$ . f >> in
+      Expr.abstract_over (paramtype_patts@paramfun_patts)
+        <:expr< fun arg -> Format.asprintf "%a" $(Expr.applist ppfexp paramfun_exprs)$ arg >> in
+
+    let msg1 = Printf.sprintf "%s: Maybe a [@@deriving show] is missing when extending the type " ppfname in
+    let msg2 = td.tdNam |> uv |> snd |> uv in
+
+    let field_type = PM.quantify_over_ctyp param_map ppftype in
+    let fexp = <:expr< fun _ -> invalid_arg ($str:msg1$ ^ $str:msg2$) >> in
+    let fexp = Expr.abstract_over (List.map (PM.arg_patt ~{mono=True} loc) param_map) fexp in
+    let fexp = Expr.abstract_over (List.map (fun p -> <:patt< ( type $lid:PM.type_id p$ ) >>) param_map) fexp in
+    [ <:str_item< module $uid:modname$ =
+    struct
+      type nonrec $lid:ppfname$ = { f: mutable  $field_type$ } ;
+      value f = { f = $fexp$ } ;
+    end >> ;
+      <:str_item< value $lid:ppfname$ x = $uid:modname$ . f . $uid:modname$ . f x >> ;
+      <:str_item< value $lid:showfname$ = $showfexp$ >>
+    ]
+
+| <:str_item:< type $lilongid:t$ $list:params$ += $_priv:_$ [ $list:ecs$ ] $_itemattrs:_$ >> ->
+    let modname = Printf.sprintf "M_%s" (pp_fname arg (uv (snd t))) in
+    let modname = match fst t with [
+      None -> <:longident< $uid:modname$ >>
+    | Some li -> <:longident< $longid:li$ . $uid:modname$ >>
+    ] in
+    let modname = module_expr_of_longident modname in
+    let param_map = PM.make "show" loc params in
+    let ec2gc = fun [
+      EcTuple gc -> [gc]
+    | EcRebind _ _ _ -> []
+    ] in
+    let gcl = List.concat (List.map ec2gc ecs) in
+    let ty = <:ctyp< [ $list:gcl$ ] >> in
+    let e = fmt_expression arg param_map ty in
+    let branches = match e with [
+      <:expr< fun ofmt -> fun [ $list:branches$ ] >> -> branches
+    | _ -> assert False
+    ] in
+    let paramexps = List.map (PM.arg_expr loc) param_map in
+    let parampats = List.map (PM.arg_patt ~{mono=True} loc) param_map in
+    let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
+    let catch_branch = (<:patt< z >>, <:vala< None >>,
+                        Expr.applist <:expr< fallback >> (paramexps @[<:expr< ofmt >> ;  <:expr< z >> ])) in
+    let branches = branches @ [ catch_branch ] in
+    let e = <:expr< fun ofmt -> fun [ $list:branches$ ] >> in
+    let e = Expr.abstract_over (paramtype_patts@parampats) e in
+    [ <:str_item<
+      let open $!:False$ $modname$ in
+      let fallback = f . f in
+      f.f := $e$ >> ]
+
+| _ -> assert False
+]
+;
+
 value str_item_gen_show name arg = fun [
-  <:str_item:< type $_flag:_$ $list:tdl$ >> ->
+  <:str_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >> as z ->
+    let l = extend_str_items arg z in
+    <:str_item< declare $list:l$ end >>
+
+| <:str_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ [ $list:_$ ] $_itemattrs:_$ >> as z ->
+    let l = extend_str_items arg z in
+    <:str_item< declare $list:l$ end >>
+
+| <:str_item:< type $_flag:_$ $list:tdl$ >> ->
     let l = List.concat (List.map (str_item_funs arg) tdl) in
     <:str_item< value rec $list:l$ >>
 | _ -> assert False ]
 ;
 
 value sig_item_gen_show name arg = fun [
-  <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
+  <:sig_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >> as z ->
+    let l = extend_sig_items arg z in
+    <:sig_item< declare $list:l$ end >>
+
+| <:sig_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ [ $list:_$ ] $_itemattrs:_$ >> as z ->
+    <:sig_item< declare $list:[]$ end >>
+
+| <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
     let l = List.concat (List.map (sig_items arg) tdl) in
     <:sig_item< declare $list:l$ end >>
 | _ -> assert False ]
