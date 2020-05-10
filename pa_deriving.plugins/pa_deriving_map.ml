@@ -224,7 +224,7 @@ value sig_item_top_funs arg td =
 ;
 
 value str_item_funs arg td =
-  let loc = fst (uv td.tdNam) in
+  let loc = loc_of_type_decl td in
   let param_map = PM.make "map" loc (uv td.tdPrm) in
   let l = str_item_top_funs arg td in
   let types = sig_item_top_funs arg td in
@@ -238,7 +238,7 @@ value str_item_funs arg td =
 ;
 
 value sig_items arg td =
-  let loc = fst (uv td.tdNam) in
+  let loc = loc_of_type_decl td in
   let l = sig_item_top_funs arg td in
   List.map (fun (fname, (ty,_)) ->
       <:sig_item< value $lid:fname$ : $ty$>>) l
@@ -247,8 +247,6 @@ value sig_items arg td =
 value str_item_gen_map0 arg td =
   str_item_funs arg td
 ;
-
-value loc_of_type_decl td = fst (uv td.tdNam) ;
 
 value str_item_gen_map name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->

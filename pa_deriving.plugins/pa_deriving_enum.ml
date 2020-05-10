@@ -154,14 +154,14 @@ value sig_item_top_funs arg td =
 ;
 
 value str_item_funs arg td =
-  let loc = fst (uv td.tdNam) in
+  let loc = loc_of_type_decl td in
   let funs = str_item_top_funs arg td in
   let types = sig_item_top_funs arg td in
   PM.wrap_type_constraints loc [] funs types
 ;
 
 value sig_item_funs arg td =
-  let loc = fst (uv td.tdNam) in
+  let loc = loc_of_type_decl td in
   let l = sig_item_top_funs arg td in
   List.map (fun (fname, ty) ->
       <:sig_item< value $lid:fname$ : $ty$>>) l
@@ -174,8 +174,6 @@ value str_item_gen_enum0 arg td =
   else
     str_item_funs arg td
 ;
-
-value loc_of_type_decl td = fst (uv td.tdNam) ;
 
 value str_item_gen_enum name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->

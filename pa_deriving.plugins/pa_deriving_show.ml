@@ -319,14 +319,12 @@ value str_item_funs arg td =
 ;
 
 value sig_items arg td =
-  let loc = fst (uv td.tdNam) in
+  let loc = loc_of_type_decl td in
   let l = sig_item_top_funs arg td in
   List.map (fun (fname, ty) ->
       <:sig_item< value $lid:fname$ : $ty$>>) l
 ;
 
-
-value loc_of_type_decl td = fst (uv td.tdNam) ;
 
 value str_item_gen_show name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->

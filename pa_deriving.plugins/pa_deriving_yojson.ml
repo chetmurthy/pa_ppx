@@ -275,7 +275,7 @@ value sig_item_funs arg td =
 value sig_items arg td = do {
   assert (not (match td.tdDef with [ <:ctyp< .. >> -> True | _ -> False ])) ;
   let (to_yojsonfname, toftype) = sig_item_fun0 arg td in
-  let loc = fst (uv td.tdNam) in
+  let loc = loc_of_type_decl td in
   [ <:sig_item< value $lid:to_yojsonfname$ : $toftype$>> ]
 }
 ;
@@ -664,7 +664,7 @@ value sig_item_fun0 arg td =
 ;
 
 value gen_sig_items arg td =
-  let loc = fst (uv td.tdNam) in
+  let loc = loc_of_type_decl td in
   let mk1sig (fname, fty) = <:sig_item< value $lid:fname$ : $fty$>> in
   match sig_item_fun0 arg td with [
     (f, None) -> [mk1sig f]
