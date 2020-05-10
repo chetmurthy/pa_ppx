@@ -299,5 +299,5 @@ let ef = EF.{ (ef) with
       fun arg ->
         registered_expr_extension arg z
   ] } in
-  Pa_passthru.(install { name = "pa_deriving" ; ef = ef ; before = [] ; after = ["pa_import"] })
+  Pa_passthru.(install { name = "pa_deriving" ; ef = ef ; before = [] ; after = ["pa_import";"surveil"] })
 ;
