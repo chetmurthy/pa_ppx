@@ -291,7 +291,9 @@ value str_item_funs arg td =
 ;
 
 value extend_sig_items arg si = match si with [
-  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >>
+| <:sig_item< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
+ as z ->
     let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
     let (loc, tyname) = uv td.tdNam in
     let param_map = PM.make "sexp" loc (uv td.tdPrm) in
@@ -309,7 +311,9 @@ value extend_sig_items arg si = match si with [
 ;
 
 value extend_str_items arg si = match si with [
-  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >>
+| <:str_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
+ as z ->
     let td = match z with [ <:str_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
     let param_map = PM.make "sexp" loc (uv td.tdPrm) in
     let (to_sexpfname, toftype) = List.hd (sig_item_top_funs arg td) in
@@ -658,7 +662,9 @@ value str_item_funs arg td =
 ;
 
 value extend_sig_items arg si = match si with [
-  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+  <:sig_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >>
+| <:sig_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
+ as z ->
     let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
     let (loc, tyname) = uv td.tdNam in
     let param_map = PM.make "sexp" loc (uv td.tdPrm) in
@@ -676,7 +682,9 @@ value extend_sig_items arg si = match si with [
 ;
 
 value extend_str_items arg si = match si with [
-  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> as z ->
+  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> 
+| <:str_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
+  as z ->
     let td = match z with [ <:str_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
     let param_map = PM.make "sexp" loc (uv td.tdPrm) in
     let (of_sexpfname, offtype) = List.hd (sig_item_top_funs arg td) in
@@ -791,7 +799,9 @@ value extend_str_items arg td =
 ;
 
 value str_item_gen_sexp name arg = fun [
-  <:str_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >> as z ->
+  <:str_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >>
+| <:str_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
+ as z ->
     let l = extend_str_items arg z in
     <:str_item< declare $list:l$ end >>
 
@@ -807,7 +817,9 @@ value str_item_gen_sexp name arg = fun [
 ;
 
 value sig_item_gen_sexp name arg = fun [
-  <:sig_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >> as z ->
+  <:sig_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >>
+| <:sig_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
+ as z ->
     let l = extend_sig_items arg z in
     <:sig_item< declare $list:l$ end >>
 

@@ -69,6 +69,7 @@ TESTS= \
 	test_passthru_hashrecons.byte \
 	test_ppx_yojson.byte \
 	test_ppx_yojson.ppx.byte \
+	test_extensible_variants.byte \
 
 
 all: $(CMO) $(TESTS) test
