@@ -76,7 +76,12 @@ let ef = EF.{ (ef) with
     fun arg ->
       Some (rewrite_ctyp arg z)
   ] } in
-  Pa_passthru.(install { name = "pa_assert"; ef =  ef ; before = ["pa_inline_test"; "pa_expect_test"; "pa_deriving"] ; after = [] })
+Pa_passthru.(install {
+    name = "pa_assert";
+    ef =  ef ;
+    before = ["pa_deriving"] ;
+    after = ["pa_inline_test"; "pa_expect_test"]
+  })
 ;
 
 install();

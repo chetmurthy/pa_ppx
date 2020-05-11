@@ -1,8 +1,5 @@
 let filemod = "Test_extensible_variants"
 open OUnit2
-open Sexplib.Sexp
-open Sexplib.Std
-open Sexplib0.Sexp_conv
 
 type json =
   [ `Assoc of (string * json) list
@@ -31,7 +28,7 @@ let assert_roundtrip pp_obj to_json of_json obj str =
 
 let assert_roundtrip_sexp pp_obj to_sexp of_sexp obj str =
   let sexp = Sexplib.Sexp.of_string str in
-  assert_equal ~printer:to_string_hum sexp (to_sexp obj);
+  assert_equal ~printer:Sexplib0.Sexp.to_string_hum sexp (to_sexp obj);
   assert_equal ~printer:pp_obj obj (of_sexp sexp)
 
 let assert_failure pp_obj of_json err str =

@@ -4,9 +4,11 @@ let filemod = "Test_ppx_yojson"
 let filemod = "Test_ppx_yojson.ppx"
 #endif
 open OUnit2
+#ifndef PAPPX
 open Sexplib.Sexp
 open Sexplib.Std
 open Sexplib0.Sexp_conv
+#endif
 
 type json =
   [ `Assoc of (string * json) list
@@ -35,7 +37,7 @@ let assert_roundtrip pp_obj to_json of_json obj str =
 
 let assert_roundtrip_sexp pp_obj to_sexp of_sexp obj str =
   let sexp = Sexplib.Sexp.of_string str in
-  assert_equal ~printer:to_string_hum sexp (to_sexp obj);
+  assert_equal ~printer:Sexplib0.Sexp.to_string_hum sexp (to_sexp obj);
   assert_equal ~printer:pp_obj obj (of_sexp sexp)
 
 let assert_failure pp_obj of_json err str =
@@ -254,7 +256,7 @@ let test_id _ctxt =
 
 type id2 = Sexplib.Sexp.t [@@deriving sexp]
 let test_id2 _ctxt =
-  assert_roundtrip_sexp to_string_hum sexp_of_id2 id2_of_sexp
+  assert_roundtrip_sexp Sexplib0.Sexp.to_string_hum sexp_of_id2 id2_of_sexp
                    (Atom "42") "42"
 
 module Custvar1 = struct
@@ -441,7 +443,7 @@ let test_nostrict _ctxt =
                                             "some_other_field", (`Int 43)])) ;
   assert_equal ~printer:show_nostrict
                { nostrict_field = 42 }
-               (nostrict_of_sexp (of_string "((nostrict_field 42))"))
+               (nostrict_of_sexp (Sexplib.Sexp.of_string "((nostrict_field 42))"))
 
 module Opentype :
   sig
@@ -731,14 +733,14 @@ let test_int_redefined ctxt =
   in
   let expected = `Int 1 in
   assert_equal ~ctxt ~printer:show_json expected M.x ;
-  assert_equal ~ctxt ~printer:to_string_hum (Atom"1") M.x'
+  assert_equal ~ctxt ~printer:Sexplib0.Sexp.to_string_hum (Atom"1") M.x'
 
 #ifdef PAPPX
 module HT = struct
 type ('a, 'b) t = ('a, 'b) Hashtbl.t [@@deriving sexp, yojson]
 let test_hashtbl_sexp ctxt =
   let canon = function
-    List l -> List (List.sort Stdlib.compare l)
+    Sexplib0.Sexp.List l -> Sexplib0.Sexp.List (List.sort Stdlib.compare l)
   | e -> e
   in
   let open Hashtbl in
@@ -748,12 +750,12 @@ let test_hashtbl_sexp ctxt =
     add ht 2 3 ;
     add ht 3 4 ;
     add ht 3 5 ;
-    assert_equal ~ctxt ~printer:to_string_hum
-      (canon (of_string "((1 2) (2 3) (3 4) (3 5))"))
+    assert_equal ~ctxt ~printer:Sexplib0.Sexp.to_string_hum
+      (canon (Sexplib.Sexp.of_string "((1 2) (2 3) (3 4) (3 5))"))
       (canon (sexp_of_t sexp_of_i1 sexp_of_i1 ht))
   end ;
   begin
-    let ht = t_of_sexp i1_of_sexp i1_of_sexp  (of_string "((1 2) (2 3) (3 5))") in
+    let ht = t_of_sexp i1_of_sexp i1_of_sexp  (Sexplib.Sexp.of_string "((1 2) (2 3) (3 5))") in
     assert_equal 2 (Hashtbl.find ht 1)  ;
     assert_equal 3 (Hashtbl.find ht 2)  ;
     assert_equal 5 (Hashtbl.find ht 3)  ;
