@@ -11,9 +11,9 @@ RM=rm
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 
-PACKAGES := rresult,fmt,camlp5,yojson
+PACKAGES := rresult,fmt,camlp5,yojson,sexplib
 TARGET := pa_ppx_runtime.cma
-CMO := runtime.cmo
+CMO := runtime.cmo exceptions.cmo
 CMI := $(CMO:.cmo=.cmi)
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_runtime
 
@@ -49,8 +49,48 @@ $(TARGET:.cma=.cmxa): pa_ppx_runtime.cmx
 $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
+initialize-exn-i:: exceptions.ORIG.mli
+	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax -syntax camlp5o $< > $@.NEW
+	mv $@.NEW exceptions.mli
+
+bootstrap-exn-i: exceptions.ORIG.mli
+	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax,pa_ppx_import.syntax,pa_ppx_deriving_plugins.std.syntax,pa_ppx_deriving_plugins.yojson.syntax,pa_ppx_deriving_plugins.sexp.syntax \
+	-syntax camlp5o \
+	-ppopt -pa_ppx-runtime -ppopt "" \
+	-ppopt -D -ppopt BOOTSTRAP \
+	-ppopt -pa_import-package -ppopt $(PACKAGES) \
+	-ppopt -pa_import-I -ppopt . \
+	$< > $@.NEW
+	mv $@.NEW  exceptions.mli
+
+refold-exn-i: exceptions.mli
+	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r.syntax,pa_ppx_undo_deriving.syntax \
+	-syntax camlp5r \
+	$< > $@.NEW
+	mv $@.NEW  exceptions.REFOLD.mli
+
+initialize-exn:: exceptions.ORIG.ml
+	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax -syntax camlp5o $< > $@.NEW
+	mv $@.NEW exceptions.ml
+
+bootstrap-exn: exceptions.ORIG.ml
+	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax,pa_ppx_import.syntax,pa_ppx_deriving_plugins.std.syntax,pa_ppx_deriving_plugins.yojson.syntax,pa_ppx_deriving_plugins.sexp.syntax \
+	-syntax camlp5o \
+	-ppopt -pa_ppx-runtime -ppopt "" \
+	-ppopt -D -ppopt BOOTSTRAP \
+	-ppopt -pa_import-package -ppopt $(PACKAGES) \
+	-ppopt -pa_import-I -ppopt . \
+	$< > $@.NEW
+	mv $@.NEW  exceptions.ml
+
+refold-exn: exceptions.ml
+	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r.syntax,pa_ppx_undo_deriving.syntax \
+	-syntax camlp5r \
+	$< > $@.NEW
+	mv $@.NEW  exceptions.REFOLD.ml
+
 depend::
-	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli > .depend.NEW \
+	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r runtime.ml exceptions.ml exceptions.mli > .depend.NEW \
 		&& mv .depend.NEW .depend
 
 -include .depend

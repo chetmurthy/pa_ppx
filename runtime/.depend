@@ -1,2 +1,7 @@
-pa_ppx_runtime.cmo :
-pa_ppx_runtime.cmx :
+exceptions.cmo : \
+    exceptions.cmi
+exceptions.cmx : \
+    exceptions.cmi
+exceptions.cmi :
+runtime.cmo :
+runtime.cmx :

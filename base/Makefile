@@ -14,7 +14,7 @@ MKCAMLP5 := $(LAUNCH) $(MKCAMLP5)
 
 PACKAGES := $(PACKAGES),rresult,fmt,pa_ppx_utils,compiler-libs.common
 TARGET := pa_ppx_base.cma
-CMO := pp_MLast.cmo ppxutil.cmo pa_passthru.cmo
+CMO := base.cmo pp_MLast.cmo ppxutil.cmo pa_passthru.cmo
 CMI := $(CMO:.cmo=.cmi)
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_base
 
@@ -81,10 +81,10 @@ clean::
 	rm -rf META camlp5.pa_ppx_base
 
 $(TARGET): pa_ppx_base.cmo
-	$(OCAMLFIND) ocamlc $(DEBUG) $^ -a -o $(TARGET)
+	$(OCAMLFIND) ocamlc $(DEBUG) $< -a -o $(TARGET)
 
 $(TARGET:.cma=.cmxa): pa_ppx_base.cmx
-	$(OCAMLFIND) ocamlopt $(DEBUG) $^ -a -o $(TARGET:.cma=.cmxa)
+	$(OCAMLFIND) ocamlopt $(DEBUG) $< -a -o $(TARGET:.cma=.cmxa)
 
 $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)

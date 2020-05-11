@@ -6,6 +6,12 @@ deriving_harness.cmx : \
     pa_deriving.cmx
 pa_deriving.cmo :
 pa_deriving.cmx :
+pa_deriving_base.cmo : \
+    surveil.cmo
+pa_deriving_base.cmx : \
+    surveil.cmx
+pa_rebindto.cmo :
+pa_rebindto.cmx :
 surveil.cmo : \
     pa_deriving.cmo
 surveil.cmx : \

@@ -7,5 +7,7 @@ pp_MLast.cmo : \
 pp_MLast.cmx : \
     pp_MLast.cmi
 pp_MLast.cmi :
-ppxutil.cmo :
-ppxutil.cmx :
+ppxutil.cmo : \
+    pp_MLast.cmi
+ppxutil.cmx : \
+    pp_MLast.cmx
