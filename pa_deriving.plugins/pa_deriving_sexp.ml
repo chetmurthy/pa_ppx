@@ -270,7 +270,7 @@ value str_item_top_funs arg td =
     monomorphize_ctyp ty in
   let to_sexpfname = to_sexp_fname arg tyname in
   let to_e = fmt_to_top arg ~{coercion=coercion} ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map tk in
-  let to_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $to_e$ >> in
+  let to_e = <:expr< let open! Pa_ppx_runtime.Runtime in let open! Stdlib in $to_e$ >> in
   let paramfun_patts = List.map (PM.arg_patt ~{mono=True} loc) param_map in
   let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
   let argexp =
@@ -641,7 +641,7 @@ value str_item_top_funs arg td =
   let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
   let body = fmt_of_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
   let e = 
-    let of_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $body$ >> in
+    let of_e = <:expr< let open! Pa_ppx_runtime.Runtime in let open! Stdlib in $body$ >> in
     (of_sexpfname, Expr.abstract_over (paramtype_patts@paramfun_patts)
        <:expr< fun arg -> $of_e$ arg >>) in
   [e]
@@ -852,7 +852,7 @@ value expr_sexp arg = fun [
     let param_map = ty |> type_params |> To.PM.make_of_ids in
     let coercion = monomorphize_ctyp ty in
     let e = To.fmt_to_top arg ~{coercion=coercion} ~{msg=Printf.sprintf "%s.sexp_of"  (Ctxt.module_path_s arg)} param_map ty in
-    let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
+    let e = <:expr< let open! Pa_ppx_runtime.Runtime in let open! Stdlib in $e$ >> in
     let parampats = List.map (To.PM.arg_patt ~{mono=True} loc) param_map in
     let paramtype_patts = List.map (fun p -> <:patt< (type $To.PM.type_id p$) >>) param_map in
     Expr.abstract_over (paramtype_patts@parampats) e
@@ -861,7 +861,7 @@ value expr_sexp arg = fun [
     let loc = loc_of_ctyp ty in
     let param_map = ty |> type_params |> Of.PM.make_of_ids in
     let e = Of.fmt_of_top ~{msg=Printf.sprintf "%s.of_sexp"  (Ctxt.module_path_s arg)} arg param_map ty in
-    let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
+    let e = <:expr< let open! Pa_ppx_runtime.Runtime in let open! Stdlib in $e$ >> in
     let parampats = List.map (Of.PM.arg_patt ~{mono=True} loc) param_map in
     let paramtype_patts = List.map (fun p -> <:patt< (type $Of.PM.type_id p$) >>) param_map in
     Expr.abstract_over (paramtype_patts@parampats) e
