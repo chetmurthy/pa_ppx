@@ -193,7 +193,7 @@ Pa_deriving.(Registry.add PI.{
 ; alternates = []
 ; options = ["with_path"; "optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ; ("with_path", <:expr< True >>) ]
-; alg_attributes = ["opaque"; "printer"; "polyprinter"; "nobuiltin"]
+; alg_attributes = ["default"; "split"; "main"]
 ; expr_extensions = []
 ; expr = (fun arg e -> assert False)
 ; str_item = str_item_gen_make
