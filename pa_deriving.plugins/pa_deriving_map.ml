@@ -25,8 +25,8 @@ type attrmod_t = [ Nobuiltin ] ;
 
 module PM = ParamMap(struct value arg_ctyp_f loc ty = assert False ; end) ;
 
-value fmt_expression arg param_map ty0 =
-  let rec fmtrec ?{attrmod=None} = fun [
+value fmt_expression arg ?{coercion} param_map ty0 =
+  let rec fmtrec ?{coercion} ?{attrmod=None} = fun [
     <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
   let fname = map_fname arg lid in
   <:expr< $lid:fname$ >>
@@ -161,6 +161,7 @@ value fmt_expression arg param_map ty0 =
 
   | <:ctyp:< { $list:fields$ } >> ->
   let (rec1pat, body) = fmt_record loc arg fields in
+  let rec1pat = match coercion with [ None -> rec1pat | Some ty -> <:patt< ( $rec1pat$ : $ty$ ) >> ] in
   <:expr< fun $rec1pat$ -> $body$ >>
 
 | [%unmatched_vala] -> failwith "pa_deriving_map.fmt_expression"
@@ -177,14 +178,13 @@ value fmt_expression arg param_map ty0 =
   let cmpexp = <:expr< { $list:flds$ } >>
   in
   (v1pat, cmpexp)
- in
-  fmtrec ty0
+ in fmtrec ?{coercion=coercion} ty0
 ;
 
-value fmt_top arg params = fun [
+value fmt_top arg ~{coercion} params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
-  fmt_expression arg params t2
-| t -> fmt_expression arg params t
+  fmt_expression arg ~{coercion=coercion} params t2
+| t -> fmt_expression arg ~{coercion=coercion} params t
 ]
 ;
 
@@ -193,11 +193,16 @@ value str_item_top_funs arg td =
   let param_map = PM.make "map" loc (uv td.tdPrm) in
   let ty = td.tdDef in
   let tyname = uv tyname in
+  let coercion =
+    let paramtys = List.map (fun p -> <:ctyp< ' $PM.type_id p$ >>) param_map in
+    let ty = <:ctyp< $lid:tyname$ >> in
+    monomorphize_ctyp (Ctyp.applist ty paramtys) in
   let eqfname = map_fname arg tyname in
-  let e = fmt_top arg param_map ty in
+  let e = fmt_top arg ~{coercion=coercion} param_map ty in
 
   let paramfun_patts = List.map (PM.arg_patt ~{naked=True} loc) param_map in
-  [(eqfname, Expr.abstract_over paramfun_patts
+  let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
+  [(eqfname, Expr.abstract_over (paramtype_patts@paramfun_patts)
       <:expr< fun arg -> $e$ arg >>)]
 ;
 

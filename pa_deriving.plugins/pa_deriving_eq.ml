@@ -25,8 +25,8 @@ type attrmod_t = [ Nobuiltin ] ;
 
 module PM = ParamMap(struct value arg_ctyp_f loc pty = <:ctyp< $pty$ -> $pty$ -> Stdlib.Bool.t >> ; end) ;
 
-value fmt_expression arg param_map ty0 =
-  let rec fmtrec ?{attrmod=None} = fun [
+value fmt_expression arg ?{coercion} param_map ty0 =
+  let rec fmtrec ?{coercion} ?{attrmod=None} = fun [
     <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
   let fname = eq_fname arg lid in
   <:expr< $lid:fname$ >>
@@ -196,6 +196,8 @@ value fmt_expression arg param_map ty0 =
 
   | <:ctyp:< { $list:fields$ } >> ->
   let (rec1pat, rec2pat, body) = fmt_record loc arg fields in
+  let rec1pat = match coercion with [ None -> rec1pat | Some ty -> <:patt< ( $rec1pat$ : $ty$ ) >> ] in
+  let rec2pat = match coercion with [ None -> rec2pat | Some ty -> <:patt< ( $rec2pat$ : $ty$ ) >> ] in
   <:expr< fun $rec1pat$ -> fun $rec2pat$ -> $body$ >>
 
 | [%unmatched_vala] -> failwith "pa_deriving_eq.fmt_expression"
@@ -215,14 +217,13 @@ value fmt_expression arg param_map ty0 =
   | [] -> assert False ]
   in
   (v1pat, v2pat, cmpexp)
- in
-  fmtrec ty0
+ in fmtrec ?{coercion=coercion} ty0
 ;
 
-value fmt_top arg params = fun [
+value fmt_top arg ~{coercion} params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
-  fmt_expression arg params t2
-| t -> fmt_expression arg params t
+  fmt_expression arg ~{coercion=coercion} params t2
+| t -> fmt_expression arg ~{coercion=coercion} params t
 ]
 ;
 
@@ -231,8 +232,12 @@ value str_item_top_funs arg td =
   let ty = td.tdDef in
   let param_map = PM.make "eq" loc (uv td.tdPrm) in
   let tyname = uv tyname in
+  let coercion =
+    let paramtys = List.map (fun p -> <:ctyp< ' $PM.type_id p$ >>) param_map in
+    let ty = <:ctyp< $lid:tyname$ >> in
+    monomorphize_ctyp (Ctyp.applist ty paramtys) in
   let eqfname = eq_fname arg tyname in
-  let e = fmt_top arg param_map ty in
+  let e = fmt_top arg ~{coercion=coercion} param_map ty in
 
   let paramfun_patts = List.map (PM.arg_patt ~{mono=True} loc) param_map in
   let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
@@ -390,7 +395,8 @@ value sig_item_gen_eq name arg = fun [
 value expr_eq arg = fun [
   <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "eq" || id = "derive.eq" ->
     let loc = loc_of_ctyp ty in
-    let e = fmt_top arg [] ty in
+    let coercion = monomorphize_ctyp ty in
+    let e = fmt_top arg ~{coercion=coercion} [] ty in
     <:expr< fun a b ->  $e$ a b >>
 | _ -> assert False ]
 ;

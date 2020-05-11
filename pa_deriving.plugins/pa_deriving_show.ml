@@ -61,8 +61,8 @@ type attrmod_t = [ Nobuiltin ] ;
 
 module PM = ParamMap(struct value arg_ctyp_f loc ty = <:ctyp< Fmt.t $ty$ >> ; end) ;
 
-value fmt_expression arg param_map ty0 =
-  let rec fmtrec ?{attrmod=None} = fun [
+value fmt_expression arg ?{coercion} param_map ty0 =
+  let rec fmtrec ?{coercion} ?{attrmod=None} = fun [
 
   <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
   let fname = pp_fname arg lid in
@@ -237,6 +237,7 @@ value fmt_expression arg param_map ty0 =
 
 | <:ctyp:< { $list:fields$ } >> ->
   let (recpat, body) = fmt_record ~{without_path=False} ~{prefix_txt=""} ~{bracket_space=" "} loc arg fields in
+  let recpat = match coercion with [ None -> recpat | Some ty -> <:patt< ( $recpat$ : $ty$ ) >> ] in
   <:expr< fun ofmt $recpat$ -> $body$ >>
 | [%unmatched_vala] -> failwith "pa_deriving_show.fmt_expression"
 | ty -> failwith (Printf.sprintf "pa_deriving_show.fmt_expression: failed on type %s" (Ctyp.print ty))
@@ -261,17 +262,17 @@ and fmt_record ~{without_path} ~{prefix_txt} ~{bracket_space} loc arg fields =
       <:expr< pf ofmt $str:fmt$ >> labels_vars_fmts in
   let pl = List.map (fun (f, v, _) -> (<:patt< $lid:f$ >>, <:patt< $lid:v$ >>)) labels_vars_fmts in
   (<:patt< { $list:pl$ } >>, <:expr< let open Pa_ppx_runtime.Fmt in ($e$) >>)
-in fmtrec ty0
+in fmtrec ?{coercion=coercion} ty0
 ;
 
-value fmt_top arg params = fun [
+value fmt_top arg ~{coercion} params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
   let arg = match t1 with [
     <:ctyp< $longid:li$ . $lid:_$ >> -> Ctxt.module_path arg li
   | _ -> arg
   ] in
-  fmt_expression arg params t2
-| t -> fmt_expression arg params t
+  fmt_expression arg ~{coercion=coercion} params t2
+| t -> fmt_expression arg ~{coercion=coercion} params t
 ]
 ;
 
@@ -295,9 +296,13 @@ value str_item_top_funs arg td =
   let param_map = PM.make "show" loc (uv td.tdPrm) in
   let ty = td.tdDef in
   let tyname = uv tyname in
+  let coercion =
+    let paramtys = List.map (fun p -> <:ctyp< ' $PM.type_id p$ >>) param_map in
+    let ty = <:ctyp< $lid:tyname$ >> in
+    monomorphize_ctyp (Ctyp.applist ty paramtys) in
   let ppfname = pp_fname arg tyname in
   let showfname = show_fname arg tyname in
-  let e = fmt_top arg param_map ty in
+  let e = fmt_top arg ~{coercion=coercion} param_map ty in
 
   let paramfun_patts = List.map (PM.arg_patt ~{mono=True} loc) param_map in
   let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
@@ -452,7 +457,8 @@ value sig_item_gen_show name arg = fun [
 value expr_show arg = fun [
   <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "show" || id = "derive.show" ->
     let loc = loc_of_ctyp ty in
-    let e = fmt_top arg [] ty in
+    let coercion = monomorphize_ctyp ty in
+    let e = fmt_top arg ~{coercion=coercion} [] ty in
     <:expr< fun arg -> Format.asprintf "%a" $e$ arg >>
 | _ -> assert False ]
 ;

@@ -68,8 +68,8 @@ value to_yojson_fname arg tyname =
   else tyname^"_to_yojson"
 ;
 
-value to_expression arg ~{msg} param_map ty0 =
-  let rec fmtrec ?{attrmod=None} = fun [
+value to_expression arg ?{coercion} ~{msg} param_map ty0 =
+  let rec fmtrec ?{coercion} ?{attrmod=None} = fun [
 
   <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
   let fname = to_yojson_fname arg lid in
@@ -218,6 +218,7 @@ value to_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< { $list:fields$ } >> ->
   let (recpat, body) = fmt_record loc arg fields in
+  let recpat = match coercion with [ None -> recpat | Some ty -> <:patt< ( $recpat$ : $ty$ ) >> ] in
   <:expr< fun $recpat$ -> $body$ >>
 
 | [%unmatched_vala] -> failwith "pa_deriving_yojson.to_expression"
@@ -245,14 +246,14 @@ and fmt_record loc arg fields =
   let pl = List.map (fun (f, v, _, _, _) -> (<:patt< $lid:f$ >>, <:patt< $lid:v$ >>)) labels_vars_fmts_defaults_jskeys in
   (<:patt< { $list:pl$ } >>, <:expr< `Assoc $liste$ >>)
 
-in fmtrec ty0
+in fmtrec ?{coercion=coercion} ty0
 ;
 
 
-value fmt_to_top arg ~{msg} params = fun [
+value fmt_to_top arg ~{coercion} ~{msg} params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
-  to_expression arg ~{msg=msg} params t2
-| t -> to_expression arg ~{msg} params t
+  to_expression arg ~{coercion=coercion} ~{msg=msg} params t2
+| t -> to_expression arg ~{coercion=coercion} ~{msg} params t
 ]
 ;
 
@@ -286,8 +287,12 @@ value str_item_funs arg td = do {
   let param_map = PM.make "yojson" loc (uv td.tdPrm) in
   let ty = td.tdDef in
   let tyname = uv tyname in
+  let coercion =
+    let paramtys = List.map (fun p -> <:ctyp< ' $PM.type_id p$ >>) param_map in
+    let ty = <:ctyp< $lid:tyname$ >> in
+    monomorphize_ctyp (Ctyp.applist ty paramtys) in
   let to_yojsonfname = to_yojson_fname arg tyname in
-  let to_e = fmt_to_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
+  let to_e = fmt_to_top arg ~{coercion=coercion} ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
   let to_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $to_e$ >> in
   let paramfun_patts = List.map (PM.arg_patt ~{mono=True} loc) param_map in
   let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
@@ -886,7 +891,8 @@ value type_params t =
 value expr_yojson arg = fun [
   <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "to_yojson" || id = "derive.to_yojson" ->
     let param_map = ty |> type_params |> To.PM.make_of_ids in
-    let e = To.fmt_to_top arg ~{msg=Printf.sprintf "%s.to_yojson"  (Ctxt.module_path_s arg)} param_map ty in
+    let coercion = monomorphize_ctyp ty in
+    let e = To.fmt_to_top arg ~{coercion=coercion} ~{msg=Printf.sprintf "%s.to_yojson"  (Ctxt.module_path_s arg)} param_map ty in
     let e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $e$ >> in
     let parampats = List.map (To.PM.arg_patt ~{mono=True} loc) param_map in
     let paramtype_patts = List.map (fun p -> <:patt< (type $To.PM.type_id p$) >>) param_map in
