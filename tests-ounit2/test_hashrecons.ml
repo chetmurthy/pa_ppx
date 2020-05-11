@@ -91,6 +91,6 @@ let suite = "Test hashrecons" >::: [
   ]
 
 let _ = 
-if Testutil2.invoked_with "test_hashrecons" then
+if not !Sys.interactive then
   run_test_tt_main suite
 else ()

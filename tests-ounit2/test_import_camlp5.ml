@@ -35,6 +35,6 @@ let suite = "Test import_camlp5" >::: [
     "test_simplest"   >:: test_simplest
   ]
 let _ = 
-if Testutil2.invoked_with "test_import_caml5" then
+if not !Sys.interactive then
   run_test_tt_main suite
 else ()

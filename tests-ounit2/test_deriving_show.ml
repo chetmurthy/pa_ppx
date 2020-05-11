@@ -1,3 +1,8 @@
+#ifdef PAPPX
+let filemod = "Test_deriving_show"
+#else
+let filemod = "Test_deriving_show.ml.ppx"
+#endif
 open OUnit2
 
 let printer = fun x -> x
@@ -44,22 +49,22 @@ let test_alias ctxt =
 
 type v = Foo | Bar of int * string | Baz of string [@@deriving show]
 let test_variant ctxt =
-  assert_equal ~printer "Test_deriving_show.Foo"                (show_v Foo);
-  assert_equal ~printer "(Test_deriving_show.Bar (1, \"foo\"))" (show_v (Bar (1, "foo")));
-  assert_equal ~printer "(Test_deriving_show.Baz \"foo\")"      (show_v (Baz "foo"))
+  assert_equal ~printer (filemod^".Foo")                (show_v Foo);
+  assert_equal ~printer ("("^filemod^".Bar (1, \"foo\"))") (show_v (Bar (1, "foo")));
+  assert_equal ~printer ("("^filemod^".Baz \"foo\")")      (show_v (Baz "foo"))
 
 type rv = RFoo | RBar of { x: int; y: string } | RBaz of { z: string } [@@deriving show]
 let test_variant_record ctxt =
-  assert_equal ~printer "Test_deriving_show.RFoo"
+  assert_equal ~printer (filemod^".RFoo")
                         (show_rv RFoo);
-  assert_equal ~printer "Test_deriving_show.RBar {x = 1; y = \"foo\"}"
+  assert_equal ~printer (filemod^".RBar {x = 1; y = \"foo\"}")
                         (show_rv (RBar {x=1; y="foo"}));
-  assert_equal ~printer "(Test_deriving_show.RBaz {z = \"foo\"}"
+  assert_equal ~printer ("("^filemod^".RBaz {z = \"foo\"}")
                         (show_rv (RBaz {z="foo"}))
 
 type vn = Foo of int option [@@deriving show]
 let test_variant_nest ctxt =
-  assert_equal ~printer "(Test_deriving_show.Foo (Some 1))" (show_vn (Foo (Some 1)))
+  assert_equal ~printer ("("^filemod^".Foo (Some 1))") (show_vn (Foo (Some 1)))
 
 type pv1 = [ `Foo | `Bar of int * string ] [@@deriving show]
 let test_poly ctxt =
@@ -81,7 +86,7 @@ type re = {
   f3 : float [@opaque];
 } [@@deriving show]
 let test_record ctxt =
-  assert_equal ~printer "{ Test_deriving_show.f1 = 1; f2 = \"foo\"; f3 = <opaque> }"
+  assert_equal ~printer ("{ "^filemod^".f1 = 1; f2 = \"foo\"; f3 = <opaque> }")
                         (show_re { f1 = 1; f2 = "foo"; f3 = 1.0 })
 
 type variant = Foo of {
@@ -91,7 +96,7 @@ type variant = Foo of {
 } [@@deriving show]
 let test_variant_record ctxt =
   assert_equal ~printer
-    "Test_deriving_show.Foo {f1 = 1; f2 = \"foo\"; f3 = <opaque>}"
+    (filemod^".Foo {f1 = 1; f2 = \"foo\"; f3 = <opaque>}")
     (show_variant (Foo { f1 = 1; f2 = "foo"; f3 = 1.0 }))
 
 
@@ -102,11 +107,11 @@ end = struct
 end
 
 let test_module ctxt =
-  assert_equal ~printer "Test_deriving_show.M.A" (M.show M.A)
+  assert_equal ~printer (filemod^".M.A") (M.show M.A)
 
 type z = M.t [@@deriving show]
 let test_abstr ctxt =
-  assert_equal ~printer "Test_deriving_show.M.A" (show_z M.A)
+  assert_equal ~printer (filemod^".M.A") (show_z M.A)
 
 type file = {
   name : string;
@@ -114,12 +119,12 @@ type file = {
 }
 [@@deriving show]
 let test_custom ctxt =
-  assert_equal ~printer "{ Test_deriving_show.name = \"dir\"; perm = 0o755 }"
+  assert_equal ~printer ("{ "^filemod^".name = \"dir\"; perm = 0o755 }")
                         (show_file { name = "dir"; perm = 0o755 })
 
 type 'a pt = { v : 'a } [@@deriving show]
 let test_parametric ctxt =
-  assert_equal ~printer "{ Test_deriving_show.v = 1 }"
+  assert_equal ~printer ("{ "^filemod^".v = 1 }")
                         (show_pt (fun fmt -> Format.fprintf fmt "%d") { v = 1 })
 
 type 'a btree = Node of 'a btree * 'a * 'a btree | Leaf
@@ -135,8 +140,8 @@ let print_hi = fun fmt _ -> Format.fprintf fmt "hi!"
 type polypr = (string [@printer print_hi]) btree [@polyprinter pp_btree]
 [@@deriving show]
 let test_polypr ctxt =
-  assert_equal ~printer "(Test_deriving_show.Node (Test_deriving_show.Leaf, hi!,\n\
-                        \   Test_deriving_show.Leaf))"
+  assert_equal ~printer ("("^filemod^".Node ("^filemod^".Leaf, hi!,\n\
+                        \   "^filemod^".Leaf))")
                         (show_polypr (Node (Leaf, "x", Leaf)))
 
 let test_placeholder ctxt =
@@ -160,7 +165,7 @@ and 'a bar = { x : 'a ; r : foo }
 
 let test_mrec ctxt =
   let e1 =  B { x = 12; r = F 16 } in
-  assert_equal ~printer "(Test_deriving_show.B\n   { Test_deriving_show.x = 12; r = (Test_deriving_show.F 16) })" (show_foo e1)
+  assert_equal ~printer ("("^filemod^".B\n   { "^filemod^".x = 12; r = ("^filemod^".F 16) })") (show_foo e1)
 
 
 type i_has_result = I_has of (bool, string) result [@@deriving show]
@@ -168,9 +173,9 @@ type i_has_result = I_has of (bool, string) result [@@deriving show]
 let test_result ctxt =
   assert_equal ~printer "(Ok 100)"
     ([%derive.show: (int, bool) result] (Ok 100));
-  assert_equal ~printer "(Test_deriving_show.I_has (Ok true))"
+  assert_equal ~printer ("("^filemod^".I_has (Ok true))")
     (show_i_has_result (I_has (Ok true)));
-  assert_equal ~printer "(Test_deriving_show.I_has (Error \"err\"))"
+  assert_equal ~printer ("("^filemod^".I_has (Error \"err\"))")
     (show_i_has_result (I_has (Error "err")))
 
 type i_has_result_result = I_has of (bool, string) Result.result [@@deriving show]
@@ -179,9 +184,9 @@ let test_result_result ctxt =
   let open Result in
   assert_equal ~printer "(Ok 100)"
     ([%show: (int, bool) result] (Result.Ok 100));
-  assert_equal ~printer "(Test_deriving_show.I_has (Ok true))"
+  assert_equal ~printer ("("^filemod^".I_has (Ok true))")
     (show_i_has_result_result (I_has (Ok true)));
-  assert_equal ~printer "(Test_deriving_show.I_has (Error \"err\"))"
+  assert_equal ~printer ("("^filemod^".I_has (Error \"err\"))")
     (show_i_has_result_result (I_has (Error "err")))
 
 type es =
@@ -191,16 +196,16 @@ and bool =
   | Bfoo of int * (int -> int)
 and string =
   | Sfoo of String.t * (int -> int)
-[@@deriving show]
+[@@deriving show { with_path = false }]
 
 let test_std_shadowing ctxt =
   let e1 = ESBool (Bfoo (1, (+) 1)) in
   let e2 = ESString (Sfoo ("lalala", (+) 3)) in
   assert_equal ~printer
-    "(Test_deriving_show.ESBool (Test_deriving_show.Bfoo (1, <fun>)))"
+    "(ESBool (Bfoo (1, <fun>)))"
     (show_es e1);
   assert_equal ~printer
-    "(Test_deriving_show.ESString (Test_deriving_show.Sfoo (\"lalala\", <fun>)))"
+    {|(ESString (Sfoo ("lalala", <fun>)))|}
     (show_es e2)
 
 type poly_app = float poly_abs
@@ -231,7 +236,7 @@ let test_variant_printer ctxt =
   assert_equal ~printer
     "second: 42" (show_variant_printer (Second 42));
   assert_equal ~printer
-    "Test_deriving_show.Third" (show_variant_printer Third);
+    (""^filemod^".Third") (show_variant_printer Third);
   assert_equal ~printer
     "fourth: 8 4" (show_variant_printer (Fourth(8,4)))
 
@@ -242,8 +247,8 @@ module WithFull = struct
 end
 let test_paths_printer ctxt =
   assert_equal ~printer "(NoFull 1)"   (show_no_full   (NoFull 1));
-  assert_equal ~printer "(Test_deriving_show.WithFull 1)" (show_with_full (WithFull 1));
-  assert_equal ~printer "(Test_deriving_show.WithFull.A 1)" (WithFull.show (WithFull.A 1));
+  assert_equal ~printer ("("^filemod^".WithFull 1)") (show_with_full (WithFull 1));
+  assert_equal ~printer ("("^filemod^".WithFull.A 1)") (WithFull.show (WithFull.A 1));
   ()
 
 let suite = "Test deriving(show)" >::: [
@@ -275,6 +280,6 @@ let _ = ([%show: 'a * 'a] : [%show: 'a * 'a])
 #endif
 
 let _ = 
-if Testutil2.invoked_with "test_deriving_show" || Testutil2.invoked_with "test_deriving_show.ppx" then
+if not !Sys.interactive then
   run_test_tt_main suite
 else ()

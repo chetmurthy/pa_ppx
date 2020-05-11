@@ -32,6 +32,6 @@ let suite = "Test import(0)" >::: [
   ]
 
 let _ = 
-if Testutil2.invoked_with "test_import0" || Testutil2.invoked_with "test_import0.ppx" then
+if not !Sys.interactive then
   run_test_tt_main suite
 else ()

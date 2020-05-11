@@ -42,6 +42,6 @@ let suite = "Test deriving(enum)" >::: [
   ]
 
 let _ = 
-if Testutil2.invoked_with "test_deriving_enum" || Testutil2.invoked_with "test_deriving_enum.ppx" then
+if not !Sys.interactive then
   run_test_tt_main suite
 else ()

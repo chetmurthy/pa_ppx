@@ -49,9 +49,8 @@ let tsort_tests = "tsort tests" >:::
 
 (* Run the tests in test suite *)
 let _ =
-if invoked_with "test_utils" then begin
+if not !Sys.interactive then
   run_test_tt_main ("all_tests" >::: [
         tsort_tests ;
     ])
-end
 ;;

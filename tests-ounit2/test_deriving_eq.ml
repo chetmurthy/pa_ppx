@@ -164,6 +164,6 @@ let _ = ([%eq: 'a * 'a] : [%eq: 'a * 'a])
 #endif
 
 let _ = 
-if Testutil2.invoked_with "test_deriving_eq" || Testutil2.invoked_with "test_deriving_eq.ppx" then
+if not !Sys.interactive then
   run_test_tt_main suite
 else ()
