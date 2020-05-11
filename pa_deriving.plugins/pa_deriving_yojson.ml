@@ -285,22 +285,28 @@ value str_item_funs arg td = do {
   assert (not (match td.tdDef with [ <:ctyp< .. >> | <:ctyp< $_$ == .. >> -> True | _ -> False ])) ;
   let (loc, tyname) = uv td.tdNam in
   let param_map = PM.make "yojson" loc (uv td.tdPrm) in
-  let ty = td.tdDef in
+  let tk = td.tdDef in
   let tyname = uv tyname in
-  let coercion =
+  let ty =
     let paramtys = List.map (fun p -> <:ctyp< ' $PM.type_id p$ >>) param_map in
     let ty = <:ctyp< $lid:tyname$ >> in
-    monomorphize_ctyp (Ctyp.applist ty paramtys) in
+    (Ctyp.applist ty paramtys) in
+  let coercion =
+    monomorphize_ctyp ty in
   let to_yojsonfname = to_yojson_fname arg tyname in
-  let to_e = fmt_to_top arg ~{coercion=coercion} ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
+  let to_e = fmt_to_top arg ~{coercion=coercion} ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map tk in
   let to_e = <:expr< let open! Pa_ppx_runtime in let open! Stdlib in $to_e$ >> in
   let paramfun_patts = List.map (PM.arg_patt ~{mono=True} loc) param_map in
   let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
   let (_, fty) = sig_item_fun0 arg td in
   let fty = PM.quantify_over_ctyp param_map fty in
+  let argexp =
+    if uv td.tdPrv && is_type_abbreviation tk then
+      <:expr< ( arg : $monomorphize_ctyp ty$ :> $monomorphize_ctyp tk$ ) >>
+    else <:expr< arg >> in
   [(<:patt< ( $lid:to_yojsonfname$ : $fty$ ) >>,
     Expr.abstract_over (paramtype_patts@paramfun_patts)
-      <:expr< fun arg -> $to_e$ arg >>, <:vala< [] >>)]
+      <:expr< fun arg -> $to_e$ $argexp$ >>, <:vala< [] >>)]
 }
 ;
 

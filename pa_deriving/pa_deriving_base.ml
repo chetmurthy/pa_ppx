@@ -101,3 +101,10 @@ value monomorphize_ctyp cty =
   ]
   in mrec cty
 ;
+
+value is_type_abbreviation = fun [
+  <:ctyp< [ $list:_$ ] >> -> False
+| <:ctyp< { $list:_$ } >> -> False
+| _ -> True
+]
+;

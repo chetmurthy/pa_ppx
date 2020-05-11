@@ -81,7 +81,6 @@ ppx_sexp_test.ppx.byte: ppx_sexp_test.ml
 ppx_sexp_test.pa.byte: ppx_sexp_test.ml
 	cppo -D PAPPX ppx_sexp_test.ml > ppx_sexp_test.pappx.ml
 	$(OCAMLFIND)2 preprocess -package $(PACKAGES),$(PAINLINEPACKAGES),camlp5.pr_o.syntax -ppopt -sep -ppopt ";;" -syntax camlp5o $(PAINLINEOPT) ppx_sexp_test.pappx.ml >  ppx_sexp_test.pappx.ml.ppo
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package compiler-libs.common,ounit2,fmt,pcre,rresult,compiler-libs.common,sexplib0,sexplib,str,threads,pa_ppx_runtime,expect_test_helpers,ppx_expect.evaluator,ppx_inline_test.runtime-lib,ppx_inline_test.runner.lib -c -impl ppx_sexp_test.pappx.ml.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg ppx_sexp_test.pappx.ml ppx_inline_test_epilogue.ml -o $@
 
 %.TEST: %.ppx.byte %.pa.byte

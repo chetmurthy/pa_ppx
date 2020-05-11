@@ -190,18 +190,25 @@ value fmt_top arg ~{coercion} params = fun [
 value str_item_top_funs arg td =
   let (loc, tyname) = uv td.tdNam in
   let param_map = PM.make "fold" loc (uv td.tdPrm) in
-  let ty = td.tdDef in
+  let tk = td.tdDef in
   let tyname = uv tyname in
-  let coercion =
+  let ty =
     let paramtys = List.map (fun p -> <:ctyp< ' $PM.type_id p$ >>) param_map in
     let ty = <:ctyp< $lid:tyname$ >> in
-    monomorphize_ctyp (Ctyp.applist ty paramtys) in
+    (Ctyp.applist ty paramtys) in
+  let coercion =
+    monomorphize_ctyp ty in
   let eqfname = fold_fname arg tyname in
-  let e = fmt_top arg ~{coercion=coercion} param_map ty in
+  let e = fmt_top arg ~{coercion=coercion} param_map tk in
 
   let paramfun_patts = List.map (PM.arg_patt ~{naked=True} loc) param_map in
-  [(eqfname, Expr.abstract_over paramfun_patts
-      <:expr< fun arg -> $e$ arg >>)]
+  let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
+  let argexp =
+    if uv td.tdPrv && is_type_abbreviation tk then
+      <:expr< ( arg : $monomorphize_ctyp ty$ :> $monomorphize_ctyp tk$ ) >>
+    else <:expr< arg >> in
+  [(eqfname, Expr.abstract_over (paramtype_patts@paramfun_patts)
+      <:expr< fun acc arg -> $e$ acc $argexp$ >>)]
 ;
 
 value sig_item_top_funs arg td =
