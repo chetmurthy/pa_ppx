@@ -348,6 +348,17 @@ let test_default _ctxt =
                    { def = 42 } "()"
 end
 
+module Default3 = struct
+type default = {
+  def : int option [@default None];
+} [@@deriving yojson, show]
+let test_default _ctxt =
+  assert_roundtrip pp_default default_to_yojson default_of_yojson
+                   { def = None } "{}"
+; assert_roundtrip pp_default default_to_yojson default_of_yojson
+                   { def = Some 42 } {foo|{"def": 42}|foo}
+end
+
 type bidi = int [@@deriving show, to_yojson, of_yojson, of_sexp, sexp_of]
 let test_bidi _ctxt =
   assert_roundtrip pp_bidi bidi_to_yojson bidi_of_yojson
@@ -815,6 +826,7 @@ let suite = "Test ppx_yojson" >::: [
     "test_field_err" >:: test_field_err;
     "test_default.yojson"   >:: Default1.test_default;
     "test_default.sexp"   >:: Default2.test_default;
+    "test_default.yojson.2"   >:: Default3.test_default;
     "test_bidi"      >:: test_bidi;
     "test_custom"    >:  CustomConversions.suite;
     "test_shortcut"  >:: test_shortcut;
