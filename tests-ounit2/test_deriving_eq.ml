@@ -159,6 +159,10 @@ let suite = "Test deriving(eq)" >::: [
     "test_result_result" >:: test_result_result;
   ]
 
+#ifdef PAPPX
+let _ = ([%eq: 'a * 'a] : [%eq: 'a * 'a])
+#endif
+
 let _ = 
 if Testutil2.invoked_with "test_deriving_eq" || Testutil2.invoked_with "test_deriving_eq.ppx" then
   run_test_tt_main suite

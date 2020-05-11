@@ -195,7 +195,9 @@ Pa_deriving.(Registry.add PI.{
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ; ("with_path", <:expr< True >>) ]
 ; alg_attributes = ["default"; "split"; "main"]
 ; expr_extensions = []
+; ctyp_extensions = []
 ; expr = (fun arg e -> assert False)
+; ctyp = (fun arg e -> assert False)
 ; str_item = str_item_gen_make
 ; sig_item = sig_item_gen_make
 })

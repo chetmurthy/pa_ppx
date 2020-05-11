@@ -879,21 +879,6 @@ value sig_item_gen_yojson name arg = fun [
 | _ -> assert False ]
 ;
 
-value type_params t =
-  let acc = ref [] in
-  let add1 tv = if not (List.mem tv acc.val) then Std.push acc tv else () in
-  let rec brec = fun [
-    <:ctyp< ' $tv$ >> -> add1 tv
-  | <:ctyp< $a$ $b$ >> -> do { brec a; brec b }
-  | <:ctyp< ( $list:l$ ) >> -> List.iter brec l
-  | <:ctyp< [= $list:branches$ ] >> ->
-    List.iter (fun [ PvTag _ _ _ tyl _ -> List.iter brec (uv tyl) | PvInh _ ty -> brec ty ])  branches
-  | _ -> ()
-  ] in do {
-    brec t ; List.rev acc.val
-  }
-;
-
 value expr_yojson arg = fun [
   <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "to_yojson" || id = "derive.to_yojson" ->
     let param_map = ty |> type_params |> To.PM.make_of_ids in
@@ -914,6 +899,20 @@ value expr_yojson arg = fun [
 | _ -> assert False ]
 ;
 
+value ctyp_yojson arg = fun [
+  <:ctyp:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "to_yojson" || id = "derive.to_yojson" ->
+    let param_map = ty |> type_params |> To.PM.make_of_ids in
+    let argfmttys = List.map (To.PM.arg_ctyp loc) param_map in  
+    Ctyp.arrows_list loc argfmttys <:ctyp< $ty$ -> Yojson.Safe.t >>
+
+| <:ctyp:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "of_yojson" || id = "derive.of_yojson" ->
+    let param_map = ty |> type_params |> Of.PM.make_of_ids in
+    let argfmttys = List.map (Of.PM.arg_ctyp loc) param_map in  
+    Ctyp.arrows_list loc argfmttys <:ctyp< Yojson.Safe.t -> Rresult.result $ty$ string >>
+
+| _ -> assert False ]
+;
+
 Pa_deriving.(Registry.add PI.{
   name = "yojson"
 ; alternates = ["to_yojson"; "of_yojson"]
@@ -922,7 +921,9 @@ Pa_deriving.(Registry.add PI.{
     [ ("optional", <:expr< False >>); ("strict", <:expr< False >>); ("exn", <:expr< False >>) ]
 ; alg_attributes = ["nobuiltin"; "key"; "name"; "encoding"; "default"; "to_yojson"; "of_yojson"]
 ; expr_extensions = ["to_yojson"; "of_yojson"]
+; ctyp_extensions = ["to_yojson"; "of_yojson"]
 ; expr = expr_yojson
+; ctyp = ctyp_yojson
 ; str_item = str_item_gen_yojson
 ; sig_item = sig_item_gen_yojson
 })

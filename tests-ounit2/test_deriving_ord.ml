@@ -192,4 +192,8 @@ let suite = "Test deriving(ord)" >::: [
     "test_ord_result_result" >:: test_ord_result_result;
   ]
 
+#ifdef PAPPX
+let _ = ([%ord: 'a * 'a] : [%ord: 'a * 'a])
+#endif
+
 let _ = run_test_tt_main suite

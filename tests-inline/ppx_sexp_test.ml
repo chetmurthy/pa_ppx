@@ -707,6 +707,8 @@ module Inline = struct
   let%test _ = sexp_of_u u = sexp
 end
 
+#ifdef PAPPX
+#else
 module Magic_types = struct
   type t =
     { sexp_array : int sexp_array [@warning "-3"]
@@ -755,6 +757,8 @@ module Magic_types = struct
   let%test _ = v_of_sexp sexp = v
   let%test _ = sexp_of_v v = sexp
 end
+#endif
+
 #ifndef PAPPX
 module Variance = struct
   type (+'a, -'b, 'c, +_, -_, _) t [@@deriving sexp]

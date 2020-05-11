@@ -846,21 +846,6 @@ value sig_item_gen_sexp name arg = fun [
 | _ -> assert False ]
 ;
 
-value type_params t =
-  let acc = ref [] in
-  let add1 tv = if not (List.mem tv acc.val) then Std.push acc tv else () in
-  let rec brec = fun [
-    <:ctyp< ' $tv$ >> -> add1 tv
-  | <:ctyp< $a$ $b$ >> -> do { brec a; brec b }
-  | <:ctyp< ( $list:l$ ) >> -> List.iter brec l
-  | <:ctyp< [= $list:branches$ ] >> ->
-    List.iter (fun [ PvTag _ _ _ tyl _ -> List.iter brec (uv tyl) | PvInh _ ty -> brec ty ])  branches
-  | _ -> ()
-  ] in do {
-    brec t ; List.rev acc.val
-  }
-;
-
 value expr_sexp arg = fun [
   <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "sexp_of" || id = "derive.sexp_of" ->
     let loc = loc_of_ctyp ty in
@@ -883,6 +868,20 @@ value expr_sexp arg = fun [
 | _ -> assert False ]
 ;
 
+value ctyp_sexp arg = fun [
+  <:ctyp:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "sexp_of" || id = "derive.sexp_of" ->
+    let param_map = ty |> type_params |> To.PM.make_of_ids in
+    let argfmttys = List.map (To.PM.arg_ctyp loc) param_map in  
+    Ctyp.arrows_list loc argfmttys <:ctyp< $ty$ -> Sexplib.Sexp.t >>
+
+| <:ctyp:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "of_sexp" || id = "derive.of_sexp" ->
+    let param_map = ty |> type_params |> Of.PM.make_of_ids in
+    let argfmttys = List.map (Of.PM.arg_ctyp loc) param_map in  
+    Ctyp.arrows_list loc argfmttys <:ctyp< Sexplib.Sexp.t -> $ty$ >>
+
+| _ -> assert False ]
+;
+
 Pa_deriving.(Registry.add PI.{
   name = "sexp"
 ; alternates = ["of_sexp"; "sexp_of"; "sexp_poly"]
@@ -891,7 +890,9 @@ Pa_deriving.(Registry.add PI.{
     [ ("optional", <:expr< False >>); ("strict", <:expr< False >>); ("exn", <:expr< False >>) ]
 ; alg_attributes = ["nobuiltin"; "key"; "name"; "encoding"; "default"; "sexp_of"; "of_sexp"]
 ; expr_extensions = ["of_sexp"; "sexp_of"]
+; ctyp_extensions = ["of_sexp"; "sexp_of"]
 ; expr = expr_sexp
+; ctyp = ctyp_sexp
 ; str_item = str_item_gen_sexp
 ; sig_item = sig_item_gen_sexp
 })

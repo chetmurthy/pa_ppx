@@ -270,6 +270,10 @@ let suite = "Test deriving(show)" >::: [
     "test_result_result"   >:: test_result_result;
   ]
 
+#ifdef PAPPX
+let _ = ([%show: 'a * 'a] : [%show: 'a * 'a])
+#endif
+
 let _ = 
 if Testutil2.invoked_with "test_deriving_show" || Testutil2.invoked_with "test_deriving_show.ppx" then
   run_test_tt_main suite

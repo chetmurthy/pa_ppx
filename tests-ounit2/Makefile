@@ -80,14 +80,16 @@ test: $(TESTS:.byte=)
 	./$<
 
 test_%.byte: test_%.ml testutil.cmo testutil2.cmo
+	cppo -D PAPPX $< > $<.pappx.ml
 	$(OCAMLFIND)2 preprocess -package $(PACKAGES),$(PAPACKAGES),camlp5.pr_o.syntax \
-	-syntax camlp5o $< > $<.pappx.ppo
+	-syntax camlp5o $<.pappx.ml > $<.pappx.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PAPACKAGES) \
-	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $< -o $@
+	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $<.pappx.ml -o $@
 
 test_%.ppx.byte: test_%.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
-	$(OCAMLFIND)2 preprocess -package $(PACKAGES),ounit2,$(PPXPACKAGES) $< > $<.ppx.ppo
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $< -o $@
+	cppo -U PAPPX $< > $<.ppx.ml
+	$(OCAMLFIND)2 preprocess -package $(PACKAGES),ounit2,$(PPXPACKAGES) $<.ppx.ml > $<.ppx.ppo
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $<.ppx.ml -o $@
 
 test_ppx_yojson.byte: test_ppx_yojson.ml testutil.cmo testutil2.cmo
 	cppo -D PAPPX test_ppx_yojson.ml > test_ppx_yojson.pappx.ml

@@ -405,9 +405,23 @@ value sig_item_gen_eq name arg = fun [
 value expr_eq arg = fun [
   <:expr:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "eq" || id = "derive.eq" ->
     let loc = loc_of_ctyp ty in
+    let param_map = ty |> type_params |> PM.make_of_ids in
     let coercion = monomorphize_ctyp ty in
-    let e = fmt_top arg ~{coercion=coercion} [] ty in
-    <:expr< fun a b ->  $e$ a b >>
+    let e = fmt_top arg ~{coercion=coercion} param_map ty in
+    let parampats = List.map (PM.arg_patt ~{mono=True} loc) param_map in
+    let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
+    let e = <:expr< fun a b ->  $e$ a b >> in
+    Expr.abstract_over (paramtype_patts@parampats) e
+
+| _ -> assert False ]
+;
+
+value ctyp_eq arg = fun [
+  <:ctyp:< [% $attrid:(_, id)$: $type:ty$ ] >> when id = "eq" || id = "derive.eq" ->
+    let param_map = ty |> type_params |> PM.make_of_ids in
+    let argfmttys = List.map (PM.arg_ctyp loc) param_map in  
+    Ctyp.arrows_list loc argfmttys <:ctyp< $ty$ ->  $ty$ -> Stdlib.Bool.t >>
+
 | _ -> assert False ]
 ;
 
@@ -418,7 +432,9 @@ Pa_deriving.(Registry.add PI.{
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
 ; alg_attributes = ["equal"; "nobuiltin"]
 ; expr_extensions = ["eq"]
+; ctyp_extensions = ["eq"]
 ; expr = expr_eq
+; ctyp = ctyp_eq
 ; str_item = str_item_gen_eq
 ; sig_item = sig_item_gen_eq
 })

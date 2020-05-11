@@ -108,3 +108,18 @@ value is_type_abbreviation = fun [
 | _ -> True
 ]
 ;
+
+value type_params t =
+  let acc = ref [] in
+  let add1 tv = if not (List.mem tv acc.val) then Std.push acc tv else () in
+  let rec brec = fun [
+    <:ctyp< ' $tv$ >> -> add1 tv
+  | <:ctyp< $a$ $b$ >> -> do { brec a; brec b }
+  | <:ctyp< ( $list:l$ ) >> -> List.iter brec l
+  | <:ctyp< [= $list:branches$ ] >> ->
+    List.iter (fun [ PvTag _ _ _ tyl _ -> List.iter brec (uv tyl) | PvInh _ ty -> brec ty ])  branches
+  | _ -> ()
+  ] in do {
+    brec t ; List.rev acc.val
+  }
+;

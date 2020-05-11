@@ -70,7 +70,9 @@ type t = {
 ; options : list string
 ; alg_attributes : list string
 ; expr_extensions : list string
+; ctyp_extensions : list string
 ; expr : Ctxt.t -> expr -> expr
+; ctyp : Ctxt.t -> ctyp -> ctyp
 ; str_item : string -> Ctxt.t -> str_item -> str_item
 ; sig_item : string -> Ctxt.t -> sig_item -> sig_item
 ; default_options : list (string * expr)
@@ -96,7 +98,8 @@ end
 
 value plugin_registry = ref [] ;
 value alternate2plugin = ref [] ;
-value extension2plugin = ref [] ;
+value expr_extension2plugin = ref [] ;
+value ctyp_extension2plugin = ref [] ;
 value algattr2plugin = ref [] ;
 
 value checked_add_assoc ~{mapping} r (k,v) =
@@ -111,10 +114,16 @@ value add t = do {
   t.PI.alternates |> List.iter (fun s ->
       checked_add_assoc ~{mapping="plugin-alternates"} alternate2plugin (s, t.PI.name)) ;
   t.expr_extensions |> List.iter (fun e ->
-      Std.push extension2plugin (e, t.name)) ;
+      Std.push expr_extension2plugin (e, t.name)) ;
 
   t.expr_extensions |> List.iter (fun e ->
-      Std.push extension2plugin (Printf.sprintf "derive.%s" t.name, t.name)) ;
+      Std.push expr_extension2plugin (Printf.sprintf "derive.%s" t.name, t.name)) ;
+
+  t.ctyp_extensions |> List.iter (fun e ->
+      Std.push ctyp_extension2plugin (e, t.name)) ;
+
+  t.ctyp_extensions |> List.iter (fun e ->
+      Std.push ctyp_extension2plugin (Printf.sprintf "derive.%s" t.name, t.name)) ;
 
   List.iter (fun aname -> Std.push algattr2plugin (aname, t.name)) t.alg_attributes
 }
@@ -158,7 +167,7 @@ value registered_sig_item (name,pi) arg = fun [
 value registered_expr_extension arg = fun [
   <:expr:< [% $_extension:e$ ] >> as z ->
     let ename = attr_id e in
-    let piname = List.assoc ename extension2plugin.val in
+    let piname = List.assoc ename expr_extension2plugin.val in
     let pi = List.assoc piname plugin_registry.val in
     let arg = Ctxt.add_options arg pi.default_options in
     Some (pi.expr arg z)
@@ -166,11 +175,25 @@ value registered_expr_extension arg = fun [
 ]
 ;
 
+value registered_ctyp_extension arg = fun [
+  <:ctyp:< [% $_extension:e$ ] >> as z ->
+    let ename = attr_id e in
+    let piname = List.assoc ename ctyp_extension2plugin.val in
+    let pi = List.assoc piname plugin_registry.val in
+    let arg = Ctxt.add_options arg pi.default_options in
+    Some (pi.ctyp arg z)
+| _ -> assert False
+]
+;
+
 value is_registered_deriving attr =
   List.exists (fun (name, _) -> is_deriving name attr) plugin_registry.val ;
 
-value is_registered_extension attr =
-  List.mem_assoc (attr_id attr) extension2plugin.val ;
+value is_registered_expr_extension attr =
+  List.mem_assoc (attr_id attr) expr_extension2plugin.val ;
+
+value is_registered_ctyp_extension attr =
+  List.mem_assoc (attr_id attr) ctyp_extension2plugin.val ;
 
 value is_registered_plugin na =
   List.mem_assoc na plugin_registry.val || List.mem_assoc na alternate2plugin.val ;
@@ -295,9 +318,17 @@ let ef = EF.{ (ef) with
 
 let ef = EF.{ (ef) with
   expr = extfun ef.expr with [
-    <:expr:< [% $_extension:e$ ] >> as z when is_registered_extension e ->
+    <:expr:< [% $_extension:e$ ] >> as z when is_registered_expr_extension e ->
       fun arg ->
         registered_expr_extension arg z
   ] } in
+
+let ef = EF.{ (ef) with
+  ctyp = extfun ef.ctyp with [
+    <:ctyp:< [% $_extension:e$ ] >> as z when is_registered_ctyp_extension e ->
+      fun arg ->
+        registered_ctyp_extension arg z
+  ] } in
+
   Pa_passthru.(install { name = "pa_deriving" ; ef = ef ; before = [] ; after = ["pa_import";"surveil"] })
 ;

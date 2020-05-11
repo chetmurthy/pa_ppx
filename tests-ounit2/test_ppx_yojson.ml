@@ -838,6 +838,13 @@ let suite = "Test ppx_yojson" >::: [
     "test_hashtbl_yojson" >:: HT.test_hashtbl_yojson;
   ]
 
+#ifdef PAPPX
+let _ = ([%of_yojson: 'a * 'a] : [%of_yojson: 'a * 'a])
+let _ = ([%to_yojson: 'a * 'a] : [%to_yojson: 'a * 'a])
+let _ = ([%of_sexp: 'a * 'a] : [%of_sexp: 'a * 'a])
+let _ = ([%sexp_of: 'a * 'a] : [%sexp_of: 'a * 'a])
+#endif
+
 let _ = 
 if not !Sys.interactive then
   run_test_tt_main suite
