@@ -161,9 +161,9 @@ value fmt_expression arg ?{coercion} param_map ty0 =
     (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
     let cid = uv cid in
     let ppcid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
-      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
+      None -> Ctxt.prefixed_name arg cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
-    let prefix_txt = (Ctxt.prefixed_name arg ppcid)^" " in
+    let prefix_txt = ppcid^" " in
     let (recpat, body) = fmt_record ~{without_path=True} ~{prefix_txt=prefix_txt} ~{bracket_space=""} loc arg (uv fields) in
 
     let conspat = <:patt< $uid:cid$ $recpat$ >> in
@@ -172,7 +172,7 @@ value fmt_expression arg ?{coercion} param_map ty0 =
   | (loc, cid, tyl, None, attrs) ->
     let cid = uv cid in
     let ppcid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
-      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
+      None -> Ctxt.prefixed_name arg cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let tyl = uv tyl in
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
@@ -192,12 +192,12 @@ value fmt_expression arg ?{coercion} param_map ty0 =
     let fmts = List.map fmtrec tyl in
     let fmtstring =
       if vars = [] then
-        Printf.sprintf "@[<2>%s@]" (Ctxt.prefixed_name arg ppcid)
+        Printf.sprintf "@[<2>%s@]" ppcid
       else if List.length vars = 1 then
-        Printf.sprintf "(@[<2>%s@ %s)@]" (Ctxt.prefixed_name arg ppcid)
+        Printf.sprintf "(@[<2>%s@ %s)@]" ppcid
         (String.concat ",@ " (List.map (fun _ -> "%a") vars))
       else
-        Printf.sprintf "(@[<2>%s@ (@,%s@,))@]" (Ctxt.prefixed_name arg ppcid)
+        Printf.sprintf "(@[<2>%s@ (@,%s@,))@]" ppcid
         (String.concat ",@ " (List.map (fun _ -> "%a") vars))
     in
     let e = List.fold_left2 (fun e f v -> <:expr< $e$ $f$ $lid:v$ >>)
@@ -360,7 +360,7 @@ value extend_sig_items arg si = match si with [
 ]
 ;
 
-value extend_str_items arg si = match si with [
+value rec extend_str_items arg si = match si with [
   <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >>
 | <:str_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >>
   as z ->
@@ -426,6 +426,9 @@ value extend_str_items arg si = match si with [
       let fallback = f . f in
       f.f := $e$ >> ]
 
+  | <:str_item:< exception $excon:ec$ $itemattrs:attrs$ >> ->
+    extend_str_items arg <:str_item:< type Pa_ppx_runtime.Exceptions.t +=  [ $list:[ec]$ ] $itemattrs:attrs$ >>
+
 | _ -> assert False
 ]
 ;
@@ -438,6 +441,10 @@ value str_item_gen_show name arg = fun [
     <:str_item< declare $list:l$ end >>
 
 | <:str_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ [ $list:_$ ] $_itemattrs:_$ >> as z ->
+    let l = extend_str_items arg z in
+    <:str_item< declare $list:l$ end >>
+
+| <:str_item:< exception $excon:_$ $itemattrs:_$ >> as z ->
     let l = extend_str_items arg z in
     <:str_item< declare $list:l$ end >>
 

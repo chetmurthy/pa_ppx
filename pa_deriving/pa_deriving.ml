@@ -149,6 +149,9 @@ value registered_str_item (name,pi) arg = fun [
 | <:str_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ [ $list:_$ ] $itemattrs:_$ >> as z ->
     pi.PI.str_item name arg z
 
+| <:str_item:< exception $_excon:_$ $itemattrs:_$ >> as z ->
+    pi.PI.str_item name arg z
+
 | _ -> assert False
 ]
 ;
@@ -221,6 +224,10 @@ value rewrite_str_item_deriving_attribute = fun [
 | <:str_item:< type $lilongid:lili$ $_list:pl$ += $_priv:pf$ [ $list:ecs$ ] $itemattrs:attrs$ >> ->
     let attrs = rewrite_deriving_attribute attrs in
     <:str_item:< type $lilongid:lili$ $_list:pl$ += $_priv:pf$ [ $list:ecs$ ] $itemattrs:attrs$ >>
+
+| <:str_item:< exception $_excon:ec$ $itemattrs:attrs$ >> ->
+    let attrs = rewrite_deriving_attribute attrs in
+    <:str_item< exception $_excon:ec$ $itemattrs:attrs$ >>
 ]
 ;
 
@@ -290,6 +297,15 @@ let ef = EF.{ (ef) with
       let l = [z :: l ] @ [ <:str_item< [@@@"end"] >> ] in
       Some <:str_item< declare $list:l$ end >>
 
+  | <:str_item:< exception $_excon:_$ $itemattrs:attrs$ >> as z
+    when 1 = count is_deriving_attribute attrs ->
+    fun arg ->
+      let derivings = attrs |> List.map extract_deriving0 |> List.concat in
+      let l = derivings |> List.map (invoke_str_item_plugin arg z) |> List.concat in
+      let z = rewrite_str_item_deriving_attribute z in
+      let l = [z :: l ] @ [ <:str_item< [@@@"end"] >> ] in
+      Some <:str_item< declare $list:l$ end >>
+      
   ] } in
 
 let ef = EF.{ (ef) with

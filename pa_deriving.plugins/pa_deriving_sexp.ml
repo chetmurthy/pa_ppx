@@ -313,7 +313,7 @@ value extend_sig_items arg si = match si with [
 ]
 ;
 
-value extend_str_items arg si = match si with [
+value rec extend_str_items arg si = match si with [
   <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >>
 | <:str_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
  as z ->
@@ -367,6 +367,9 @@ value extend_str_items arg si = match si with [
       let open $!:False$ $modname$ in
       let fallback = f . f in
       f.f := $e$ >> ]
+
+  | <:str_item:< exception $excon:ec$ $itemattrs:attrs$ >> ->
+    extend_str_items arg <:str_item:< type Pa_ppx_runtime.Exceptions.t +=  [ $list:[ec]$ ] $itemattrs:attrs$ >>
 
 | _ -> assert False
 ]
@@ -687,7 +690,7 @@ value extend_sig_items arg si = match si with [
 ]
 ;
 
-value extend_str_items arg si = match si with [
+value rec extend_str_items arg si = match si with [
   <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >> 
 | <:str_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
   as z ->
@@ -743,6 +746,9 @@ value extend_str_items arg si = match si with [
       let open $!:False$ $modname$ in
       let fallback = f . f in
       f.f := $e$ >> ]
+
+  | <:str_item:< exception $excon:ec$ $itemattrs:attrs$ >> ->
+    extend_str_items arg <:str_item:< type Pa_ppx_runtime.Exceptions.t +=  [ $list:[ec]$ ] $itemattrs:attrs$ >>
 
 | _ -> assert False
 ]
@@ -812,6 +818,10 @@ value str_item_gen_sexp name arg = fun [
     <:str_item< declare $list:l$ end >>
 
 | <:str_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ [ $list:_$ ] $_itemattrs:_$ >> as z ->
+    let l = extend_str_items arg z in
+    <:str_item< declare $list:l$ end >>
+
+| <:str_item:< exception $excon:_$ $itemattrs:_$ >> as z ->
     let l = extend_str_items arg z in
     <:str_item< declare $list:l$ end >>
 

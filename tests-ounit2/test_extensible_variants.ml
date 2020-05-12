@@ -85,10 +85,26 @@ let test_exceptions2 ctxt =
 ; assert_roundtrip_sexp Exn.show Exn.sexp_of_t Exn.t_of_sexp
     (XY"foo") {|(Y "foo")|}
 
+module MZ = struct
+  exception Z of string
+end
+
+exception Z of string [@name "MZ.Z"] [@rebind_to MZ.Z]  [@@deriving show, eq, yojson, sexp]
+
+let test_exceptions3 ctxt =
+  assert_equal ~printer:(fun x -> x)
+    {|(MZ.Z "foo")|} (Exn.show (Z"foo"))
+; assert_bool "equal-MZ.Z" (Exn.equal (MZ.Z "foo") (MZ.Z "foo"))
+; assert_roundtrip Exn.pp Exn.to_yojson Exn.of_yojson
+    (Z"foo") {|["MZ.Z", "foo"]|}
+; assert_roundtrip_sexp Exn.show Exn.sexp_of_t Exn.t_of_sexp
+    (Z"foo") {|(MZ.Z "foo")|}
+
 let suite = filemod >::: [
     "test_AB"  >:: test_AB;
     "test_exceptions"  >:: test_exceptions;
     "test_exceptions2"  >:: test_exceptions2;
+    "test_exceptions3"  >:: test_exceptions3;
   ]
 
 let _ = 

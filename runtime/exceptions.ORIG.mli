@@ -30,7 +30,7 @@ type t +=
   | StreamFailure [@rebind_to Stream.Failure]
   | Error of string [@rebind_to Stream.Error]
   | Break [@rebind_to Sys.Break]
-[@@deriving show { with_path = false }, sexp, yojson, eq]
+[@@deriving show, sexp, yojson, eq]
 
 ELSE
 END
