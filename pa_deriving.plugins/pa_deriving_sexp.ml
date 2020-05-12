@@ -49,15 +49,6 @@ end ;
 value tuplepatt loc l = if List.length l = 1 then List.hd l else <:patt< ( $list:l$ ) >> ;
 value tupleexpr loc l = if List.length l = 1 then List.hd l else <:expr< ( $list:l$ ) >> ;
 
-value extract_allowed_attribute_expr arg attrna attrs =
-  match try_find (fun a -> match uv a with [ <:attribute_body< $attrid:(_, id)$ $exp:e$ ; >>
-                   when id = DC.allowed_attribute (DC.get arg) "sexp" attrna ->
-                   e
-                 | _ -> failwith "extract_allowed_attribute_expr" ]) attrs with [
-    e -> Some e
-  | exception Failure _ -> None ]
-;
-
 module To = struct
 
 type attrmod_t = [ Nobuiltin ] ;

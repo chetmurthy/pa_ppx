@@ -28,17 +28,32 @@ value expr_to_longident eli =
   ]
   in erec eli
 ;
+value is_rebind_to_attribute (attr : attribute) = attr_id attr = "rebind_to" ;
+
+value rebind_extension_constructor arg = fun [
+   EcTuple (loc, ci, _, None, attrs) as z
+    when List.exists is_rebind_to_attribute (uv attrs) ->
+    let (rebind_attrs, others) = filter_split is_rebind_to_attribute (uv attrs) in
+    let eli = match List.map uv rebind_attrs  with [
+      [ <:attribute_body:< rebind_to $exp:eli$ ; >> ] -> eli
+    | _ -> Ploc.raise loc (Failure "rebind_extension_constructor: bad rebind_to attribute")
+    ] in
+    <:extension_constructor< $_uid:ci$ = $longid:expr_to_longident eli$ $algattrs:others$ >>
+ ]
+;
 
 value install () = 
 let ef = EF.mk () in 
 let ef = EF.{ (ef) with
             extension_constructor = extfun ef.extension_constructor with [
-    <:extension_constructor:< $uid:ci$ of $list:_$ [@rebind_to $exp:eli$ ; ] >> as z ->
+    <:extension_constructor:< $uid:ci$ of $list:_$ $algattrs:attrs$ >> as z
+    when List.exists is_rebind_to_attribute attrs ->
     fun arg ->
-      Some <:extension_constructor< $uid:ci$ = $longid:expr_to_longident eli$ >>
-  | <:extension_constructor:< $uid:ci$ [@rebind_to $exp:eli$ ; ] >> as z ->
+      Some (rebind_extension_constructor arg z)
+  | <:extension_constructor:< $uid:ci$  $algattrs:attrs$ >> as z
+    when List.exists is_rebind_to_attribute attrs ->
     fun arg ->
-      Some <:extension_constructor< $uid:ci$ = $longid:expr_to_longident eli$ >>
+      Some (rebind_extension_constructor arg z)
   ] } in
   Pa_passthru.(install { name = "pa_rebindto"; ef =  ef ; before = [] ; after = ["pa_deriving"] })
 ;

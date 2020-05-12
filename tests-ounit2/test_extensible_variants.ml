@@ -1,5 +1,6 @@
 let filemod = "Test_extensible_variants"
 open OUnit2
+open Pa_ppx_runtime
 
 type json =
   [ `Assoc of (string * json) list
@@ -53,34 +54,41 @@ let test_AB ctxt =
   assert_equal ~printer:(fun x -> x) "Test_extensible_variants.C" (B.show_u C)
 ; assert_equal A.A C
 
-module Exn = struct
-type t = exn = .. [@@deriving show, sexp, yojson, eq]
-end
-
-type Exn.t +=
-    Not_found [@rebind_to Stdlib.Not_found ;]
-  | Failure of string [@rebind_to Stdlib.Failure ;]
-[@@deriving show { with_path = false }, sexp, yojson, eq]
+module Exn = Exceptions
 
 let test_exceptions ctxt =
   assert_equal Stdlib.Not_found Not_found
-; assert_equal ~printer:(fun x -> x) "Not_found" (Exn.show Stdlib.Not_found)
+; assert_equal ~printer:(fun x -> x) "Stdlib.Not_found" (Exn.show Stdlib.Not_found)
 ; assert_equal (Stdlib.Failure "foo") (Failure "foo")
-; assert_equal ~printer:(fun x -> x) {|(Failure "foo")|} (Exn.show (Stdlib.Failure "foo"))
+; assert_equal ~printer:(fun x -> x) {|(Stdlib.Failure "foo")|} (Exn.show (Stdlib.Failure "foo"))
 ; assert_roundtrip_sexp Exn.show Exn.sexp_of_t Exn.t_of_sexp
-    Not_found "(Not_found)"
+    Not_found "(Stdlib.Not_found)"
 ; assert_roundtrip_sexp Exn.show Exn.sexp_of_t Exn.t_of_sexp
-    (Failure"foo") {|(Failure "foo")|}
+    (Failure"foo") {|(Stdlib.Failure "foo")|}
 ; assert_roundtrip Exn.pp Exn.to_yojson Exn.of_yojson
-    Not_found {|["Not_found"]|}
+    Not_found {|["Stdlib.Not_found"]|}
 ; assert_roundtrip Exn.pp Exn.to_yojson Exn.of_yojson
-    (Failure"foo") {|["Failure", "foo"]|}
+    (Failure"foo") {|["Stdlib.Failure", "foo"]|}
 ; assert_bool "equal-Not_found" (Exn.equal Stdlib.Not_found Not_found)
 ; assert_bool "not-equal-Not_found-Failure" (not (Exn.equal (Failure "foo") Not_found))
+
+exception Y of string
+
+type Exn.t +=
+    XY of string [@rebind_to Y ;][@name "Y";]
+[@@deriving show { with_path = false }, sexp, yojson, eq]
+
+let test_exceptions2 ctxt =
+  assert_equal ~printer:Sexplib.Sexp.to_string_hum
+    Sexplib.Sexp.(List [Atom"Y"; Atom"foo"])
+    (Exn.sexp_of_t (XY"foo"))
+; assert_roundtrip_sexp Exn.show Exn.sexp_of_t Exn.t_of_sexp
+    (XY"foo") {|(Y "foo")|}
 
 let suite = filemod >::: [
     "test_AB"  >:: test_AB;
     "test_exceptions"  >:: test_exceptions;
+    "test_exceptions2"  >:: test_exceptions2;
   ]
 
 let _ = 

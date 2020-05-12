@@ -158,9 +158,12 @@ value fmt_expression arg ?{coercion} param_map ty0 =
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, None, _) ->
+    (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
     let cid = uv cid in
-    let prefix_txt = (Ctxt.prefixed_name arg cid)^" " in
+    let ppcid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
+    ] in
+    let prefix_txt = (Ctxt.prefixed_name arg ppcid)^" " in
     let (recpat, body) = fmt_record ~{without_path=True} ~{prefix_txt=prefix_txt} ~{bracket_space=""} loc arg (uv fields) in
 
     let conspat = <:patt< $uid:cid$ $recpat$ >> in
@@ -168,6 +171,9 @@ value fmt_expression arg ?{coercion} param_map ty0 =
 
   | (loc, cid, tyl, None, attrs) ->
     let cid = uv cid in
+    let ppcid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
+    ] in
     let tyl = uv tyl in
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
@@ -186,12 +192,12 @@ value fmt_expression arg ?{coercion} param_map ty0 =
     let fmts = List.map fmtrec tyl in
     let fmtstring =
       if vars = [] then
-        Printf.sprintf "@[<2>%s@]" (Ctxt.prefixed_name arg cid)
+        Printf.sprintf "@[<2>%s@]" (Ctxt.prefixed_name arg ppcid)
       else if List.length vars = 1 then
-        Printf.sprintf "(@[<2>%s@ %s)@]" (Ctxt.prefixed_name arg cid)
+        Printf.sprintf "(@[<2>%s@ %s)@]" (Ctxt.prefixed_name arg ppcid)
         (String.concat ",@ " (List.map (fun _ -> "%a") vars))
       else
-        Printf.sprintf "(@[<2>%s@ (@,%s@,))@]" (Ctxt.prefixed_name arg cid)
+        Printf.sprintf "(@[<2>%s@ (@,%s@,))@]" (Ctxt.prefixed_name arg ppcid)
         (String.concat ",@ " (List.map (fun _ -> "%a") vars))
     in
     let e = List.fold_left2 (fun e f v -> <:expr< $e$ $f$ $lid:v$ >>)

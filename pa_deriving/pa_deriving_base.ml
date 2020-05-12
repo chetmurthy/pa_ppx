@@ -123,3 +123,12 @@ value type_params t =
     brec t ; List.rev acc.val
   }
 ;
+
+value extract_allowed_attribute_expr arg attrna attrs =
+  match try_find (fun a -> match uv a with [ <:attribute_body< $attrid:(_, id)$ $exp:e$ ; >>
+                   when id = DC.allowed_attribute (DC.get arg) "sexp" attrna ->
+                   e
+                 | _ -> failwith "extract_allowed_attribute_expr" ]) attrs with [
+    e -> Some e
+  | exception Failure _ -> None ]
+;
