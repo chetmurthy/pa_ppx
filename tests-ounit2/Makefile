@@ -29,6 +29,7 @@ PPXPACKAGES:=$(PPXPACKAGES),ppx_here
 
 PAPACKAGES:=$(PACKAGEPREFIX)utils
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)runtime
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)dock
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import.syntax
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std.syntax
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.yojson.syntax
@@ -70,6 +71,7 @@ TESTS= \
 	test_ppx_yojson.byte \
 	test_ppx_yojson.ppx.byte \
 	test_extensible_variants.byte \
+	test_comment_lexer.byte \
 
 
 all: $(CMO) $(TESTS) test
