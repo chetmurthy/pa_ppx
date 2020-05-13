@@ -12,9 +12,9 @@ LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
 
-PACKAGES := $(PACKAGES),fmt,pa_ppx_base,camlp5.pa_r.syntax,camlp5.lexer.syntax
+PACKAGES := $(PACKAGES),fmt,bos,pa_ppx_base,camlp5.pa_r.syntax,camlp5.lexer.syntax
 TARGET := pa_ppx_dock.cma
-CMO := comment_lexer.cmo
+CMO := comment_lexer.cmo pa_dock.cmo
 CMI := $(CMO:.cmo=.cmi)
 SYNTAX := camlp5r
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_dock

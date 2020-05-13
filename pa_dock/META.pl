@@ -7,7 +7,7 @@ our $destdir = shift @ARGV ;
 
 print <<"EOF";
 # Specifications for the "pa_ppx" preprocessor:
-requires = "camlp5,fmt,pa_ppx_base"
+requires = "camlp5,fmt,bos,pa_ppx_base"
 version = "$version"
 description = "pa_ppx pa_dock support"
 
