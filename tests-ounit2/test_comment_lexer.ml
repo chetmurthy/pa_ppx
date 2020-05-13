@@ -14,8 +14,20 @@ let test_simplest ctxt =
     [("(** The first special comment of the file is the comment associated\n     with the whole module.*)",
   0); ("\n\n", 97)] toks
     
+let test_full_string ctxt =
+  let s = {|(** The first special comment of the file is the comment associated
+     with the whole module.*)
+
+let x = 1
+|} in
+    let l = Pa_dock.comments_of_string s in
+  assert_equal ~printer:[%show: (string * int) list]
+    [("(** The first special comment of the file is the comment associated\n     with the whole module.*)",
+  0); ("\n\n", 97); (" ", 102); (" ", 104); (" ", 106); ("\n", 108)] l
+
 let suite = "Test here" >::: [
     "test_simplest"   >:: test_simplest
+;   "test_full_string"   >:: test_full_string
   ]
 
 let _ = 
