@@ -248,12 +248,12 @@ value adjust_loc s loc = do {
   let file_name = Ploc.file_name loc in
   let line_nb = Ploc.line_nb loc - slines in
   assert (line_nb > 0) ;
-  let bol_pos = Ploc.bol_pos loc - slen in
-  assert (bol_pos >= 0) ;
   let bp = Ploc.first_pos loc - slen in
   assert (bp >= 0) ;
   let ep = Ploc.last_pos loc - slen in
   assert (ep >= 0) ;
+  let bol_pos = bp in
+  assert (bol_pos >= 0) ;
   Ploc.make_loc file_name line_nb bol_pos (bp, ep) ""
 }
 ;

@@ -79,6 +79,7 @@ let ef = EF.{ (ef) with
 Pa_passthru.(install {
     name = "pa_assert";
     ef =  ef ;
+    pass = None ;
     before = ["pa_deriving"] ;
     after = ["pa_inline_test"; "pa_expect_test"]
   })

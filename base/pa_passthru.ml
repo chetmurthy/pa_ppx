@@ -913,6 +913,7 @@ and interf0 arg (l, status) =
 
 type pass_t = {
   name : string ;
+  pass : option int ;
   before : list string ;
   after : list string ;
   ef : EF.t

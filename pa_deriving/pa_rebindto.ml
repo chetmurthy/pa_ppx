@@ -55,7 +55,7 @@ let ef = EF.{ (ef) with
     fun arg ->
       Some (rebind_extension_constructor arg z)
   ] } in
-  Pa_passthru.(install { name = "pa_rebindto"; ef =  ef ; before = [] ; after = ["pa_deriving"] })
+  Pa_passthru.(install { name = "pa_rebindto"; ef =  ef ; pass = None ; before = [] ; after = ["pa_deriving"] })
 ;
 
 install();

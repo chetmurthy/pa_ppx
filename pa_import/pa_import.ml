@@ -470,7 +470,7 @@ let ef = EF.{ (ef) with
       fun arg ->
         registered_module_type_extension arg z
   ] } in
-Pa_passthru.(install { name = "pa_import" ; ef = ef ; before = [] ; after = [] })
+Pa_passthru.(install { name = "pa_import" ; ef = ef ; pass = None ; before = [] ; after = [] })
 ;
 
 Pcaml.add_option "-pa_import-package" (Arg.String add_package)

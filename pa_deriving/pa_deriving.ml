@@ -346,5 +346,5 @@ let ef = EF.{ (ef) with
         registered_ctyp_extension arg z
   ] } in
 
-  Pa_passthru.(install { name = "pa_deriving" ; ef = ef ; before = [] ; after = ["pa_import";"surveil"] })
+  Pa_passthru.(install { name = "pa_deriving" ; ef = ef ; pass = None ; before = [] ; after = ["pa_import";"surveil"] })
 ;

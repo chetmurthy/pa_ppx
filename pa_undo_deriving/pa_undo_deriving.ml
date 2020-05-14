@@ -155,7 +155,7 @@ let ef = EF.{ (ef) with
         Some (registered_structure arg z)
   ] } in
 
-Pa_passthru.(install { name = "pa_undo_deriving" ; ef = ef ; before = [] ; after = [] })
+Pa_passthru.(install { name = "pa_undo_deriving" ; ef = ef ; pass = None ; before = [] ; after = [] })
 ;
 
 install();

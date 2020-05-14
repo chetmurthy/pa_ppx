@@ -344,5 +344,5 @@ let ef = EF.{ (ef) with
         let rv = interf arg z in do {
         Fmt.(DC.dump stderr (DC.get arg)) ; rv }
   ] } in
-  Pa_passthru.(install { name = "surveil" ; ef = ef ; before = [] ; after = [] })
+  Pa_passthru.(install { name = "surveil" ; ef = ef ; pass = None ; before = [] ; after = [] })
 ;

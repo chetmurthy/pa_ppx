@@ -174,7 +174,7 @@ let ef = EF.{ (ef) with
     fun arg ->
       Some (rewrite_case_branch arg z)
   ] } in
-  Pa_passthru.(install { name = "pa_hashrecons" ; ef = ef ; before = [] ; after = [] })
+  Pa_passthru.(install { name = "pa_hashrecons" ; ef = ef ; pass = None ; before = [] ; after = [] })
 ;
 
 install();

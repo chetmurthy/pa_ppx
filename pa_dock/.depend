@@ -1,0 +1,6 @@
+comment_lexer.cmo :
+comment_lexer.cmx :
+pa_dock.cmo : \
+    comment_lexer.cmo
+pa_dock.cmx : \
+    comment_lexer.cmx

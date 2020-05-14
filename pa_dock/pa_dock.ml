@@ -11,6 +11,7 @@
 open Asttools;
 open MLast;
 open Pa_ppx_base ;
+open Pa_ppx_utils ;
 open Pa_passthru ;
 open Ppxutil ;
 
@@ -35,8 +36,319 @@ value comments_of_string s =
   List.concat ll
 ;
 
-value comments_of_file f =
-  let s = f |> Fpath.v |> Bos.OS.File.read
+value comments_of_file f = do {
+  let fname = f |> Fpath.v in
+  fname |> Bos.OS.Path.must_exist |> Rresult.R.failwith_error_msg ;
+  let s = fname |> Bos.OS.File.read
              |> Rresult.R.get_ok in
   comments_of_string s
+}
 ;
+
+module CM = Map.Make(struct type t = int ; value compare = Stdlib.compare ; end) ;
+
+value make_comment_map l =
+  List.fold_left (fun m ((s : string), i) -> CM.add i s m) CM.empty l
+;
+
+value comments_between m i j = do {
+  assert (i < j) ;
+  let (_, iopt, rest) = CM.split i m in
+  let (want, jopt, _) = CM.split j rest in
+  (match iopt with [ None -> [] | Some x -> [(i, x)] ])@
+  (CM.bindings want)
+}
+;
+
+type t = {
+  cm : mutable CM.t string
+} ;
+type scratchdata_t += [ Pa_dock of t ] ;
+
+value get arg =
+  match Ctxt.scratchdata arg "dock" with [
+    Pa_dock dc -> dc.cm
+  | _ -> assert False
+  ]
+;
+
+value update arg newv =
+  match Ctxt.scratchdata arg "dock" with [
+    Pa_dock dc -> dc.cm := newv
+  | _ -> assert False
+  ]
+;
+
+value init arg m =
+   Ctxt.init_scratchdata arg "dock" (Pa_dock { cm = m })
+;
+
+value is_comment s =
+  String.length s >= 2 && "(*" = String.sub s 0 2 ;
+
+value is_doc_comment s =
+  String.length s >= 3 && "(**" = String.sub s 0 3 ;
+
+value not_is_doc_comment s = not (is_doc_comment s) ;
+
+value is_blank_line s =
+  not (is_comment s) &&
+  Comment_lexer.string_count s '\n' > 1 ;
+
+value f_not p x = not (p x) ;
+value f_or p1 p2 x = (p1 x) || (p2 x);
+
+value split_at_first_doc_comment l =
+  let rec srec acc = fun [
+    ([ h :: t ] as l) when is_doc_comment h -> (List.rev acc, l)
+  | ([ h :: t ] as l) -> srec [ h :: acc ] t
+  | [] -> (List.rev acc, [])
+  ]
+ in srec [] l
+;
+
+value sig_item_apportion_interior_comments l =
+  let (before_doc, maybe_doc) = split_at_first_doc_comment l in
+  let (before, rest) = match maybe_doc with [
+    [] -> ([], [])
+  | ([ h :: t ] as l) -> do {
+      assert (is_doc_comment h) ;
+      if List.for_all (f_not (f_or is_blank_line is_comment)) before_doc then
+        ([h], t)
+      else ([], l)
+    }
+  ] in
+  let (rev_after_doc, rev_maybe_doc) = split_at_first_doc_comment (List.rev rest) in
+  let (after, rev_rest) = match rev_maybe_doc with [
+    [] -> ([], [])
+  | [ h :: t ] as l -> do {
+      assert(is_doc_comment h) ;
+      if List.for_all (f_not is_blank_line) rev_after_doc then
+        ([h], t)
+      else ([], l)
+    }
+  ] in
+  let rest = List.rev (Std.filter is_doc_comment rev_rest) in
+  (before, rest, after)
+;
+
+value str_item_apportion_interior_comments l =
+  let (rev_after_doc, rev_maybe_doc) = split_at_first_doc_comment (List.rev l) in
+  let (after, rev_rest) = match rev_maybe_doc with [
+    [] -> (None, [])
+  | [ h :: t ] as l -> do {
+      assert(is_doc_comment h) ;
+      if List.for_all (f_not is_blank_line) rev_after_doc then
+        (Some h, t)
+      else (None, l)
+    }
+  ] in
+  let rest = List.rev (Std.filter is_doc_comment rev_rest) in
+  (rest, after)
+;
+
+value flatten_structure l =
+  let rec frec acc = fun [
+    [] -> List.rev acc
+  | [ <:str_item< declare $list:l$ end >> :: t ] ->
+      frec acc (l@t)
+  | [ h :: t ] -> frec [h :: acc] t
+  ]
+  in frec [] l
+;
+
+value str_item_floating_attribute s =
+  let loc = Ploc.dummy in
+  (<:str_item< [@@@ "ocaml.text" $str:s$ ; ] >>, loc)
+;
+
+value itemattr_doc_comment loc s =
+  let a = <:attribute_body< "ocaml.doc" $str:s$ ; >> in
+  <:vala< a >>
+;
+
+value str_item_wrap_itemattr a si = match si with [
+  <:str_item:< declare $list:_$ end >> -> assert False
+| <:str_item< [@@@ $_attribute:attr$ ] >> -> assert False
+
+| <:str_item:< exception $excon:ec$ $itemattrs:item_attrs$ >> ->
+  <:str_item< exception $excon:ec$ $itemattrs:item_attrs@[ a ]$ >>
+
+| <:str_item:< external $lid:i$ : $t$ = $list:pd$ $itemattrs:attrs$ >> ->
+  <:str_item< external $lid:i$ : $t$ = $list:pd$ $itemattrs:attrs@[ a ]$ >>
+
+| <:str_item:< include $me$ $itemattrs:attrs$ >> ->
+  <:str_item< include $me$ $itemattrs:attrs @[ a ]$ >>
+
+| <:str_item:< module $flag:r$ $list:l$ >> ->
+  let (last, l) = sep_last l in
+  let (id, me, attrs) = last in
+  let attrs = (uv attrs)@[ a ] in
+  let last = (id, me, <:vala< attrs >>) in
+  let l = l @ [ last ] in
+  <:str_item< module $flag:r$ $list:l$ >>
+
+| <:str_item:< module type $_:i$ = $mt$ $itemattrs:attrs$ >> ->
+  <:str_item< module type $_:i$ = $mt$ $itemattrs:attrs@[ a ]$ >>
+
+| <:str_item:< module type $_:i$ $itemattrs:attrs$ >> ->
+  <:str_item< module type $_:i$ $itemattrs:attrs@[ a ]$ >>
+| <:str_item:< open $_!:ovf$ $me$ $itemattrs:attrs$ >> ->
+  <:str_item< open $_!:ovf$ $me$ $itemattrs:attrs@[ a ]$ >>
+
+| <:str_item:< type $_flag:nrfl$ $list:tdl$ >> ->
+  let (last, tdl) = sep_last tdl in
+  let attrs = uv last.tdAttributes in
+  let attrs = attrs @ [ a ] in
+  let last = { (last) with tdAttributes = <:vala< attrs >> } in
+  let tdl = tdl @ [ last ] in
+  <:str_item< type $_flag:nrfl$ $list:tdl$ >>
+
+| <:str_item:< type $_lilongid:tp$ $_list:pl$ += $_priv:pf$ [ $_list:ecs$ ] $itemattrs:attrs$ >> ->
+  <:str_item< type $_lilongid:tp$ $_list:pl$ += $_priv:pf$ [ $_list:ecs$ ] $itemattrs:attrs@[ a ]$ >>
+
+| <:str_item:< value $_flag:r$ $list:l$ >> ->
+  let (last, l) = sep_last l in
+  let (p,e,attrs) = last in
+  let attrs = (uv attrs)@[ a ] in
+  let last = (p,e, <:vala< attrs >> ) in
+  let l = l @ [ last ] in
+  <:str_item< value $_flag:r$ $list:l$ >>
+
+| <:str_item:< # $_lid:n$ $_opt:dp$ >> as z -> z
+| <:str_item< # $_str:s$ $_list:sil$ >> as z -> z
+
+| <:str_item:< $exp:e$ $itemattrs:attrs$ >> ->
+  <:str_item< $exp:e$ $itemattrs:attrs@[ a ]$ >>
+
+| <:str_item:< [%% $_extension:e$ ] $itemattrs:attrs$ >> ->
+  <:str_item< [%% $_extension:e$ ] $itemattrs:attrs@[ a ]$ >>
+
+| <:str_item:< class $list:cd$ >> ->
+  let (last, cd) = sep_last cd in
+  let attrs = uv last.ciAttributes in
+  let attrs = attrs @ [ a ] in
+  let last = { (last) with ciAttributes = <:vala< attrs >> } in
+  let cd = cd @ [ last ] in
+  <:str_item< class $list:cd$ >>
+
+| <:str_item:< class type $list:ctd$ >> ->
+  let (last, ctd) = sep_last ctd in
+  let attrs = uv last.ciAttributes in
+  let attrs = attrs @ [ a ] in
+  let last = { (last) with ciAttributes = <:vala< attrs >> } in
+  let ctd = ctd @ [ last ] in
+  <:str_item< class type $list:ctd$ >>
+
+
+| [%unmatched_vala] -> Ploc.raise (loc_of_str_item si) (Failure "pa_dock.str_item_wrap_itemattr")
+
+]
+;
+
+value rewrite_str_item_pair arg (h1, loc1) (h2, loc2) =
+  let ep1 = Ploc.last_pos loc1 in
+  let bp2 = Ploc.first_pos loc2 in
+  let l = List.map snd (comments_between (get arg) ep1 bp2) in
+  let (floating, after) = str_item_apportion_interior_comments l in
+  let floating = List.map str_item_floating_attribute floating in
+  let (more_floating, h2) = match (after, h2) with [
+    (None, _) -> ([], h2)
+  | (Some s, <:str_item< [@@@ $_attribute:_$ ] >>) -> ([str_item_floating_attribute s], h2)
+  | (Some s, _) -> ([], str_item_wrap_itemattr (itemattr_doc_comment loc2 s) h2)
+  ] in
+  ((h1, loc1), floating@more_floating, (h2, loc2))
+;
+
+value rec rewrite_structure arg = fun [
+  [ h1 ; h2 :: t ] ->
+  let (h1, floating, h2) = rewrite_str_item_pair arg (h1, loc_of_str_item h1) (h2, loc_of_str_item h2) in
+  [ (fst h1) ] @ (List.map fst floating) @ (rewrite_structure arg [ (fst h2) :: t ])
+| [ si ] -> [ si ]
+| [] -> []
+]
+;
+
+value rec rewrite_implem arg (sil, status) = 
+  let rec rerec = fun [
+    [ h1 ; h2 :: t ] ->
+    let (h1, floating, h2) = rewrite_str_item_pair arg h1 h2 in
+    [ h1 ] @ floating @ (rerec [ h2 :: t ])
+  | [ si ] -> [ si ]
+  | [] -> []
+  ] in
+  (rerec sil, status)
+;
+
+value flatten_signature l =
+  let rec frec acc = fun [
+    [] -> List.rev acc
+  | [ <:sig_item< declare $list:l$ end >> :: t ] ->
+      frec acc (l@t)
+  | [ h :: t ] -> frec [h :: acc] t
+  ]
+  in frec [] l
+;
+
+value rec rewrite_signature arg = fun [
+  z ->
+  z
+]
+;
+
+value wrap_implem arg z = do {
+  let (sil, status) = z in
+  let loc = sil |> List.hd |> snd in
+  let fname = Ctxt.filename arg in
+  let l = comments_of_file fname in
+  let m = make_comment_map l in
+  init arg m ;
+  (sil, status) |> rewrite_implem arg |> Pa_passthru.implem0 arg 
+}
+;
+
+value wrap_interf arg z = do {
+  let (sil, status) = z in
+  let loc = sil |> List.hd |> snd in
+  let fname = Ctxt.filename arg in
+  let l = comments_of_file fname in
+  let m = make_comment_map l in
+  init arg m ;
+  Pa_passthru.interf0 arg (sil, status)
+}
+;
+
+value install () = 
+let ef = EF.mk () in 
+let ef = EF.{ (ef) with
+            structure = extfun ef.structure with [
+    z ->
+    fun arg ->
+      Some (rewrite_structure arg (flatten_structure z))
+  ] } in
+
+let ef = EF.{ (ef) with
+            signature = extfun ef.signature with [
+    z ->
+    fun arg ->
+      Some (rewrite_signature arg (flatten_signature z))
+  ] } in
+
+let ef = EF.{ (ef) with
+              implem = extfun ef.implem with [
+    z ->
+    fun arg -> 
+      Some (wrap_implem arg z)
+  ] } in
+
+let ef = EF.{ (ef) with
+              interf = extfun ef.interf with [
+    z ->
+    fun arg -> 
+      Some (wrap_interf arg z)
+  ] } in
+
+  Pa_passthru.(install { name = "pa_dock_doc_comment" ; ef = ef ; pass = Some 0 ; before = [] ; after = [] })
+;
+
+install();

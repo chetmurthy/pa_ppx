@@ -12,11 +12,11 @@ all:
 	$(RM) -rf local-install && mkdir -p local-install/lib
 	$(MAKE) -C util-lib all
 	$(MAKE) -C base all
+	$(MAKE) -C pa_unmatched_vala all
 	$(MAKE) -C pa_dock all
 	$(MAKE) -C pa_here all
 	$(MAKE) -C pa_undo_deriving all
 	$(MAKE) -C pa_assert all
-	$(MAKE) -C pa_unmatched_vala all
 	$(MAKE) -C pa_inline_test all
 	$(MAKE) -C pa_expect_test all
 	$(MAKE) -C pa_hashrecons all
@@ -30,9 +30,9 @@ all:
 
 PACKAGES := pa_ppx_utils
 PACKAGES := $(PACKAGES),pa_ppx_base
+PACKAGES := $(PACKAGES),pa_ppx_unmatched_vala
 PACKAGES := $(PACKAGES),pa_ppx_here
 PACKAGES := $(PACKAGES),pa_ppx_assert
-PACKAGES := $(PACKAGES),pa_ppx_unmatched_vala
 PACKAGES := $(PACKAGES),pa_ppx_inline_test
 PACKAGES := $(PACKAGES),pa_ppx_expect_test
 PACKAGES := $(PACKAGES),pa_ppx_deriving
@@ -60,11 +60,11 @@ clean::
 	rm -rf META local-install camlp5o.pa_ppx
 	$(MAKE) -C util-lib clean
 	$(MAKE) -C base clean
+	$(MAKE) -C pa_unmatched_vala clean
 	$(MAKE) -C pa_dock clean
 	$(MAKE) -C pa_here clean
 	$(MAKE) -C pa_undo_deriving clean
 	$(MAKE) -C pa_assert clean
-	$(MAKE) -C pa_unmatched_vala clean
 	$(MAKE) -C pa_inline_test clean
 	$(MAKE) -C pa_expect_test clean
 	$(MAKE) -C pa_hashrecons clean
@@ -79,11 +79,11 @@ clean::
 depend:
 	$(MAKE) -C util-lib depend
 	$(MAKE) -C base depend
+	$(MAKE) -C pa_unmatched_vala depend
 	$(MAKE) -C pa_dock depend
 	$(MAKE) -C pa_here depend
 	$(MAKE) -C pa_undo_deriving depend
 	$(MAKE) -C pa_assert depend
-	$(MAKE) -C pa_unmatched_vala depend
 	$(MAKE) -C pa_inline_test depend
 	$(MAKE) -C pa_expect_test depend
 	$(MAKE) -C pa_hashrecons depend
