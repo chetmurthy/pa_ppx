@@ -350,10 +350,8 @@ value rewrite_str_item_pair arg ((h1 : str_item), loc1) (h2, loc2) =
   ((h1, loc1), floating@more_floating, (h2, loc2))
 ;
 
-value rewrite_class_str_item_pair arg (h1 : class_str_item) h2 =
-  let loc1 = loc_of_class_str_item h1 in
+value rewrite_class_str_item_pair arg ep1 h2 =
   let loc2 = loc_of_class_str_item h2 in
-  let ep1 = Ploc.last_pos loc1 in
   let bp2 = Ploc.first_pos loc2 in
   let l = List.map snd (comments_between (get arg) ep1 bp2) in
   let (floating, after) = str_item_apportion_interior_comments l in
@@ -363,7 +361,7 @@ value rewrite_class_str_item_pair arg (h1 : class_str_item) h2 =
   | (Some s, <:class_str_item< [@@@ $_attribute:_$ ] >>) -> ([class_str_item_floating_attribute s], h2)
   | (Some s, _) -> ([], class_str_item_wrap_itemattr (attr_doc_comment loc2 s) h2)
   ] in
-  (h1, floating@more_floating, h2)
+  (floating@more_floating, h2)
 ;
 
 value rewrite_structure arg loc l =
@@ -378,14 +376,13 @@ value rewrite_structure arg loc l =
 ;
 
 value rewrite_class_structure arg loc l =
-  let rec rerec = fun [
-    [ h1 ; h2 :: t ] ->
-    let (h1, floating, h2) = rewrite_class_str_item_pair arg h1 h2 in
-    [ h1 ] @ floating @ (rerec [ h2 :: t ])
-  | [ si ] -> [ si ]
+  let rec rerec ep1 = fun [
+    [ h1  :: t ] ->
+    let (floating, h1) = rewrite_class_str_item_pair arg ep1 h1 in
+    floating @ [h1] @ (rerec (Ploc.last_pos (loc_of_class_str_item h1)) t)
   | [] -> []
   ] in
-  rerec l
+  rerec (Ploc.first_pos loc) l
 ;
 
 value rewrite_first_implem_item arg ep1 (h2, loc2) =
