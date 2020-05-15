@@ -51,7 +51,7 @@ value make_comment_map l =
   List.fold_left (fun m ((s : string), i) -> CM.add i s m) CM.empty l
 ;
 
-value comments_between m i j = do {
+value comments_between (m : CM.t string) i j = do {
   assert (i <= j) ;
   let (_, iopt, rest) = CM.split i m in
   let (want, jopt, _) = CM.split j rest in
@@ -157,12 +157,23 @@ value flatten_structure l =
   in frec [] l
 ;
 
+value strip_comment_marks s = do {
+  let slen = String.length s in
+  assert (slen > String.length "(***)") ;
+  assert (String.sub s 0 3 = "(**") ;
+  assert (String.sub s (slen -2) 2 = "*)") ;
+  String.escaped (String.sub s 3 (slen - 5))
+}
+;
+
 value str_item_floating_attribute s =
   let loc = Ploc.dummy in
+  let s = strip_comment_marks s in
   (<:str_item< [@@@ "ocaml.text" $str:s$ ; ] >>, loc)
 ;
 
 value attr_doc_comment loc s =
+  let s = strip_comment_marks s in
   let a = <:attribute_body< "ocaml.doc" $str:s$ ; >> in
   <:vala< a >>
 ;
@@ -291,7 +302,7 @@ value rewrite_type_decls arg maxpos tdl =
   in tdl
 ;
 
-value rewrite_str_item_pair arg (h1, loc1) (h2, loc2) =
+value rewrite_str_item_pair arg ((h1 : str_item), loc1) (h2, loc2) =
   let ep1 = Ploc.last_pos loc1 in
   let bp2 = Ploc.first_pos loc2 in
   let l = List.map snd (comments_between (get arg) ep1 bp2) in
