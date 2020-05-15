@@ -66,3 +66,5 @@
      val x : int
      (* ... *)
    end
+
+(** a special comment at the end of the toplevel module *)

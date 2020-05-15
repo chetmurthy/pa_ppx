@@ -336,8 +336,7 @@ value rewrite_type_decls arg maxpos tdl =
   in tdl
 ;
 
-value rewrite_str_item_pair arg ((h1 : str_item), loc1) (h2, loc2) =
-  let ep1 = Ploc.last_pos loc1 in
+value rewrite_str_item_pair arg ep1 (h2, loc2) =
   let bp2 = Ploc.first_pos loc2 in
   let l = List.map snd (comments_between (get arg) ep1 bp2) in
   let (floating, after) = str_item_apportion_interior_comments l in
@@ -347,7 +346,7 @@ value rewrite_str_item_pair arg ((h1 : str_item), loc1) (h2, loc2) =
   | (Some s, <:str_item< [@@@ $_attribute:_$ ] >>) -> ([str_item_floating_attribute s], h2)
   | (Some s, _) -> ([], str_item_wrap_itemattr (attr_doc_comment loc2 s) h2)
   ] in
-  ((h1, loc1), floating@more_floating, (h2, loc2))
+  (floating@more_floating, (h2, loc2))
 ;
 
 value rewrite_class_str_item_pair arg ep1 h2 =
@@ -364,15 +363,27 @@ value rewrite_class_str_item_pair arg ep1 h2 =
   (floating@more_floating, h2)
 ;
 
+value trailing_str_item_doc_comments arg spos epos =
+  let l = List.map snd (comments_between (get arg) spos epos) in
+  let l = Std.filter is_doc_comment l in
+  List.map str_item_floating_attribute l
+;
+
+value trailing_class_str_item_doc_comments arg spos epos =
+  let l = List.map snd (comments_between (get arg) spos epos) in
+  let l = Std.filter is_doc_comment l in
+  List.map class_str_item_floating_attribute l
+;
+
 value rewrite_structure arg loc l =
-  let rec rerec = fun [
-    [ h1 ; h2 :: t ] ->
-    let (h1, floating, h2) = rewrite_str_item_pair arg (h1, loc_of_str_item h1) (h2, loc_of_str_item h2) in
-    [ (fst h1) ] @ (List.map fst floating) @ (rerec [ (fst h2) :: t ])
-  | [ si ] -> [ si ]
-  | [] -> []
+  let rec rerec eps1 = fun [
+    [ h1 :: t ] ->
+    let (floating, (h1, _)) = rewrite_str_item_pair arg eps1 (h1, loc_of_str_item h1) in
+    (List.map fst floating) @ [h1] @ (rerec (Ploc.last_pos (loc_of_str_item h1)) t)
+  | [] ->
+    List.map fst (trailing_str_item_doc_comments arg eps1 (Ploc.last_pos loc))
   ] in
-  rerec l
+  rerec (Ploc.first_pos loc) l
 ;
 
 value rewrite_class_structure arg loc l =
@@ -380,7 +391,8 @@ value rewrite_class_structure arg loc l =
     [ h1  :: t ] ->
     let (floating, h1) = rewrite_class_str_item_pair arg ep1 h1 in
     floating @ [h1] @ (rerec (Ploc.last_pos (loc_of_class_str_item h1)) t)
-  | [] -> []
+  | [] ->
+    trailing_class_str_item_doc_comments arg ep1 (Ploc.last_pos loc)
   ] in
   rerec (Ploc.first_pos loc) l
 ;
@@ -399,18 +411,23 @@ value rewrite_first_implem_item arg ep1 (h2, loc2) =
 ;
 
 value rec rewrite_implem arg (sil, status) = 
-  let rec rerec = fun [
-    [ h1 ; h2 :: t ] ->
-    let (h1, floating, h2) = rewrite_str_item_pair arg h1 h2 in
-    [ h1 ] @ floating @ (rerec [ h2 :: t ])
-  | [ si ] -> [ si ]
-  | [] -> []
+ let loc =
+   let (first, _) = List.hd sil in
+   let ((last,_), _) = sep_last sil in
+   Ploc.encl (loc_of_str_item first) (loc_of_str_item last) in
+  let rec rerec eps1 = fun [
+    [ h1 :: t ] ->
+    let (floating, h1) = rewrite_str_item_pair arg eps1 h1 in
+    floating @ [h1] @ (rerec (Ploc.last_pos (loc_of_str_item (fst h1))) t)
+
+  | [] -> trailing_str_item_doc_comments arg eps1 max_int
+
   ] in
   match sil with [
     [] -> assert False
   | [ h :: t ] ->
     let (floating, h) = rewrite_first_implem_item arg 0 h in
-    (floating @ rerec [ h :: t], status)
+    (floating @ [h] @ rerec (Ploc.last_pos (loc_of_str_item (fst h))) t, status)
   ]
 ;
 
