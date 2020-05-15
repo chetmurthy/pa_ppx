@@ -249,9 +249,19 @@ value str_item_wrap_itemattr a si = match si with [
 value rewrite_gc arg ((loc, ci, tyl, rto, attrs) : generic_constructor) maxpos = 
   let startpos = Ploc.last_pos loc in
   let l = List.map snd (comments_between (get arg) startpos maxpos) in
+  let l = Std.filter is_doc_comment l in
   let newattrs = List.map (attr_doc_comment loc) l in
   let attrs = <:vala< (uv attrs) @ newattrs >> in
   ((loc, ci, tyl, rto, attrs), Ploc.first_pos loc)
+;
+
+value rewrite_field arg ((loc, f, m, ty, attrs) : (loc * string * bool * ctyp * attributes)) maxpos = 
+  let startpos = Ploc.last_pos loc in
+  let l = List.map snd (comments_between (get arg) startpos maxpos) in
+  let l = Std.filter is_doc_comment l in
+  let newattrs = List.map (attr_doc_comment loc) l in
+  let attrs = <:vala< (uv attrs) @ newattrs >> in
+  ((loc, f, m, ty, attrs), Ploc.first_pos loc)
 ;
 
 value rewrite_type_decl arg td maxpos = match td.tdDef with [
@@ -261,6 +271,14 @@ value rewrite_type_decl arg td maxpos = match td.tdDef with [
         ([ gc :: acc], maxpos)
     ) l ([], maxpos) in
   { (td) with tdDef = <:ctyp< [ $list:l$ ] >> }
+
+| <:ctyp:< { $list:l$ } >> ->
+  let (l, _) = List.fold_right (fun gc (acc, maxpos) ->
+        let (gc, maxpos) = rewrite_field arg gc maxpos in
+        ([ gc :: acc], maxpos)
+    ) l ([], Ploc.last_pos loc) in
+  { (td) with tdDef = <:ctyp< { $list:l$ } >> }
+
 | _ -> td
 ]
 ;
