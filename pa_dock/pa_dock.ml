@@ -87,7 +87,7 @@ value is_comment s =
   String.length s >= 2 && "(*" = String.sub s 0 2 ;
 
 value is_doc_comment s =
-  String.length s >= 3 && "(**" = String.sub s 0 3 ;
+  String.length s >= 4 && "(**" = String.sub s 0 3  && "(***" <> String.sub s 0 4 ;
 
 value not_is_doc_comment s = not (is_doc_comment s) ;
 
