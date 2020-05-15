@@ -260,13 +260,28 @@ value rewrite_str_item_pair arg (h1, loc1) (h2, loc2) =
   ((h1, loc1), floating@more_floating, (h2, loc2))
 ;
 
-value rec rewrite_structure arg = fun [
-  [ h1 ; h2 :: t ] ->
-  let (h1, floating, h2) = rewrite_str_item_pair arg (h1, loc_of_str_item h1) (h2, loc_of_str_item h2) in
-  [ (fst h1) ] @ (List.map fst floating) @ (rewrite_structure arg [ (fst h2) :: t ])
-| [ si ] -> [ si ]
-| [] -> []
-]
+value rewrite_structure arg loc l =
+  let rec rerec = fun [
+    [ h1 ; h2 :: t ] ->
+    let (h1, floating, h2) = rewrite_str_item_pair arg (h1, loc_of_str_item h1) (h2, loc_of_str_item h2) in
+    [ (fst h1) ] @ (List.map fst floating) @ (rerec [ (fst h2) :: t ])
+  | [ si ] -> [ si ]
+  | [] -> []
+  ] in
+  rerec l
+;
+
+value rewrite_first_implem_item arg ep1 (h2, loc2) =
+  let bp2 = Ploc.first_pos loc2 in
+  let l = List.map snd (comments_between (get arg) ep1 bp2) in
+  let (floating, after) = str_item_apportion_interior_comments l in
+  let floating = List.map str_item_floating_attribute floating in
+  let (more_floating, h2) = match (after, h2) with [
+    (None, _) -> ([], h2)
+  | (Some s, <:str_item< [@@@ $_attribute:_$ ] >>) -> ([str_item_floating_attribute s], h2)
+  | (Some s, _) -> ([], str_item_wrap_itemattr (itemattr_doc_comment loc2 s) h2)
+  ] in
+  (floating@more_floating, (h2, loc2))
 ;
 
 value rec rewrite_implem arg (sil, status) = 
@@ -277,7 +292,12 @@ value rec rewrite_implem arg (sil, status) =
   | [ si ] -> [ si ]
   | [] -> []
   ] in
-  (rerec sil, status)
+  match sil with [
+    [] -> assert False
+  | [ h :: t ] ->
+    let (floating, h) = rewrite_first_implem_item arg 0 h in
+    (floating @ rerec [ h :: t], status)
+  ]
 ;
 
 value flatten_signature l =
@@ -321,10 +341,11 @@ value wrap_interf arg z = do {
 value install () = 
 let ef = EF.mk () in 
 let ef = EF.{ (ef) with
-            structure = extfun ef.structure with [
-    z ->
+            module_expr = extfun ef.module_expr with [
+    <:module_expr:< struct $list:l$ end >> ->
     fun arg ->
-      Some (rewrite_structure arg (flatten_structure z))
+    let l = rewrite_structure arg loc (flatten_structure l) in
+    Some <:module_expr:< struct $list:l$ end >>
   ] } in
 
 let ef = EF.{ (ef) with
