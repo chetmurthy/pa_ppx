@@ -172,10 +172,44 @@ value str_item_floating_attribute s =
   (<:str_item< [@@@ "ocaml.text" $str:s$ ; ] >>, loc)
 ;
 
+value class_str_item_floating_attribute s =
+  let loc = Ploc.dummy in
+  let s = strip_comment_marks s in
+  <:class_str_item< [@@@ "ocaml.text" $str:s$ ; ] >>
+;
+
 value attr_doc_comment loc s =
   let s = strip_comment_marks s in
   let a = <:attribute_body< "ocaml.doc" $str:s$ ; >> in
   <:vala< a >>
+;
+
+value class_str_item_wrap_itemattr a si = match si with [
+  <:class_str_item:< [@@@ $_attribute:_$ ] >> -> assert False
+| <:class_str_item< declare $_list:st$ end >> -> assert False
+
+| <:class_str_item:< inherit $_!:ovf$ $ce$ $_opt:pb$ $itemattrs:attrs$ >> ->
+  <:class_str_item< inherit $_!:ovf$ $ce$ $_opt:pb$ $itemattrs:attrs@[ a ]$ >>
+
+| <:class_str_item:< value $_!:ovf$ $_flag:mf$ $_lid:lab$ = $e$ $itemattrs:attrs$ >> ->
+  <:class_str_item< value $_!:ovf$ $_flag:mf$ $_lid:lab$ = $e$ $itemattrs:attrs@[ a ]$ >>
+
+| <:class_str_item:< value virtual $_flag:mf$ $_lid:lab$ : $t$ $itemattrs:attrs$ >> ->
+  <:class_str_item< value virtual $_flag:mf$ $_lid:lab$ : $t$ $itemattrs:attrs@[ a ]$ >>
+
+| <:class_str_item:< method virtual $_flag:pf$ $_lid:l$ : $t$ $itemattrs:attrs$ >> ->
+  <:class_str_item< method virtual $_flag:pf$ $_lid:l$ : $t$ $itemattrs:attrs@[ a ]$ >>
+
+| <:class_str_item:<
+    method $_!:ovf$ $_priv:pf$ $_lid:l$ $_opt:topt$ = $e$ $itemattrs:attrs$ >> ->
+  <:class_str_item<
+    method $_!:ovf$ $_priv:pf$ $_lid:l$ $_opt:topt$ = $e$ $itemattrs:attrs@[ a ]$ >>
+
+| <:class_str_item:< type $t1$ = $t2$ $itemattrs:attrs$ >> ->
+  <:class_str_item< type $t1$ = $t2$ $itemattrs:attrs@[ a ]$ >>
+| <:class_str_item:< [%% $_extension:e$ ] >> ->
+  Ploc.raise loc (Invalid_argument "class_str_item-%%extension")
+]
 ;
 
 value str_item_wrap_itemattr a si = match si with [
@@ -316,11 +350,38 @@ value rewrite_str_item_pair arg ((h1 : str_item), loc1) (h2, loc2) =
   ((h1, loc1), floating@more_floating, (h2, loc2))
 ;
 
+value rewrite_class_str_item_pair arg (h1 : class_str_item) h2 =
+  let loc1 = loc_of_class_str_item h1 in
+  let loc2 = loc_of_class_str_item h2 in
+  let ep1 = Ploc.last_pos loc1 in
+  let bp2 = Ploc.first_pos loc2 in
+  let l = List.map snd (comments_between (get arg) ep1 bp2) in
+  let (floating, after) = str_item_apportion_interior_comments l in
+  let floating = List.map class_str_item_floating_attribute floating in
+  let (more_floating, h2) = match (after, h2) with [
+    (None, _) -> ([], h2)
+  | (Some s, <:class_str_item< [@@@ $_attribute:_$ ] >>) -> ([class_str_item_floating_attribute s], h2)
+  | (Some s, _) -> ([], class_str_item_wrap_itemattr (attr_doc_comment loc2 s) h2)
+  ] in
+  (h1, floating@more_floating, h2)
+;
+
 value rewrite_structure arg loc l =
   let rec rerec = fun [
     [ h1 ; h2 :: t ] ->
     let (h1, floating, h2) = rewrite_str_item_pair arg (h1, loc_of_str_item h1) (h2, loc_of_str_item h2) in
     [ (fst h1) ] @ (List.map fst floating) @ (rerec [ (fst h2) :: t ])
+  | [ si ] -> [ si ]
+  | [] -> []
+  ] in
+  rerec l
+;
+
+value rewrite_class_structure arg loc l =
+  let rec rerec = fun [
+    [ h1 ; h2 :: t ] ->
+    let (h1, floating, h2) = rewrite_class_str_item_pair arg h1 h2 in
+    [ h1 ] @ floating @ (rerec [ h2 :: t ])
   | [ si ] -> [ si ]
   | [] -> []
   ] in
@@ -396,6 +457,15 @@ value wrap_interf arg z = do {
 
 value install () = 
 let ef = EF.mk () in 
+
+let ef = EF.{ (ef) with
+            class_expr = extfun ef.class_expr with [
+    <:class_expr:< object $_opt:cspo$ $list:cf$ end >> ->
+    fun arg ->
+    let cf = rewrite_class_structure arg loc cf in
+    Some <:class_expr< object $_opt:cspo$ $list:cf$ end >>
+  ] } in
+
 let ef = EF.{ (ef) with
             module_expr = extfun ef.module_expr with [
     <:module_expr:< struct $list:l$ end >> ->
