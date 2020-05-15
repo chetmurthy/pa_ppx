@@ -227,3 +227,6 @@ value quote_position loc p =
   pos_bol = $int:string_of_int p.pos_bol$ ;
   pos_cnum = $int:string_of_int p.pos_cnum$ } >>
 ;
+
+value loc_of_type_decl td = fst (uv td.tdNam) ;
+

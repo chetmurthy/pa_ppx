@@ -52,7 +52,7 @@ value make_comment_map l =
 ;
 
 value comments_between m i j = do {
-  assert (i < j) ;
+  assert (i <= j) ;
   let (_, iopt, rest) = CM.split i m in
   let (want, jopt, _) = CM.split j rest in
   (match iopt with [ None -> [] | Some x -> [(i, x)] ])@
@@ -162,7 +162,7 @@ value str_item_floating_attribute s =
   (<:str_item< [@@@ "ocaml.text" $str:s$ ; ] >>, loc)
 ;
 
-value itemattr_doc_comment loc s =
+value attr_doc_comment loc s =
   let a = <:attribute_body< "ocaml.doc" $str:s$ ; >> in
   <:vala< a >>
 ;
@@ -246,6 +246,33 @@ value str_item_wrap_itemattr a si = match si with [
 ]
 ;
 
+value rewrite_gc arg ((loc, ci, tyl, rto, attrs) : generic_constructor) maxpos = 
+  let startpos = Ploc.last_pos loc in
+  let l = List.map snd (comments_between (get arg) startpos maxpos) in
+  let newattrs = List.map (attr_doc_comment loc) l in
+  let attrs = <:vala< (uv attrs) @ newattrs >> in
+  ((loc, ci, tyl, rto, attrs), Ploc.first_pos loc)
+;
+
+value rewrite_type_decl arg td maxpos = match td.tdDef with [
+  <:ctyp:< [ $list:l$ ] >> ->
+  let (l, _) = List.fold_right (fun gc (acc, maxpos) ->
+        let (gc, maxpos) = rewrite_gc arg gc maxpos in
+        ([ gc :: acc], maxpos)
+    ) l ([], maxpos) in
+  { (td) with tdDef = <:ctyp< [ $list:l$ ] >> }
+| _ -> td
+]
+;
+
+value rewrite_type_decls arg maxpos tdl =
+  let (tdl, _) = List.fold_right (fun td (acc, maxpos) ->
+    let td = rewrite_type_decl arg td maxpos in
+    let maxpos = Ploc.first_pos (loc_of_type_decl td) in
+    ([ td :: acc], maxpos)) tdl ([], maxpos)
+  in tdl
+;
+
 value rewrite_str_item_pair arg (h1, loc1) (h2, loc2) =
   let ep1 = Ploc.last_pos loc1 in
   let bp2 = Ploc.first_pos loc2 in
@@ -255,7 +282,7 @@ value rewrite_str_item_pair arg (h1, loc1) (h2, loc2) =
   let (more_floating, h2) = match (after, h2) with [
     (None, _) -> ([], h2)
   | (Some s, <:str_item< [@@@ $_attribute:_$ ] >>) -> ([str_item_floating_attribute s], h2)
-  | (Some s, _) -> ([], str_item_wrap_itemattr (itemattr_doc_comment loc2 s) h2)
+  | (Some s, _) -> ([], str_item_wrap_itemattr (attr_doc_comment loc2 s) h2)
   ] in
   ((h1, loc1), floating@more_floating, (h2, loc2))
 ;
@@ -279,7 +306,7 @@ value rewrite_first_implem_item arg ep1 (h2, loc2) =
   let (more_floating, h2) = match (after, h2) with [
     (None, _) -> ([], h2)
   | (Some s, <:str_item< [@@@ $_attribute:_$ ] >>) -> ([str_item_floating_attribute s], h2)
-  | (Some s, _) -> ([], str_item_wrap_itemattr (itemattr_doc_comment loc2 s) h2)
+  | (Some s, _) -> ([], str_item_wrap_itemattr (attr_doc_comment loc2 s) h2)
   ] in
   (floating@more_floating, (h2, loc2))
 ;
@@ -346,6 +373,14 @@ let ef = EF.{ (ef) with
     fun arg ->
     let l = rewrite_structure arg loc (flatten_structure l) in
     Some <:module_expr:< struct $list:l$ end >>
+  ] } in
+
+let ef = EF.{ (ef) with
+            str_item = extfun ef.str_item with [
+    <:str_item:< type $_flag:nrfl$ $list:tdl$ >> ->
+    fun arg ->
+    let tdl = rewrite_type_decls arg (Ploc.last_pos loc) tdl in
+    Some <:str_item< type $_flag:nrfl$ $list:tdl$ >>
   ] } in
 
 let ef = EF.{ (ef) with

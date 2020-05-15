@@ -84,7 +84,6 @@ value wrap_type_constraints loc param_map funs types =
 
 end
 ;
-value loc_of_type_decl td = fst (uv td.tdNam) ;
 
 value monomorphize_ctyp cty =
   let rec mrec = fun [
