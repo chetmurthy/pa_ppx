@@ -44,8 +44,13 @@ sub runtest {
 			       "-source-tree-root", ".",
 			       "-diff-cmd", "-",
 			       @args]);
-  if ($rc > 0 && -r $corr) {
-    v_systemx([0,1], ["git", "--no-pager", "diff", "--no-index", "-u", $src, $corr]);
+  if ($rc > 0 || -r $corr) {
+    if (-r $corr) {
+      v_systemx([0,1], ["git", "--no-pager", "diff", "--no-index", "-u", $src, $corr]);
+    }
+    else {
+      die "test failed but no $corr file present" ;
+    }
   }
   return $rc;
 }

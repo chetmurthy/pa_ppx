@@ -27,6 +27,6 @@ top: all
 .SUFFIXES: .cmo .cmi .ml .mli .cmx .cma .cmxa
 
 clean::
-	$(RM) -f *.cm* *.o *.a *.byte *.log *.cache *.ppo *.ppo.ml _build/*
+	$(RM) -rf *.cm* *.o *.a *.byte *.log *.cache *.ppo *.ppo.ml _build/*
 
 realclean:: clean

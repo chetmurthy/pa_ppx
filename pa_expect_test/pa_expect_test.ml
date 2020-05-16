@@ -217,7 +217,7 @@ let ef = EF.{ (ef) with
       Some (wrap_implem arg (Pa_passthru.implem0 arg z))
   ] } in
 
-  Pa_passthru.(install { name = "pa_expect_test" ; ef = ef ; pass = None ; before = ["pa_inline_test"] ; after = [] })
+  Pa_passthru.(install { name = "pa_expect_test" ; ef = ef ; pass = None ; before = [] ; after = ["pa_inline_test"] })
 ;
 
 install();
