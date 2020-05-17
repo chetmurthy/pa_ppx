@@ -11,6 +11,7 @@ RM=rm
 all:
 	$(RM) -rf local-install && mkdir -p local-install/lib
 	$(MAKE) -C util-lib all
+	$(MAKE) -C runtime all
 	$(MAKE) -C base all
 	$(MAKE) -C pa_unmatched_vala all
 	$(MAKE) -C pa_dock all
@@ -23,7 +24,6 @@ all:
 	$(MAKE) -C pa_deriving all
 	$(MAKE) -C pa_deriving.plugins all
 	$(MAKE) -C pa_import all
-	$(MAKE) -C runtime all
 	$(MAKE) -C tests-ounit2 all
 	$(MAKE) -C tests-inline all
 	$(MAKE) -C tests-expect all
@@ -59,6 +59,7 @@ uninstall:
 clean::
 	rm -rf META local-install camlp5o.pa_ppx
 	$(MAKE) -C util-lib clean
+	$(MAKE) -C runtime clean
 	$(MAKE) -C base clean
 	$(MAKE) -C pa_unmatched_vala clean
 	$(MAKE) -C pa_dock clean
@@ -71,13 +72,13 @@ clean::
 	$(MAKE) -C pa_deriving clean
 	$(MAKE) -C pa_deriving.plugins clean
 	$(MAKE) -C pa_import clean
-	$(MAKE) -C runtime clean
 	$(MAKE) -C tests-ounit2 clean
 	$(MAKE) -C tests-inline clean
 	$(MAKE) -C tests-expect clean
 
 depend:
 	$(MAKE) -C util-lib depend
+	$(MAKE) -C runtime depend
 	$(MAKE) -C base depend
 	$(MAKE) -C pa_unmatched_vala depend
 	$(MAKE) -C pa_dock depend
@@ -90,7 +91,6 @@ depend:
 	$(MAKE) -C pa_deriving depend
 	$(MAKE) -C pa_deriving.plugins depend
 	$(MAKE) -C pa_import depend
-	$(MAKE) -C runtime depend
 	$(MAKE) -C tests-ounit2 depend
 	$(MAKE) -C tests-inline depend
 	$(MAKE) -C tests-expect depend
