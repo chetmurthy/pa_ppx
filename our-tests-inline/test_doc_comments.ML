@@ -66,3 +66,16 @@ let%expect_test "simple implem" =
     module type my_module_type  = sig val x : int[@@ocaml.doc " Comment for value x. "] end
     [@@ocaml.doc " The comment for module type my_module_type. "]
     [@@@ocaml.text " a special comment at the end of the toplevel module "] |}]
+
+let%expect_test "simple interf" =
+#ifdef OFFICIAL
+  "../pa_dock/examples/foo.mli" |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> Official.Interf.pa
+  |> Official.Interf.pr |> print_string ;
+#else
+  "../pa_dock/examples/foo.mli" |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> PAPR.Interf.pa1 ~input_file:"../pa_dock/examples/foo.mli"
+  |> NormLocations.signature |> List.map fst |> Ast2pt.interf "../pa_dock/examples/foo.mli"
+  |> Official.Interf.pr |> print_string ;
+#endif
+  [%expect {| |}]

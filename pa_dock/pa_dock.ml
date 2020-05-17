@@ -596,15 +596,22 @@ value trailing_class_str_item_doc_comments arg spos epos =
   List.map class_str_item_floating_attribute l
 ;
 
-value rewrite_structure arg loc l =
+value rewrite_implem0 arg loc l =
   let rec rerec startpos = fun [
     [ h1 :: t ] ->
-    let (floating, (h1, _)) = rewrite_str_item_pair arg startpos (h1, loc_of_str_item h1) in
-    (List.map fst floating) @ [h1] @ (rerec (Ploc.last_pos (loc_of_str_item h1)) t)
+    let (floating, h1) = rewrite_str_item_pair arg startpos h1 in
+    floating @ [h1] @ (rerec (Ploc.last_pos (loc_of_str_item (fst h1))) t)
   | [] ->
-    List.map fst (trailing_str_item_doc_comments arg startpos (Ploc.last_pos loc))
+    (trailing_str_item_doc_comments arg startpos (Ploc.last_pos loc))
   ] in
   rerec (Ploc.first_pos loc) l
+;
+
+value rewrite_structure arg loc l =
+  l
+  |> List.map (fun si -> (si, loc_of_str_item si))
+  |> rewrite_implem0 arg loc
+  |> List.map fst
 ;
 
 value rewrite_class_structure arg loc l =
@@ -619,23 +626,14 @@ value rewrite_class_structure arg loc l =
 ;
 
 value rewrite_implem arg (sil, status) = 
- let loc =
-   let (first, _) = List.hd sil in
-   let ((last,_), _) = sep_last sil in
-   Ploc.encl (loc_of_str_item first) (loc_of_str_item last) in
-  let rec rerec startpos = fun [
-    [ h1 :: t ] ->
-    let (floating, h1) = rewrite_str_item_pair arg startpos h1 in
-    floating @ [h1] @ (rerec (Ploc.last_pos (loc_of_str_item (fst h1))) t)
-
-  | [] -> trailing_str_item_doc_comments arg startpos max_int
-
-  ] in
   match sil with [
     [] -> assert False
   | [ h :: t ] ->
     let (floating, h) = rewrite_str_item_pair arg 0 h in
-    (floating @ [h] @ rerec (Ploc.last_pos (loc_of_str_item (fst h))) t, status)
+    let startpos = Ploc.last_pos (loc_of_str_item (fst h)) in
+
+    (floating @ [h] @ rewrite_implem0 arg (Ploc.make_unlined (startpos, max_int)) t,
+     status)
   ]
 ;
 
@@ -659,18 +657,25 @@ value flatten_class_signature l =
   in frec [] l
 ;
 
-value rewrite_signature arg loc l =
+value rewrite_interf0 arg loc l =
   let rec rerec = fun [
     [ h1 ; h2 :: t ] ->
-    let ((h1, _), floating, (h2, _)) = rewrite_sig_item_pair arg (h1, loc_of_sig_item h1) (h2, loc_of_sig_item h2) in
-    [h1]@(List.map fst floating) @ (rerec [h2 :: t])
+    let (h1, floating, h2) = rewrite_sig_item_pair arg h1 h2 in
+    [h1]@ floating @ (rerec [h2 :: t])
   | [h] ->
-    let ((h, _), trailing) = trailing_sig_item_doc_comments arg (h, loc_of_sig_item h) (Ploc.last_pos loc) in
-    [h]@(List.map fst trailing)
+    let (h, trailing) = trailing_sig_item_doc_comments arg h (Ploc.last_pos loc) in
+    [h]@trailing
   ] in
   let h1 = List.hd l in
-  let (floating, (h1, _)) = rewrite_leading_sig_item arg (Ploc.first_pos loc) (h1, loc_of_sig_item h1) in
-  (List.map fst floating) @ (rerec [h1 :: List.tl l])
+  let (floating, h1) = rewrite_leading_sig_item arg (Ploc.first_pos loc) h1 in
+  floating @ (rerec [h1 :: List.tl l])
+;
+
+value rewrite_signature arg loc l =
+  l
+  |> List.map (fun si -> (si, loc_of_sig_item si))
+  |> rewrite_interf0 arg loc
+  |> List.map fst
 ;
 
 value rewrite_class_signature arg loc l =
@@ -698,8 +703,10 @@ value wrap_implem arg z = do {
 }
 ;
 
-value rewrite_interf arg (sil, status) = (sil, status) ;
-
+value rewrite_interf arg (sil, status) = 
+  (rewrite_interf0 arg (Ploc.make_unlined (0, max_int)) sil,
+   status)
+;
 
 value wrap_interf arg z = do {
   let (sil, status) = z in
