@@ -107,25 +107,40 @@ value split_at_first_doc_comment l =
  in srec [] l
 ;
 
+value sig_item_apportion_leading_comments l =
+  let (rev_after_doc, rev_maybe_doc) = split_at_first_doc_comment (List.rev l) in
+  let (after, rev_rest) = match rev_maybe_doc with [
+    [] -> (None, [])
+  | [ h :: t ] as l -> do {
+      assert(is_doc_comment h) ;
+      if List.for_all (f_not is_blank_line) rev_after_doc then
+        (Some h, t)
+      else (None, l)
+    }
+  ] in
+  let rest = List.rev (Std.filter is_doc_comment rev_rest) in
+  (rest, after)
+;
+
 value sig_item_apportion_interior_comments l =
   let (before_doc, maybe_doc) = split_at_first_doc_comment l in
   let (before, rest) = match maybe_doc with [
-    [] -> ([], [])
+    [] -> (None, [])
   | ([ h :: t ] as l) -> do {
       assert (is_doc_comment h) ;
       if List.for_all (f_not (f_or is_blank_line is_comment)) before_doc then
-        ([h], t)
-      else ([], l)
+        (Some h, t)
+      else (None, l)
     }
   ] in
   let (rev_after_doc, rev_maybe_doc) = split_at_first_doc_comment (List.rev rest) in
   let (after, rev_rest) = match rev_maybe_doc with [
-    [] -> ([], [])
+    [] -> (None, [])
   | [ h :: t ] as l -> do {
       assert(is_doc_comment h) ;
       if List.for_all (f_not is_blank_line) rev_after_doc then
-        ([h], t)
-      else ([], l)
+        (Some h, t)
+      else (None, l)
     }
   ] in
   let rest = List.rev (Std.filter is_doc_comment rev_rest) in
@@ -172,10 +187,22 @@ value str_item_floating_attribute s =
   (<:str_item< [@@@ "ocaml.text" $str:s$ ; ] >>, loc)
 ;
 
+value sig_item_floating_attribute s =
+  let loc = Ploc.dummy in
+  let s = strip_comment_marks s in
+  (<:sig_item< [@@@ "ocaml.text" $str:s$ ; ] >>, loc)
+;
+
 value class_str_item_floating_attribute s =
   let loc = Ploc.dummy in
   let s = strip_comment_marks s in
   <:class_str_item< [@@@ "ocaml.text" $str:s$ ; ] >>
+;
+
+value class_sig_item_floating_attribute s =
+  let loc = Ploc.dummy in
+  let s = strip_comment_marks s in
+  <:class_sig_item< [@@@ "ocaml.text" $str:s$ ; ] >>
 ;
 
 value attr_doc_comment loc s =
@@ -291,6 +318,108 @@ value str_item_wrap_itemattr a si = match si with [
 ]
 ;
 
+value sig_item_wrap_itemattr a si = match si with [
+  <:sig_item< declare $_list:st$ end >> -> assert False
+| <:sig_item< [@@@ $_attribute:attr$ ] >> -> assert False
+
+| MLast.SgExc loc gc item_attrs ->
+  MLast.SgExc loc gc <:vala< (uv item_attrs)@[ a ] >>
+
+| <:sig_item:< external $_lid:i$ : $t$ = $_list:pd$ $itemattrs:attrs$ >> ->
+  <:sig_item< external $_lid:i$ : $t$ = $_list:pd$ $itemattrs:attrs@[ a ]$ >>
+
+| <:sig_item:< include $mt$ $itemattrs:attrs$ >> ->
+  <:sig_item< include $mtyp:mt$ $itemattrs:attrs@[ a ]$ >>
+
+| <:sig_item:< module $_flag:rf$ $list:l$ >> ->
+  let (last, l) = sep_last l in
+  let (na, ty, attrs) = last in
+  let attrs = <:vala< (uv attrs) @ [ a ] >> in
+  let last = (na, ty, attrs) in
+  let l = l @ [ last ] in
+  <:sig_item< module $_flag:rf$ $list:l$ >>
+
+| <:sig_item:< module $_uid:i$ := $longid:li$ $itemattrs:attrs$ >> ->
+  <:sig_item< module $_uid:i$ := $longid:li$ $itemattrs:attrs@[ a ]$ >>
+
+| <:sig_item:< module type $_:i$ = $mt$ $itemattrs:attrs$ >> ->
+  <:sig_item< module type $_:i$ = $mt$ $itemattrs:attrs@[ a ]$ >>
+
+| <:sig_item:< module type $_:i$ $itemattrs:attrs$ >> ->
+  <:sig_item< module type $_:i$ $itemattrs:attrs@[ a ]$ >>
+
+| <:sig_item:< module alias $_:i$ = $_longid:li$ $itemattrs:attrs$ >> ->
+  <:sig_item< module alias $_:i$ = $_longid:li$ $itemattrs:attrs@[ a ]$ >>
+
+| <:sig_item:< open $longid:i$ $itemattrs:attrs$ >> ->
+  <:sig_item< open $longid:i$ $itemattrs:attrs@[ a ]$ >>
+
+| <:sig_item:< type $_flag:nrfl$ $list:tdl$ >> ->
+  let (last, tdl) = sep_last tdl in
+  let attrs = uv last.tdAttributes in
+  let attrs = attrs @ [ a ] in
+  let last = { (last) with tdAttributes = <:vala< attrs >> } in
+  let tdl = tdl @ [ last ] in
+  <:sig_item< type $_flag:nrfl$ $list:tdl$ >>
+
+| <:sig_item:< type $_lilongid:tp$ $_list:pl$ += $_priv:pf$ [ $_list:ecs$ ] $itemattrs:attrs$ >> ->
+  <:sig_item< type $_lilongid:tp$ $_list:pl$ += $_priv:pf$ [ $_list:ecs$ ] $itemattrs:attrs@[ a ]$ >>
+
+| <:sig_item:< value $_lid:i$ : $t$ $itemattrs:attrs$ >> ->
+  <:sig_item< value $_lid:i$ : $t$ $itemattrs:attrs@[ a ]$ >>
+
+| <:sig_item< # $_lid:_$ $_opt:_$ >> as z -> z
+
+| <:sig_item< # $_str:_$ $_list:_$ >> as z -> z
+
+| <:sig_item:< [%% $_extension:e$ ] $itemattrs:attrs$ >> ->
+  <:sig_item< [%% $_extension:e$ ] $itemattrs:attrs@[ a ]$ >>
+
+| <:sig_item:< class $list:cd$ >> ->
+  let (last, cd) = sep_last cd in
+  let attrs = uv last.ciAttributes in
+  let attrs = attrs @ [ a ] in
+  let last = { (last) with ciAttributes = <:vala< attrs >> } in
+  let cd = cd @ [ last ] in
+  <:sig_item< class $list:cd$ >>
+
+| <:sig_item:< class type $list:ctd$ >> ->
+  let (last, ctd) = sep_last ctd in
+  let attrs = uv last.ciAttributes in
+  let attrs = attrs @ [ a ] in
+  let last = { (last) with ciAttributes = <:vala< attrs >> } in
+  let ctd = ctd @ [ last ] in
+  <:sig_item< class type $list:ctd$ >>
+
+| [%unmatched_vala] -> Ploc.raise (loc_of_sig_item si) (Failure "pa_dock.sig_item_wrap_itemattr")
+
+]
+;
+
+value class_sig_item_wrap_itemattr a si = match si with [
+  <:class_sig_item< declare $_list:_$ end >> -> assert False
+| <:class_sig_item< [@@@ $_attribute:_$ ] >> -> assert False
+
+| <:class_sig_item:< inherit $cs$ $itemattrs:attrs$ >> ->
+  <:class_sig_item< inherit $cs$ $itemattrs:attrs@[ a ]$ >>
+
+| <:class_sig_item:< value $_flag:mf$ $_flag:vf$  $_lid:l$ : $t$ $itemattrs:attrs$ >> ->
+  <:class_sig_item< value $_flag:mf$ $_flag:vf$  $_lid:l$ : $t$ $itemattrs:attrs@[ a ]$ >>
+
+| <:class_sig_item:< method virtual $_flag:pf$ $_lid:l$ : $t$ $itemattrs:attrs$ >> ->
+  <:class_sig_item< method virtual $_flag:pf$ $_lid:l$ : $t$ $itemattrs:attrs@[ a ]$ >>
+
+| <:class_sig_item:< method $_flag:pf$ $_lid:l$ : $t$ $itemattrs:attrs$ >> ->
+  <:class_sig_item< method $_flag:pf$ $_lid:l$ : $t$ $itemattrs:attrs@[ a ]$ >>
+
+| <:class_sig_item:< type $t1$ = $t2$ $itemattrs:attrs$ >> ->
+  <:class_sig_item< type $t1$ = $t2$ $itemattrs:attrs@[ a ]$ >>
+
+| <:class_sig_item:< [%% $_extension:e$ ] >> -> Ploc.raise loc (Invalid_argument "class_sig_item-%%extension")
+
+]
+;
+
 value rewrite_gc arg ((loc, ci, tyl, rto, attrs) : generic_constructor) maxpos = 
   let startpos = Ploc.last_pos loc in
   let l = List.map snd (comments_between (get arg) startpos maxpos) in
@@ -349,6 +478,70 @@ value rewrite_str_item_pair arg startpos (h2, loc2) =
   (floating@more_floating, (h2, loc2))
 ;
 
+value rewrite_sig_item_pair arg (h1, loc1) (h2, loc2) =
+  let startpos = Ploc.last_pos loc1 in
+  let bp2 = Ploc.first_pos loc2 in
+  let l = List.map snd (comments_between (get arg) startpos bp2) in
+  let (before, floating, after) = sig_item_apportion_interior_comments l in
+  let floating = List.map sig_item_floating_attribute floating in
+  let (more_floating2, h2) = match (after, h2) with [
+    (None, _) -> ([], h2)
+  | (Some s, <:sig_item< [@@@ $_attribute:_$ ] >>) -> ([sig_item_floating_attribute s], h2)
+  | (Some s, _) -> ([], sig_item_wrap_itemattr (attr_doc_comment loc2 s) h2)
+  ] in
+  let (more_floating1, h1) = match (before, h1) with [
+    (None, _) -> ([], h1)
+  | (Some s, <:sig_item< [@@@ $_attribute:_$ ] >>) -> ([sig_item_floating_attribute s], h1)
+  | (Some s, _) -> ([], sig_item_wrap_itemattr (attr_doc_comment loc1 s) h1)
+  ] in
+  ((h1, loc1), more_floating1@floating@more_floating2, (h2, loc2))
+;
+
+value rewrite_class_sig_item_pair arg (h1, loc1) (h2, loc2) =
+  let startpos = Ploc.last_pos loc1 in
+  let bp2 = Ploc.first_pos loc2 in
+  let l = List.map snd (comments_between (get arg) startpos bp2) in
+  let (before, floating, after) = sig_item_apportion_interior_comments l in
+  let floating = List.map class_sig_item_floating_attribute floating in
+  let (more_floating2, h2) = match (after, h2) with [
+    (None, _) -> ([], h2)
+  | (Some s, <:class_sig_item< [@@@ $_attribute:_$ ] >>) -> ([class_sig_item_floating_attribute s], h2)
+  | (Some s, _) -> ([], class_sig_item_wrap_itemattr (attr_doc_comment loc2 s) h2)
+  ] in
+  let (more_floating1, h1) = match (before, h1) with [
+    (None, _) -> ([], h1)
+  | (Some s, <:class_sig_item< [@@@ $_attribute:_$ ] >>) -> ([class_sig_item_floating_attribute s], h1)
+  | (Some s, _) -> ([], class_sig_item_wrap_itemattr (attr_doc_comment loc1 s) h1)
+  ] in
+  ((h1, loc1), more_floating1@floating@more_floating2, (h2, loc2))
+;
+
+value rewrite_leading_sig_item arg startpos (h2, loc2) =
+  let bp2 = Ploc.first_pos loc2 in
+  let l = List.map snd (comments_between (get arg) startpos bp2) in
+  let (floating, after) = sig_item_apportion_leading_comments l in
+  let floating = List.map sig_item_floating_attribute floating in
+  let (more_floating2, h2) = match (after, h2) with [
+    (None, _) -> ([], h2)
+  | (Some s, <:sig_item< [@@@ $_attribute:_$ ] >>) -> ([sig_item_floating_attribute s], h2)
+  | (Some s, _) -> ([], sig_item_wrap_itemattr (attr_doc_comment loc2 s) h2)
+  ] in
+  (floating@more_floating2, (h2, loc2))
+;
+
+value rewrite_leading_class_sig_item arg startpos (h2, loc2) =
+  let bp2 = Ploc.first_pos loc2 in
+  let l = List.map snd (comments_between (get arg) startpos bp2) in
+  let (floating, after) = sig_item_apportion_leading_comments l in
+  let floating = List.map class_sig_item_floating_attribute floating in
+  let (more_floating2, h2) = match (after, h2) with [
+    (None, _) -> ([], h2)
+  | (Some s, <:class_sig_item< [@@@ $_attribute:_$ ] >>) -> ([class_sig_item_floating_attribute s], h2)
+  | (Some s, _) -> ([], class_sig_item_wrap_itemattr (attr_doc_comment loc2 s) h2)
+  ] in
+  (floating@more_floating2, (h2, loc2))
+;
+
 value rewrite_class_str_item_pair arg startpos h2 =
   let loc2 = loc_of_class_str_item h2 in
   let bp2 = Ploc.first_pos loc2 in
@@ -367,6 +560,34 @@ value trailing_str_item_doc_comments arg spos epos =
   let l = List.map snd (comments_between (get arg) spos epos) in
   let l = Std.filter is_doc_comment l in
   List.map str_item_floating_attribute l
+;
+
+value trailing_sig_item_doc_comments arg (h, loc) epos =
+  let spos = Ploc.last_pos loc in
+  let l = List.map snd (comments_between (get arg) spos epos) in
+  let (before, rest, after) = sig_item_apportion_interior_comments l in
+  let (more_floating1, h) = match (before, h) with [
+    (None, _) -> ([], h)
+  | (Some s, <:sig_item< [@@@ $_attribute:_$ ] >>) -> ([s], h)
+  | (Some s, _) -> ([], sig_item_wrap_itemattr (attr_doc_comment loc s) h)
+  ] in
+
+  let after = match after with [ None -> [] | Some x -> [x] ] in
+  ((h, loc), List.map sig_item_floating_attribute (more_floating1@rest@after))
+;
+
+value trailing_class_sig_item_doc_comments arg (h, loc) epos =
+  let spos = Ploc.last_pos loc in
+  let l = List.map snd (comments_between (get arg) spos epos) in
+  let (before, rest, after) = sig_item_apportion_interior_comments l in
+  let (more_floating1, h) = match (before, h) with [
+    (None, _) -> ([], h)
+  | (Some s, <:class_sig_item< [@@@ $_attribute:_$ ] >>) -> ([s], h)
+  | (Some s, _) -> ([], class_sig_item_wrap_itemattr (attr_doc_comment loc s) h)
+  ] in
+
+  let after = match after with [ None -> [] | Some x -> [x] ] in
+  ((h, loc), List.map class_sig_item_floating_attribute (more_floating1@rest@after))
 ;
 
 value trailing_class_str_item_doc_comments arg spos epos =
@@ -397,7 +618,7 @@ value rewrite_class_structure arg loc l =
   rerec (Ploc.first_pos loc) l
 ;
 
-value rec rewrite_implem arg (sil, status) = 
+value rewrite_implem arg (sil, status) = 
  let loc =
    let (first, _) = List.hd sil in
    let ((last,_), _) = sep_last sil in
@@ -428,10 +649,42 @@ value flatten_signature l =
   in frec [] l
 ;
 
-value rec rewrite_signature arg = fun [
-  z ->
-  z
-]
+value flatten_class_signature l =
+  let rec frec acc = fun [
+    [] -> List.rev acc
+  | [ <:class_sig_item< declare $list:l$ end >> :: t ] ->
+      frec acc (l@t)
+  | [ h :: t ] -> frec [h :: acc] t
+  ]
+  in frec [] l
+;
+
+value rewrite_signature arg loc l =
+  let rec rerec = fun [
+    [ h1 ; h2 :: t ] ->
+    let ((h1, _), floating, (h2, _)) = rewrite_sig_item_pair arg (h1, loc_of_sig_item h1) (h2, loc_of_sig_item h2) in
+    [h1]@(List.map fst floating) @ (rerec [h2 :: t])
+  | [h] ->
+    let ((h, _), trailing) = trailing_sig_item_doc_comments arg (h, loc_of_sig_item h) (Ploc.last_pos loc) in
+    [h]@(List.map fst trailing)
+  ] in
+  let h1 = List.hd l in
+  let (floating, (h1, _)) = rewrite_leading_sig_item arg (Ploc.first_pos loc) (h1, loc_of_sig_item h1) in
+  (List.map fst floating) @ (rerec [h1 :: List.tl l])
+;
+
+value rewrite_class_signature arg loc l =
+  let rec rerec = fun [
+    [ h1 ; h2 :: t ] ->
+    let ((h1, _), floating, (h2, _)) = rewrite_class_sig_item_pair arg (h1, loc_of_class_sig_item h1) (h2, loc_of_class_sig_item h2) in
+    [h1] @ floating @ (rerec [h2 :: t])
+  | [h] ->
+    let ((h, _), trailing) = trailing_class_sig_item_doc_comments arg (h, loc_of_class_sig_item h) (Ploc.last_pos loc) in
+    [h] @ trailing
+  ] in
+  let h1 = List.hd l in
+  let (floating, (h1, _)) = rewrite_leading_class_sig_item arg (Ploc.first_pos loc) (h1, loc_of_class_sig_item h1) in
+  floating @ (rerec [h1 :: List.tl l])
 ;
 
 value wrap_implem arg z = do {
@@ -445,6 +698,9 @@ value wrap_implem arg z = do {
 }
 ;
 
+value rewrite_interf arg (sil, status) = (sil, status) ;
+
+
 value wrap_interf arg z = do {
   let (sil, status) = z in
   let loc = sil |> List.hd |> snd in
@@ -452,7 +708,7 @@ value wrap_interf arg z = do {
   let l = comments_of_file fname in
   let m = make_comment_map l in
   init arg m ;
-  Pa_passthru.interf0 arg (sil, status)
+ (sil, status) |> rewrite_interf arg |>  Pa_passthru.interf0 arg
 }
 ;
 
@@ -484,10 +740,19 @@ let ef = EF.{ (ef) with
   ] } in
 
 let ef = EF.{ (ef) with
-            signature = extfun ef.signature with [
-    z ->
+            module_type = extfun ef.module_type with [
+    <:module_type:< sig $list:l$ end >> ->
     fun arg ->
-      Some (rewrite_signature arg (flatten_signature z))
+     let l = rewrite_signature arg loc (flatten_signature l) in
+    Some <:module_type:< sig $list:l$ end >>
+  ] } in
+
+let ef = EF.{ (ef) with
+            class_type = extfun ef.class_type with [
+    <:class_type:< object $_opt:cst$ $list:l$ end >> ->
+    fun arg ->
+     let l = rewrite_class_signature arg loc (flatten_class_signature l) in
+    Some <:class_type:< object $_opt:cst$ $list:l$ end >>
   ] } in
 
 let ef = EF.{ (ef) with

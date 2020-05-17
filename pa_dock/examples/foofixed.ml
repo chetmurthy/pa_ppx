@@ -62,7 +62,7 @@
  (** The comment for module type my_module_type. *)
  module type my_module_type =
    sig
-     (* Comment for value x. *)
+     (** Comment for value x. *)
      val x : int
      (* ... *)
    end
