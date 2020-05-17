@@ -699,7 +699,7 @@ value wrap_implem arg z = do {
   let l = comments_of_file fname in
   let m = make_comment_map l in
   init arg m ;
-  (sil, status) |> rewrite_implem arg
+  (sil, status)
 }
 ;
 
@@ -715,7 +715,7 @@ value wrap_interf arg z = do {
   let l = comments_of_file fname in
   let m = make_comment_map l in
   init arg m ;
- (sil, status) |> rewrite_interf arg
+ (sil, status)
 }
 ;
 
@@ -766,14 +766,14 @@ let ef = EF.{ (ef) with
               implem = extfun ef.implem with [
     z ->
     fun arg -> 
-      Some (Pa_passthru.implem0 arg (wrap_implem arg z))
+      Some (z |> wrap_implem arg |> rewrite_implem arg |> Pa_passthru.implem0 arg)
   ] } in
 
 let ef = EF.{ (ef) with
               interf = extfun ef.interf with [
     z ->
     fun arg -> 
-      Some (Pa_passthru.interf0 arg (wrap_interf arg z))
+      Some (z |> wrap_interf arg |> rewrite_interf arg |> Pa_passthru.interf0 arg)
   ] } in
 
   Pa_passthru.(install { name = "pa_dock_doc_comment" ; ef = ef ; pass = Some 0 ; before = [] ; after = [] })
