@@ -647,6 +647,28 @@ value flatten_signature l =
   in frec [] l
 ;
 
+value flatten_interf (l, status) =
+  let rec frec acc = fun [
+    [] -> List.rev acc
+  | [ (<:sig_item< declare $list:l$ end >>,_) :: t ] ->
+    let l = List.map (fun si -> (si, loc_of_sig_item si)) l in
+      frec acc (l@t)
+  | [ h :: t ] -> frec [h :: acc] t
+  ]
+  in (frec [] l, status)
+;
+
+value flatten_implem (l, status) =
+  let rec frec acc = fun [
+    [] -> List.rev acc
+  | [ (<:str_item< declare $list:l$ end >>,_) :: t ] ->
+    let l = List.map (fun si -> (si, loc_of_str_item si)) l in
+      frec acc (l@t)
+  | [ h :: t ] -> frec [h :: acc] t
+  ]
+  in (frec [] l, status)
+;
+
 value flatten_class_signature l =
   let rec frec acc = fun [
     [] -> List.rev acc
@@ -766,14 +788,14 @@ let ef = EF.{ (ef) with
               implem = extfun ef.implem with [
     z ->
     fun arg -> 
-      Some (z |> wrap_implem arg |> rewrite_implem arg |> Pa_passthru.implem0 arg)
+      Some (z |> wrap_implem arg |> flatten_implem |> rewrite_implem arg |> Pa_passthru.implem0 arg)
   ] } in
 
 let ef = EF.{ (ef) with
               interf = extfun ef.interf with [
     z ->
     fun arg -> 
-      Some (z |> wrap_interf arg |> rewrite_interf arg |> Pa_passthru.interf0 arg)
+      Some (z |> wrap_interf arg |> flatten_interf |> rewrite_interf arg |> Pa_passthru.interf0 arg)
   ] } in
 
   Pa_passthru.(install { name = "pa_dock_doc_comment" ; ef = ef ; pass = Some 0 ; before = [] ; after = [] })
