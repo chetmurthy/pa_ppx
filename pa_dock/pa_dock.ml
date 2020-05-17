@@ -699,7 +699,7 @@ value wrap_implem arg z = do {
   let l = comments_of_file fname in
   let m = make_comment_map l in
   init arg m ;
-  (sil, status) |> rewrite_implem arg |> Pa_passthru.implem0 arg 
+  (sil, status) |> rewrite_implem arg
 }
 ;
 
@@ -715,7 +715,7 @@ value wrap_interf arg z = do {
   let l = comments_of_file fname in
   let m = make_comment_map l in
   init arg m ;
- (sil, status) |> rewrite_interf arg |>  Pa_passthru.interf0 arg
+ (sil, status) |> rewrite_interf arg
 }
 ;
 
@@ -727,15 +727,15 @@ let ef = EF.{ (ef) with
     <:class_expr:< object $_opt:cspo$ $list:cf$ end >> ->
     fun arg ->
     let cf = rewrite_class_structure arg loc cf in
-    Some <:class_expr< object $_opt:cspo$ $list:cf$ end >>
+    Some (Pa_passthru.class_expr0 arg <:class_expr< object $_opt:cspo$ $list:cf$ end >>)
   ] } in
 
 let ef = EF.{ (ef) with
             module_expr = extfun ef.module_expr with [
     <:module_expr:< struct $list:l$ end >> ->
     fun arg ->
-    let l = rewrite_structure arg loc (flatten_structure l) in
-    Some <:module_expr:< struct $list:l$ end >>
+    let l = l |> flatten_structure |> rewrite_structure arg loc in
+    Some (Pa_passthru.module_expr0 arg <:module_expr:< struct $list:l$ end >>)
   ] } in
 
 let ef = EF.{ (ef) with
@@ -743,37 +743,37 @@ let ef = EF.{ (ef) with
     <:str_item:< type $_flag:nrfl$ $list:tdl$ >> ->
     fun arg ->
     let tdl = rewrite_type_decls arg (Ploc.last_pos loc) tdl in
-    Some <:str_item< type $_flag:nrfl$ $list:tdl$ >>
+    Some (Pa_passthru.str_item0 arg <:str_item< type $_flag:nrfl$ $list:tdl$ >>)
   ] } in
 
 let ef = EF.{ (ef) with
             module_type = extfun ef.module_type with [
     <:module_type:< sig $list:l$ end >> ->
     fun arg ->
-     let l = rewrite_signature arg loc (flatten_signature l) in
-    Some <:module_type:< sig $list:l$ end >>
+     let l = l |> flatten_signature |> rewrite_signature arg loc in
+    Some (Pa_passthru.module_type0 arg <:module_type:< sig $list:l$ end >>)
   ] } in
 
 let ef = EF.{ (ef) with
             class_type = extfun ef.class_type with [
     <:class_type:< object $_opt:cst$ $list:l$ end >> ->
     fun arg ->
-     let l = rewrite_class_signature arg loc (flatten_class_signature l) in
-    Some <:class_type:< object $_opt:cst$ $list:l$ end >>
+     let l = l |> flatten_class_signature |> rewrite_class_signature arg loc in
+    Some (Pa_passthru.class_type0 arg <:class_type:< object $_opt:cst$ $list:l$ end >>)
   ] } in
 
 let ef = EF.{ (ef) with
               implem = extfun ef.implem with [
     z ->
     fun arg -> 
-      Some (wrap_implem arg z)
+      Some (Pa_passthru.implem0 arg (wrap_implem arg z))
   ] } in
 
 let ef = EF.{ (ef) with
               interf = extfun ef.interf with [
     z ->
     fun arg -> 
-      Some (wrap_interf arg z)
+      Some (Pa_passthru.interf0 arg (wrap_interf arg z))
   ] } in
 
   Pa_passthru.(install { name = "pa_dock_doc_comment" ; ef = ef ; pass = Some 0 ; before = [] ; after = [] })
