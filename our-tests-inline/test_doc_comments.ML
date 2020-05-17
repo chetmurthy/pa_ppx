@@ -60,9 +60,9 @@ let%expect_test "simple implem" =
       end[@@ocaml.doc " The comment for class type my_class_type "]
     module Foo =
       struct
-        let x = 0[@@ocaml.doc " The comment for x "][@@ocaml.doc
-                                                      " A special comment in the class, but not associated to any element. "]
+        let x = 0[@@ocaml.doc " The comment for x "]
+        [@@@ocaml.text " A special comment in the class, but not associated to any element. "]
       end[@@ocaml.doc " The comment for module Foo "]
-    module type my_module_type  = sig val x : int end[@@ocaml.doc
-                                                       " The comment for module type my_module_type. "]
+    module type my_module_type  = sig val x : int[@@ocaml.doc " Comment for value x. "] end
+    [@@ocaml.doc " The comment for module type my_module_type. "]
     [@@@ocaml.text " a special comment at the end of the toplevel module "] |}]

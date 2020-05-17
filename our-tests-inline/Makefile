@@ -23,7 +23,6 @@ CMI=$(CMO:.cmo=.cmi)
 TESTS= \
 	test_doc_comments_official.TEST \
 	test_doc_comments_pa_dock.TEST \
-	test_foo.TEST \
 
 all: $(CMO) test-executables
 
@@ -63,16 +62,6 @@ test_doc_comments_pa_dock.ml: test_doc_comments.ML
 
 %.TEST: %.pa.byte
 	$(TESTRUNNER) $^ foo $(VERBOSE)
-
-
-P= camlp5,compiler-libs.common,fmt,bos,pcre,rresult,str,threads.posix,camlp5.pa_o,pa_ppx_base,pa_ppx_dock
-
-test_foo.pa.byte: test_foo.ml
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(P) -c $<
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(P) -linkall -linkpkg test_foo.cmo -o $@
-
-test_foo.TEST: test_foo.pa.byte
-	./$^
 
 .SUFFIXES: .TEST
 
