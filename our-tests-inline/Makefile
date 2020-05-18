@@ -68,9 +68,9 @@ busted_doc_comments_official.ml: busted_doc_comments.ML
 busted_doc_comments_pa_dock.ml: busted_doc_comments.ML
 	cppo -n -D PA_DOCK $< > $@
 
-%.pa.byte: %.ml
+%.pa.byte: %.ml dock_test_utils.ml
 	$(OCAMLFIND)2 preprocess -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) camlp5/papr_official.exe -binary-input -impl > $<.pappx.ppo
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -I ../tests-ounit2 -linkall -linkpkg ../tests-ounit2/testutil.cmo $< ppx_inline_test_epilogue.ml -o $@
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -I ../tests-ounit2 -linkall -linkpkg ../tests-ounit2/testutil.cmo dock_test_utils.ml $< ppx_inline_test_epilogue.ml -o $@
 
 %.TEST: %.pa.byte
 	$(TESTRUNNER) $^ foo $(VERBOSE)
