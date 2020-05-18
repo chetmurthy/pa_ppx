@@ -117,3 +117,18 @@ let%expect_test "interface leading comment" =
       " The first special comment of the file is the comment associated\n     with the whole module."]
     val f : int -> int -> int |}]
 
+let%expect_test "implem: variants" =
+#ifdef OFFICIAL
+  official_implem_string
+#else
+  pappx_implem_string
+#endif
+ {|
+  type t = A (** 1 *) | B (** 2 *) | C (** 3 *)
+|} ;
+  [%expect {|
+    type t =
+      | A [@ocaml.doc " 1 "]
+      | B [@ocaml.doc " 2 "]
+      | C [@ocaml.doc " 3 "]
+ |}]
