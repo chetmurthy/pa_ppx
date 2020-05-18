@@ -36,13 +36,17 @@ value comments_of_string s =
   List.concat ll
 ;
 
-value comments_of_file f = do {
-  let fname = f |> Fpath.v in
-  fname |> Bos.OS.Path.must_exist |> Rresult.R.failwith_error_msg ;
-  let s = fname |> Bos.OS.File.read
-             |> Rresult.R.get_ok in
+value stashed_file_contents = ref "" ;
+
+value comments_of_file f =
+  let s =
+    if f = "file://stashed" then stashed_file_contents.val
+    else
+      let fname = f |> Fpath.v in do {
+      fname |> Bos.OS.Path.must_exist |> Rresult.R.failwith_error_msg ;
+      fname |> Bos.OS.File.read
+      |> Rresult.R.get_ok } in
   comments_of_string s
-}
 ;
 
 module CM = Map.Make(struct type t = int ; value compare = Stdlib.compare ; end) ;
