@@ -479,6 +479,23 @@ value str_items_leading_doc_comments arg startpos (h2, loc2) =
   ]
 ;
 
+value sig_items_leading_doc_comments arg startpos (h2, loc2) =
+  let bp2 = Ploc.first_pos loc2 in
+  let l = comments_between (get arg) startpos bp2 in
+  let (floating, after) = str_item_apportion_interior_comments l in
+  let floating = List.map sig_item_floating_attribute floating in
+  let (more_floating, h2) = match (after, h2) with [
+    (None, _) -> ([], h2)
+  | (Some s, <:sig_item< [@@@ $_attribute:_$ ] >>) -> ([sig_item_floating_attribute s], h2)
+  | (Some s, _) -> ([], sig_item_wrap_itemattr (attr_doc_comment s) h2)
+  ] in
+  let l = floating@more_floating in
+  match l with [
+    [] -> ([], startpos)
+  | _ -> (l, l |> sep_last |> fst |> fst |> loc_of_sig_item |> Ploc.last_pos)
+  ]
+;
+
 value str_item_preceding_doc_comment arg startpos (h2, loc2) =
   let bp2 = Ploc.first_pos loc2 in
   let l = comments_between (get arg) startpos bp2 in
@@ -610,7 +627,7 @@ value trailing_class_str_item_doc_comments arg spos epos =
   List.map class_str_item_floating_attribute l
 ;
 
-value extend_str_item_location arg hloc epos =
+value extend_location arg hloc epos =
   let txtloc = match comments_between (get arg) (Ploc.last_pos hloc) epos with [
     [ s :: _ ] when is_doc_comment s -> fst s
   | [ s1 ; s2 :: _ ]
@@ -623,10 +640,10 @@ value extend_str_item_location arg hloc epos =
   Ploc.encl hloc txtloc
 ;
 
-value extend_type_decl_location arg (h1, h1loc) epos =
+value extend_str_item_type_decl_location arg (h1, h1loc) epos =
   match h1 with [
     <:str_item< type $_flag:_$ $list:_$ >> ->
-      extend_str_item_location arg h1loc epos
+      extend_location arg h1loc epos
   | _ -> h1loc
   ]
 ;
@@ -634,10 +651,31 @@ value extend_type_decl_location arg (h1, h1loc) epos =
 value extend_type_decl_locations_in_str_items arg loc l =
   let rec erec = fun [
     [ (h1, h1loc) ; (h2, h2loc) :: t ] ->
-    let h1loc = extend_type_decl_location arg (h1, h1loc) (Ploc.first_pos h2loc) in
+    let h1loc = extend_str_item_type_decl_location arg (h1, h1loc) (Ploc.first_pos h2loc) in
     [ (h1, h1loc) :: erec [ (h2, h2loc) :: t] ]
   | [ (h1, h1loc) ] ->
-    let h1loc = extend_type_decl_location arg (h1, h1loc) (Ploc.last_pos loc) in
+    let h1loc = extend_str_item_type_decl_location arg (h1, h1loc) (Ploc.last_pos loc) in
+    [ (h1, h1loc) ]
+  | [] -> []
+  ]
+  in erec l
+;
+
+value extend_sig_item_type_decl_location arg (h1, h1loc) epos =
+  match h1 with [
+    <:sig_item< type $_flag:_$ $list:_$ >> ->
+      extend_location arg h1loc epos
+  | _ -> h1loc
+  ]
+;
+
+value extend_type_decl_locations_in_sig_items arg loc l =
+  let rec erec = fun [
+    [ (h1, h1loc) ; (h2, h2loc) :: t ] ->
+    let h1loc = extend_sig_item_type_decl_location arg (h1, h1loc) (Ploc.first_pos h2loc) in
+    [ (h1, h1loc) :: erec [ (h2, h2loc) :: t] ]
+  | [ (h1, h1loc) ] ->
+    let h1loc = extend_sig_item_type_decl_location arg (h1, h1loc) (Ploc.last_pos loc) in
     [ (h1, h1loc) ]
   | [] -> []
   ]
@@ -652,11 +690,19 @@ value rewrite_str_item arg = fun [
 ]
 ;
 
+value rewrite_sig_item arg = fun [
+  (<:sig_item:< type $_flag:nrfl$ $list:tdl$ >>, siloc) ->
+  let tdl = rewrite_type_decls arg (Ploc.last_pos siloc) tdl in
+  (<:sig_item< type $_flag:nrfl$ $list:tdl$ >>, siloc)
+| x -> x
+]
+;
+
 value rewrite_implem0 arg loc l =
   let rec rerec startpos = fun [
     [ h1 :: t ] ->
     let (floating, h1) = str_item_preceding_doc_comment arg startpos h1 in
-    floating @ [h1] @ (rerec (Ploc.last_pos (loc_of_str_item (fst h1))) t)
+    floating @ [h1] @ (rerec (Ploc.last_pos (snd h1)) t)
   | [] ->
     (trailing_str_item_doc_comments arg startpos (Ploc.last_pos loc))
   ] in
@@ -755,10 +801,17 @@ value rewrite_interf0 arg loc l =
   floating @ (rerec [h1 :: List.tl l])
 ;
 
+value rewrite_signature0 arg loc l =
+  l
+  |> extend_type_decl_locations_in_sig_items arg loc
+  |> List.map (rewrite_sig_item arg)
+  |> rewrite_interf0 arg loc
+;
+
 value rewrite_signature arg loc l =
   l
   |> List.map (fun si -> (si, loc_of_sig_item si))
-  |> rewrite_interf0 arg loc
+  |> rewrite_signature0 arg loc
   |> List.map fst
 ;
 
@@ -788,8 +841,14 @@ value wrap_implem arg z = do {
 ;
 
 value rewrite_interf arg (sil, status) = 
-  (rewrite_interf0 arg (Ploc.make_unlined (0, max_int)) sil,
-   status)
+  match sil with [
+    [] -> ([], status)
+  | [ h :: _ ] ->
+    let (floating, startpos) = sig_items_leading_doc_comments arg 0 h in
+
+    (floating @ rewrite_signature0 arg (Ploc.make_unlined (startpos, max_int)) sil,
+     status)
+  ]
 ;
 
 value wrap_interf arg z = do {

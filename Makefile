@@ -27,6 +27,7 @@ all:
 	$(MAKE) -C tests-ounit2 all
 	$(MAKE) -C tests-inline all
 	$(MAKE) -C tests-expect all
+	$(MAKE) -C our-tests-inline all
 
 PACKAGES := pa_ppx_utils
 PACKAGES := $(PACKAGES),pa_ppx_base
@@ -75,6 +76,7 @@ clean::
 	$(MAKE) -C tests-ounit2 clean
 	$(MAKE) -C tests-inline clean
 	$(MAKE) -C tests-expect clean
+	$(MAKE) -C our-tests-inline clean
 
 depend:
 	$(MAKE) -C util-lib depend
@@ -94,3 +96,4 @@ depend:
 	$(MAKE) -C tests-ounit2 depend
 	$(MAKE) -C tests-inline depend
 	$(MAKE) -C tests-expect depend
+	$(MAKE) -C our-tests-inline depend

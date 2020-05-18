@@ -81,3 +81,19 @@ let%expect_test "implem: variants" =
       | B [@ocaml.doc " 2 "]
       | C [@ocaml.doc " 3 "]
  |}]
+
+let%expect_test "interf: variants" =
+#ifdef OFFICIAL
+  official_interf_string
+#else
+  pappx_interf_string
+#endif
+ {|
+  type t = A (** 1 *) | B (** 2 *) | C (** 3 *)
+|} ;
+  [%expect {|
+    type t =
+      | A [@ocaml.doc " 1 "]
+      | B [@ocaml.doc " 2 "]
+      | C [@ocaml.doc " 3 "]
+ |}]
