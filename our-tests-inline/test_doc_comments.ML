@@ -9,16 +9,59 @@ module NormLocations = struct
   let signature sil = List.map (fun (si, loc) -> (sig_item si, loc)) sil
 end
 
+let official_implem f =
+  f |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> Official.Implem.pa
+  |> Official.Implem.pr |> print_string
+
+let pappx_implem f =
+  f |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> PAPR.Implem.pa1 ~input_file:f
+  |> NormLocations.structure |> List.map fst |> Ast2pt.implem f
+  |> Official.Implem.pr |> print_string
+
+let official_interf f =
+  f |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> Official.Interf.pa
+  |> Official.Interf.pr |> print_string
+
+let pappx_interf f =
+  f |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> PAPR.Interf.pa1 ~input_file:f
+  |> NormLocations.signature |> List.map fst |> Ast2pt.interf f
+  |> Official.Interf.pr |> print_string
+
+let%expect_test "minimal implem" =
+#ifdef OFFICIAL
+  official_implem "testdata/minimal.ml" ;
+#else
+  pappx_implem "testdata/minimal.ml" ;
+#endif
+  [%expect {|
+    [@@@ocaml.text
+      " The first special comment of the file is the comment associated\n     to the whole module. "]
+    let f x y = x + y[@@ocaml.doc " The comment for function f "] |}]
+
+let%expect_test "minimal interf" =
+#ifdef OFFICIAL
+  official_interf "testdata/minimal.mli" ;
+#else
+  pappx_interf "testdata/minimal.mli" ;
+#endif
+  [%expect {|
+    [@@@ocaml.text
+      " The first special comment of the file is the comment associated\n     with the whole module."]
+    [@@@ocaml.text
+      " Special comments can be placed between elements and are kept\n     by the OCamldoc tool, but are not associated to any element.\n     @-tags in these comments are ignored."]
+    [@@@ocaml.text
+      " Comments like the one above, with more than two asterisks,\n     are ignored. "]
+    val f : int -> int -> int[@@ocaml.doc " The comment for function f. "] |}]
+
 let%expect_test "simple implem" =
 #ifdef OFFICIAL
-  "../pa_dock/examples/foofixed.ml" |> Fpath.v |> Bos.OS.File.read
-  |> Rresult.R.get_ok |> Official.Implem.pa
-  |> Official.Implem.pr |> print_string ;
+  official_implem "../pa_dock/examples/foofixed.ml" ;
 #else
-  "../pa_dock/examples/foofixed.ml" |> Fpath.v |> Bos.OS.File.read
-  |> Rresult.R.get_ok |> PAPR.Implem.pa1 ~input_file:"../pa_dock/examples/foofixed.ml"
-  |> NormLocations.structure |> List.map fst |> Ast2pt.implem "../pa_dock/examples/foofixed.ml"
-  |> Official.Implem.pr |> print_string ;
+  pappx_implem "../pa_dock/examples/foofixed.ml" ;
 #endif
   [%expect {|
     [@@@ocaml.text
@@ -69,13 +112,8 @@ let%expect_test "simple implem" =
 
 let%expect_test "simple interf" =
 #ifdef OFFICIAL
-  "../pa_dock/examples/foo.mli" |> Fpath.v |> Bos.OS.File.read
-  |> Rresult.R.get_ok |> Official.Interf.pa
-  |> Official.Interf.pr |> print_string ;
+  official_interf "../pa_dock/examples/foo.mli" ;
 #else
-  "../pa_dock/examples/foo.mli" |> Fpath.v |> Bos.OS.File.read
-  |> Rresult.R.get_ok |> PAPR.Interf.pa1 ~input_file:"../pa_dock/examples/foo.mli"
-  |> NormLocations.signature |> List.map fst |> Ast2pt.interf "../pa_dock/examples/foo.mli"
-  |> Official.Interf.pr |> print_string ;
+  pappx_interf "../pa_dock/examples/foo.mli" ;
 #endif
   [%expect {| |}]
