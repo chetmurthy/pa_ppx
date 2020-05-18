@@ -66,6 +66,23 @@ let%expect_test "interface leading comment" =
       " The first special comment of the file is the comment associated\n     with the whole module."]
     val f : int -> int -> int |}]
 
+let%expect_test "doc-before-value" =
+#ifdef OFFICIAL
+  official_implem_string
+#else
+  pappx_implem_string
+#endif
+ {|
+ (** 1 *)
+ let f x y = x + y
+
+ (** 2 *)
+|} ;
+  [%expect {|
+    let f x y = x + y[@@ocaml.doc " 1 "]
+    [@@@ocaml.text " 2 "]
+ |}]
+
 let%expect_test "implem: variants" =
 #ifdef OFFICIAL
   official_implem_string
@@ -73,16 +90,17 @@ let%expect_test "implem: variants" =
   pappx_implem_string
 #endif
  {|
+(** 0 *)
   type t = A (** 1 *) | B (** 2 *) | C (** 3 *)
 |} ;
   [%expect {|
     type t =
       | A [@ocaml.doc " 1 "]
       | B [@ocaml.doc " 2 "]
-      | C [@ocaml.doc " 3 "]
+      | C [@ocaml.doc " 3 "][@@ocaml.doc " 0 "]
  |}]
 
-let%expect_test "implem: variants" =
+let%expect_test "implem: struct+variants" =
 #ifdef OFFICIAL
   official_implem_string
 #else
@@ -103,7 +121,7 @@ module M =
   end
  |}]
 
-let%expect_test "interf: variants" =
+let%expect_test "interf: sig+variants" =
 #ifdef OFFICIAL
   official_interf_string
 #else
@@ -111,7 +129,9 @@ let%expect_test "interf: variants" =
 #endif
  {|
 module type S = sig
+(** 0 *)
   type t = A (** 1 *) | B (** 2 *) | C (** 3 *)
+(** 4 *)
 end
 |} ;
   [%expect {|
@@ -120,6 +140,24 @@ module type S  =
     type t =
       | A [@ocaml.doc " 1 "]
       | B [@ocaml.doc " 2 "]
-      | C [@ocaml.doc " 3 "]
+      | C [@ocaml.doc " 3 "][@@ocaml.doc " 0 "][@@ocaml.doc " 4 "]
   end
+ |}]
+
+let%expect_test "interf: variants" =
+#ifdef OFFICIAL
+  official_interf_string
+#else
+  pappx_interf_string
+#endif
+ {|
+(** 0 *)
+  type t = A (** 1 *) | B (** 2 *) | C (** 3 *)
+(** 4 *)
+|} ;
+  [%expect {|
+  type t =
+    | A [@ocaml.doc " 1 "]
+    | B [@ocaml.doc " 2 "]
+    | C [@ocaml.doc " 3 "][@@ocaml.doc " 0 "][@@ocaml.doc " 4 "]
  |}]
