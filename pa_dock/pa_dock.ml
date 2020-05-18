@@ -162,16 +162,6 @@ value str_item_apportion_interior_comments l =
   (rest, after)
 ;
 
-value flatten_structure l =
-  let rec frec acc = fun [
-    [] -> List.rev acc
-  | [ <:str_item< declare $list:l$ end >> :: t ] ->
-      frec acc (l@t)
-  | [ h :: t ] -> frec [h :: acc] t
-  ]
-  in frec [] l
-;
-
 value strip_comment_marks s = do {
   let slen = String.length s in
   assert (slen > String.length "(***)") ;
@@ -465,7 +455,7 @@ value rewrite_type_decls arg maxpos tdl =
   in tdl
 ;
 
-value rewrite_str_item_pair arg startpos (h2, loc2) =
+value str_item_preceding_doc_comment arg startpos (h2, loc2) =
   let bp2 = Ploc.first_pos loc2 in
   let l = List.map snd (comments_between (get arg) startpos bp2) in
   let (floating, after) = str_item_apportion_interior_comments l in
@@ -599,7 +589,7 @@ value trailing_class_str_item_doc_comments arg spos epos =
 value rewrite_implem0 arg loc l =
   let rec rerec startpos = fun [
     [ h1 :: t ] ->
-    let (floating, h1) = rewrite_str_item_pair arg startpos h1 in
+    let (floating, h1) = str_item_preceding_doc_comment arg startpos h1 in
     floating @ [h1] @ (rerec (Ploc.last_pos (loc_of_str_item (fst h1))) t)
   | [] ->
     (trailing_str_item_doc_comments arg startpos (Ploc.last_pos loc))
@@ -627,9 +617,9 @@ value rewrite_class_structure arg loc l =
 
 value rewrite_implem arg (sil, status) = 
   match sil with [
-    [] -> assert False
+    [] -> ([], status)
   | [ h :: t ] ->
-    let (floating, h) = rewrite_str_item_pair arg 0 h in
+    let (floating, h) = str_item_preceding_doc_comment arg 0 h in
     let startpos = Ploc.last_pos (loc_of_str_item (fst h)) in
 
     (floating @ [h] @ rewrite_implem0 arg (Ploc.make_unlined (startpos, max_int)) t,
@@ -637,14 +627,10 @@ value rewrite_implem arg (sil, status) =
   ]
 ;
 
-value flatten_signature l =
-  let rec frec acc = fun [
-    [] -> List.rev acc
-  | [ <:sig_item< declare $list:l$ end >> :: t ] ->
-      frec acc (l@t)
-  | [ h :: t ] -> frec [h :: acc] t
-  ]
-  in frec [] l
+value lower_from_pairs f loc_fun l =
+  let l = List.map (fun x -> (x, loc_fun x)) l in
+  let (l, _) = f (l, None) in
+  List.map fst l
 ;
 
 value flatten_interf (l, status) =
@@ -658,6 +644,8 @@ value flatten_interf (l, status) =
   in (frec [] l, status)
 ;
 
+value flatten_signature l = lower_from_pairs flatten_interf loc_of_sig_item l ;
+
 value flatten_implem (l, status) =
   let rec frec acc = fun [
     [] -> List.rev acc
@@ -669,6 +657,8 @@ value flatten_implem (l, status) =
   in (frec [] l, status)
 ;
 
+value flatten_structure l = lower_from_pairs flatten_implem loc_of_str_item l ;
+
 value flatten_class_signature l =
   let rec frec acc = fun [
     [] -> List.rev acc
@@ -677,6 +667,31 @@ value flatten_class_signature l =
   | [ h :: t ] -> frec [h :: acc] t
   ]
   in frec [] l
+;
+
+value extend_str_item_location arg hloc epos =
+  let endtxt = match comments_between (get arg) (Ploc.last_pos hloc) epos with [
+    [ (ofs, s) :: _ ] when is_doc_comment s -> ofs + String.length s
+  | [ (ofs1, s1) ; (ofs2, s2) :: _ ]
+    when (not (is_comment s1))
+      && (not (is_blank_line s1))
+      && is_doc_comment s2 -> do {
+      assert (ofs1 + String.length s1 = ofs2) ;
+      ofs2 + String.length s2
+    }
+  | [] -> 0
+  ] in
+  Ploc.encl hloc (Ploc.make_unlined (Ploc.last_pos hloc, endtxt))
+;
+
+value extend_type_decl_locations_in_str_items arg loc l =
+  let rec erec = fun [
+    [ (<:str_item:< type $_flag:nrfl$ $list:tdl$ >>, h1loc) ; (h2, h2loc) :: t ] ->
+    let h1loc' = extend_str_item_location arg h1loc (Ploc.first_pos h2loc) in
+    [ (let loc = h1loc' in (<:str_item:< type $_flag:nrfl$ $list:tdl$ >>, loc)) ::
+      erec [ (h2, h2loc) :: t ] ]
+  ] in
+  erec l
 ;
 
 value rewrite_interf0 arg loc l =
