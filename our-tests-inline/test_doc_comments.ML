@@ -82,6 +82,27 @@ let%expect_test "implem: variants" =
       | C [@ocaml.doc " 3 "]
  |}]
 
+let%expect_test "implem: variants" =
+#ifdef OFFICIAL
+  official_implem_string
+#else
+  pappx_implem_string
+#endif
+ {|
+module M = struct
+  type t = A (** 1 *) | B (** 2 *) | C (** 3 *)
+end
+|} ;
+  [%expect {|
+module M =
+  struct
+    type t =
+      | A [@ocaml.doc " 1 "]
+      | B [@ocaml.doc " 2 "]
+      | C [@ocaml.doc " 3 "]
+  end
+ |}]
+
 let%expect_test "interf: variants" =
 #ifdef OFFICIAL
   official_interf_string
@@ -89,11 +110,16 @@ let%expect_test "interf: variants" =
   pappx_interf_string
 #endif
  {|
+module type S = sig
   type t = A (** 1 *) | B (** 2 *) | C (** 3 *)
+end
 |} ;
   [%expect {|
+module type S  =
+  sig
     type t =
       | A [@ocaml.doc " 1 "]
       | B [@ocaml.doc " 2 "]
       | C [@ocaml.doc " 3 "]
+  end
  |}]
