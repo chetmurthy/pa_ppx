@@ -24,11 +24,17 @@ TESTS= \
 	test_doc_comments_official.TEST \
 	test_doc_comments_pa_dock.TEST \
 
+BUSTED_TESTS= \
+	busted_doc_comments_official.TEST \
+	busted_doc_comments_pa_dock.TEST \
+
 all: $(CMO) test-executables
 
-test-executables: $(TESTS:.TEST=.pa.byte)
+test-executables: $(TESTS:.TEST=.pa.byte) $(BUSTED_TESTS:.TEST=.pa.byte)
 
+all-test: test busted-test
 test: $(TESTS)
+busted-test: $(BUSTED_TESTS)
 
 PAPACKAGES:=$(PACKAGEPREFIX)runtime
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import.syntax
@@ -54,6 +60,12 @@ test_doc_comments_official.ml: test_doc_comments.ML
 	cppo -n -D OFFICIAL $< > $@
 
 test_doc_comments_pa_dock.ml: test_doc_comments.ML
+	cppo -n -D PA_DOCK $< > $@
+
+busted_doc_comments_official.ml: busted_doc_comments.ML
+	cppo -n -D OFFICIAL $< > $@
+
+busted_doc_comments_pa_dock.ml: busted_doc_comments.ML
 	cppo -n -D PA_DOCK $< > $@
 
 %.pa.byte: %.ml

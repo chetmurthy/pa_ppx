@@ -13,6 +13,8 @@ open Asttools;
 open MLast;
 open Ppxutil ;
 
+value debug = ref False ;
+
 value option_map f =
   fun
   [ Some x -> Some (f x)
@@ -920,10 +922,12 @@ type pass_t = {
 } ;
 
 value onepass implem (ctxt,arg) pass = do {
-      Printf.(fprintf stderr "[pass %s]\n%!" pass.name) ;
-      let ctxt = Ctxt.{ (ctxt) with ef = pass.ef } in
-      (ctxt, implem ctxt arg)
-    }
+  if debug.val then
+   Printf.(fprintf stderr "[pass %s]\n%!" pass.name)
+  else ();
+  let ctxt = Ctxt.{ (ctxt) with ef = pass.ef } in
+  (ctxt, implem ctxt arg)
+}
 ;
 
 value tsort_passes passes =
@@ -935,7 +939,9 @@ value tsort_passes passes =
   let adj = merge_adj (invert_adj (nodes before_adj) before_adj) after_adj in
   let space = Fmt.(const string " ") in
   let sorted = Tsort.tsort  (fun v l -> [v::l]) adj [] in do {
-    Fmt.(pf stderr "[tsort: <<%a>> -> <<%a>>]\n%!" (list ~{sep=space} string) unsorted (list ~{sep=space} string) sorted) ;
+    if debug.val then
+      Fmt.(pf stderr "[tsort: <<%a>> -> <<%a>>]\n%!" (list ~{sep=space} string) unsorted (list ~{sep=space} string) sorted)
+    else () ;
     sorted
     |> List.map (fun n -> match List.assoc n pass_map with [ x -> [x] | exception Not_found -> [] ])
     |> List.concat
