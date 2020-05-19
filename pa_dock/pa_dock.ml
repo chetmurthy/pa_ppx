@@ -240,8 +240,11 @@ value str_item_wrap_itemattr a si = match si with [
   <:str_item:< declare $list:_$ end >> -> assert False
 | <:str_item< [@@@ $_attribute:attr$ ] >> -> assert False
 
-| <:str_item:< exception $excon:ec$ $itemattrs:item_attrs$ >> ->
-  <:str_item< exception $excon:ec$ $itemattrs:item_attrs@[ a ]$ >>
+| <:str_item:< exception $_uid:ci$ of $list:cal$ $algattrs:alg_attrs$ $itemattrs:item_attrs$ >> ->
+  <:str_item:< exception $_uid:ci$ of $list:cal$ $algattrs:alg_attrs@[ a ]$ $itemattrs:item_attrs$ >>
+
+| <:str_item:< exception $_uid:ci$ $algattrs:alg_attrs$ $itemattrs:item_attrs$ >> ->
+  <:str_item:< exception $_uid:ci$ $algattrs:alg_attrs@[ a ]$ $itemattrs:item_attrs$ >>
 
 | <:str_item:< external $lid:i$ : $t$ = $list:pd$ $itemattrs:attrs$ >> ->
   <:str_item< external $lid:i$ : $t$ = $list:pd$ $itemattrs:attrs@[ a ]$ >>
@@ -319,8 +322,11 @@ value sig_item_wrap_itemattr a si = match si with [
   <:sig_item< declare $_list:st$ end >> -> assert False
 | <:sig_item< [@@@ $_attribute:attr$ ] >> -> assert False
 
-| MLast.SgExc loc gc item_attrs ->
-  MLast.SgExc loc gc <:vala< (uv item_attrs)@[ a ] >>
+| <:sig_item:< exception $_uid:ci$ of $list:cal$ $algattrs:alg_attrs$ $itemattrs:item_attrs$ >> ->
+  <:sig_item:< exception $_uid:ci$ of $list:cal$ $algattrs:alg_attrs@[ a ]$ $itemattrs:item_attrs$ >>
+
+| <:sig_item:< exception $_uid:ci$ $algattrs:alg_attrs$ $itemattrs:item_attrs$ >> ->
+  <:sig_item:< exception $_uid:ci$ $algattrs:alg_attrs@[ a ]$ $itemattrs:item_attrs$ >>
 
 | <:sig_item:< external $_lid:i$ : $t$ = $_list:pd$ $itemattrs:attrs$ >> ->
   <:sig_item< external $_lid:i$ : $t$ = $_list:pd$ $itemattrs:attrs@[ a ]$ >>

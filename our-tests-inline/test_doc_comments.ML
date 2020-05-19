@@ -209,3 +209,23 @@ let%expect_test "interf: record" =
                                                            " The comment for type my_record "]
     [@@ocaml.doc " Continuation of comment for type my_record "]
  |}]
+
+let%expect_test "interf: exception" =
+#ifdef OFFICIAL
+  official_interf_string
+#else
+  pappx_interf_string
+#endif
+ {|
+
+ (** Comment for exception My_exception, even with a simple comment
+     between the special comment and the exception.*)
+ (* Hello, I'm a simple comment :-) *)
+ exception My_exception of (int -> int) * int
+
+|} ;
+  [%expect {|
+    exception My_exception of (int -> int) * int
+      [@ocaml.doc
+        " Comment for exception My_exception, even with a simple comment\n     between the special comment and the exception."]
+ |}]
