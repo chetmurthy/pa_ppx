@@ -15,6 +15,8 @@ open Pa_ppx_base ;
 open Pa_passthru ;
 open Ppxutil ;
 
+value debug = Pa_passthru.debug ;
+
 value predicates = ref [] ;
 value lookup_path = ref [] ;
 
@@ -127,7 +129,7 @@ value find_type modpath lid sil =
   | [m :: t] ->
     findrec t lid (find_mod m sil)
   ] in do {
-  Fmt.(pf stderr "[find_type: %a]\n%!" (list ~{sep=(const string ".")} string) (modpath@[lid])) ;
+  if debug.val then Fmt.(pf stderr "[find_type: %a]\n%!" (list ~{sep=(const string ".")} string) (modpath@[lid])) else () ;
   match findrec modpath lid sil with [
     x -> x
   | exception Failure _ -> failwith (Printf.sprintf "find_type: %s" (String.concat "." (modpath@[lid])))
@@ -143,7 +145,7 @@ value find_module_type modpath sil =
   | [m :: t] ->
     findrec t (find_mod m sil)
   ] in do {
-  Fmt.(pf stderr "[find_module_type: %a]\n%!" (list ~{sep=(const string ".")} string) modpath) ;
+  if debug.val then Fmt.(pf stderr "[find_module_type: %a]\n%!" (list ~{sep=(const string ".")} string) modpath) else () ;
   match findrec modpath sil with [
     x -> x
   | exception Failure _ -> failwith (Printf.sprintf "find_type: %s" (String.concat "." modpath))
@@ -173,7 +175,7 @@ value lookup_module_type sil = do {
 ;
 
 value import_typedecl arg t = do {
-  report() ;
+  if debug.val then report() else () ;
   match fst (Ctyp.unapplist t)  with [
     <:ctyp< $lid:lid$ >> -> failwith "self-type-lookup not implemented"
   | <:ctyp< $longid:modname$ . $lid:lid$ >> ->

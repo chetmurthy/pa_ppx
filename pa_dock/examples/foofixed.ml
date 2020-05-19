@@ -33,11 +33,14 @@
 
        (** The comment for the instance variable tutu *)
        val mutable tutu = "tutu"
+
        (** The comment for toto *)
        val toto = 1
        val titi = "titi"
+
        (** Comment for method toto *)
        method toto = tutu ^ "!"
+
        (** Comment for method m *)
        method m (f : float) = 1
      end
@@ -47,6 +50,7 @@
    object
      (** The comment for the instance variable x. *)
      val mutable x : int
+
      (** The comment for method m. *)
      method m : int -> int
    end
@@ -56,6 +60,7 @@
    struct
      (** The comment for x *)
      let x = 0
+
      (** A special comment in the class, but not associated to any element. *)
    end
 

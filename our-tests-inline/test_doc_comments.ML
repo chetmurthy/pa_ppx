@@ -161,3 +161,51 @@ let%expect_test "interf: variants" =
     | B [@ocaml.doc " 2 "]
     | C [@ocaml.doc " 3 "][@@ocaml.doc " 0 "][@@ocaml.doc " 4 "]
  |}]
+
+let%expect_test "implem: class+method" =
+#ifdef OFFICIAL
+  official_implem_string
+#else
+  pappx_implem_string
+#endif
+ {|
+ class type my_class_type =
+   object
+     (** The comment for the instance variable x. *)
+     val mutable x : int
+
+     (** The comment for method m. *)
+     method m : int -> int
+   end
+|} ;
+  [%expect {|
+    class type my_class_type =
+      object
+        val  mutable x : int[@@ocaml.doc
+                              " The comment for the instance variable x. "]
+        method  m : int -> int[@@ocaml.doc " The comment for method m. "]
+      end
+ |}]
+
+let%expect_test "interf: record" =
+#ifdef OFFICIAL
+  official_interf_string
+#else
+  pappx_interf_string
+#endif
+ {|
+ (** The comment for type my_record *)
+ type my_record = {
+     foo : int ;    (** Comment for field foo *)
+     bar : string ; (** Comment for field bar *)
+   }
+   (** Continuation of comment for type my_record *)
+|} ;
+  [%expect {|
+    type my_record =
+      {
+      foo: int [@ocaml.doc " Comment for field foo "];
+      bar: string [@ocaml.doc " Comment for field bar "]}[@@ocaml.doc
+                                                           " The comment for type my_record "]
+    [@@ocaml.doc " Continuation of comment for type my_record "]
+ |}]

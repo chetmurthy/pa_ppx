@@ -642,7 +642,8 @@ value extend_location arg hloc epos =
 
 value extend_str_item_type_decl_location arg (h1, h1loc) epos =
   match h1 with [
-    <:str_item< type $_flag:_$ $list:_$ >> ->
+    <:str_item< type $_flag:_$ $list:tdl$ >>
+      when match (tdl |> sep_last |> fst).tdDef with [ <:ctyp< [ $list:_$ ] >> -> True | _ -> False ] ->
       extend_location arg h1loc epos
   | _ -> h1loc
   ]
@@ -663,7 +664,8 @@ value extend_type_decl_locations_in_str_items arg loc l =
 
 value extend_sig_item_type_decl_location arg (h1, h1loc) epos =
   match h1 with [
-    <:sig_item< type $_flag:_$ $list:_$ >> ->
+    <:sig_item< type $_flag:_$ $list:tdl$ >>
+      when match (tdl |> sep_last |> fst).tdDef with [ <:ctyp< [ $list:_$ ] >> -> True | _ -> False ] ->
       extend_location arg h1loc epos
   | _ -> h1loc
   ]

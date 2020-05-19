@@ -13,6 +13,8 @@ open Pa_passthru ;
 open Ppxutil ;
 open Pa_deriving ;
 
+value debug = Pa_passthru.debug ;
+
   (** Attributes and extensions in deriving come in three forms:
 
   @opaque, %printer -- short-form
@@ -335,14 +337,16 @@ let ef = EF.{ (ef) with
     z ->
       fun arg ->
         let rv = implem arg z in do {
-        Fmt.(DC.dump stderr (DC.get arg)) ; rv }
+        if debug.val then Fmt.(DC.dump stderr (DC.get arg)) else () ;
+        rv }
   ] } in
 let ef = EF.{ (ef) with
   interf = extfun ef.interf with [
     z ->
       fun arg ->
         let rv = interf arg z in do {
-        Fmt.(DC.dump stderr (DC.get arg)) ; rv }
+        if debug.val then Fmt.(DC.dump stderr (DC.get arg)) else () ;
+        rv }
   ] } in
   Pa_passthru.(install { name = "surveil" ; ef = ef ; pass = None ; before = [] ; after = [] })
 ;

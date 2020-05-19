@@ -41,6 +41,7 @@
  (** Comment for foo *)
  val foo : string
  (** This comment is associated to foo and not to bar. *)
+
  val bar : string
  (** This comment is associated to bar. *)
 

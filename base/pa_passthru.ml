@@ -963,7 +963,9 @@ value passthru implem passes pa_before arg = do {
 value eflist = ref [] ;
 
 value install x = do {
-  Fmt.(pf stderr "[install %s]\n%!" x.name) ;
+  if debug.val then
+    Fmt.(pf stderr "[install %s]\n%!" x.name)
+  else () ;
   Std.push eflist x
 }
 ;

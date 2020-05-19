@@ -78,7 +78,7 @@ busted_doc_comments_pa_dock.ml: busted_doc_comments.ML
 .SUFFIXES: .TEST
 
 clean::
-	rm -f *.corrected *.ppo test_doc_comments_official.ml test_doc_comments_pa_dock.ml
+	rm -f *.corrected *.ppo *_doc_comments_official.ml *_doc_comments_pa_dock.ml
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o test_*.ml > .depend.NEW
