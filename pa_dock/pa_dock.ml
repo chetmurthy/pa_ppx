@@ -832,9 +832,12 @@ value rewrite_class_signature arg loc l =
     let ((h, _), trailing) = trailing_class_sig_item_doc_comments arg (h, loc_of_class_sig_item h) (Ploc.last_pos loc) in
     [h] @ trailing
   ] in
-  let h1 = List.hd l in
-  let (floating, (h1, _)) = rewrite_leading_class_sig_item arg (Ploc.first_pos loc) (h1, loc_of_class_sig_item h1) in
-  floating @ (rerec [h1 :: List.tl l])
+  match l with [
+    [] -> []
+  | [ h1 :: _ ] ->
+    let (floating, (h1, _)) = rewrite_leading_class_sig_item arg (Ploc.first_pos loc) (h1, loc_of_class_sig_item h1) in
+    floating @ (rerec [h1 :: List.tl l])
+  ]
 ;
 
 value wrap_implem arg z = do {
