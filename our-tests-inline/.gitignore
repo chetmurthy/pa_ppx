@@ -1,4 +1,4 @@
 *.corrected
-*_doc_comments_official.ml
-*_doc_comments_pa_dock.ml
+*_official_original.ml
+*_pa_dock_original.ml
 *.ppo
