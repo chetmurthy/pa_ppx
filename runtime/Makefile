@@ -15,6 +15,8 @@ PACKAGES := rresult,fmt,camlp5,yojson,sexplib
 TARGET := pa_ppx_runtime.cma
 CMO := runtime.cmo exceptions.cmo
 CMI := $(CMO:.cmo=.cmi)
+CMX := $(CMO:.cmo=.cmx)
+
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_runtime
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) local-install
@@ -28,10 +30,9 @@ pa_ppx_runtime.cmx: $(CMO:.cmo=.cmx)
 META: META.pl
 	./META.pl > META
 install::
-	./META.pl $(DESTDIR)/lib > META
-	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_runtime || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_runtime -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_runtime.cmx pa_ppx_runtime.cmi
+	./META.pl $(DESTDIR)/lib > META
+	$(OCAMLFIND)2 reinstall-if-diff pa_ppx_runtime -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_runtime.cmx pa_ppx_runtime.cmi
 	$(RM) -f META
 
 local-install::
@@ -88,6 +89,9 @@ refold-exn: exceptions.ml
 	-syntax camlp5r \
 	$< > $@.NEW
 	mv $@.NEW  exceptions.REFOLD.ml
+
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
+$(CMO) $(CMI) $(CMX): $(EXTERNAL)
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r runtime.ml exceptions.ml exceptions.mli > .depend.NEW \

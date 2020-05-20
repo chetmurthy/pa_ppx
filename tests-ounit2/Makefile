@@ -41,7 +41,8 @@ PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here.syntax
 ALL_PACKAGES := $(PACKAGES),$(PAPACKAGES),$(PPXPACKAGES)
 
 CMO=
-CMI=$(CMO:.cmo=.cmi)
+CMI := $(CMO:.cmo=.cmi)
+CMX := $(CMO:.cmo=.cmx)
 
 TESTS= \
 	test_utils.byte \
@@ -75,7 +76,7 @@ TESTS= \
 	test_comment_lexer.byte \
 
 
-all: $(CMO) $(TESTS) test
+all: $(CMO) $(TESTS)
 
 test: $(TESTS:.byte=)
 

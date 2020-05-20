@@ -17,7 +17,9 @@ PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,sexplib0,se
 OCAMLCFLAGS += -thread
 
 CMO=
-CMI=$(CMO:.cmo=.cmi)
+CMI := $(CMO:.cmo=.cmi)
+CMX := $(CMO:.cmo=.cmx)
+
 
 TESTS= \
 	test_inline_test.TEST failures.TEST order.TEST random_state.TEST \
@@ -25,9 +27,10 @@ TESTS= \
 	no_output_patterns_test.TEST \
 	ppx_assert_test.TEST ppx_sexp_test.TEST
 
+TEST_EXECUTABLES = $(TESTS:.TEST=.pa.byte) $(TESTS:.TEST=.ppx.byte)
 all: $(CMO) test-executables
 
-test-executables: $(TESTS:.TEST=.pa.byte) $(TESTS:.TEST=.ppx.byte)
+test-executables: $(TEST_EXECUTABLES)
 
 test: $(TESTS)
 
@@ -87,6 +90,9 @@ ppx_sexp_test.pa.byte: ppx_sexp_test.ml
 	./test-runner $^ foo $(VERBOSE)
 
 .SUFFIXES: .TEST
+
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES),$(PAINLINEPACKAGES))
+$(TEST_EXECUTABLES): $(EXTERNAL)
 
 clean::
 	rm -f *.corrected *.ppo

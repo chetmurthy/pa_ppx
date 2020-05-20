@@ -16,6 +16,8 @@ PACKAGES := $(PACKAGES),fmt,bos,pa_ppx_base,pa_ppx_utils,camlp5.pa_r.syntax,caml
 TARGET := pa_ppx_dock.cma
 CMO := comment_lexer.cmo pa_dock.cmo
 CMI := $(CMO:.cmo=.cmi)
+CMX := $(CMO:.cmo=.cmx)
+
 SYNTAX := camlp5r
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_dock
 
@@ -33,10 +35,9 @@ camlp5.pa_ppx_dock: $(TARGET)
 META: META.pl
 	./META.pl > META
 install::
-	./META.pl $(DESTDIR)/lib > META
-	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_dock || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_dock -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(TARGET:.cma=.cmi)
+	./META.pl $(DESTDIR)/lib > META
+	$(OCAMLFIND)2 reinstall-if-diff pa_ppx_dock -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(TARGET:.cma=.cmi)
 	$(RM) -f META
 
 local-install::
@@ -55,7 +56,7 @@ $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
 EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
-$(CMO): $(EXTERNAL)
+$(CMO) $(CMI) $(CMX): $(EXTERNAL)
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli > .depend.NEW \

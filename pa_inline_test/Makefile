@@ -16,6 +16,7 @@ PACKAGES := $(PACKAGES),fmt,pa_ppx_base
 TARGET := pa_ppx_inline_test.cma
 CMO := pa_inline_test.cmo
 CMI := $(CMO:.cmo=.cmi)
+CMX := $(CMO:.cmo=.cmx)
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_inline_test local-install
 
@@ -26,9 +27,8 @@ META: META.pl
 	./META.pl > META
 install::
 	./META.pl $(DESTDIR)/lib > META
-	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_inline_test || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_inline_test -destdir $(DESTDIR)/lib META $(TARGET) $(CMO:.cmo=.cmx) $(CMI)
+	$(OCAMLFIND)2 reinstall-if-diff pa_ppx_inline_test -destdir $(DESTDIR)/lib META $(TARGET) $(CMO:.cmo=.cmx) $(CMI)
 	$(RM) -f META
 
 local-install::
@@ -47,7 +47,7 @@ $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
 EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
-$(CMO): $(EXTERNAL)
+$(CMO) $(CMI) $(CMX): $(EXTERNAL)
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli > .depend.NEW \

@@ -15,7 +15,8 @@ PACKAGES := $(PACKAGES),pa_ppx_base,fmt,bos,compiler-libs.common
 
 TARGET=pa_undo_deriving.cma
 CMO=pa_undo_deriving.cmo
-CMI=$(CMO:.cmo=.cmi)
+CMI := $(CMO:.cmo=.cmi)
+CMX := $(CMO:.cmo=.cmx)
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_undo_deriving local-install
 
@@ -27,9 +28,8 @@ META: META.pl
 
 install::
 	./META.pl $(DESTDIR)/lib > META
-	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_undo_deriving || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_undo_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(CMI)
+	$(OCAMLFIND)2 reinstall-if-diff pa_ppx_undo_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(CMI)
 	$(RM) -f META
 
 local-install::
@@ -48,7 +48,7 @@ $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
 EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
-$(CMO): $(EXTERNAL)
+$(CMO) $(CMI) $(CMX): $(EXTERNAL)
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli > .depend.NEW \

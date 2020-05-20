@@ -9,7 +9,6 @@ DESTDIR=
 RM=rm
 
 all:
-	$(RM) -rf local-install && mkdir -p local-install/lib
 	$(MAKE) -C util-lib all
 	$(MAKE) -C runtime all
 	$(MAKE) -C base all
@@ -28,6 +27,13 @@ all:
 	$(MAKE) -C tests-inline all
 	$(MAKE) -C tests-expect all
 	$(MAKE) -C our-tests-inline all
+
+test: all
+	$(MAKE) -C tests-ounit2 test
+	$(MAKE) -C tests-inline test
+	$(MAKE) -C tests-expect test
+	$(MAKE) -C our-tests-inline test
+
 
 PACKAGES := pa_ppx_utils
 PACKAGES := $(PACKAGES),pa_ppx_base

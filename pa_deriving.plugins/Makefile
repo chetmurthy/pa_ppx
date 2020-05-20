@@ -25,7 +25,8 @@ CMO=\
 	pa_deriving_yojson.cmo \
 	pa_deriving_sexp.cmo \
 
-CMI=$(CMO:.cmo=.cmi)
+CMI := $(CMO:.cmo=.cmi)
+CMX := $(CMO:.cmo=.cmx)
 
 all: $(CMO) camlp5.pa_ppx_deriving_plugins local-install
 
@@ -38,10 +39,9 @@ META: META.pl
 	./META.pl > META
 
 install::
-	./META.pl $(DESTDIR)/lib > META
-	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_deriving_plugins || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_deriving_plugins -destdir $(DESTDIR)/lib META $(CMO) $(CMI)
+	./META.pl $(DESTDIR)/lib > META
+	$(OCAMLFIND)2 reinstall-if-diff pa_ppx_deriving_plugins -destdir $(DESTDIR)/lib META $(CMO) $(CMI)
 	$(RM) -f META
 
 local-install::

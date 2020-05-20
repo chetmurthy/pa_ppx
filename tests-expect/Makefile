@@ -13,16 +13,17 @@ RM=rm
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common
+PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,sexplib0
 
 CMO=
-CMI=$(CMO:.cmo=.cmi)
+CMI := $(CMO:.cmo=.cmi)
+CMX := $(CMO:.cmo=.cmx)
 
 TESTS= \
 	test_inline_test.byte \
 	test_inline_test.ppx.byte \
 
-all: $(CMO) $(TESTS) test
+all: $(CMO) $(TESTS)
 
 test: $(TESTS:.byte=)
 
@@ -81,6 +82,9 @@ test_inline_test: test_inline_test.byte
 
 clean::
 	rm -f *.corrected
+
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES),$(PAINLINEPACKAGES))
+$(TESTS): $(EXTERNAL)
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o test_*.ml > .depend.NEW

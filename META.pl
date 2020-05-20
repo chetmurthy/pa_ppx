@@ -12,9 +12,11 @@ our %pkgmap = (
   'pa_ppx_runtime' => 'pa_ppx.runtime',
   'pa_ppx_deriving' => 'pa_ppx.deriving',
   'pa_ppx_deriving_plugins' => 'pa_ppx.deriving_plugins',
+  'pa_ppx_dock' => 'pa_ppx.dock',
   'pa_ppx_base' => 'pa_ppx.base',
   'pa_ppx_import' => 'pa_ppx.import',
   'pa_ppx_unmatched_vala' => 'pa_ppx.unmatched_vala',
+  'pa_ppx_hasrecons' => 'pa_ppx.hashrecons',
   'pa_ppx_here' => 'pa_ppx.here',
   'pa_ppx_assert' => 'pa_ppx.assert',
   'pa_ppx_inline_test' => 'pa_ppx.inline_test',
@@ -26,10 +28,12 @@ our %pkgmap = (
   my $utilsmeta = indent(2, fixdeps(capturex("./util-lib/META.pl"))) ;
   my $rtmeta = indent(2, fixdeps(capturex("./runtime/META.pl"))) ;
   my $basemeta = indent(2, fixdeps(capturex("./base/META.pl"))) ;
+  my $impmeta = indent(2, fixdeps(capturex("./pa_import/META.pl"))) ;
   my $uvmeta = indent(2, fixdeps(capturex("./pa_unmatched_vala/META.pl"))) ;
   my $hrmeta = indent(2, fixdeps(capturex("./pa_hashrecons/META.pl"))) ;
   my $dermeta = indent(2, fixdeps(capturex("./pa_deriving/META.pl"))) ;
   my $derpmeta = indent(2, fixdeps(capturex("./pa_deriving.plugins/META.pl"))) ;
+  my $dockmeta = indent(2, fixdeps(capturex("./pa_dock/META.pl"))) ;
   my $heremeta = indent(2, fixdeps(capturex("./pa_here/META.pl"))) ;
   my $assertmeta = indent(2, fixdeps(capturex("./pa_assert/META.pl"))) ;
   my $inlmeta = indent(2, fixdeps(capturex("./pa_inline_test/META.pl"))) ;
@@ -60,6 +64,9 @@ $dermeta
 )
 package "deriving_plugins" (
 $derpmeta
+)
+package "dock" (
+$dockmeta
 )
 package "import" (
 $impmeta

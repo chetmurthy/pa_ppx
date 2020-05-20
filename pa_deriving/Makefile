@@ -15,7 +15,9 @@ PACKAGES := $(PACKAGES),fmt,pa_ppx_utils,pa_ppx_base,pa_ppx_base.syntax
 
 TARGET=pa_deriving.cma
 CMO=pa_deriving.cmo surveil.cmo pa_rebindto.cmo deriving_harness.cmo pa_deriving_base.cmo
-CMI=$(CMO:.cmo=.cmi)
+CMI := $(CMO:.cmo=.cmi)
+CMX := $(CMO:.cmo=.cmx)
+
 INSTALL_CMI=$(filter-out deriving_harness.cmi,$(CMI))
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_deriving local-install
@@ -27,10 +29,9 @@ META: META.pl
 	./META.pl > META
 
 install::
-	./META.pl $(DESTDIR)/lib > META
-	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_deriving || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(INSTALL_CMI)
+	./META.pl $(DESTDIR)/lib > META
+	$(OCAMLFIND)2 reinstall-if-diff pa_ppx_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(INSTALL_CMI)
 	$(RM) -f META
 
 local-install::
@@ -49,7 +50,7 @@ $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
 EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
-$(CMO): $(EXTERNAL)
+$(CMO) $(CMI) $(CMX): $(EXTERNAL)
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli > .depend.NEW \

@@ -16,6 +16,7 @@ PACKAGES := $(PACKAGES),fmt,pa_ppx_base
 TARGET := pa_ppx_expect_test.cma
 CMO := pa_expect_test.cmo
 CMI := $(CMO:.cmo=.cmi)
+CMX := $(CMO:.cmo=.cmx)
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_expect_test local-install
 
@@ -26,9 +27,8 @@ META: META.pl
 	./META.pl > META
 install::
 	./META.pl $(DESTDIR)/lib > META
-	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_expect_test || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_expect_test -destdir $(DESTDIR)/lib META $(TARGET) $(CMO:.cmo=.cmx) $(CMI)
+	$(OCAMLFIND)2 reinstall-if-diff pa_ppx_expect_test -destdir $(DESTDIR)/lib META $(TARGET) $(CMO:.cmo=.cmx) $(CMI)
 	$(RM) -f META
 
 local-install::

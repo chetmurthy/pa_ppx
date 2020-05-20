@@ -18,7 +18,9 @@ PACKAGES := $(PACKAGES),ounit2,fmt,bos,pcre,rresult,compiler-libs.common,sexplib
 OCAMLCFLAGS += -thread
 
 CMO=
-CMI=$(CMO:.cmo=.cmi)
+CMI := $(CMO:.cmo=.cmi)
+CMX := $(CMO:.cmo=.cmx)
+
 
 TESTS= \
 	test_doc_comments_official.TEST \
@@ -28,9 +30,11 @@ BUSTED_TESTS= \
 	busted_doc_comments_official.TEST \
 	busted_doc_comments_pa_dock.TEST \
 
+TEST_EXECUTABLES = $(TESTS:.TEST=.pa.byte) $(BUSTED_TESTS:.TEST=.pa.byte)
+
 all: $(CMO) test-executables
 
-test-executables: $(TESTS:.TEST=.pa.byte) $(BUSTED_TESTS:.TEST=.pa.byte)
+test-executables: $(TEST_EXECUTABLES)
 
 all-test: test busted-test
 test: $(TESTS)
@@ -79,6 +83,9 @@ busted_doc_comments_pa_dock.ml: busted_doc_comments.ML
 
 clean::
 	rm -f *.corrected *.ppo *_doc_comments_official.ml *_doc_comments_pa_dock.ml
+
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES),$(PAINLINEPACKAGES))
+$(TEST_EXECUTABLES): $(EXTERNAL)
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o test_*.ml > .depend.NEW

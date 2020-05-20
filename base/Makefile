@@ -16,6 +16,7 @@ PACKAGES := $(PACKAGES),rresult,fmt,pa_ppx_utils,pa_ppx_runtime,compiler-libs.co
 TARGET := pa_ppx_base.cma
 CMO := base.cmo pp_MLast.cmo pp_parsetree.cmo ppxutil.cmo pa_passthru.cmo
 CMI := $(CMO:.cmo=.cmi)
+CMX := $(CMO:.cmo=.cmx)
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_base
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_base local-install
@@ -106,10 +107,9 @@ camlp5.pa_ppx_base: $(TARGET)
 META: META.pl
 	./META.pl > META
 install::
-	./META.pl $(DESTDIR)/lib > META
-	$(OCAMLFIND) remove -destdir $(DESTDIR)/lib pa_ppx_base || true
 	mkdir -p $(DESTDIR)/lib
-	$(OCAMLFIND) install pa_ppx_base -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_base.cmx pa_ppx_base.cmi
+	./META.pl $(DESTDIR)/lib > META
+	$(OCAMLFIND)2 reinstall-if-diff pa_ppx_base -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_base.cmx pa_ppx_base.cmi
 	$(RM) -f META
 
 local-install::
@@ -128,7 +128,7 @@ $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
 EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
-$(CMO): $(EXTERNAL)
+$(CMO) $(CMI) $(CMX): $(EXTERNAL)
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r \
