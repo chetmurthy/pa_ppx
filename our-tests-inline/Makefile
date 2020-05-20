@@ -22,12 +22,12 @@ CMI := $(CMO:.cmo=.cmi)
 CMX := $(CMO:.cmo=.cmx)
 
 ORIGINAL_TESTS= \
-	test_doc_comments_official.TEST \
-	test_doc_comments_pa_dock.TEST \
-	bigass_doc_comments_official.TEST \
-	bigass_doc_comments_pa_dock.TEST \
+	test_doc_comments_official_original.TEST \
+	test_doc_comments_pa_dock_original.TEST \
+	bigass_doc_comments_official_original.TEST \
+	bigass_doc_comments_pa_dock_original.TEST \
 
-TEST_EXECUTABLES = $(ORIGINAL_TESTS:.TEST=.original.byte)
+TEST_EXECUTABLES = $(ORIGINAL_TESTS:.TEST=.pa.byte)
 
 all: $(CMO) test-executables
 
@@ -55,23 +55,23 @@ PAINLINEPACKAGES:=$(PAINLINEPACKAGES),ppx_inline_test.runtime-lib,ppx_inline_tes
 
 PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
 
-test_doc_comments_official.ml: test_doc_comments.ML
+test_doc_comments_official_original.ml: test_doc_comments_original.ML
 	cppo -n -D OFFICIAL $< > $@
 
-test_doc_comments_pa_dock.ml: test_doc_comments.ML
+test_doc_comments_pa_dock_original.ml: test_doc_comments_original.ML
 	cppo -n -D PA_DOCK $< > $@
 
-bigass_doc_comments_official.ml: bigass_doc_comments.ML
+bigass_doc_comments_official_original.ml: bigass_doc_comments_original.ML
 	cppo -n -D OFFICIAL $< > $@
 
-bigass_doc_comments_pa_dock.ml: bigass_doc_comments.ML
+bigass_doc_comments_pa_dock_original.ml: bigass_doc_comments_original.ML
 	cppo -n -D PA_DOCK $< > $@
 
-%.original.byte: %.ml dock_test_utils.ml
+%_original.pa.byte: %_original.ml dock_test_utils.ml
 	$(OCAMLFIND)2 preprocess -package $(PACKAGES),camlp5.pa_o,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) camlp5/papr_official.exe -binary-input -impl > $<.pappx.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),camlp5.pa_o,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -I ../tests-ounit2 -linkall -linkpkg ../tests-ounit2/testutil.cmo dock_test_utils.ml $< ppx_inline_test_epilogue.ml -o $@
 
-%.TEST: %.original.byte
+%.TEST: %.pa.byte
 	$(TESTRUNNER) $^ foo $(VERBOSE)
 
 .SUFFIXES: .TEST
