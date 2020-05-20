@@ -29,6 +29,7 @@ ORIGINAL_TESTS= \
 
 REVISED_TESTS= \
 	bigass_doc_comments_revised.TEST \
+	test_doc_comments_revised.TEST \
 
 TEST_EXECUTABLES = $(ORIGINAL_TESTS:.TEST=.pa.byte) $(REVISED_TESTS:.TEST=.pa.byte)
 
