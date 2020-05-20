@@ -28,8 +28,8 @@
  (** Comment for type weather2  *)
  type weather2 = [
    Rain of int (** The comment for constructor Rain *)
- | Sun
- ] ; (** The comment for constructor Sun *)
+ | Sun (** The comment for constructor Sun *)
+ ] ;
  (** I can continue the comment for type weather2 here
    because there is already a comment associated to the last constructor.*)
 

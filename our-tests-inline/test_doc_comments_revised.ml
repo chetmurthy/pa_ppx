@@ -120,7 +120,7 @@ let%expect_test "interf: variants" =
   pappx_interf_string
  {|
 (** 0 *)
-  type t = [ A (** 1 *) | B (** 2 *) | C ] ; (** 3 *)
+  type t = [ A (** 1 *) | B (** 2 *) | C (** 3 *) ] ;
 (** 4 *)
 |} ;
   [%expect {|

@@ -672,15 +672,16 @@ value str_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) epos =
            |> uv
            |> List.for_all (fun a -> not (is_doc_attribute a)) ->
       match immediately_trailing_doc_comment arg h1loc epos with [
-        None -> h1
+        None -> (h1, h1loc)
       | Some s ->
+        let sloc = fst s in
         let (last, tdl) = sep_last tdl in
         let last = variant_type_decl_add_doc_comment last s in
         let tdl = tdl @ [ last ] in
-        <:str_item< type $_flag:nrf$ $list:tdl$ >>
+        (<:str_item< type $_flag:nrf$ $list:tdl$ >>, Ploc.encl h1loc sloc)
       ]
 
-  | _ -> h1
+  | _ -> (h1, h1loc)
   ]
 ;
 
@@ -692,47 +693,26 @@ value sig_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) epos =
            |> uv
            |> List.for_all (fun a -> not (is_doc_attribute a)) ->
       match immediately_trailing_doc_comment arg h1loc epos with [
-        None -> h1
+        None -> (h1, h1loc)
       | Some s ->
+        let sloc = fst s in
         let (last, tdl) = sep_last tdl in
         let last = variant_type_decl_add_doc_comment last s in
         let tdl = tdl @ [ last ] in
-        <:sig_item< type $_flag:nrf$ $list:tdl$ >>
+        (<:sig_item< type $_flag:nrf$ $list:tdl$ >>, Ploc.encl h1loc sloc)
       ]
 
-  | _ -> h1
-  ]
-;
-
-value extend_location arg hloc epos =
-  let txtloc = match comments_between (get arg) (Ploc.last_pos hloc) epos with [
-    [ s :: _ ] when is_doc_comment s -> fst s
-  | [ s1 ; s2 :: _ ]
-    when (not (is_comment s1))
-      && (not (is_blank_line s1))
-      && is_doc_comment s2 ->
-      fst s2
-  | _ -> hloc
-  ] in
-  Ploc.encl hloc txtloc
-;
-
-value extend_str_item_type_decl_location arg (h1, h1loc) epos =
-  match h1 with [
-    <:str_item< type $_flag:_$ $list:tdl$ >>
-      when match (tdl |> sep_last |> fst).tdDef with [ <:ctyp< [ $list:_$ ] >> -> True | _ -> False ] ->
-      extend_location arg h1loc epos
-  | _ -> h1loc
+  | _ -> (h1, h1loc)
   ]
 ;
 
 value extend_type_decl_locations_in_str_items arg loc l =
   let rec erec = fun [
     [ (h1, h1loc) ; (h2, h2loc) :: t ] ->
-    let h1 = str_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) (Ploc.first_pos h2loc) in
+    let (h1, h1loc) = str_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) (Ploc.first_pos h2loc) in
     [ (h1, h1loc) :: erec [ (h2, h2loc) :: t] ]
   | [ (h1, h1loc) ] ->
-    let h1 = str_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) (Ploc.last_pos loc) in
+    let (h1, h1loc) = str_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) (Ploc.last_pos loc) in
     [ (h1, h1loc) ]
   | [] -> []
   ]
@@ -742,32 +722,10 @@ value extend_type_decl_locations_in_str_items arg loc l =
 value extend_type_decl_locations_in_sig_items arg loc l =
   let rec erec = fun [
     [ (h1, h1loc) ; (h2, h2loc) :: t ] ->
-    let h1 = sig_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) (Ploc.first_pos h2loc) in
+    let (h1, h1loc) = sig_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) (Ploc.first_pos h2loc) in
     [ (h1, h1loc) :: erec [ (h2, h2loc) :: t] ]
   | [ (h1, h1loc) ] ->
-    let h1 = sig_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) (Ploc.last_pos loc) in
-    [ (h1, h1loc) ]
-  | [] -> []
-  ]
-  in erec l
-;
-
-value extend_sig_item_type_decl_location arg (h1, h1loc) epos =
-  match h1 with [
-    <:sig_item< type $_flag:_$ $list:tdl$ >>
-      when match (tdl |> sep_last |> fst).tdDef with [ <:ctyp< [ $list:_$ ] >> -> True | _ -> False ] ->
-      extend_location arg h1loc epos
-  | _ -> h1loc
-  ]
-;
-
-value extend_type_decl_locations_in_sig_items arg loc l =
-  let rec erec = fun [
-    [ (h1, h1loc) ; (h2, h2loc) :: t ] ->
-    let h1loc = extend_sig_item_type_decl_location arg (h1, h1loc) (Ploc.first_pos h2loc) in
-    [ (h1, h1loc) :: erec [ (h2, h2loc) :: t] ]
-  | [ (h1, h1loc) ] ->
-    let h1loc = extend_sig_item_type_decl_location arg (h1, h1loc) (Ploc.last_pos loc) in
+    let (h1, h1loc) = sig_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) (Ploc.last_pos loc) in
     [ (h1, h1loc) ]
   | [] -> []
   ]
