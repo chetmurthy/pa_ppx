@@ -21,24 +21,20 @@ CMO=
 CMI := $(CMO:.cmo=.cmi)
 CMX := $(CMO:.cmo=.cmx)
 
-
-TESTS= \
+ORIGINAL_TESTS= \
 	test_doc_comments_official.TEST \
 	test_doc_comments_pa_dock.TEST \
+	bigass_doc_comments_official.TEST \
+	bigass_doc_comments_pa_dock.TEST \
 
-BUSTED_TESTS= \
-	busted_doc_comments_official.TEST \
-	busted_doc_comments_pa_dock.TEST \
-
-TEST_EXECUTABLES = $(TESTS:.TEST=.pa.byte) $(BUSTED_TESTS:.TEST=.pa.byte)
+TEST_EXECUTABLES = $(ORIGINAL_TESTS:.TEST=.original.byte)
 
 all: $(CMO) test-executables
 
 test-executables: $(TEST_EXECUTABLES)
 
-all-test: test busted-test
-test: $(TESTS)
-busted-test: $(BUSTED_TESTS)
+all-test: test
+test: $(ORIGINAL_TESTS)
 
 PAPACKAGES:=$(PACKAGEPREFIX)runtime
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import.syntax
@@ -46,7 +42,6 @@ PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std.syntax
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp.syntax
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here.syntax
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)assert.syntax
-PAPACKAGES:=$(PAPACKAGES),camlp5.pa_o
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)dock
 
 PAINLINEPACKAGES:=$(PAPACKAGES)
@@ -66,17 +61,17 @@ test_doc_comments_official.ml: test_doc_comments.ML
 test_doc_comments_pa_dock.ml: test_doc_comments.ML
 	cppo -n -D PA_DOCK $< > $@
 
-busted_doc_comments_official.ml: busted_doc_comments.ML
+bigass_doc_comments_official.ml: bigass_doc_comments.ML
 	cppo -n -D OFFICIAL $< > $@
 
-busted_doc_comments_pa_dock.ml: busted_doc_comments.ML
+bigass_doc_comments_pa_dock.ml: bigass_doc_comments.ML
 	cppo -n -D PA_DOCK $< > $@
 
-%.pa.byte: %.ml dock_test_utils.ml
-	$(OCAMLFIND)2 preprocess -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) camlp5/papr_official.exe -binary-input -impl > $<.pappx.ppo
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -I ../tests-ounit2 -linkall -linkpkg ../tests-ounit2/testutil.cmo dock_test_utils.ml $< ppx_inline_test_epilogue.ml -o $@
+%.original.byte: %.ml dock_test_utils.ml
+	$(OCAMLFIND)2 preprocess -package $(PACKAGES),camlp5.pa_o,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) camlp5/papr_official.exe -binary-input -impl > $<.pappx.ppo
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),camlp5.pa_o,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -I ../tests-ounit2 -linkall -linkpkg ../tests-ounit2/testutil.cmo dock_test_utils.ml $< ppx_inline_test_epilogue.ml -o $@
 
-%.TEST: %.pa.byte
+%.TEST: %.original.byte
 	$(TESTRUNNER) $^ foo $(VERBOSE)
 
 .SUFFIXES: .TEST

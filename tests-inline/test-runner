@@ -33,7 +33,7 @@ sub runtest {
   if ($test =~ /(.*)\.ppx\.byte$/) {
     $src = "$1.ml" ;
   }
-  elsif ($test =~ /(.*)\.pa\.byte$/) {
+  elsif ($test =~ /(.*)\.(?:pa|original|revised)\.byte$/) {
     $src = "$1.ml" ;
   }
   else { die "malformed test $test"; }
