@@ -633,6 +633,77 @@ value trailing_class_str_item_doc_comments arg spos epos =
   List.map class_str_item_floating_attribute l
 ;
 
+value immediately_trailing_doc_comment arg hloc epos =
+  match comments_between (get arg) (Ploc.last_pos hloc) epos with [
+    [ s :: _ ] when is_doc_comment s -> Some s
+  | [ s1 ; s2 :: _ ]
+    when (not (is_comment s1))
+      && (not (is_blank_line s1))
+      && is_doc_comment s2 ->
+      Some s2
+  | _ -> None
+  ]
+;
+
+value is_doc_attribute a = match uv a with [
+  <:attribute_body< "ocaml.doc" $str:_$ ; >> -> True
+| _ -> False
+]
+;
+
+value variant_type_decl_add_doc_comment td s =
+  match td.tdDef with [
+    <:ctyp:< [ $list:l$ ] >> ->
+      let (last, l) = sep_last l in
+      let (loc, ci, tyl, rto, attrs) = last in
+      let attrs = <:vala< (uv attrs) @ [ attr_doc_comment s ] >> in
+      let last =  (loc, ci, tyl, rto, attrs) in
+      let l = l @ [ last ] in
+      { (td) with tdDef = <:ctyp:< [ $list:l$ ] >> }
+  | _ -> assert False
+  ]
+;
+
+value str_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) epos =
+  match h1 with [
+    <:str_item:< type $_flag:nrf$ $list:tdl$ >>
+      when match (tdl |> sep_last |> fst).tdDef with [ <:ctyp< [ $list:_$ ] >> -> True | _ -> False ]
+       &&  (tdl |> sep_last |> fst).tdAttributes
+           |> uv
+           |> List.for_all (fun a -> not (is_doc_attribute a)) ->
+      match immediately_trailing_doc_comment arg h1loc epos with [
+        None -> h1
+      | Some s ->
+        let (last, tdl) = sep_last tdl in
+        let last = variant_type_decl_add_doc_comment last s in
+        let tdl = tdl @ [ last ] in
+        <:str_item< type $_flag:nrf$ $list:tdl$ >>
+      ]
+
+  | _ -> h1
+  ]
+;
+
+value sig_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) epos =
+  match h1 with [
+    <:sig_item:< type $_flag:nrf$ $list:tdl$ >>
+      when match (tdl |> sep_last |> fst).tdDef with [ <:ctyp< [ $list:_$ ] >> -> True | _ -> False ]
+       &&  (tdl |> sep_last |> fst).tdAttributes
+           |> uv
+           |> List.for_all (fun a -> not (is_doc_attribute a)) ->
+      match immediately_trailing_doc_comment arg h1loc epos with [
+        None -> h1
+      | Some s ->
+        let (last, tdl) = sep_last tdl in
+        let last = variant_type_decl_add_doc_comment last s in
+        let tdl = tdl @ [ last ] in
+        <:sig_item< type $_flag:nrf$ $list:tdl$ >>
+      ]
+
+  | _ -> h1
+  ]
+;
+
 value extend_location arg hloc epos =
   let txtloc = match comments_between (get arg) (Ploc.last_pos hloc) epos with [
     [ s :: _ ] when is_doc_comment s -> fst s
@@ -658,10 +729,23 @@ value extend_str_item_type_decl_location arg (h1, h1loc) epos =
 value extend_type_decl_locations_in_str_items arg loc l =
   let rec erec = fun [
     [ (h1, h1loc) ; (h2, h2loc) :: t ] ->
-    let h1loc = extend_str_item_type_decl_location arg (h1, h1loc) (Ploc.first_pos h2loc) in
+    let h1 = str_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) (Ploc.first_pos h2loc) in
     [ (h1, h1loc) :: erec [ (h2, h2loc) :: t] ]
   | [ (h1, h1loc) ] ->
-    let h1loc = extend_str_item_type_decl_location arg (h1, h1loc) (Ploc.last_pos loc) in
+    let h1 = str_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) (Ploc.last_pos loc) in
+    [ (h1, h1loc) ]
+  | [] -> []
+  ]
+  in erec l
+;
+
+value extend_type_decl_locations_in_sig_items arg loc l =
+  let rec erec = fun [
+    [ (h1, h1loc) ; (h2, h2loc) :: t ] ->
+    let h1 = sig_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) (Ploc.first_pos h2loc) in
+    [ (h1, h1loc) :: erec [ (h2, h2loc) :: t] ]
+  | [ (h1, h1loc) ] ->
+    let h1 = sig_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) (Ploc.last_pos loc) in
     [ (h1, h1loc) ]
   | [] -> []
   ]
@@ -719,8 +803,8 @@ value rewrite_implem0 arg loc l =
 
 value rewrite_structure0 arg loc l =
   l
-  |> extend_type_decl_locations_in_str_items arg loc
   |> List.map (rewrite_str_item arg)
+  |> extend_type_decl_locations_in_str_items arg loc
   |> rewrite_implem0 arg loc
 ;
 
@@ -811,8 +895,8 @@ value rewrite_interf0 arg loc l =
 
 value rewrite_signature0 arg loc l =
   l
-  |> extend_type_decl_locations_in_sig_items arg loc
   |> List.map (rewrite_sig_item arg)
+  |> extend_type_decl_locations_in_sig_items arg loc
   |> rewrite_interf0 arg loc
 ;
 
