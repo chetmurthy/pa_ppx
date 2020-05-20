@@ -664,13 +664,21 @@ value variant_type_decl_add_doc_comment td s =
   ]
 ;
 
+value variant_type_decl_last_branch_has_doc_comments td =
+  match td.tdDef with [
+    <:ctyp:< [ $list:l$ ] >> ->
+      let (last, l) = sep_last l in
+      let (loc, ci, tyl, rto, attrs) = last in
+      List.exists is_doc_attribute (uv attrs)
+    | _ -> False
+  ]
+;
+
 value str_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) epos =
   match h1 with [
     <:str_item:< type $_flag:nrf$ $list:tdl$ >>
       when match (tdl |> sep_last |> fst).tdDef with [ <:ctyp< [ $list:_$ ] >> -> True | _ -> False ]
-       &&  (tdl |> sep_last |> fst).tdAttributes
-           |> uv
-           |> List.for_all (fun a -> not (is_doc_attribute a)) ->
+       && not (tdl |> sep_last |> fst |> variant_type_decl_last_branch_has_doc_comments) ->
       match immediately_trailing_doc_comment arg h1loc epos with [
         None -> (h1, h1loc)
       | Some s ->
@@ -689,9 +697,7 @@ value sig_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) epos =
   match h1 with [
     <:sig_item:< type $_flag:nrf$ $list:tdl$ >>
       when match (tdl |> sep_last |> fst).tdDef with [ <:ctyp< [ $list:_$ ] >> -> True | _ -> False ]
-       &&  (tdl |> sep_last |> fst).tdAttributes
-           |> uv
-           |> List.for_all (fun a -> not (is_doc_attribute a)) ->
+       && not (tdl |> sep_last |> fst |> variant_type_decl_last_branch_has_doc_comments) ->
       match immediately_trailing_doc_comment arg h1loc epos with [
         None -> (h1, h1loc)
       | Some s ->
