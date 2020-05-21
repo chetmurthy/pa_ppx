@@ -441,20 +441,22 @@ value rewrite_field arg ((loc, f, m, ty, attrs) : (loc * string * bool * ctyp * 
   ((loc, f, m, ty, attrs), Ploc.first_pos loc)
 ;
 
-value rewrite_type_decl arg td maxpos = match td.tdDef with [
-  <:ctyp:< [ $list:l$ ] >> ->
+value rewrite_type_decl arg td maxpos = match td with [
+  <:type_decl:< $_tp:n$ $_list:tpl$ = $_priv:pf$ [ $list:l$ ] $_list:cl$ $_itemattrs:attrs$ >> ->
+  let loc = loc_of_type_decl td in
   let (l, _) = List.fold_right (fun gc (acc, maxpos) ->
         let (gc, maxpos) = rewrite_gc arg gc maxpos in
         ([ gc :: acc], maxpos)
     ) l ([], maxpos) in
-  { (td) with tdDef = <:ctyp< [ $list:l$ ] >> }
+  <:type_decl< $_tp:n$ $_list:tpl$ = $_priv:pf$ [ $list:l$ ] $_list:cl$ $_itemattrs:attrs$ >>
 
-| <:ctyp:< { $list:l$ } >> ->
+| <:type_decl:< $_tp:n$ $_list:tpl$ = $_priv:pf$ { $list:l$ } $_list:cl$ $_itemattrs:attrs$ >> ->
+  let loc = loc_of_type_decl td in
   let (l, _) = List.fold_right (fun gc (acc, maxpos) ->
         let (gc, maxpos) = rewrite_field arg gc maxpos in
         ([ gc :: acc], maxpos)
-    ) l ([], Ploc.last_pos loc) in
-  { (td) with tdDef = <:ctyp< { $list:l$ } >> }
+    ) l ([], Ploc.last_pos (loc_of_ctyp td.tdDef)) in
+  <:type_decl:< $_tp:n$ $_list:tpl$ = $_priv:pf$ { $list:l$ } $_list:cl$ $_itemattrs:attrs$ >>
 
 | _ -> td
 ]
@@ -466,6 +468,34 @@ value rewrite_type_decls arg maxpos tdl =
     let maxpos = Ploc.first_pos (loc_of_type_decl td) in
     ([ td :: acc], maxpos)) tdl ([], maxpos)
   in tdl
+;
+
+value loc_of_extension_constructor = fun [
+  EcTuple (loc, _, _, _, _) -> loc
+| EcRebind _ li _ -> loc_of_longid (uv li)
+]
+;
+
+value rewrite_extension_constructor arg ec maxpos = match ec with [
+  EcTuple gc ->
+  let (gc, maxpos) = rewrite_gc arg gc maxpos in
+  (EcTuple gc, maxpos)
+| EcRebind a b attrs ->
+  let loc = loc_of_extension_constructor ec in
+  let startpos = Ploc.last_pos loc in
+  let l = comments_between (get arg) startpos maxpos in
+  let l = Std.filter is_doc_comment l in
+  let newattrs = List.map attr_doc_comment l in
+  let attrs = <:vala< (uv attrs) @ newattrs >> in
+  (EcRebind a b attrs, Ploc.first_pos loc)
+]
+;
+
+value rewrite_extension_constructors arg maxpos ecs =
+  let (ecs, _) = List.fold_right (fun ec (acc, maxpos) ->
+    let (ec, maxpos) = rewrite_extension_constructor arg ec maxpos in
+    ([ ec :: acc], maxpos)) ecs ([], maxpos) in
+  ecs
 ;
 
 value str_items_leading_doc_comments arg startpos (h2, loc2) =
@@ -674,6 +704,22 @@ value variant_type_decl_last_branch_has_doc_comments td =
   ]
 ;
 
+value extension_constructor_has_doc_comments = fun [
+  EcTuple (_, _, _, _, attrs) ->
+  List.exists is_doc_attribute (uv attrs)
+| EcRebind _ _ attrs ->
+  List.exists is_doc_attribute (uv attrs)
+]
+;
+
+value extension_constructor_add_doc_comment ec s = match ec with [
+  EcTuple (a, b, c, d, attrs) -> EcTuple (a, b, c, d, <:vala< (uv attrs) @ [ attr_doc_comment s ] >>)
+  
+| EcRebind a b attrs ->
+  EcRebind a b <:vala< (uv attrs) @ [ attr_doc_comment s ] >>
+]
+;
+
 value str_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) epos =
   match h1 with [
     <:str_item:< type $_flag:nrf$ $list:tdl$ >>
@@ -687,6 +733,18 @@ value str_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) epos =
         let last = variant_type_decl_add_doc_comment last s in
         let tdl = tdl @ [ last ] in
         (<:str_item< type $_flag:nrf$ $list:tdl$ >>, Ploc.encl h1loc sloc)
+      ]
+
+  | <:str_item:< type $_lilongid:tp$ $_list:pl$ += $_priv:pf$ [ $list:ecs$ ] $itemattrs:attrs$ >>
+      when not (ecs |> sep_last |> fst |> extension_constructor_has_doc_comments) ->
+      match immediately_trailing_doc_comment arg h1loc epos with [
+        None -> (h1, h1loc)
+      | Some s ->
+        let sloc = fst s in
+        let (last, ecs) = sep_last ecs in
+        let last = extension_constructor_add_doc_comment last s in
+        let ecs = ecs @ [ last ] in
+        (<:str_item:< type $_lilongid:tp$ $_list:pl$ += $_priv:pf$ [ $list:ecs$ ] $itemattrs:attrs$ >>, Ploc.encl h1loc sloc)
       ]
 
   | _ -> (h1, h1loc)
@@ -706,6 +764,17 @@ value sig_item_type_decl_adjust_last_doc_comment arg (h1, h1loc) epos =
         let last = variant_type_decl_add_doc_comment last s in
         let tdl = tdl @ [ last ] in
         (<:sig_item< type $_flag:nrf$ $list:tdl$ >>, Ploc.encl h1loc sloc)
+      ]
+  | <:sig_item:< type $_lilongid:tp$ $_list:pl$ += $_priv:pf$ [ $list:ecs$ ] $itemattrs:attrs$ >>
+      when not (ecs |> sep_last |> fst |> extension_constructor_has_doc_comments) ->
+      match immediately_trailing_doc_comment arg h1loc epos with [
+        None -> (h1, h1loc)
+      | Some s ->
+        let sloc = fst s in
+        let (last, ecs) = sep_last ecs in
+        let last = extension_constructor_add_doc_comment last s in
+        let ecs = ecs @ [ last ] in
+        (<:sig_item:< type $_lilongid:tp$ $_list:pl$ += $_priv:pf$ [ $list:ecs$ ] $itemattrs:attrs$ >>, Ploc.encl h1loc sloc)
       ]
 
   | _ -> (h1, h1loc)
@@ -742,6 +811,11 @@ value rewrite_str_item arg = fun [
   (<:str_item:< type $_flag:nrfl$ $list:tdl$ >>, siloc) ->
   let tdl = rewrite_type_decls arg (Ploc.last_pos siloc) tdl in
   (<:str_item< type $_flag:nrfl$ $list:tdl$ >>, siloc)
+
+| (<:str_item:< type $_lilongid:tp$ $_list:pl$ += $_priv:pf$ [ $list:ecs$ ] $itemattrs:attrs$ >>, siloc) ->
+  let ecs = rewrite_extension_constructors arg (Ploc.last_pos siloc) ecs in
+  (<:str_item:< type $_lilongid:tp$ $_list:pl$ += $_priv:pf$ [ $list:ecs$ ] $itemattrs:attrs$ >>, siloc)
+
 | x -> x
 ]
 ;
@@ -750,6 +824,11 @@ value rewrite_sig_item arg = fun [
   (<:sig_item:< type $_flag:nrfl$ $list:tdl$ >>, siloc) ->
   let tdl = rewrite_type_decls arg (Ploc.last_pos siloc) tdl in
   (<:sig_item< type $_flag:nrfl$ $list:tdl$ >>, siloc)
+
+| (<:sig_item:< type $_lilongid:tp$ $_list:pl$ += $_priv:pf$ [ $list:ecs$ ] $itemattrs:attrs$ >>, siloc) ->
+  let ecs = rewrite_extension_constructors arg (Ploc.last_pos siloc) ecs in
+  (<:sig_item:< type $_lilongid:tp$ $_list:pl$ += $_priv:pf$ [ $list:ecs$ ] $itemattrs:attrs$ >>, siloc)
+
 | x -> x
 ]
 ;

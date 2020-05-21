@@ -229,3 +229,43 @@ let%expect_test "interf: exception" =
       [@ocaml.doc
         " Comment for exception My_exception, even with a simple comment\n     between the special comment and the exception."]
  |}]
+
+let%expect_test "implem: extensible-variants" =
+#ifdef OFFICIAL
+  official_implem_string
+#else
+  pappx_implem_string
+#endif
+ {|
+  type t = ..
+
+(** 0 *)
+  type t += A (** 1 *) | B (** 2 *) | C (** 3 *)
+|} ;
+  [%expect {|
+    type t = ..
+    type t +=
+      | A [@ocaml.doc " 1 "]
+      | B [@ocaml.doc " 2 "]
+      | C [@ocaml.doc " 3 "][@@ocaml.doc " 0 "]
+ |}]
+
+let%expect_test "interf: extensible-variants" =
+#ifdef OFFICIAL
+  official_interf_string
+#else
+  pappx_interf_string
+#endif
+ {|
+  type t = ..
+
+(** 0 *)
+  type t += A (** 1 *) | B (** 2 *) | C (** 3 *)
+|} ;
+  [%expect {|
+    type t = ..
+    type t +=
+      | A [@ocaml.doc " 1 "]
+      | B [@ocaml.doc " 2 "]
+      | C [@ocaml.doc " 3 "][@@ocaml.doc " 0 "]
+ |}]
