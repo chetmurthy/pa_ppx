@@ -12,6 +12,7 @@ RM=rm
 
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
+NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
 PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,yojson,sexplib
 
@@ -85,25 +86,25 @@ test: $(TESTS:.byte=)
 
 test_%.byte: test_%.ml testutil.cmo testutil2.cmo
 	cppo -D PAPPX $< > $<.pappx.ml
-	$(OCAMLFIND)2 preprocess -package $(PACKAGES),$(PAPACKAGES),camlp5.pr_o.syntax \
+	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),$(PAPACKAGES),camlp5.pr_o.syntax \
 	-syntax camlp5o $<.pappx.ml > $<.pappx.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PAPACKAGES) \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $<.pappx.ml -o $@
 
 test_%.ppx.byte: test_%.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
 	cppo -U PAPPX $< > $<.ppx.ml
-	$(OCAMLFIND)2 preprocess -package $(PACKAGES),ounit2,$(PPXPACKAGES) $<.ppx.ml > $<.ppx.ppo
+	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),ounit2,$(PPXPACKAGES) $<.ppx.ml > $<.ppx.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES) -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo $<.ppx.ml -o $@
 
 test_ppx_yojson.byte: test_ppx_yojson.ml testutil.cmo testutil2.cmo
 	cppo -D PAPPX test_ppx_yojson.ml > test_ppx_yojson.pappx.ml
-	$(OCAMLFIND)2 preprocess -package $(PACKAGES),$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp.syntax,camlp5.pr_o.syntax  -syntax camlp5o  test_ppx_yojson.pappx.ml > test_ppx_yojson.pappx.ml.ppo
+	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp.syntax,camlp5.pr_o.syntax  -syntax camlp5o  test_ppx_yojson.pappx.ml > test_ppx_yojson.pappx.ml.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp.syntax \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo test_ppx_yojson.pappx.ml -o $@
 
 test_ppx_yojson.ppx.byte: test_ppx_yojson.ml testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo
 	cppo test_ppx_yojson.ml > test_ppx_yojson.ppx.ml
-	$(OCAMLFIND)2 preprocess -package $(PACKAGES),ounit2,$(PPXPACKAGES),ppx_sexp_conv test_ppx_yojson.ppx.ml >  test_ppx_yojson.ppx.ml.ppo
+	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),ounit2,$(PPXPACKAGES),ppx_sexp_conv test_ppx_yojson.ppx.ml >  test_ppx_yojson.ppx.ml.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES),ppx_sexp_conv -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo test_ppx_yojson.ppx.ml -o $@
 
 test_passthru_hashrecons.byte: test_passthru_hashrecons.ml testutil.cmo testutil2.cmo hCPassthru.cmo

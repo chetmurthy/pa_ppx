@@ -10,6 +10,7 @@ RM=rm
 
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
+NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 
 PACKAGES := $(PACKAGES),pcre,core_kernel
 TARGET := pa_ppx_utils.cma
@@ -33,7 +34,7 @@ META: META.pl
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(OCAMLFIND)2 reinstall-if-diff pa_ppx_utils -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_utils.cmx pa_ppx_utils.cmi
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_utils -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_utils.cmx pa_ppx_utils.cmi
 	$(RM) -f META
 
 local-install::

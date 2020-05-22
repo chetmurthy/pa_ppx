@@ -10,6 +10,7 @@ RM=rm
 
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
+NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 
 PACKAGES := rresult,fmt,camlp5,yojson,sexplib
 TARGET := pa_ppx_runtime.cma
@@ -32,7 +33,7 @@ META: META.pl
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(OCAMLFIND)2 reinstall-if-diff pa_ppx_runtime -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_runtime.cmx pa_ppx_runtime.cmi
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_runtime -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_runtime.cmx pa_ppx_runtime.cmi
 	$(RM) -f META
 
 local-install::
@@ -51,11 +52,11 @@ $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
 initialize-exn-i:: exceptions.ORIG.mli
-	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax -syntax camlp5o $< > $@.NEW
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax -syntax camlp5o $< > $@.NEW
 	mv $@.NEW exceptions.mli
 
 bootstrap-exn-i: exceptions.ORIG.mli
-	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax,pa_ppx_import.syntax,pa_ppx_deriving_plugins.std.syntax,pa_ppx_deriving_plugins.yojson.syntax,pa_ppx_deriving_plugins.sexp.syntax \
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax,pa_ppx_import.syntax,pa_ppx_deriving_plugins.std.syntax,pa_ppx_deriving_plugins.yojson.syntax,pa_ppx_deriving_plugins.sexp.syntax \
 	-syntax camlp5o \
 	-ppopt -pa_ppx-runtime -ppopt "" \
 	-ppopt -D -ppopt BOOTSTRAP \
@@ -65,17 +66,17 @@ bootstrap-exn-i: exceptions.ORIG.mli
 	mv $@.NEW  exceptions.mli
 
 refold-exn-i: exceptions.mli
-	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r.syntax,pa_ppx_undo_deriving.syntax \
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r.syntax,pa_ppx_undo_deriving.syntax \
 	-syntax camlp5r \
 	$< > $@.NEW
 	mv $@.NEW  exceptions.REFOLD.mli
 
 initialize-exn:: exceptions.ORIG.ml
-	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax -syntax camlp5o $< > $@.NEW
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax -syntax camlp5o $< > $@.NEW
 	mv $@.NEW exceptions.ml
 
 bootstrap-exn: exceptions.ORIG.ml
-	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax,pa_ppx_import.syntax,pa_ppx_deriving_plugins.std.syntax,pa_ppx_deriving_plugins.yojson.syntax,pa_ppx_deriving_plugins.sexp.syntax \
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax,pa_ppx_import.syntax,pa_ppx_deriving_plugins.std.syntax,pa_ppx_deriving_plugins.yojson.syntax,pa_ppx_deriving_plugins.sexp.syntax \
 	-syntax camlp5o \
 	-ppopt -pa_ppx-runtime -ppopt "" \
 	-ppopt -D -ppopt BOOTSTRAP \
@@ -85,7 +86,7 @@ bootstrap-exn: exceptions.ORIG.ml
 	mv $@.NEW  exceptions.ml
 
 refold-exn: exceptions.ml
-	$(OCAMLFIND)2 preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r.syntax,pa_ppx_undo_deriving.syntax \
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r.syntax,pa_ppx_undo_deriving.syntax \
 	-syntax camlp5r \
 	$< > $@.NEW
 	mv $@.NEW  exceptions.REFOLD.ml

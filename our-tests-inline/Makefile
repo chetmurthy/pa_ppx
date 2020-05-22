@@ -12,6 +12,7 @@ RM=rm
 
 LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
+NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
 TESTRUNNER=$(TOP)/tests-inline/test-runner
 PACKAGES := $(PACKAGES),ounit2,fmt,bos,pcre,rresult,compiler-libs.common,sexplib0,sexplib,str,threads.posix
@@ -72,11 +73,11 @@ bigass_doc_comments_pa_dock_original.ml: bigass_doc_comments_original.ML
 	cppo -n -D PA_DOCK $< > $@
 
 %_original.pa.byte: %_original.ml dock_test_utils.ml
-	$(OCAMLFIND)2 preprocess -package $(PACKAGES),camlp5.pa_o,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) camlp5/papr_official.exe -binary-input -impl > $<.pappx.ppo
+	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),camlp5.pa_o,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) camlp5/papr_official.exe -binary-input -impl > $<.pappx.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),camlp5.pa_o,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -I ../tests-ounit2 -linkall -linkpkg ../tests-ounit2/testutil.cmo dock_test_utils.ml $< ppx_inline_test_epilogue.ml -o $@
 
 %_revised.pa.byte: %_revised.ml dock_test_utils.ml
-	$(OCAMLFIND)2 preprocess -package $(PACKAGES),camlp5.pa_r,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) camlp5/papr_official.exe -binary-input -impl > $<.pappx.ppo
+	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),camlp5.pa_r,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) camlp5/papr_official.exe -binary-input -impl > $<.pappx.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),camlp5.pa_r,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -I ../tests-ounit2 -linkall -linkpkg ../tests-ounit2/testutil.cmo dock_test_utils.ml $< ppx_inline_test_epilogue.ml -o $@
 
 %.TEST: %.pa.byte
