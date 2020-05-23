@@ -100,6 +100,8 @@ value is_comment (_, s) =
 value is_doc_comment (_, s) =
   String.length s >= 4 && "(**" = String.sub s 0 3  && "(***" <> String.sub s 0 4 ;
 
+value is_stop_comment (_, s) = s = "(**/**)" ;
+
 value not_is_doc_comment s = not (is_doc_comment s) ;
 
 value is_blank_line s =
@@ -124,7 +126,7 @@ value sig_item_apportion_leading_comments l =
     [] -> (None, [])
   | [ h :: t ] as l -> do {
       assert(is_doc_comment h) ;
-      if List.for_all (f_not is_blank_line) rev_after_doc then
+      if not (is_stop_comment h) && List.for_all (f_not is_blank_line) rev_after_doc then
         (Some h, t)
       else (None, l)
     }
@@ -139,7 +141,7 @@ value sig_item_apportion_interior_comments l =
     [] -> (None, [])
   | ([ h :: t ] as l) -> do {
       assert (is_doc_comment h) ;
-      if List.for_all (f_not (f_or is_blank_line is_comment)) before_doc then
+      if not (is_stop_comment h) && List.for_all (f_not (f_or is_blank_line is_comment)) before_doc then
         (Some h, t)
       else (None, l)
     }
@@ -149,7 +151,7 @@ value sig_item_apportion_interior_comments l =
     [] -> (None, [])
   | [ h :: t ] as l -> do {
       assert(is_doc_comment h) ;
-      if List.for_all (f_not is_blank_line) rev_after_doc then
+      if not (is_stop_comment h) && List.for_all (f_not is_blank_line) rev_after_doc then
         (Some h, t)
       else (None, l)
     }
@@ -164,7 +166,7 @@ value str_item_apportion_interior_comments l =
     [] -> (None, [])
   | [ h :: t ] as l -> do {
       assert(is_doc_comment h) ;
-      if List.for_all (f_not is_blank_line) rev_after_doc then
+      if not (is_stop_comment h) && List.for_all (f_not is_blank_line) rev_after_doc then
         (Some h, t)
       else (None, l)
     }

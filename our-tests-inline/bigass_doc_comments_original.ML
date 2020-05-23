@@ -120,3 +120,27 @@ let%expect_test "simple interf" =
         module M : sig val y : int[@@ocaml.doc " The comment for value y. "] end
         [@@ocaml.doc " The comment for module M. "]
       end[@@ocaml.doc " The comment for module type my_module_type. "] |}]
+
+let%expect_test "stop-interf" =
+#ifdef OFFICIAL
+  official_interf_file "../pa_dock/examples/stop.mli" ;
+#else
+  pappx_interf_file "../pa_dock/examples/stop.mli" ;
+#endif
+  [%expect {|
+    class type foo =
+      object
+        method  m : string[@@ocaml.doc " comment for method m "]
+        [@@@ocaml.text "/*"]
+        method  bar : int[@@ocaml.doc
+                           " This method won't appear in the documentation "]
+      end
+    val foo : string[@@ocaml.doc
+                      " This value appears in the documentation, since the Stop special comment\n     in the class does not affect the parent module of the class."]
+    [@@@ocaml.text "/*"]
+    val bar : string[@@ocaml.doc
+                      " The value bar does not appear in the documentation."]
+    [@@@ocaml.text "/*"]
+    type t = string[@@ocaml.doc
+                     " The type t appears since in the documentation since the previous stop comment\n toggled off the \"no documentation mode\". "]
+ |}]
