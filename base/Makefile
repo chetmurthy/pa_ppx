@@ -15,7 +15,7 @@ MKCAMLP5 := $(LAUNCH) $(MKCAMLP5)
 
 PACKAGES := $(PACKAGES),rresult,fmt,pa_ppx_utils,pa_ppx_runtime,compiler-libs.common
 TARGET := pa_ppx_base.cma
-CMO := base.cmo pp_MLast.cmo pp_parsetree.cmo ppxutil.cmo pa_passthru.cmo
+CMO := base.cmo pp_MLast.cmo pp_parsetree.cmo ppxutil.cmo pa_passthru.cmo pa_normalize.cmo
 CMI := $(CMO:.cmo=.cmi)
 CMX := $(CMO:.cmo=.cmx)
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_base
@@ -133,7 +133,7 @@ $(CMO) $(CMI) $(CMX): $(EXTERNAL)
 
 depend::
 	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r \
-	pa_passthru.ml ppxutil.ml \
+	pa_passthru.ml pa_normalize.ml ppxutil.ml \
 	pp_MLast.ml pp_MLast.mli \
 	pp_parsetree.ml pp_parsetree.mli > .depend.NEW
 	mv .depend.NEW .depend

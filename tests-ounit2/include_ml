@@ -6,20 +6,20 @@
 #require "rresult";;
 #require "pcre";;
 #require "bos";;
+#require "str";;
 
-(*
 #require "camlp5.pa_o";;
 Pcaml.inter_phrases := Some ";;\n";;
-*)
+(*
 #require "camlp5.pa_r";;
 Pcaml.inter_phrases := Some ";\n";;
-
-(*
-#require "camlp5.pr_o";;
 *)
 
-#require "camlp5.pr_r";;
+#require "camlp5.pr_o";;
 
+(*
+#require "camlp5.pr_r";;
+*)
 #require "camlp5.quotations";;
 #require "camlp5.extfun";;
 (*
@@ -39,6 +39,41 @@ open Testutil2 ;;
 
 let pp_plexing_lexbuf b = Fmt.(pf stdout "<<%s>>" (Plexing.Lexbuf.get b)) ;;
 #install_printer pp_plexing_lexbuf ;;
+
+let nonws_re = Str.regexp "[^ \t\n]"
+let not_ws s = match Str.search_forward nonws_re s 0 with _ -> true | exception Not_found -> false ;;
+
+type ploc_verbosity = TERSE | COMMENT | LOCATION ;;
+
+let verbose_ploc = ref TERSE ;;
+let terse_pp_ploc (ploc : Ploc.t) =
+  Format.print_string "<loc>"
+;;
+let comment_pp_ploc (ploc : Ploc.t) =
+  let cs = Ploc.comment ploc in
+  if not_ws cs then Format.printf "<loc \"%s\">" (String.escaped cs)
+  else Format.print_string "<loc>"
+;;
+let verbose_pp_ploc (loc : Ploc.t) =
+  let file_name = Ploc.file_name loc in
+  let line_nb = Ploc.line_nb loc in
+  let bol_pos = Ploc.bol_pos loc in
+  let first_pos = Ploc.first_pos loc in
+  let last_pos = Ploc.last_pos loc in
+  let cs = Ploc.comment loc in
+  if not_ws cs then
+    Fmt.(pf stdout "<loc<\"%s\":%d (bol %d) %d-%d \"%s\">>"
+           file_name line_nb bol_pos first_pos last_pos (String.escaped cs))
+  else
+    Fmt.(pf stdout "<loc<\"%s\":%d (bol %d) %d-%d>>"
+           file_name line_nb bol_pos first_pos last_pos)
+;;
+let pp_ploc loc = match !verbose_ploc with 
+    TERSE -> terse_pp_ploc loc
+  | COMMENT -> comment_pp_ploc loc
+  | LOCATION -> verbose_pp_ploc loc
+;;
+#install_printer pp_ploc;;
 
 let pp_loc (loc : Location.t) = Format.print_string "<loc>" ;;
 #install_printer pp_loc ;;
@@ -80,18 +115,41 @@ open Longident ;;
 
 print_string "================ START ================\n";; flush stdout ;;
 
-
-#require "pa_ppx_base";;
 (*
-#require "pa_ppx_undo_deriving";;
+#require "pa_ppx_deriving_plugins.yojson";;
 
-#install_printer Fpath.pp ;;
-#trace Bos.OS.File.exists ;;
-
-"../base/pp_MLast.mli" |> Fpath.v |> Bos.OS.File.read
-  |> Rresult.R.get_ok |> PAPR.Interf.pa1
-  |> PAPR.Interf.pr |> print_string ;;
+"foo.ml" |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> PAPR.Implem.pa1
+  |> PAPR.Implem.pr |> print_string ;;
 *)
+
+#require "pa_ppx_dock";;
+(*
+#trace Pa_ppx_dock.Pa_dock.comments_between ;;
+#trace Pa_ppx_dock.Pa_dock.make_comment_map ;;
+#trace Pa_ppx_dock.Pa_dock.str_item_apportion_interior_comments ;;
+#trace Pa_ppx_dock.Pa_dock.str_item_wrap_itemattr ;;
+#trace Pa_ppx_dock.Pa_dock.rewrite_str_item_pair ;;
+#trace Pa_ppx_dock.Pa_dock.rewrite_gc ;;
+#trace Pa_ppx_dock.Pa_dock.trailing_str_item_doc_comments ;;
+
+print_string "================ PA_DOCK ================\n";; flush stdout ;;
+"../pa_dock/examples/foofixed.ml" |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> PAPR.Implem.pa1 ~input_file:"../pa_dock/examples/foofixed.ml"
+  |> PAPR.Implem.pr |> print_string ;;
+*)
+
+
+print_string "================ OFFICIAL ================\n";; flush stdout ;;
+"../pa_dock/examples/foofixed.ml" |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> Official.Implem.pa
+  |> Official.Implem.pr |> print_string ;;
+
+print_string "================ PA_DOCK ================\n";; flush stdout ;;
+"../pa_dock/examples/foofixed.ml" |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> PAPR.Implem.pa1 ~input_file:"../pa_dock/examples/foofixed.ml"
+  |> List.map fst |> Ast2pt.implem "../pa_dock/examples/foofixed.ml" |> Official.Implem.pr |> print_string ;;
+
 (*
 ;;; Local Variables: ***
 ;;; mode:tuareg ***

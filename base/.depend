@@ -1,3 +1,9 @@
+pa_normalize.cmo : \
+    ppxutil.cmo \
+    pa_passthru.cmo
+pa_normalize.cmx : \
+    ppxutil.cmx \
+    pa_passthru.cmx
 pa_passthru.cmo : \
     ppxutil.cmo
 pa_passthru.cmx : \

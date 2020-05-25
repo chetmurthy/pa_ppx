@@ -155,8 +155,14 @@ EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(ALL_PACKAGES))
 $(CMO): $(EXTERNAL)
 
 depend::
-	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o testutil2.ml stuff.ml test_*.ml > .depend.NEW
-	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5r testutil.ml >> .depend.NEW
+	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o \
+	testutil2.ml stuff.ml \
+	test_*.ppx.ml \
+	test_*.pappx.ml \
+	> .depend.NEW
+	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5r \
+	testutil.ml \
+	>> .depend.NEW
 	mv .depend.NEW .depend
 
 -include .depend

@@ -948,14 +948,44 @@ value tsort_passes passes =
   }
 ;
 
+value partition_passes l =
+  let rec prec = fun [
+    [] -> []
+  | ([ h1 :: _ ] as l) ->
+    let (first, rest) = filter_split (fun h2 -> h1.pass = h2.pass) l in
+    [ first :: (prec rest) ]
+  ] in
+  prec l
+;
+
+value sort_passes passes = do {
+  let rv =
+  passes
+  |> List.sort (fun p1 p2 -> Stdlib.compare p1.pass p2.pass)
+  |> partition_passes
+  |> List.map tsort_passes
+  |> List.concat in
+  if debug.val then
+  let space = Fmt.(const string " ") in
+  Fmt.(pf stderr "[sort: <<%a>> -> <<%a>>]\n%!"
+         (list ~{sep=space} string) (List.map (fun p -> p.name) passes)
+         (list ~{sep=space} string) (List.map (fun p -> p.name) rv))
+  else () ;
+  rv
+}
+;
+
 value passthru implem passes pa_before arg = do {
-  let passes = tsort_passes passes in
+  let passes = sort_passes passes in
   let rv = pa_before arg in
   let (l, status) = rv in
   assert (l <> []) ;
   let (_, loc) = List.hd l in
   let ctxt = Ctxt.mk (EF.mk()) loc in
   let (_, rv) = List.fold_left (onepass implem) (ctxt,(l,status)) passes in
+  if debug.val then
+    Printf.(fprintf stderr "[done]\n%!")
+  else ();
   rv
 }
 ;

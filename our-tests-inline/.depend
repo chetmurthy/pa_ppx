@@ -1,0 +1,12 @@
+test_doc_comments_official_original.cmo : \
+    dock_test_utils.cmo
+test_doc_comments_official_original.cmx : \
+    dock_test_utils.cmx
+test_doc_comments_pa_dock_original.cmo : \
+    dock_test_utils.cmo
+test_doc_comments_pa_dock_original.cmx : \
+    dock_test_utils.cmx
+test_doc_comments_revised.cmo : \
+    dock_test_utils.cmo
+test_doc_comments_revised.cmx : \
+    dock_test_utils.cmx

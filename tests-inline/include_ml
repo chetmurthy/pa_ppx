@@ -14,12 +14,12 @@ Pcaml.inter_phrases := Some ";;\n";;
 #require "camlp5.pa_r";;
 Pcaml.inter_phrases := Some ";\n";;
 *)
-(*
+
 #require "camlp5.pr_o";;
-*)
 
+(*
 #require "camlp5.pr_r";;
-
+*)
 #require "camlp5.quotations";;
 #require "camlp5.extfun";;
 (*
@@ -73,8 +73,9 @@ let pp_lexbuf lb =
   Format.print_string (lexbuf_contents lb);
   Format.print_string ">>"
 ;;
+(*
 #install_printer pp_lexbuf ;;
-
+*)
 open Asttypes ;;
 open Parsetree ;;
 open Longident ;;
@@ -83,26 +84,14 @@ print_string "================ START ================\n";; flush stdout ;;
 
 (*
 #require "pa_ppx_expect_test";;
-#require "pa_ppx_inline_test";;
-#require "pa_ppx_assert";;
-
-#install_printer Fpath.pp ;;
-#trace Bos.OS.File.exists ;;
-Pa_inline_test.libname := "foo" ;;
-
-#trace Pa_assert.rewrite_expr ;;
-
-"ppx_assert_test.ml" |> Fpath.v |> Bos.OS.File.read
-  |> Rresult.R.get_ok |> PAPR.Implem.pa1 ~input_file:"ppx_assert_test.ml"
+#trace Pa_expect_test.transform_body ;;
+#trace Pa_expect_test.expect_test ;;
+#trace Pa_expect_test.extract_uncaught_exn ;;
+#trace Pa_expect_test.rewrite_str_item ;;
+"uncaught_exn.ml" |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> PAPR.Implem.pa1 ~input_file:"uncaught_exn.ml"
   |> PAPR.Implem.pr |> print_string ;;
 *)
-
-#require "pa_ppx_assert";;
-#trace Pa_assert.rewrite_expr ;;
-
-"test_boo.ml" |> Fpath.v |> Bos.OS.File.read
-  |> Rresult.R.get_ok |> PAPR.Implem.pa1 ~input_file:"test_boo.ml"
-  |> PAPR.Implem.pr |> print_string ;;
 
 (*
 ;;; Local Variables: ***

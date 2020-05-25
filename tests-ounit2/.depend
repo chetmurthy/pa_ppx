@@ -1,63 +1,59 @@
 stuff.cmo :
 stuff.cmx :
-test_deriving_enum.cmo : \
-    testutil2.cmo
-test_deriving_enum.cmx : \
-    testutil2.cmx
-test_deriving_eq.cmo : \
-    testutil2.cmo
-test_deriving_eq.cmx : \
-    testutil2.cmx
-test_deriving_fold.cmo :
-test_deriving_fold.cmx :
-test_deriving_iter.cmo :
-test_deriving_iter.cmx :
-test_deriving_make.cmo :
-test_deriving_make.cmx :
-test_deriving_map.cmo :
-test_deriving_map.cmx :
-test_deriving_ord.cmo :
-test_deriving_ord.cmx :
-test_deriving_show.cmo : \
-    testutil2.cmo
-test_deriving_show.cmx : \
-    testutil2.cmx
-test_hashrecons.cmo : \
-    testutil2.cmo
-test_hashrecons.cmx : \
-    testutil2.cmx
-test_here.cmo : \
-    testutil2.cmo
-test_here.cmx : \
-    testutil2.cmx
-test_import0.cmo : \
-    testutil2.cmo \
-    stuff.cmo
-test_import0.cmx : \
-    testutil2.cmx \
-    stuff.cmx
-test_import_camlp5.cmo : \
-    testutil2.cmo
-test_import_camlp5.cmx : \
-    testutil2.cmx
-test_passthru_hashrecons.cmo : \
-    testutil2.cmo \
-    hCPassthru.cmo
-test_passthru_hashrecons.cmx : \
-    testutil2.cmx \
-    hCPassthru.cmx
-test_ppx_import.cmo : \
+test_comment_lexer.ml.pappx.cmo :
+test_comment_lexer.ml.pappx.cmx :
+test_deriving_enum.ml.pappx.cmo :
+test_deriving_enum.ml.pappx.cmx :
+test_deriving_enum.ml.ppx.cmo :
+test_deriving_enum.ml.ppx.cmx :
+test_deriving_eq.ml.pappx.cmo :
+test_deriving_eq.ml.pappx.cmx :
+test_deriving_eq.ml.ppx.cmo :
+test_deriving_eq.ml.ppx.cmx :
+test_deriving_fold.ml.pappx.cmo :
+test_deriving_fold.ml.pappx.cmx :
+test_deriving_fold.ml.ppx.cmo :
+test_deriving_fold.ml.ppx.cmx :
+test_deriving_iter.ml.pappx.cmo :
+test_deriving_iter.ml.pappx.cmx :
+test_deriving_iter.ml.ppx.cmo :
+test_deriving_iter.ml.ppx.cmx :
+test_deriving_make.ml.pappx.cmo :
+test_deriving_make.ml.pappx.cmx :
+test_deriving_make.ml.ppx.cmo :
+test_deriving_make.ml.ppx.cmx :
+test_deriving_map.ml.pappx.cmo :
+test_deriving_map.ml.pappx.cmx :
+test_deriving_map.ml.ppx.cmo :
+test_deriving_map.ml.ppx.cmx :
+test_deriving_ord.ml.pappx.cmo :
+test_deriving_ord.ml.pappx.cmx :
+test_deriving_ord.ml.ppx.cmo :
+test_deriving_ord.ml.ppx.cmx :
+test_deriving_show.ml.pappx.cmo :
+test_deriving_show.ml.pappx.cmx :
+test_deriving_show.ml.ppx.cmo :
+test_deriving_show.ml.ppx.cmx :
+test_extensible_variants.ml.pappx.cmo :
+test_extensible_variants.ml.pappx.cmx :
+test_hashrecons.ml.pappx.cmo :
+test_hashrecons.ml.pappx.cmx :
+test_here.ml.pappx.cmo :
+test_here.ml.pappx.cmx :
+test_here.ml.ppx.cmo :
+test_here.ml.ppx.cmx :
+test_ppx_import.ml.ppx.cmo : \
     test_self_import.cmi \
     stuff.cmo
-test_ppx_import.cmx : \
+test_ppx_import.ml.ppx.cmx : \
     test_self_import.cmx \
     stuff.cmx
-test_ppx_yojson.cmo :
-test_ppx_yojson.cmx :
-test_self_import.cmo : \
-    test_self_import.cmi
-test_self_import.cmx : \
-    test_self_import.cmi
+test_ppx_yojson.pappx.cmo :
+test_ppx_yojson.pappx.cmx :
+test_ppx_yojson.ppx.cmo :
+test_ppx_yojson.ppx.cmx :
+test_utils.ml.pappx.cmo :
+test_utils.ml.pappx.cmx :
 testutil2.cmo : \
     testutil.cmo
 testutil2.cmx : \

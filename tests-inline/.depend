@@ -1,7 +1,5 @@
 test_inline_test.cmo :
 test_inline_test.cmx :
-test_matcher.cmo :
-test_matcher.cmx :
 test_output.cmo :
 test_output.cmx :
 test_stderr.cmo :
