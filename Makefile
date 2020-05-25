@@ -8,32 +8,18 @@ WD=$(shell pwd)
 DESTDIR=
 RM=rm
 
+SYSDIRS= util-lib runtime base pa_unmatched_vala \
+	pa_dock pa_here pa_undo_deriving pa_assert \
+	pa_inline_test pa_expect_test pa_hashrecons \
+	pa_deriving pa_deriving.plugins pa_import \
+
+TESTDIRS= tests-ounit2 tests-inline tests-expect our-tests-inline
+
 all:
-	$(MAKE) -C util-lib all
-	$(MAKE) -C runtime all
-	$(MAKE) -C base all
-	$(MAKE) -C pa_unmatched_vala all
-	$(MAKE) -C pa_dock all
-	$(MAKE) -C pa_here all
-	$(MAKE) -C pa_undo_deriving all
-	$(MAKE) -C pa_assert all
-	$(MAKE) -C pa_inline_test all
-	$(MAKE) -C pa_expect_test all
-	$(MAKE) -C pa_hashrecons all
-	$(MAKE) -C pa_deriving all
-	$(MAKE) -C pa_deriving.plugins all
-	$(MAKE) -C pa_import all
-	$(MAKE) -C tests-ounit2 all
-	$(MAKE) -C tests-inline all
-	$(MAKE) -C tests-expect all
-	$(MAKE) -C our-tests-inline all
+	set -e; for i in $(SYSDIRS) $(TESTDIRS); do cd $$i; $(MAKE) all; cd ..; done
 
 test: all
-	$(MAKE) -C tests-ounit2 test
-	$(MAKE) -C tests-inline test
-	$(MAKE) -C tests-expect test
-	$(MAKE) -C our-tests-inline test
-
+	set -e; for i in $(TESTDIRS); do cd $$i; $(MAKE) test; cd ..; done
 
 PACKAGES := pa_ppx_utils
 PACKAGES := $(PACKAGES),pa_ppx_base
@@ -64,42 +50,7 @@ uninstall:
 	$(OCAMLFIND) remove pa_ppx || true
 
 clean::
-	rm -rf META local-install camlp5o.pa_ppx
-	$(MAKE) -C util-lib clean
-	$(MAKE) -C runtime clean
-	$(MAKE) -C base clean
-	$(MAKE) -C pa_unmatched_vala clean
-	$(MAKE) -C pa_dock clean
-	$(MAKE) -C pa_here clean
-	$(MAKE) -C pa_undo_deriving clean
-	$(MAKE) -C pa_assert clean
-	$(MAKE) -C pa_inline_test clean
-	$(MAKE) -C pa_expect_test clean
-	$(MAKE) -C pa_hashrecons clean
-	$(MAKE) -C pa_deriving clean
-	$(MAKE) -C pa_deriving.plugins clean
-	$(MAKE) -C pa_import clean
-	$(MAKE) -C tests-ounit2 clean
-	$(MAKE) -C tests-inline clean
-	$(MAKE) -C tests-expect clean
-	$(MAKE) -C our-tests-inline clean
+	set -e; for i in $(SYSDIRS) $(TESTDIRS); do cd $$i; $(MAKE) clean; cd ..; done
 
 depend:
-	$(MAKE) -C util-lib depend
-	$(MAKE) -C runtime depend
-	$(MAKE) -C base depend
-	$(MAKE) -C pa_unmatched_vala depend
-	$(MAKE) -C pa_dock depend
-	$(MAKE) -C pa_here depend
-	$(MAKE) -C pa_undo_deriving depend
-	$(MAKE) -C pa_assert depend
-	$(MAKE) -C pa_inline_test depend
-	$(MAKE) -C pa_expect_test depend
-	$(MAKE) -C pa_hashrecons depend
-	$(MAKE) -C pa_deriving depend
-	$(MAKE) -C pa_deriving.plugins depend
-	$(MAKE) -C pa_import depend
-	$(MAKE) -C tests-ounit2 depend
-	$(MAKE) -C tests-inline depend
-	$(MAKE) -C tests-expect depend
-	$(MAKE) -C our-tests-inline depend
+	set -e; for i in $(SYSDIRS) $(TESTDIRS); do cd $$i; $(MAKE) depend; cd ..; done
