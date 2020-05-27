@@ -15,11 +15,16 @@ MKCAMLP5=$(LAUNCH) mkcamlp5
 PACKAGES := $(PACKAGES),pa_ppx_base,fmt,bos,compiler-libs.common
 
 TARGET=pa_undo_deriving.cma
-CMO=pa_undo_deriving.cmo
-CMI := $(CMO:.cmo=.cmi)
-CMX := $(CMO:.cmo=.cmx)
+ML=pa_undo_deriving.ml
+CMO := $(ML:.ml=.cmo)
+CMI := $(ML:.ml=.cmi)
+CMX := $(ML:.ml=.cmx)
+CMT := $(ML:.ml=.cmt)
+CMTI := $(MLI:.mli=.cmti)
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_undo_deriving local-install
+
+doc: $(CMT) $(CMTI)
 
 camlp5.pa_ppx_undo_deriving:
 	$(MKCAMLP5) -verbose -package $(PACKAGES) $(TARGET) -o $@
@@ -30,7 +35,7 @@ META: META.pl
 install::
 	./META.pl $(DESTDIR)/lib > META
 	mkdir -p $(DESTDIR)/lib
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_undo_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(CMI)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_undo_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(CMI) *.cmt*
 	$(RM) -f META
 
 local-install::

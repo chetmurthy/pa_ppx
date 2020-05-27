@@ -14,13 +14,18 @@ NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 
 PACKAGES := rresult,fmt,camlp5,yojson,sexplib
 TARGET := pa_ppx_runtime.cma
-CMO := runtime.cmo exceptions.cmo
-CMI := $(CMO:.cmo=.cmi)
-CMX := $(CMO:.cmo=.cmx)
+ML := runtime.ml exceptions.ml
+CMO := $(ML:.ml=.cmo)
+CMI := $(ML:.ml=.cmi)
+CMX := $(ML:.ml=.cmx)
+CMT := $(ML:.ml=.cmt)
+CMTI := $(MLI:.mli=.cmti)
 
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_runtime
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) local-install
+
+doc: $(CMT) $(CMTI)
 
 pa_ppx_runtime.cmo: $(CMO)
 	$(OCAMLFIND) ocamlc $(DEBUG) -pack -o pa_ppx_runtime.cmo $^
@@ -33,7 +38,7 @@ META: META.pl
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_runtime -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_runtime.cmx pa_ppx_runtime.cmi
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_runtime -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_runtime.cmx pa_ppx_runtime.cmi *.cmt*
 	$(RM) -f META
 
 local-install::

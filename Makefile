@@ -18,6 +18,11 @@ TESTDIRS= tests-ounit2 tests-inline tests-expect our-tests-inline
 all:
 	set -e; for i in $(SYSDIRS) $(TESTDIRS); do cd $$i; $(MAKE) all; cd ..; done
 
+doc: all
+	set -e; for i in $(SYSDIRS); do cd $$i; $(MAKE) doc; cd ..; done
+	rm -rf docs
+	tools/make-docs pa_ppx docs
+
 test: all
 	set -e; for i in $(TESTDIRS); do cd $$i; $(MAKE) test; cd ..; done
 
@@ -51,6 +56,7 @@ uninstall:
 
 clean::
 	set -e; for i in $(SYSDIRS) $(TESTDIRS); do cd $$i; $(MAKE) clean; cd ..; done
+	rm -rf docs
 
 depend:
 	set -e; for i in $(SYSDIRS) $(TESTDIRS); do cd $$i; $(MAKE) depend; cd ..; done

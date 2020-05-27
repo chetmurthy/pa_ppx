@@ -14,22 +14,27 @@ NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
 PACKAGES := $(PACKAGES),pa_ppx_deriving,pa_ppx_base.syntax,pa_ppx_unmatched_vala.syntax
 
-CMO=\
-	pa_deriving_show.cmo \
-	pa_deriving_eq.cmo \
-	pa_deriving_ord.cmo \
-	pa_deriving_enum.cmo \
-	pa_deriving_iter.cmo \
-	pa_deriving_map.cmo \
-	pa_deriving_fold.cmo \
-	pa_deriving_make.cmo \
-	pa_deriving_yojson.cmo \
-	pa_deriving_sexp.cmo \
+ML=\
+	pa_deriving_show.ml \
+	pa_deriving_eq.ml \
+	pa_deriving_ord.ml \
+	pa_deriving_enum.ml \
+	pa_deriving_iter.ml \
+	pa_deriving_map.ml \
+	pa_deriving_fold.ml \
+	pa_deriving_make.ml \
+	pa_deriving_yojson.ml \
+	pa_deriving_sexp.ml \
 
-CMI := $(CMO:.cmo=.cmi)
-CMX := $(CMO:.cmo=.cmx)
+CMO := $(ML:.ml=.cmo)
+CMI := $(ML:.ml=.cmi)
+CMX := $(ML:.ml=.cmx)
+CMT := $(ML:.ml=.cmt)
+CMTI := $(MLI:.mli=.cmti)
 
 all: $(CMO) camlp5.pa_ppx_deriving_plugins local-install
+
+doc: $(CMT) $(CMTI)
 
 KITS=$(CMO)
 
@@ -42,7 +47,7 @@ META: META.pl
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_deriving_plugins -destdir $(DESTDIR)/lib META $(CMO) $(CMI)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_deriving_plugins -destdir $(DESTDIR)/lib META $(CMO) $(CMI) *.cmt*
 	$(RM) -f META
 
 local-install::

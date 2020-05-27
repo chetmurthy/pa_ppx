@@ -15,12 +15,16 @@ MKCAMLP5=$(LAUNCH) mkcamlp5
 
 PACKAGES := $(PACKAGES),fmt,pa_ppx_base
 TARGET := pa_ppx_hashrecons.cma
-CMO := pa_hashrecons.cmo
-CMI := $(CMO:.cmo=.cmi)
-CMX := $(CMO:.cmo=.cmx)
-
+ML := pa_hashrecons.ml
+CMO := $(ML:.ml=.cmo)
+CMI := $(ML:.ml=.cmi)
+CMX := $(ML:.ml=.cmx)
+CMT := $(ML:.ml=.cmt)
+CMTI := $(MLI:.mli=.cmti)
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_hashrecons local-install
+
+doc: $(CMT) $(CMTI)
 
 camlp5.pa_ppx_hashrecons: $(TARGET)
 	$(MKCAMLP5) -verbose -package fmt,camlp5.pa_r,camlp5.pr_r,pa_ppx_base $(TARGET) -o $@
@@ -30,7 +34,7 @@ META: META.pl
 install::
 	./META.pl $(DESTDIR)/lib > META
 	mkdir -p $(DESTDIR)/lib
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_hashrecons -destdir $(DESTDIR)/lib META $(TARGET) $(CMO:.cmo=.cmx) $(CMI)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_hashrecons -destdir $(DESTDIR)/lib META $(TARGET) $(CMO:.cmo=.cmx) $(CMI) *.cmt*
 	$(RM) -f META
 
 local-install::

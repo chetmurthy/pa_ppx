@@ -14,14 +14,20 @@ NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 
 PACKAGES := $(PACKAGES),pcre,core_kernel
 TARGET := pa_ppx_utils.cma
-CMO := std.cmo coll.cmo std2.cmo uf.cmo tsort0.cmo tsort.cmo
-CMI := $(CMO:.cmo=.cmi)
-CMX := $(CMO:.cmo=.cmx)
+ML := std.ml coll.ml std2.ml uf.ml tsort0.ml tsort.ml
+MLI := std2.mli  std.mli  tsort0.mli  uf.mli
+CMO := $(ML:.ml=.cmo)
+CMI := $(ML:.ml=.cmi)
+CMX := $(ML:.ml=.cmx)
+CMT := $(ML:.ml=.cmt)
+CMTI := $(MLI:.mli=.cmti)
 
 SYNTAX := camlp5o
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_utils
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) local-install
+
+doc: $(CMT) $(CMTI)
 
 pa_ppx_utils.cmo: $(CMO)
 	$(OCAMLFIND) ocamlc $(DEBUG) -pack -o pa_ppx_utils.cmo $^
@@ -34,7 +40,7 @@ META: META.pl
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_utils -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_utils.cmx pa_ppx_utils.cmi
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_utils -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_utils.cmx pa_ppx_utils.cmi *.cmt*
 	$(RM) -f META
 
 local-install::

@@ -15,14 +15,19 @@ MKCAMLP5=$(LAUNCH) mkcamlp5
 
 PACKAGES := $(PACKAGES),fmt,bos,pa_ppx_base,pa_ppx_utils,camlp5.pa_r.syntax,camlp5.lexer.syntax,pa_ppx_unmatched_vala.syntax
 TARGET := pa_ppx_dock.cma
-CMO := comment_lexer.cmo pa_dock.cmo
-CMI := $(CMO:.cmo=.cmi)
-CMX := $(CMO:.cmo=.cmx)
+ML := comment_lexer.ml pa_dock.ml
+CMO := $(ML:.ml=.cmo)
+CMI := $(ML:.ml=.cmi)
+CMX := $(ML:.ml=.cmx)
+CMT := $(ML:.ml=.cmt)
+CMTI := $(MLI:.mli=.cmti)
 
 SYNTAX := camlp5r
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_dock
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_dock local-install
+
+doc: $(CMT) $(CMTI)
 
 pa_ppx_dock.cmo: $(CMO)
 	$(OCAMLFIND) ocamlc $(DEBUG) -pack -o pa_ppx_dock.cmo $^
@@ -38,7 +43,7 @@ META: META.pl
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_dock -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(TARGET:.cma=.cmi)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_dock -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(TARGET:.cma=.cmi) *.cmt*
 	$(RM) -f META
 
 local-install::

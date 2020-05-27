@@ -10,7 +10,7 @@ MKCAMLP5=mkcamlp5
 CAMLP5R=camlp5r -I $(CAMLP5LIB)
 INCLUDES=-I $(CAMLP5LIB)
 OCAMLCFLAGS=$(DEBUG) $(WARNERR) $(INCLUDES)
-PACKAGES=camlp5,compiler-libs.common
+PACKAGES=camlp5,compiler-libs.common,camlp5.quotations.syntax,camlp5.extfun.syntax
 SYNTAX = camlp5r
 
 top: all
@@ -24,9 +24,19 @@ top: all
 .ml.cmx:
 	$(OCAMLFIND) ocamlopt $(OCAMLCFLAGS) -package $(PACKAGES) -syntax $(SYNTAX) -c $<
 
-.SUFFIXES: .cmo .cmi .ml .mli .cmx .cma .cmxa
+.ml.cmt:
+	@mkdir -p .cmt
+	$(OCAMLFIND) ocamlc $(OCAMLCFLAGS) -package $(PACKAGES),pa_ppx_dock.syntax -syntax $(SYNTAX) -bin-annot -c $< -o .cmt/$*.cmo
+	cp .cmt/$*.cmt $*.cmt
+
+.mli.cmti:
+	@mkdir -p .cmt
+	$(OCAMLFIND) ocamlc $(OCAMLCFLAGS) -package $(PACKAGES),pa_ppx_dock.syntax -syntax $(SYNTAX) -bin-annot -c $< -o .cmt/$*.cmi
+	cp .cmt/$*.cmti $*.cmti
+
+.SUFFIXES: .cmo .cmi .ml .mli .cmx .cma .cmxa .cmt .cmti
 
 clean::
-	$(RM) -rf *.cm* *.o *.a *.byte *.log *.cache *.ppo *.ppo.ml _build/*
+	$(RM) -rf *.cm* *.o *.a *.byte *.log *.cache *.ppo *.ppo.ml _build/* .cmt
 
 realclean:: clean

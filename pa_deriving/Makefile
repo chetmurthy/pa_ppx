@@ -15,13 +15,18 @@ MKCAMLP5=$(LAUNCH) mkcamlp5
 PACKAGES := $(PACKAGES),fmt,pa_ppx_utils,pa_ppx_base,pa_ppx_base.syntax
 
 TARGET=pa_deriving.cma
-CMO=pa_deriving.cmo surveil.cmo pa_rebindto.cmo deriving_harness.cmo pa_deriving_base.cmo
-CMI := $(CMO:.cmo=.cmi)
-CMX := $(CMO:.cmo=.cmx)
+ML=pa_deriving.ml surveil.ml pa_rebindto.ml deriving_harness.ml pa_deriving_base.ml
+CMO := $(ML:.ml=.cmo)
+CMI := $(ML:.ml=.cmi)
+CMX := $(ML:.ml=.cmx)
+CMT := $(ML:.ml=.cmt)
+CMTI := $(MLI:.mli=.cmti)
 
 INSTALL_CMI=$(filter-out deriving_harness.cmi,$(CMI))
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_deriving local-install
+
+doc: $(CMT) $(CMTI)
 
 camlp5.pa_ppx_deriving:
 	$(MKCAMLP5) -verbose -package camlp5.pa_r,camlp5.pr_r,pa_ppx_base $(TARGET) -o $@
@@ -32,7 +37,7 @@ META: META.pl
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(INSTALL_CMI)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(INSTALL_CMI) *.cmt*
 	$(RM) -f META
 
 local-install::
