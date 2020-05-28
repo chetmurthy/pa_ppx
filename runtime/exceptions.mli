@@ -1,33 +1,33 @@
 
 
-type t = exn == ..[@@"deriving_inline" (show, sexp, yojson, eq);]; module M_equal :
+type t = exn == ..[@@"deriving_inline" (show, sexp, yojson, eq);]; [@@@"ocaml.text" "/*";]; module M_equal :
   sig
     type nonrec equal = { f : mutable t → t → Stdlib.Bool.t };
     value f : equal;
   end
-; value equal : t → t → Stdlib.Bool.t; module M_to_yojson :
+; [@@@"ocaml.text" "/*";]; value equal : t → t → Stdlib.Bool.t; [@@@"ocaml.text" "/*";]; module M_to_yojson :
   sig
     type nonrec to_yojson = { f : mutable t → Yojson.Safe.t };
     value f : to_yojson;
   end
-; value to_yojson : t → Yojson.Safe.t; module M_of_yojson :
+; [@@@"ocaml.text" "/*";]; value to_yojson : t → Yojson.Safe.t; [@@@"ocaml.text" "/*";]; module M_of_yojson :
   sig
     type nonrec of_yojson =
       { f : mutable Yojson.Safe.t → Rresult.result t string }
     ;
     value f : of_yojson;
   end
-; value of_yojson : Yojson.Safe.t → Rresult.result t string; module M_sexp_of_t :
+; [@@@"ocaml.text" "/*";]; value of_yojson : Yojson.Safe.t → Rresult.result t string; [@@@"ocaml.text" "/*";]; module M_sexp_of_t :
   sig
     type nonrec sexp_of_t = { f : mutable t → Sexplib.Sexp.t };
     value f : sexp_of_t;
   end
-; value sexp_of_t : t → Sexplib.Sexp.t; module M_t_of_sexp :
+; [@@@"ocaml.text" "/*";]; value sexp_of_t : t → Sexplib.Sexp.t; [@@@"ocaml.text" "/*";]; module M_t_of_sexp :
   sig
     type nonrec t_of_sexp = { f : mutable Sexplib.Sexp.t → t };
     value f : t_of_sexp;
   end
-; value t_of_sexp : Sexplib.Sexp.t → t; module M_pp : sig type nonrec pp = { f : mutable Fmt.t t }; value f : pp; end; value pp : Fmt.t t; value show : t → Stdlib.String.t;
+; [@@@"ocaml.text" "/*";]; value t_of_sexp : Sexplib.Sexp.t → t; [@@@"ocaml.text" "/*";]; module M_pp : sig type nonrec pp = { f : mutable Fmt.t t }; value f : pp; end; [@@@"ocaml.text" "/*";]; value pp : Fmt.t t; value show : t → Stdlib.String.t;
 
 [@@@"end"];
 

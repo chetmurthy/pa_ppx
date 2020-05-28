@@ -294,11 +294,13 @@ value extend_sig_items arg si = match si with [
     let (eqfname, eqftype) = List.hd (sig_item_top_funs arg td) in
     let modname = Printf.sprintf "M_%s" eqfname in
     let field_type = PM.quantify_over_ctyp param_map eqftype in
-    [ <:sig_item< module $uid:modname$ :
+    [ <:sig_item< [@@@ocaml.text "/*" ;] >> ;
+      <:sig_item< module $uid:modname$ :
     sig
       type nonrec $lid:eqfname$ = { f: mutable  $field_type$ } ;
       value f : $lid:eqfname$ ;
-    end >> :: sil ]
+    end >> ;
+      <:sig_item< [@@@ocaml.text "/*" ;] >> :: sil ]
 | _ -> assert False
 ]
 ;
@@ -317,11 +319,13 @@ value rec extend_str_items arg si = match si with [
     let fexp = <:expr< fun _ _ -> False >> in
     let fexp = Expr.abstract_over (List.map (PM.arg_patt ~{mono=True} loc) param_map) fexp in
     let fexp = Expr.abstract_over (List.map (fun p -> <:patt< ( type $lid:PM.type_id p$ ) >>) param_map) fexp in
-    [ <:str_item< module $uid:modname$ =
+    [ <:str_item< [@@@ocaml.text "/*" ;] >> ;
+      <:str_item< module $uid:modname$ =
     struct
       type nonrec $lid:eqfname$ = { f: mutable  $field_type$ } ;
       value f = { f = $fexp$ } ;
     end >> ;
+      <:str_item< [@@@ocaml.text "/*" ;] >> ;
       <:str_item< value $lid:eqfname$ x = $uid:modname$ . f . $uid:modname$ . f x >>
     ]
 

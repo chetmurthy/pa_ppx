@@ -1,11 +1,13 @@
 
 
-type t = exn == ..[@@"deriving_inline" (show, sexp, yojson, eq);]; module M_equal =
+type t = exn == ..[@@"deriving_inline" (show, sexp, yojson, eq);]; [@@@"ocaml.text" "/*";]; module M_equal =
   struct
     type nonrec equal = { f : mutable t → t → Stdlib.Bool.t };
     value f = {f _ _ = False};
   end
-; value equal x = M_equal.f.M_equal.f x;
+; [@@@"ocaml.text" "/*";]; value equal x = M_equal.f.M_equal.f x;
+
+[@@@"ocaml.text" "/*";];
 
 module M_to_yojson =
   struct
@@ -19,7 +21,11 @@ module M_to_yojson =
   end
 ;
 
+[@@@"ocaml.text" "/*";];
+
 value to_yojson x = M_to_yojson.f.M_to_yojson.f x;
+
+[@@@"ocaml.text" "/*";];
 
 module M_of_yojson =
   struct
@@ -35,7 +41,11 @@ module M_of_yojson =
   end
 ;
 
+[@@@"ocaml.text" "/*";];
+
 value of_yojson x = M_of_yojson.f.M_of_yojson.f x;
+
+[@@@"ocaml.text" "/*";];
 
 module M_sexp_of_t =
   struct
@@ -49,7 +59,11 @@ module M_sexp_of_t =
   end
 ;
 
+[@@@"ocaml.text" "/*";];
+
 value sexp_of_t x = M_sexp_of_t.f.M_sexp_of_t.f x;
+
+[@@@"ocaml.text" "/*";];
 
 module M_t_of_sexp =
   struct
@@ -63,7 +77,9 @@ module M_t_of_sexp =
   end
 ;
 
-value t_of_sexp x = M_t_of_sexp.f.M_t_of_sexp.f x; module M_pp =
+[@@@"ocaml.text" "/*";];
+
+value t_of_sexp x = M_t_of_sexp.f.M_t_of_sexp.f x; [@@@"ocaml.text" "/*";]; module M_pp =
   struct
     type nonrec pp = { f : mutable Fmt.t t };
     value f =
@@ -73,7 +89,7 @@ value t_of_sexp x = M_t_of_sexp.f.M_t_of_sexp.f x; module M_pp =
            "t")}
     ;
   end
-; value pp x = M_pp.f.M_pp.f x; value show arg = Format.asprintf "%a" M_pp.f.M_pp.f arg;
+; [@@@"ocaml.text" "/*";]; value pp x = M_pp.f.M_pp.f x; value show arg = Format.asprintf "%a" M_pp.f.M_pp.f arg;
 
 [@@@"end"];
 

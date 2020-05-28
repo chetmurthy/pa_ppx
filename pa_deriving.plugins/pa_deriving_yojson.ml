@@ -317,11 +317,13 @@ value extend_sig_items arg si = match si with [
     let sil = [<:sig_item< value $lid:to_yojsonfname$ : $toftype$>>] in
     let modname = Printf.sprintf "M_%s" to_yojsonfname in
     let field_type = PM.quantify_over_ctyp param_map toftype in
-    [ <:sig_item< module $uid:modname$ :
+    [ <:sig_item< [@@@ocaml.text "/*" ;] >> ;
+      <:sig_item< module $uid:modname$ :
     sig
       type nonrec $lid:to_yojsonfname$ = { f: mutable  $field_type$ } ;
       value f : $lid:to_yojsonfname$ ;
-    end >> :: sil ]
+    end >> ;
+      <:sig_item< [@@@ocaml.text "/*" ;] >> :: sil ]
 | _ -> assert False
 ]
 ;
@@ -341,11 +343,13 @@ value rec extend_str_items arg si = match si with [
     let fexp = <:expr< fun _ -> invalid_arg ($str:msg1$ ^ $str:msg2$) >> in
     let fexp = Expr.abstract_over (List.map (PM.arg_patt ~{mono=True} loc) param_map) fexp in
     let fexp = Expr.abstract_over (List.map (fun p -> <:patt< ( type $lid:PM.type_id p$ ) >>) param_map) fexp in
-    [ <:str_item< module $uid:modname$ =
+    [ <:str_item< [@@@ocaml.text "/*" ;] >> ;
+      <:str_item< module $uid:modname$ =
     struct
       type nonrec $lid:to_yojsonfname$ = { f: mutable  $field_type$ } ;
       value f = { f = $fexp$ } ;
     end >> ;
+      <:str_item< [@@@ocaml.text "/*" ;] >> ;
       <:str_item< value $lid:to_yojsonfname$ x = $uid:modname$ . f . $uid:modname$ . f x >>
     ]
 
@@ -740,11 +744,13 @@ value extend_sig_items arg si = match si with [
     let ((of_yojsonfname, offtype), _) = sig_item_fun0 arg td in
     let modname = Printf.sprintf "M_%s" of_yojsonfname in
     let field_type = PM.quantify_over_ctyp param_map offtype in
-    [ <:sig_item< module $uid:modname$ :
+    [ <:sig_item< [@@@ocaml.text "/*" ;] >> ;
+      <:sig_item< module $uid:modname$ :
     sig
       type nonrec $lid:of_yojsonfname$ = { f: mutable  $field_type$ } ;
       value f : $lid:of_yojsonfname$ ;
-    end >> :: sil ]
+    end >> ;
+      <:sig_item< [@@@ocaml.text "/*" ;] >> :: sil ]
 | _ -> assert False
 ]
 ;
@@ -764,11 +770,13 @@ value rec extend_str_items arg si = match si with [
     let fexp = <:expr< fun _ -> invalid_arg ($str:msg1$ ^ $str:msg2$) >> in
     let fexp = Expr.abstract_over (List.map (PM.arg_patt ~{mono=True} loc) param_map) fexp in
     let fexp = Expr.abstract_over (List.map (fun p -> <:patt< ( type $lid:PM.type_id p$ ) >>) param_map) fexp in
-    [ <:str_item< module $uid:modname$ =
+    [ <:str_item< [@@@ocaml.text "/*" ;] >> ;
+      <:str_item< module $uid:modname$ =
     struct
       type nonrec $lid:of_yojsonfname$ = { f: mutable  $field_type$ } ;
       value f = { f = $fexp$ } ;
     end >> ;
+      <:str_item< [@@@ocaml.text "/*" ;] >> ;
       <:str_item< value $lid:of_yojsonfname$ x = $uid:modname$ . f . $uid:modname$ . f x >>
     ]
 
