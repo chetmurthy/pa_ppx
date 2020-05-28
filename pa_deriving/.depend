@@ -1,18 +1,27 @@
 deriving_harness.cmo : \
-    surveil.cmo \
-    pa_deriving.cmo
+    surveil.cmi \
+    pa_deriving.cmi
 deriving_harness.cmx : \
     surveil.cmx \
     pa_deriving.cmx
-pa_deriving.cmo :
-pa_deriving.cmx :
+pa_deriving.cmo : \
+    pa_deriving.cmi
+pa_deriving.cmx : \
+    pa_deriving.cmi
+pa_deriving.cmi :
 pa_deriving_base.cmo : \
-    surveil.cmo
+    surveil.cmi \
+    pa_deriving_base.cmi
 pa_deriving_base.cmx : \
-    surveil.cmx
+    surveil.cmx \
+    pa_deriving_base.cmi
+pa_deriving_base.cmi :
 pa_rebindto.cmo :
 pa_rebindto.cmx :
 surveil.cmo : \
-    pa_deriving.cmo
+    pa_deriving.cmi \
+    surveil.cmi
 surveil.cmx : \
-    pa_deriving.cmx
+    pa_deriving.cmx \
+    surveil.cmi
+surveil.cmi :

@@ -15,22 +15,6 @@ open Ppxutil ;
 
 value debug = ref False ;
 
-value option_map f =
-  fun
-  [ Some x -> Some (f x)
-  | None -> None ]
-;
-
-value vala_map f =
-  IFNDEF STRICT THEN
-    fun x -> f x
-  ELSE
-    fun
-    [ Ploc.VaAnt s -> Ploc.VaAnt s
-    | Ploc.VaVal x -> Ploc.VaVal (f x) ]
-  END
-;
-
 value class_infos_map arg ~{attributes} f x =
   {ciLoc = x.ciLoc; ciVir = x.ciVir;
    ciPrm =

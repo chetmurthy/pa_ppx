@@ -4,6 +4,8 @@
 
 #load "pa_extend.cmo";
 #load "q_MLast.cmo";
+#load "pa_macro.cmo";
+#load "pa_macro_gram.cmo";
 
 open Pa_ppx_utils;
 open Asttools;
@@ -230,3 +232,18 @@ value quote_position loc p =
 
 value loc_of_type_decl td = fst (uv td.tdNam) ;
 
+value option_map f =
+  fun
+  [ Some x -> Some (f x)
+  | None -> None ]
+;
+
+value vala_map f =
+  IFNDEF STRICT THEN
+    fun x -> f x
+  ELSE
+    fun
+    [ Ploc.VaAnt s -> Ploc.VaAnt s
+    | Ploc.VaVal x -> Ploc.VaVal (f x) ]
+  END
+;

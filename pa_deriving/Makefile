@@ -16,13 +16,12 @@ PACKAGES := $(PACKAGES),fmt,pa_ppx_utils,pa_ppx_base,pa_ppx_base.syntax
 
 TARGET=pa_deriving.cma
 ML=pa_deriving.ml surveil.ml pa_rebindto.ml deriving_harness.ml pa_deriving_base.ml
+MLI=surveil.mli pa_deriving_base.mli pa_deriving.mli
 CMO := $(ML:.ml=.cmo)
 CMI := $(ML:.ml=.cmi)
 CMX := $(ML:.ml=.cmx)
 CMT := $(ML:.ml=.cmt)
 CMTI := $(MLI:.mli=.cmti)
-
-INSTALL_CMI=$(filter-out deriving_harness.cmi,$(CMI))
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_deriving local-install
 
@@ -37,7 +36,7 @@ META: META.pl
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(INSTALL_CMI) $(wildcard *.cmt*)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(MLI:.mli=.cmi) $(wildcard *.cmt*)
 	$(RM) -f META
 
 local-install::

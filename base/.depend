@@ -1,13 +1,16 @@
 pa_normalize.cmo : \
-    ppxutil.cmo \
-    pa_passthru.cmo
+    ppxutil.cmi \
+    pa_passthru.cmi
 pa_normalize.cmx : \
     ppxutil.cmx \
     pa_passthru.cmx
 pa_passthru.cmo : \
-    ppxutil.cmo
+    ppxutil.cmi \
+    pa_passthru.cmi
 pa_passthru.cmx : \
-    ppxutil.cmx
+    ppxutil.cmx \
+    pa_passthru.cmi
+pa_passthru.cmi :
 pp_MLast.cmo : \
     pp_MLast.cmi
 pp_MLast.cmx : \
@@ -19,6 +22,10 @@ pp_parsetree.cmx : \
     pp_parsetree.cmi
 pp_parsetree.cmi :
 ppxutil.cmo : \
-    pp_MLast.cmi
+    pp_MLast.cmi \
+    ppxutil.cmi
 ppxutil.cmx : \
-    pp_MLast.cmx
+    pp_MLast.cmx \
+    ppxutil.cmi
+ppxutil.cmi : \
+    pp_MLast.cmi
