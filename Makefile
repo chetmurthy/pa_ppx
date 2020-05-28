@@ -26,6 +26,10 @@ doc: all
 test: all
 	set -e; for i in $(TESTDIRS); do cd $$i; $(MAKE) test; cd ..; done
 
+bootstrap:
+	$(MAKE) -C runtime bootstrap-exn bootstrap-exn-i
+	$(MAKE) -C base bootstrap-pp-MLast bootstrap-pp-MLast-i bootstrap-pp-parsetree bootstrap-pp-parsetree-i
+
 PACKAGES := pa_ppx_utils
 PACKAGES := $(PACKAGES),pa_ppx_base
 PACKAGES := $(PACKAGES),pa_ppx_unmatched_vala
