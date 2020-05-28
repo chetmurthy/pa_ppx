@@ -42,6 +42,16 @@ value rebind_extension_constructor arg = fun [
  ]
 ;
 
+type scratchdata_t += [ Pa_rebindto of bool ] ;
+value mk b = Pa_rebindto b ;
+value init ctxt b = Ctxt.init_scratchdata ctxt "rebindto" (mk b) ;
+value update ctxt b = Ctxt.update_scratchdata ctxt "rebindto" (mk b) ;
+value get ctxt = match Ctxt.scratchdata ctxt "rebindto" with [
+  Pa_rebindto b -> b
+| _ -> failwith "Pa_rebindto: internal error in Ctxt.scratchdata"
+]
+;
+
 value install () = 
 let ef = EF.mk () in 
 let ef = EF.{ (ef) with
@@ -49,12 +59,41 @@ let ef = EF.{ (ef) with
     <:extension_constructor:< $uid:ci$ of $list:_$ $algattrs:attrs$ >> as z
     when List.exists is_rebind_to_attribute attrs ->
     fun arg ->
-      Some (rebind_extension_constructor arg z)
+      if get arg then
+        Some (rebind_extension_constructor arg z)
+      else None
   | <:extension_constructor:< $uid:ci$  $algattrs:attrs$ >> as z
     when List.exists is_rebind_to_attribute attrs ->
     fun arg ->
-      Some (rebind_extension_constructor arg z)
+      if get arg then
+        Some (rebind_extension_constructor arg z)
+      else None
   ] } in
+
+let ef = EF.{ (ef) with
+  implem = extfun ef.implem with [
+    z ->
+      fun arg ->
+        let arg = init arg True in
+        Some (Pa_passthru.implem0 arg z)
+  ] } in
+
+let ef = EF.{ (ef) with
+  interf = extfun ef.interf with [
+    z ->
+      fun arg ->
+        let arg = init arg False in
+        Some (Pa_passthru.interf0 arg z)
+  ] } in
+
+let ef = EF.{ (ef) with
+  signature = extfun ef.signature with [
+    z ->
+      fun arg ->
+        let arg = update arg False in
+        Some (Pa_passthru.signature0 arg z)
+  ] } in
+
   Pa_passthru.(install { name = "pa_rebindto"; ef =  ef ; pass = None ; before = [] ; after = ["pa_deriving"] })
 ;
 

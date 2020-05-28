@@ -80,13 +80,13 @@ value mk () = {
 type scratchdata_t += [ Pa_deriving of t ] ;
 
 value get arg =
-  match Ctxt.scratchdata arg "deriving" with [
+  match Ctxt.refscratchdata arg "deriving" with [
     Pa_deriving dc -> dc
   | _ -> assert False
   ]
 ;
 value init arg =
-   Ctxt.init_scratchdata arg "deriving" (Pa_deriving (mk()))
+   Ctxt.init_refscratchdata arg "deriving" (Pa_deriving (mk()))
 ;
 
 value legitimate_plugin_reference dc (na, options) =

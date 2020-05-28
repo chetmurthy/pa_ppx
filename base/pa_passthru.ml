@@ -129,7 +129,8 @@ and Ctxt : sig
     _module_path : list string; 
     options : list (string * expr) ;
     ef : EF.t ;
-    scratch : ref (list ( string * scratchdata_t))
+    scratch : (list ( string * scratchdata_t)) ;
+    refscratch : ref (list ( string * scratchdata_t))
   } ;
   value mk : EF.t -> Ploc.t -> t ;
   value append_module : t -> string -> t ;
@@ -140,15 +141,21 @@ and Ctxt : sig
   value set_filename : t -> string -> t ;
   value add_options : t -> list (string * expr) -> t ;
   value option : t -> string -> expr ;
+
   value scratchdata : t -> string -> scratchdata_t ;
-  value init_scratchdata : t -> string -> scratchdata_t -> unit ;
+  value init_scratchdata : t -> string -> scratchdata_t -> t ;
+  value update_scratchdata : t -> string -> scratchdata_t -> t ;
+
+  value refscratchdata : t -> string -> scratchdata_t ;
+  value init_refscratchdata : t -> string -> scratchdata_t -> unit ;
 end = struct
   type t = {
     filename : string ;
     _module_path : list string;
     options : list (string * expr) ;
     ef : EF.t ;
-    scratch : ref (list ( string * scratchdata_t))
+    scratch : (list ( string * scratchdata_t)) ;
+    refscratch : ref (list ( string * scratchdata_t))
   } ;
 value mk ef loc =
   let fname = Ploc.file_name loc in
@@ -161,7 +168,8 @@ value mk ef loc =
     _module_path = [modname] ;
     options = [] ;
     ef = ef ;
-    scratch = ref []  }
+    scratch = []  ;
+    refscratch = ref []  }
 ;
 value append_module ctxt s =
   { (ctxt) with _module_path = ctxt._module_path @ [s] }
@@ -186,18 +194,34 @@ value option ctxt name =
   ]
 ;
 
-value scratchdata ctxt name =
-  if not (List.mem_assoc name ctxt.scratch.val) then
+value refscratchdata ctxt name =
+  if not (List.mem_assoc name ctxt.refscratch.val) then
     failwith (Printf.sprintf "scratchdata: no scratch found for parsing kit <<%s>>" name)
-  else List.assoc name ctxt.scratch.val
+  else List.assoc name ctxt.refscratch.val
 ;
 
-value init_scratchdata ctxt name init = do {
-  if  List.mem_assoc name ctxt.scratch.val then
+value init_refscratchdata ctxt name init = do {
+  if  List.mem_assoc name ctxt.refscratch.val then
     failwith "init_scratchdata: scratch already inited"
   else () ;
-  ctxt.scratch.val := [(name, init) :: ctxt.scratch.val ]
+  ctxt.refscratch.val := [(name, init) :: ctxt.refscratch.val ]
 }
+;
+
+value scratchdata ctxt k = List.assoc k ctxt.scratch ;
+
+value init_scratchdata ctxt k v =
+  if List.mem_assoc k ctxt.scratch then
+    failwith (Printf.sprintf "Ctxt.init_scratchdata: key %s already present" k)
+  else
+    { (ctxt) with scratch = [ (k,v) :: ctxt.scratch ] }
+;
+
+value update_scratchdata ctxt k v =
+  if not(List.mem_assoc k ctxt.scratch) then
+    failwith (Printf.sprintf "Ctxt.update_scratchdata: key %s not present" k)
+  else
+  { (ctxt) with scratch = [ (k,v) :: ctxt.scratch ] }
 ;
 
 end ;

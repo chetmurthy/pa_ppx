@@ -9,3 +9,5 @@ local-install
 META
 camlp5o.pa_ppx
 tests-*/*.corrected
+*/*.odoc
+docs

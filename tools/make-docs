@@ -6,7 +6,7 @@ readonly DOCS=$2
 readonly ODOC=$(which odoc)
 readonly LIB=./local-install
 
-readonly CMT_FILES=$(find . -name "*.cmti")
+readonly CMT_FILES=*/*.cmti
 readonly ODOC_FILES=$(echo ${CMT_FILES} | sed "s/cmti/odoc/g")
 
 echo "<< Compiling docs..."

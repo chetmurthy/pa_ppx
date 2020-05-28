@@ -77,21 +77,21 @@ type t = {
 type scratchdata_t += [ Pa_dock of t ] ;
 
 value get arg =
-  match Ctxt.scratchdata arg "dock" with [
+  match Ctxt.refscratchdata arg "dock" with [
     Pa_dock dc -> dc.cm
   | _ -> assert False
   ]
 ;
 
 value update arg newv =
-  match Ctxt.scratchdata arg "dock" with [
+  match Ctxt.refscratchdata arg "dock" with [
     Pa_dock dc -> dc.cm := newv
   | _ -> assert False
   ]
 ;
 
 value init arg m =
-   Ctxt.init_scratchdata arg "dock" (Pa_dock { cm = m })
+   Ctxt.init_refscratchdata arg "dock" (Pa_dock { cm = m })
 ;
 
 value is_comment (_, s) =

@@ -35,7 +35,7 @@ META: META.pl
 install::
 	./META.pl $(DESTDIR)/lib > META
 	mkdir -p $(DESTDIR)/lib
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_unmatched_vala -destdir $(DESTDIR)/lib META $(TARGET) $(CMO:.cmo=.cmx) $(CMI) *.cmt*
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_unmatched_vala -destdir $(DESTDIR)/lib META $(TARGET) $(CMO:.cmo=.cmx) $(CMI) $(wildcard *.cmt*)
 	$(RM) -f META
 
 local-install::

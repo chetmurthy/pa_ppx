@@ -21,13 +21,13 @@ module ExpectContext = struct
 type scratchdata_t += [ Pa_expect_test of t ] ;
 
 value get arg =
-  match Ctxt.scratchdata arg "expect_test" with [
+  match Ctxt.refscratchdata arg "expect_test" with [
     Pa_expect_test c -> c
   | _ -> assert False
   ]
 ;
 value init arg md5 =
-   Ctxt.init_scratchdata arg "expect_test" (Pa_expect_test { md5 = md5 })
+   Ctxt.init_refscratchdata arg "expect_test" (Pa_expect_test { md5 = md5 })
 ;
 end
 ;

@@ -16,6 +16,7 @@ MKCAMLP5 := $(LAUNCH) $(MKCAMLP5)
 PACKAGES := $(PACKAGES),rresult,fmt,pa_ppx_utils,pa_ppx_runtime,compiler-libs.common
 TARGET := pa_ppx_base.cma
 ML := base.ml pp_MLast.ml pp_parsetree.ml ppxutil.ml pa_passthru.ml pa_normalize.ml
+MLI := pp_MLast.mli pp_parsetree.mli
 CMO := $(ML:.ml=.cmo)
 CMI := $(ML:.ml=.cmi)
 CMX := $(ML:.ml=.cmx)
@@ -29,10 +30,10 @@ all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_base local-install
 doc: $(CMT) $(CMTI)
 
 pa_ppx_base.cmo: $(CMO)
-	$(OCAMLFIND) ocamlc $(DEBUG) -pack -o pa_ppx_base.cmo $^
+	$(OCAMLFIND) ocamlc $(DEBUG) -pack -bin-annot -o pa_ppx_base.cmo $^
 
 pa_ppx_base.cmx: $(CMO:.cmo=.cmx)
-	$(OCAMLFIND) ocamlopt $(DEBUG) -pack -o pa_ppx_base.cmx $^
+	$(OCAMLFIND) ocamlopt $(DEBUG) -pack -bin-annot -o pa_ppx_base.cmx $^
 
 initialize-pp-MLast-i:: pp_MLast.ORIG.mli
 	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax -syntax camlp5o $< > $@.NEW
@@ -116,7 +117,7 @@ META: META.pl
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_base -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_base.cmx pa_ppx_base.cmi *.cmt*
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_base -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_base.cmx pa_ppx_base.cmi $(wildcard *.cmt*)
 	$(RM) -f META
 
 local-install::
