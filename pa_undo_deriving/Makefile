@@ -22,12 +22,15 @@ CMX := $(ML:.ml=.cmx)
 CMT := $(ML:.ml=.cmt)
 CMTI := $(MLI:.mli=.cmti)
 
-all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_undo_deriving local-install
+all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_undo_deriving camlp5.pa_ppx_undo_deriving.opt local-install
 
 doc: $(CMT) $(CMTI)
 
 camlp5.pa_ppx_undo_deriving:
-	$(MKCAMLP5) -verbose -package $(PACKAGES),pa_ppx_base.link $(TARGET) -o $@
+	$(MKCAMLP5) -verbose -package $(PACKAGES),pa_ppx_base $(TARGET) -o $@
+
+camlp5.pa_ppx_undo_deriving.opt:
+	$(MKCAMLP5).opt -verbose -package $(PACKAGES),pa_ppx_base $(TARGET:.cma=.cmxa) -o $@
 
 META: META.pl
 	./META.pl > META
@@ -35,14 +38,14 @@ META: META.pl
 install::
 	./META.pl $(DESTDIR)/lib > META
 	mkdir -p $(DESTDIR)/lib
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_undo_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(wildcard *.cmt*)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_undo_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.a) $(TARGET:.cma=.cmxa) $(wildcard *.cmt*)
 	$(RM) -f META
 
 local-install::
 	$(MAKE) DESTDIR=$(WD)/$(TOP)/local-install/ install
 
 clean::
-	rm -rf META camlp5.pa_ppx_undo_deriving
+	rm -rf META camlp5.pa_ppx_undo_deriving*
 
 $(TARGET): $(CMO)
 	$(OCAMLFIND) ocamlc $(DEBUG) $(CMO) -a -o $(TARGET)

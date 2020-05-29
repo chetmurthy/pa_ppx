@@ -22,12 +22,15 @@ CMX := $(ML:.ml=.cmx)
 CMT := $(ML:.ml=.cmt)
 CMTI := $(MLI:.mli=.cmti)
 
-all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_here local-install
+all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_here camlp5.pa_ppx_here.opt local-install
 
 doc: $(CMT) $(CMTI)
 
 camlp5.pa_ppx_here: $(TARGET)
-	$(MKCAMLP5) -verbose -package fmt,camlp5.pa_r.link,camlp5.pr_r.link,pa_ppx_base.link $(TARGET) -o $@
+	$(MKCAMLP5) -verbose -package fmt,camlp5.pa_r,camlp5.pr_r,pa_ppx_base $(TARGET) -o $@
+
+camlp5.pa_ppx_here.opt: $(TARGET:.cma=.cmxa)
+	$(MKCAMLP5).opt -verbose -package fmt,camlp5.pa_r,camlp5.pr_r,pa_ppx_base $(TARGET:.cma=.cmxa) -o $@
 
 META: META.pl
 	./META.pl > META
@@ -35,14 +38,14 @@ META: META.pl
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_here -destdir $(DESTDIR)/lib META $(TARGET) $(CMO:.cmo=.cmx) $(wildcard *.cmt*)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_here -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(TARGET:.cma=.a) $(wildcard *.cmt*)
 	$(RM) -f META
 
 local-install::
 	$(MAKE) DESTDIR=$(WD)/$(TOP)/local-install/ install
 
 clean::
-	rm -rf META camlp5.pa_ppx_here
+	rm -rf META camlp5.pa_ppx_here*
 
 $(TARGET): $(CMO)
 	$(OCAMLFIND) ocamlc $(DEBUG) $(CMO) -a -o $(TARGET)

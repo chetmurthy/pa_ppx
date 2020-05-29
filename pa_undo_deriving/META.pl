@@ -23,6 +23,7 @@ archive(byte,toploop) = "pa_undo_deriving.cma"
 
   # For the preprocessor itself:
   requires(syntax,preprocessor) = "pa_ppx_base,fmt,bos,compiler-libs.common"
-  archive(syntax,preprocessor) = "pa_undo_deriving.cma"
+  archive(syntax,preprocessor,-native) = "pa_undo_deriving.cma"
+  archive(syntax,preprocessor,native) = "pa_undo_deriving.cmxa"
 
 EOF

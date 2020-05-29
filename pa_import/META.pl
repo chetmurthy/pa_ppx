@@ -23,6 +23,7 @@ archive(byte,toploop) = "pa_import.cma"
 
   # For the preprocessor itself:
   requires(syntax,preprocessor) = "camlp5.pa_o,pa_ppx_base,fmt,bos,compiler-libs.common,findlib.internal"
-  archive(syntax,preprocessor) = "pa_import.cma"
+  archive(syntax,preprocessor,-native) = "pa_import.cma"
+  archive(syntax,preprocessor,native) = "pa_import.cmxa"
 
 EOF

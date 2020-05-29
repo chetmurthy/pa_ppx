@@ -17,6 +17,7 @@ TESTDIRS= tests-ounit2 tests-inline tests-expect our-tests-inline
 
 all:
 	set -e; for i in $(SYSDIRS) $(TESTDIRS); do cd $$i; $(MAKE) all; cd ..; done
+	$(MAKE) camlp5o.pa_ppx camlp5o.pa_ppx.opt
 
 doc: all
 	set -e; for i in $(SYSDIRS); do cd $$i; $(MAKE) doc; cd ..; done
@@ -44,16 +45,18 @@ PACKAGES := $(PACKAGES),pa_ppx_hashrecons
 PACKAGES := $(PACKAGES),pa_ppx_import
 
 camlp5o.pa_ppx:
-	tools/LAUNCH $(MKCAMLP5) -verbose -package camlp5.pa_o,camlp5.pr_o,$(PACKAGES) $(KITS) -o $@
+	tools/LAUNCH $(MKCAMLP5) -verbose -package camlp5.pa_o,camlp5.pr_o,$(PACKAGES) -o $@
 
+camlp5o.pa_ppx.opt:
+	tools/LAUNCH $(MKCAMLP5).opt -verbose -package camlp5.pa_o,camlp5.pr_o,$(PACKAGES) -o $@
 
 META: META.pl
 	./META.pl > META
 
-install: all META.pl camlp5o.pa_ppx
+install: all META.pl
 	$(OCAMLFIND) remove pa_ppx || true
 	./META.pl > META
-	$(OCAMLFIND) install pa_ppx META local-install/lib/*/*.* camlp5o.pa_ppx
+	$(OCAMLFIND) install pa_ppx META local-install/lib/*/*.* camlp5o.pa_ppx camlp5o.pa_ppx.opt
 
 uninstall:
 	$(OCAMLFIND) remove pa_ppx || true

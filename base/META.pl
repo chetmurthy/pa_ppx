@@ -23,6 +23,7 @@ archive(byte,toploop) = "pa_ppx_base.cma"
 
   # For the preprocessor itself:
   requires(syntax,preprocessor) = "camlp5,rresult,fmt,pa_ppx_utils,compiler-libs.common"
-  archive(syntax,preprocessor) = "pa_ppx_base.cma"
+  archive(syntax,preprocessor,-native) = "pa_ppx_base.cma"
+  archive(syntax,preprocessor,native) = "pa_ppx_base.cmxa"
 
 EOF

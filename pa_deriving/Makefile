@@ -23,12 +23,15 @@ CMX := $(ML:.ml=.cmx)
 CMT := $(ML:.ml=.cmt)
 CMTI := $(MLI:.mli=.cmti)
 
-all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_deriving local-install
+all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_deriving camlp5.pa_ppx_deriving.opt local-install
 
 doc: $(CMT) $(CMTI)
 
 camlp5.pa_ppx_deriving:
-	$(MKCAMLP5) -verbose -package camlp5.pa_r.link,camlp5.pr_r.link,pa_ppx_base.link $(TARGET) -o $@
+	$(MKCAMLP5) -verbose -package camlp5.pa_r,camlp5.pr_r,pa_ppx_base $(TARGET) -o $@
+
+camlp5.pa_ppx_deriving.opt:
+	$(MKCAMLP5).opt -verbose -package camlp5.pa_r,camlp5.pr_r,pa_ppx_base $(TARGET:.cma=.cmxa) -o $@
 
 META: META.pl
 	./META.pl > META
@@ -36,7 +39,7 @@ META: META.pl
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(MLI:.mli=.cmi) $(wildcard *.cmt*)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_deriving -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(TARGET:.cma=.a) $(MLI:.mli=.cmi) $(CMX) $(wildcard *.cmt*)
 	$(RM) -f META
 
 local-install::

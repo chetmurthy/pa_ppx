@@ -23,6 +23,7 @@ archive(byte,toploop) = "pa_ppx_assert.cma"
 
   # For the preprocessor itself:
   requires(syntax,preprocessor) = "camlp5,fmt,pa_ppx_base"
-  archive(syntax,preprocessor) = "pa_ppx_assert.cma"
+  archive(syntax,preprocessor,-native) = "pa_ppx_assert.cma"
+  archive(syntax,preprocessor,native) = "pa_ppx_assert.cmxa"
 
 EOF

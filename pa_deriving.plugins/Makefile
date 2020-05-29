@@ -32,14 +32,17 @@ CMX := $(ML:.ml=.cmx)
 CMT := $(ML:.ml=.cmt)
 CMTI := $(MLI:.mli=.cmti)
 
-all: $(CMO) camlp5.pa_ppx_deriving_plugins local-install
+all: $(CMO) camlp5.pa_ppx_deriving_plugins camlp5.pa_ppx_deriving_plugins.opt local-install
 
 doc: $(CMT) $(CMTI)
 
 KITS=$(CMO)
 
-camlp5.pa_ppx_deriving_plugins:
-	$(MKCAMLP5) -verbose -package camlp5.pa_r.link,camlp5.pr_r.link,pa_ppx_deriving.link $(KITS) -o $@
+camlp5.pa_ppx_deriving_plugins: $(KITS)
+	$(MKCAMLP5) -verbose -package camlp5.pa_r,camlp5.pr_r,pa_ppx_deriving $(KITS) -o $@
+
+camlp5.pa_ppx_deriving_plugins.opt: $(KITS:.cmo=.cmx)
+	$(MKCAMLP5).opt -verbose -package camlp5.pa_r,camlp5.pr_r,pa_ppx_deriving $(KITS:.cmo=.cmx) -o $@
 
 META: META.pl
 	./META.pl > META
@@ -47,14 +50,14 @@ META: META.pl
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_deriving_plugins -destdir $(DESTDIR)/lib META $(CMO) $(MLI:.mli=.cmi) $(wildcard *.cmt*)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_deriving_plugins -destdir $(DESTDIR)/lib META $(CMO) $(CMX) $(MLI:.mli=.cmi) $(KITS:.cmo=.o) $(wildcard *.cmt*)
 	$(RM) -f META
 
 local-install::
 	$(MAKE) DESTDIR=$(WD)/$(TOP)/local-install/ install
 
 clean::
-	rm -rf META camlp5.pa_ppx_deriving_plugins
+	rm -rf META camlp5.pa_ppx_deriving_plugins*
 
 EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
 $(CMO): $(EXTERNAL)

@@ -40,7 +40,7 @@ META: META.pl
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_utils -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_utils.cmx pa_ppx_utils.cmi $(wildcard *.cmt*)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_utils -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(TARGET:.cma=.a) pa_ppx_utils.cmx pa_ppx_utils.cmi $(wildcard *.cmt*)
 	$(RM) -f META
 
 local-install::

@@ -1,5 +1,7 @@
 */*.cm*
 */*.byte
+*/*.opt
+*.opt
 */camlp5.*
 tests-*/_build
 */*.o

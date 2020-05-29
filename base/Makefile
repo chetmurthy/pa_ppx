@@ -25,7 +25,7 @@ CMTI := $(MLI:.mli=.cmti)
 
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_base
 
-all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_base local-install
+all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_base camlp5.pa_ppx_base.opt local-install
 
 doc: $(CMT) $(CMTI)
 
@@ -107,24 +107,26 @@ refold-pp-parsetree: pp_parsetree.ml
 	$< > $@.NEW
 	mv $@.NEW  pp_parsetree.REFOLD.ml
 
-
-
 camlp5.pa_ppx_base: $(TARGET)
-	$(MKCAMLP5) -verbose -package fmt,rresult,camlp5.pa_r.link,camlp5.pr_r.link,pa_ppx_utils,compiler-libs.common $(TARGET) -o $@
+	$(MKCAMLP5) -verbose -package fmt,rresult,camlp5.pa_r,camlp5.pr_r,pa_ppx_utils,compiler-libs.common $(TARGET) -o $@
+
+camlp5.pa_ppx_base.opt: $(TARGET:.cma=.cmxa)
+	$(MKCAMLP5).opt -verbose -package fmt,rresult,camlp5.pa_r,camlp5.pr_r,pa_ppx_utils,compiler-libs.common $(TARGET:.cma=.cmxa) -o $@
 
 META: META.pl
 	./META.pl > META
+
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_base -destdir $(DESTDIR)/lib META $(TARGET) pa_ppx_base.cmx pa_ppx_base.cmi $(wildcard *.cmt*)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_base -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(TARGET:.cma=.a) pa_ppx_base.cmx pa_ppx_base.cmi $(wildcard *.cmt*)
 	$(RM) -f META
 
 local-install::
 	$(MAKE) DESTDIR=$(WD)/$(TOP)/local-install/ install
 
 clean::
-	rm -rf META camlp5.pa_ppx_base
+	rm -rf META camlp5.pa_ppx_base*
 
 $(TARGET): pa_ppx_base.cmo
 	$(OCAMLFIND) ocamlc $(DEBUG) $< -a -o $(TARGET)
