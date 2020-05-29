@@ -53,15 +53,15 @@ PPXINLINEPACKAGES:=$(PPXINLINEPACKAGES),ppx_expect.evaluator
 PPXINLINEOPT = -ppxopt ppx_expect,-inline-test-lib  -ppxopt ppx_expect,foo
 
 PAPACKAGES:=$(PACKAGEPREFIX)runtime
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)assert.syntax
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)assert
 
 PAINLINEPACKAGES:=$(PAPACKAGES)
-PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)inline_test.syntax
-PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)expect_test.syntax
+PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)inline_test
+PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)expect_test
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),expect_test_helpers
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),ppx_expect.evaluator
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),ppx_inline_test.runtime-lib,ppx_inline_test.runner.lib
@@ -73,7 +73,7 @@ PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 %.pa.byte: %.ml
-	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) camlp5/papr_official.exe -binary-input -impl > $<.pappx.ppo
+	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) not-ocamlfind/papr_official.exe -binary-input -impl > $<.pappx.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 ppx_sexp_test.ppx.byte: ppx_sexp_test.ml
@@ -84,7 +84,7 @@ ppx_sexp_test.ppx.byte: ppx_sexp_test.ml
 
 ppx_sexp_test.pa.byte: ppx_sexp_test.ml
 	cppo -D PAPPX ppx_sexp_test.ml > ppx_sexp_test.pappx.ml
-	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),$(PAINLINEPACKAGES),camlp5.pr_o.syntax -ppopt -sep -ppopt ";;" -syntax camlp5o $(PAINLINEOPT) ppx_sexp_test.pappx.ml >  ppx_sexp_test.pappx.ml.ppo
+	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),$(PAINLINEPACKAGES),camlp5.pr_o -ppopt -sep -ppopt ";;" -syntax camlp5o $(PAINLINEOPT) ppx_sexp_test.pappx.ml >  ppx_sexp_test.pappx.ml.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg ppx_sexp_test.pappx.ml ppx_inline_test_epilogue.ml -o $@
 
 %.TEST: %.ppx.byte %.pa.byte

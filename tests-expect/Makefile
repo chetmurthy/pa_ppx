@@ -52,15 +52,15 @@ PPXINLINEPACKAGES:=$(PPXINLINEPACKAGES),ppx_expect.evaluator
 PPXINLINEOPT = -ppxopt ppx_expect,-inline-test-lib  -ppxopt ppx_expect,foo
 
 PAPACKAGES:=$(PACKAGEPREFIX)runtime
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.yojson.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)hashrecons.syntax
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here.syntax
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.yojson
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)hashrecons
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here
 
 PAINLINEPACKAGES:=$(PAPACKAGES)
-PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)expect_test.syntax
-PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)inline_test.syntax
+PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)expect_test
+PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)inline_test
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),ppx_expect.evaluator
 
 test_inline_test.ppx.byte: test_inline_test.ml
@@ -73,7 +73,7 @@ test_inline_test.ppx: test_inline_test.ppx.byte
 
 PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
 test_inline_test.byte: test_inline_test.ml
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PAINLINEPACKAGES),camlp5.pr_o.syntax,ppx_inline_test.runtime-lib,ppx_inline_test.runner.lib -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PAINLINEPACKAGES),camlp5.pr_o,ppx_inline_test.runtime-lib,ppx_inline_test.runner.lib -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 test_inline_test: test_inline_test.byte
 	./$< inline-test-runner foo -verbose -require-tag js-only -source-tree-root . -diff-cmd - || \

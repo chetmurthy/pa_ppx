@@ -36,11 +36,11 @@ pa_ppx_base.cmx: $(CMO:.cmo=.cmx)
 	$(OCAMLFIND) ocamlopt $(DEBUG) -pack -bin-annot -o pa_ppx_base.cmx $^
 
 initialize-pp-MLast-i:: pp_MLast.ORIG.mli
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax -syntax camlp5o $< > $@.NEW
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
 	mv $@.NEW pp_MLast.mli
 
 bootstrap-pp-MLast-i: pp_MLast.ORIG.mli
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax,pa_ppx_import.syntax,pa_ppx_deriving_plugins.std.syntax \
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r,pa_ppx_import,pa_ppx_deriving_plugins.std \
 	-syntax camlp5o -ppopt -D -ppopt BOOTSTRAP \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
@@ -48,17 +48,17 @@ bootstrap-pp-MLast-i: pp_MLast.ORIG.mli
 	mv $@.NEW  pp_MLast.mli
 
 refold-pp-MLast-i: pp_MLast.mli
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r.syntax,pa_ppx_undo_deriving.syntax \
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r,pa_ppx_undo_deriving \
 	-syntax camlp5r \
 	$< > $@.NEW
 	mv $@.NEW  pp_MLast.REFOLD.mli
 
 initialize-pp-MLast:: pp_MLast.ORIG.ml
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax -syntax camlp5o $< > $@.NEW
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
 	mv $@.NEW pp_MLast.ml
 
 bootstrap-pp-MLast: pp_MLast.ORIG.ml
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax,pa_ppx_import.syntax,pa_ppx_deriving_plugins.std.syntax \
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r,pa_ppx_import,pa_ppx_deriving_plugins.std \
 	-syntax camlp5o -ppopt -D -ppopt BOOTSTRAP \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
@@ -66,17 +66,17 @@ bootstrap-pp-MLast: pp_MLast.ORIG.ml
 	mv $@.NEW  pp_MLast.ml
 
 refold-pp-MLast: pp_MLast.ml
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r.syntax,pa_ppx_undo_deriving.syntax \
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r,pa_ppx_undo_deriving \
 	-syntax camlp5r \
 	$< > $@.NEW
 	mv $@.NEW  pp_MLast.REFOLD.ml
 
 initialize-pp-parsetree-i:: pp_parsetree.ORIG.mli
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax -syntax camlp5o $< > $@.NEW
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
 	mv $@.NEW pp_parsetree.mli
 
 bootstrap-pp-parsetree-i: pp_parsetree.ORIG.mli
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax,pa_ppx_import.syntax,pa_ppx_deriving_plugins.std.syntax \
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r,pa_ppx_import,pa_ppx_deriving_plugins.std \
 	-syntax camlp5o -ppopt -D -ppopt BOOTSTRAP \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
@@ -84,17 +84,17 @@ bootstrap-pp-parsetree-i: pp_parsetree.ORIG.mli
 	mv $@.NEW  pp_parsetree.mli
 
 refold-pp-parsetree-i: pp_parsetree.mli
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r.syntax,pa_ppx_undo_deriving.syntax \
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r,pa_ppx_undo_deriving \
 	-syntax camlp5r \
 	$< > $@.NEW
 	mv $@.NEW  pp_parsetree.REFOLD.mli
 
 initialize-pp-parsetree:: pp_parsetree.ORIG.ml
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax -syntax camlp5o $< > $@.NEW
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
 	mv $@.NEW pp_parsetree.ml
 
 bootstrap-pp-parsetree: pp_parsetree.ORIG.ml
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r.syntax,pa_ppx_import.syntax,pa_ppx_deriving_plugins.std.syntax \
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r,pa_ppx_import,pa_ppx_deriving_plugins.std \
 	-syntax camlp5o -ppopt -D -ppopt BOOTSTRAP \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
@@ -102,7 +102,7 @@ bootstrap-pp-parsetree: pp_parsetree.ORIG.ml
 	mv $@.NEW  pp_parsetree.ml
 
 refold-pp-parsetree: pp_parsetree.ml
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r.syntax,pa_ppx_undo_deriving.syntax \
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.pr_r,pa_ppx_undo_deriving \
 	-syntax camlp5r \
 	$< > $@.NEW
 	mv $@.NEW  pp_parsetree.REFOLD.ml
@@ -110,7 +110,7 @@ refold-pp-parsetree: pp_parsetree.ml
 
 
 camlp5.pa_ppx_base: $(TARGET)
-	$(MKCAMLP5) -verbose -package fmt,rresult,camlp5.pa_r,camlp5.pr_r,pa_ppx_utils,compiler-libs.common $(TARGET) -o $@
+	$(MKCAMLP5) -verbose -package fmt,rresult,camlp5.pa_r.link,camlp5.pr_r.link,pa_ppx_utils,compiler-libs.common $(TARGET) -o $@
 
 META: META.pl
 	./META.pl > META

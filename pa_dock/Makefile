@@ -13,9 +13,10 @@ OCAMLFIND=$(LAUNCH) ocamlfind
 NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
 
-PACKAGES := $(PACKAGES),fmt,bos,pa_ppx_base,pa_ppx_utils,camlp5.pa_r.syntax,camlp5.lexer.syntax,pa_ppx_unmatched_vala.syntax
+PACKAGES := $(PACKAGES),fmt,bos,pa_ppx_base,pa_ppx_utils,camlp5.pa_r,camlp5.lexer,pa_ppx_unmatched_vala
 TARGET := pa_ppx_dock.cma
 ML := comment_lexer.ml pa_dock.ml
+MLI := pa_dock.mli
 CMO := $(ML:.ml=.cmo)
 CMI := $(ML:.ml=.cmi)
 CMX := $(ML:.ml=.cmx)
@@ -36,14 +37,14 @@ pa_ppx_dock.cmx: $(CMO:.cmo=.cmx)
 	$(OCAMLFIND) ocamlopt $(DEBUG) -pack -o pa_ppx_dock.cmx $^
 
 camlp5.pa_ppx_dock: $(TARGET)
-	$(MKCAMLP5) -verbose -package fmt,bos,camlp5.pa_r,camlp5.pr_r,pa_ppx_base $(TARGET) -o $@
+	$(MKCAMLP5) -verbose -package fmt,bos,camlp5.pa_r.link,camlp5.pr_r.link,pa_ppx_base.link $(TARGET) -o $@
 
 META: META.pl
 	./META.pl > META
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_dock -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(TARGET:.cma=.cmi) $(wildcard *.cmt*)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_dock -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) pa_ppx_dock.cmi $(wildcard *.cmt*)
 	$(RM) -f META
 
 local-install::

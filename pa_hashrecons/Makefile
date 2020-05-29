@@ -27,7 +27,7 @@ all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_hashrecons local-install
 doc: $(CMT) $(CMTI)
 
 camlp5.pa_ppx_hashrecons: $(TARGET)
-	$(MKCAMLP5) -verbose -package fmt,camlp5.pa_r,camlp5.pr_r,pa_ppx_base $(TARGET) -o $@
+	$(MKCAMLP5) -verbose -package fmt,camlp5.pa_r.link,camlp5.pr_r.link,pa_ppx_base.link $(TARGET) -o $@
 
 META: META.pl
 	./META.pl > META

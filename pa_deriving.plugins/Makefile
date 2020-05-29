@@ -12,7 +12,7 @@ LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),pa_ppx_deriving,pa_ppx_base.syntax,pa_ppx_unmatched_vala.syntax
+PACKAGES := $(PACKAGES),pa_ppx_deriving,pa_ppx_base,pa_ppx_unmatched_vala
 
 ML=\
 	pa_deriving_show.ml \
@@ -39,7 +39,7 @@ doc: $(CMT) $(CMTI)
 KITS=$(CMO)
 
 camlp5.pa_ppx_deriving_plugins:
-	$(MKCAMLP5) -verbose -package camlp5.pa_r,camlp5.pr_r,pa_ppx_deriving $(KITS) -o $@
+	$(MKCAMLP5) -verbose -package camlp5.pa_r.link,camlp5.pr_r.link,pa_ppx_deriving.link $(KITS) -o $@
 
 META: META.pl
 	./META.pl > META

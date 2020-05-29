@@ -12,7 +12,7 @@ LAUNCH=$(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),fmt,pa_ppx_utils,pa_ppx_base,pa_ppx_base.syntax
+PACKAGES := $(PACKAGES),fmt,pa_ppx_utils,pa_ppx_base,pa_ppx_base
 
 TARGET=pa_deriving.cma
 ML=pa_deriving.ml surveil.ml pa_rebindto.ml deriving_harness.ml pa_deriving_base.ml
@@ -28,7 +28,7 @@ all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_deriving local-install
 doc: $(CMT) $(CMTI)
 
 camlp5.pa_ppx_deriving:
-	$(MKCAMLP5) -verbose -package camlp5.pa_r,camlp5.pr_r,pa_ppx_base $(TARGET) -o $@
+	$(MKCAMLP5) -verbose -package camlp5.pa_r.link,camlp5.pr_r.link,pa_ppx_base.link $(TARGET) -o $@
 
 META: META.pl
 	./META.pl > META

@@ -27,7 +27,7 @@ all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_import local-install
 doc: $(CMT) $(CMTI)
 
 camlp5.pa_ppx_import:
-	$(MKCAMLP5) -verbose -package $(PACKAGES) $(TARGET) -o $@
+	$(MKCAMLP5) -verbose -package $(PACKAGES),pa_ppx_base.link $(TARGET) -o $@
 
 META: META.pl
 	./META.pl > META

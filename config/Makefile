@@ -10,7 +10,7 @@ MKCAMLP5=mkcamlp5
 CAMLP5R=camlp5r -I $(CAMLP5LIB)
 INCLUDES=-I $(CAMLP5LIB)
 OCAMLCFLAGS=$(DEBUG) $(WARNERR) $(INCLUDES)
-PACKAGES=camlp5,compiler-libs.common,camlp5.quotations.syntax,camlp5.extfun.syntax
+PACKAGES=camlp5,compiler-libs.common,camlp5.quotations,camlp5.extfun
 SYNTAX = camlp5r
 
 top: all
@@ -26,12 +26,12 @@ top: all
 
 .ml.cmt:
 	@mkdir -p .cmt
-	$(OCAMLFIND) ocamlc $(OCAMLCFLAGS) -package $(PACKAGES),pa_ppx_dock.syntax -syntax $(SYNTAX) -bin-annot -c $< -o .cmt/$*.cmo
+	$(OCAMLFIND) ocamlc $(OCAMLCFLAGS) -package $(PACKAGES),pa_ppx_dock -syntax $(SYNTAX) -bin-annot -c $< -o .cmt/$*.cmo
 	cp .cmt/$*.cmt $*.cmt
 
 .mli.cmti:
 	@mkdir -p .cmt
-	$(OCAMLFIND) ocamlc $(OCAMLCFLAGS) -package $(PACKAGES),pa_ppx_dock.syntax -syntax $(SYNTAX) -bin-annot -c $< -o .cmt/$*.cmi
+	$(OCAMLFIND) ocamlc $(OCAMLCFLAGS) -package $(PACKAGES),pa_ppx_dock -syntax $(SYNTAX) -bin-annot -c $< -o .cmt/$*.cmi
 	cp .cmt/$*.cmti $*.cmti
 
 .SUFFIXES: .cmo .cmi .ml .mli .cmx .cma .cmxa .cmt .cmti
