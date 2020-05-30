@@ -17,18 +17,17 @@ well.
 This code (re-)implements:
 
 1. all of ppx_deriving: pa_ppx.deriving_plugins.{enum,eq,fold,iter,make,map,ord,show}
-2. ppx_import: pa_import
+2. ppx_import: pa_ppx.import
 3. ppx_deriving_yojson: pa_ppx.deriving_plugins.yojson
 4. ppx_sexp_conv: pa_ppx.deriving_plugins.sexp
 5. ppx_inline_test: pa_ppx.inline_test
-6. ppx_expect-test: pa_ppx.expect_test
+6. ppx_expect_test: pa_ppx.expect_test
 7. ppx_assert: pa_ppx.assert
 8. ppx_here: pa_ppx.here
-9. ppx_import: pa_ppx.import
-10. pa_ppx.dock: doc-comment extractor
-11. [for internal use by PPX rewriters using this infrastructure] pa_unmatched_vala
-12. [an example] pa_hashrecons
-13. pa_ppx.undo_deriving: undoes the effet of pa_ppx.deriving and its plugins
+9. pa_ppx.dock: doc-comment extractor
+10. [for internal use by PPX rewriters using this infrastructure] pa_unmatched_vala
+11. [an example] pa_hashrecons
+12. pa_ppx.undo_deriving: undoes the effect of pa_ppx.deriving and its plugins
 
 
 the re-implementations of ppx_deriving and ppx_import pass all their
@@ -42,7 +41,7 @@ This code depends on ocaml and a pre-release version of camlp5.
 
 Ocaml: version >= 4.10.0 -- install in the usual way using `opam create_switch 4.10.0` (etc)
 
-Camlp5 pre-8.00: [Camlp5](https://github.com/chetmurthy/camlp5)
+Camlp5 pre-8.00: [Camlp5](https://github.com/camlp5/camlp5/tree/pre-8.00)
 
 Eventually this version of Camlp5 will get released, and at that
 point, you'll be able to install it with opam.  For now, you need
