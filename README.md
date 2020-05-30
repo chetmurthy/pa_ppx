@@ -10,7 +10,7 @@ ppx_deriving, etc, then they *will not work with this package*.  Not.
 At.  All.  Instead, the goal here is to show how easy it is to write
 PPX rewriters this way.
 
-Also, this code is barely two weeks old, so you should expect bugs,
+Also, this code is barely two months old, so you should expect bugs,
 and I'm happy to fix them posthaste, b/c I want this code to work
 well.
 
@@ -18,9 +18,18 @@ This code (re-)implements:
 
 1. all of ppx_deriving: pa_ppx.deriving_plugins.{enum,eq,fold,iter,make,map,ord,show}
 2. ppx_import: pa_import
-3. [for internal use by PPX rewriters using this infrastructure] pa_unmatched_vala
-4. [an example] pa_hashrecons
-5. ppx_deriving_yojson: pa_ppx.deriving_plugins.yojson (partially broken)
+3. ppx_deriving_yojson: pa_ppx.deriving_plugins.yojson
+4. ppx_sexp_conv: pa_ppx.deriving_plugins.sexp
+5. ppx_inline_test: pa_ppx.inline_test
+6. ppx_expect-test: pa_ppx.expect_test
+7. ppx_assert: pa_ppx.assert
+8. ppx_here: pa_ppx.here
+9. ppx_import: pa_ppx.import
+10. pa_ppx.dock: doc-comment extractor
+11. [for internal use by PPX rewriters using this infrastructure] pa_unmatched_vala
+12. [an example] pa_hashrecons
+13. pa_ppx.undo_deriving: undoes the effet of pa_ppx.deriving and its plugins
+
 
 the re-implementations of ppx_deriving and ppx_import pass all their
 unit-tests and use the same syntax of attributes as the original
@@ -29,19 +38,18 @@ unmodified; anything else is a bug with these packages**.
 
 # Installation
 
-This code depends on ocaml 4.10.0 and a pre-release version of camlp5.
+This code depends on ocaml and a pre-release version of camlp5.
 
-Ocaml: version 4.10.0 -- install using "opam create_switch 4.10.0"
+Ocaml: version >= 4.10.0 -- install in the usual way using `opam create_switch 4.10.0` (etc)
 
 Camlp5 pre-8.00: [Camlp5](https://github.com/chetmurthy/camlp5)
 
-Eventually this will get released, and at that point, you'll be able
-to install it with opam.
-
-For now, you need to build it in the usual way on the commandline (documented over at that camlp5 repo, but here's a quick synopsis):
+Eventually this version of Camlp5 will get released, and at that
+point, you'll be able to install it with opam.  For now, you need
+to build it in the usual way on the commandline
+(documented over at that camlp5 repo, but here's a quick synopsis):
 ```
-make clean && ./configure -libdir `dirname $(ocamlc -where)` && make -j32 all && make -C testsuite/ clean all-tests
-
+make clean && ./configure -libdir `dirname $(ocamlc -where)` && make -j32 all
 make install
 ```
 
@@ -51,9 +59,9 @@ pa_ppx (this package):
 make && make install
 ```
 
-and you can run tests (the Yojson test fails to build):
+and you can run tests (some of them fail)
 ```
-make -C tests -k all
+make test
 ```
 
 # Organization of Findlib packages
@@ -62,34 +70,33 @@ There are a bunch of findlib packages.  Maybe too many and too
 confusing, I can't tell.  But the general idea is that for each
 rewriter or group of rewriters, there are two packages:
 
-1. the package for loading into the toplevel or linking into a commandline tool, viz. `pa_ppx.deriving.plugins.show`
-2. the package for adding to camlp5 during preprocessing, viz. `pa_ppx.deriving.plugins.show.syntax`
+1. the package for linking into a program, viz. `pa_ppx.deriving.plugins.show.link`
+2. the package for loading into the toplevel or adding to camlp5 during preprocessing, viz. `pa_ppx.deriving.plugins.show`
 
-Note the ".syntax" at the end there.  These are separated like this so
+Note the `.link` at the end there.  These are separated like this so
 we can specify "preprocess with the show plugin, but don't link it
 into the program" and separately "link the show plugin into the
 program, but don't preprocess with it".
 
 [I thought of having a "virtual package" that just required the both,
-but it turns out that there's a bug in findlib that prevents this from
-working correctly in the context of preprocessing.  So I'm stuck with
-this for now.]
+but it turns out that findlib doesn't support that (and I can see the
+reasoning there -- it could be a source of hard-to-understand bugs).
 
 # Using with Makefiles
 
-There are copious examples in the `tests` directory: these are copied
-over almost-verbatim from ppx_deriving, and show almost all the
+There are copious examples in the `tests-*` directories: these are copied
+over almost-verbatim from ppx_deriving and other projects, and show almost all the
 functionality being exercised.  Here is a simple one, stripped-down to
 the minimum:
 ```
-ocamlfind ocamlc -verbose -package rresult,ounit2,pa_ppx.runtime,pa_ppx.deriving_plugins.std.syntax \
+ocamlfind ocamlc -verbose -package rresult,ounit2,pa_ppx.runtime,pa_ppx.deriving_plugins.std \
 	-syntax camlp5o -linkpkg -linkall test_deriving_show.ml -o test_deriving_show.byte
 ```
 
 1. specify syntax `-syntax camlp5o`
 2. specify packages needed by the test itself: `rresult,ounit2`
 3. specify pa_ppx runtime support package: `pa_ppx.runtime`
-4. specify the rewriter packages: `pa_ppx.deriving_plugins.std.syntax`
+4. specify the rewriter packages: `pa_ppx.deriving_plugins.std`
 
 # Using with Dune
 
