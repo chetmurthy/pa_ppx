@@ -198,12 +198,12 @@ let ef = EF.mk () in
 let ef = EF.{ (ef) with
             str_item = extfun ef.str_item with [
     <:str_item:< [%%expect_test $exp:_$ $itemattrs:_$ ; ] >> as z ->
-    fun arg ->
+    fun arg _ ->
       Some (rewrite_str_item arg z)
 
   | <:str_item:< [%%expect_test value $flag:False$ $list:_$ ; ] >>
    as z when is_named_expect_test z ->
-    fun arg ->
+    fun arg _ ->
       Some (rewrite_str_item arg z)
 
   ] } in
@@ -211,10 +211,10 @@ let ef = EF.{ (ef) with
 let ef = EF.{ (ef) with
               implem = extfun ef.implem with [
     z ->
-    fun arg -> 
+    fun arg fallback -> 
       let md5 = arg |> Ctxt.filename |> Digest.file |> Digest.to_hex in
       let arg = do { EC.init arg md5 ; arg } in
-      Some (wrap_implem arg (Pa_passthru.implem0 arg z))
+      Some (wrap_implem arg (fallback arg z))
   ] } in
 
   Pa_passthru.(install { name = "pa_expect_test" ; ef = ef ; pass = None ; before = [] ; after = ["pa_inline_test"] })

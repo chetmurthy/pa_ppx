@@ -279,7 +279,7 @@ let ef = EF.{ (ef) with
             str_item = extfun ef.str_item with [
     <:str_item:< type $flag:nrfl$ $list:tdl$ >> as z
     when 1 = count is_deriving_attribute (uv (fst (sep_last tdl)).tdAttributes) ->
-    fun arg ->
+    fun arg _ ->
       let last_td = fst (sep_last tdl) in
       let attrs = last_td.tdAttributes in
       let derivings = attrs |> uv |> List.map extract_deriving0 |> List.concat in
@@ -290,7 +290,7 @@ let ef = EF.{ (ef) with
 
   | <:str_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ [ $list:_$ ] $itemattrs:attrs$ >> as z
     when 1 = count is_deriving_attribute attrs ->
-    fun arg ->
+    fun arg _ ->
       let derivings = attrs |> List.map extract_deriving0 |> List.concat in
       let l = derivings |> List.map (invoke_str_item_plugin arg z) |> List.concat in
       let z = rewrite_str_item_deriving_attribute z in
@@ -299,7 +299,7 @@ let ef = EF.{ (ef) with
 
   | <:str_item:< exception $_excon:_$ $itemattrs:attrs$ >> as z
     when 1 = count is_deriving_attribute attrs ->
-    fun arg ->
+    fun arg _ ->
       let derivings = attrs |> List.map extract_deriving0 |> List.concat in
       let l = derivings |> List.map (invoke_str_item_plugin arg z) |> List.concat in
       let z = rewrite_str_item_deriving_attribute z in
@@ -312,7 +312,7 @@ let ef = EF.{ (ef) with
             sig_item = extfun ef.sig_item with [
     <:sig_item:< type $_flag:_$ $list:tdl$ >> as z
     when 1 = count is_deriving_attribute (uv (fst (sep_last tdl)).tdAttributes) ->
-    fun arg ->
+    fun arg _ ->
       let last_td = fst (sep_last tdl) in
       let attrs = last_td.tdAttributes in
       let derivings = attrs |> uv |> List.map extract_deriving0 |> List.concat in
@@ -323,7 +323,7 @@ let ef = EF.{ (ef) with
 
   | <:sig_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ [ $list:_$ ] $itemattrs:attrs$ >> as z
     when 1 = count is_deriving_attribute attrs ->
-    fun arg ->
+    fun arg _ ->
       let derivings = attrs |> List.map extract_deriving0 |> List.concat in
       let l = derivings |> List.map (invoke_sig_item_plugin arg z) |> List.concat in
       let z = rewrite_sig_item_deriving_attribute z in
@@ -335,14 +335,14 @@ let ef = EF.{ (ef) with
 let ef = EF.{ (ef) with
   expr = extfun ef.expr with [
     <:expr:< [% $_extension:e$ ] >> as z when is_registered_expr_extension e ->
-      fun arg ->
+      fun arg _ ->
         registered_expr_extension arg z
   ] } in
 
 let ef = EF.{ (ef) with
   ctyp = extfun ef.ctyp with [
     <:ctyp:< [% $_extension:e$ ] >> as z when is_registered_ctyp_extension e ->
-      fun arg ->
+      fun arg _ ->
         registered_ctyp_extension arg z
   ] } in
 

@@ -81,8 +81,8 @@ value attrs_to_tags = fun [
 ]
 ;
 
-value rewrite_str_item arg z =
-  match Pa_passthru.str_item0 arg z with [
+value rewrite_str_item arg fallback z =
+  match fallback arg z with [
   <:str_item:< [%%test $exp:e$ ; ] >>
   ->
   let descr = String.escaped (Printf.sprintf ": <<%s>>" (Expr.print e)) in
@@ -172,38 +172,38 @@ let ef = EF.mk () in
 let ef = EF.{ (ef) with
             str_item = extfun ef.str_item with [
     <:str_item:< [%%test $exp:_$ ; ] >> as z ->
-    fun arg ->
-      Some (rewrite_str_item arg z)
+    fun arg fallback ->
+      Some (rewrite_str_item arg fallback z)
 
   | <:str_item:< [%%test_unit $exp:_$ ; ] >> as z ->
-    fun arg ->
-      Some (rewrite_str_item arg z)
+    fun arg fallback ->
+      Some (rewrite_str_item arg fallback z)
 
   | <:str_item:< [%%test_module (module $mexp:_$) ; ] >> as z ->
-    fun arg ->
-      Some (rewrite_str_item arg z)
+    fun arg fallback ->
+      Some (rewrite_str_item arg fallback z)
 
   | <:str_item:< [%%test value $flag:False$ $list:_$ ; ] >>
    as z when is_patt_bool_test z ->
-    fun arg ->
-      Some (rewrite_str_item arg z)
+    fun arg fallback ->
+      Some (rewrite_str_item arg fallback z)
 
   | <:str_item:< [%%test_unit value $flag:False$ $list:_$ ; ] >>
    as z when is_patt_unit_test z ->
-    fun arg ->
-      Some (rewrite_str_item arg z)
+    fun arg fallback ->
+      Some (rewrite_str_item arg fallback z)
 
   | <:str_item:< [%%test_module value $flag:False$ $list:_$ ; ] >>
    as z when is_patt_module_test z ->
-    fun arg ->
-      Some (rewrite_str_item arg z)
+    fun arg fallback ->
+      Some (rewrite_str_item arg fallback z)
 
   ] } in
 
 let ef = EF.{ (ef) with
               implem = extfun ef.implem with [
     z ->
-    fun arg -> Some (wrap_implem arg (Pa_passthru.implem0 arg z))
+    fun arg fallback -> Some (wrap_implem arg (fallback arg z))
   ] } in
 
   Pa_passthru.(install { name = "pa_inline_test" ; ef = ef ; pass = None ; before = [] ; after = [] })

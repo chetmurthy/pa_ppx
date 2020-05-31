@@ -1008,47 +1008,47 @@ let ef = EF.mk () in
 let ef = EF.{ (ef) with
             class_expr = extfun ef.class_expr with [
     <:class_expr:< object $_opt:cspo$ $list:cf$ end >> ->
-    fun arg ->
+    fun arg fallback ->
     let cf = rewrite_class_structure arg loc cf in
-    Some (Pa_passthru.class_expr0 arg <:class_expr< object $_opt:cspo$ $list:cf$ end >>)
+    Some (fallback arg <:class_expr< object $_opt:cspo$ $list:cf$ end >>)
   ] } in
 
 let ef = EF.{ (ef) with
             module_expr = extfun ef.module_expr with [
     <:module_expr:< struct $list:l$ end >> ->
-    fun arg ->
+    fun arg fallback ->
     let l = l |> flatten_structure |> rewrite_structure arg loc in
-    Some (Pa_passthru.module_expr0 arg <:module_expr:< struct $list:l$ end >>)
+    Some (fallback arg <:module_expr:< struct $list:l$ end >>)
   ] } in
 
 let ef = EF.{ (ef) with
             module_type = extfun ef.module_type with [
     <:module_type:< sig $list:l$ end >> ->
-    fun arg ->
+    fun arg fallback ->
      let l = l |> flatten_signature |> rewrite_signature arg loc in
-    Some (Pa_passthru.module_type0 arg <:module_type:< sig $list:l$ end >>)
+    Some (fallback arg <:module_type:< sig $list:l$ end >>)
   ] } in
 
 let ef = EF.{ (ef) with
             class_type = extfun ef.class_type with [
     <:class_type:< object $_opt:cst$ $list:l$ end >> ->
-    fun arg ->
+    fun arg fallback ->
      let l = l |> flatten_class_signature |> rewrite_class_signature arg loc in
-    Some (Pa_passthru.class_type0 arg <:class_type:< object $_opt:cst$ $list:l$ end >>)
+    Some (fallback arg <:class_type:< object $_opt:cst$ $list:l$ end >>)
   ] } in
 
 let ef = EF.{ (ef) with
               implem = extfun ef.implem with [
     z ->
-    fun arg -> 
-      Some (z |> wrap_implem arg |> flatten_implem |> rewrite_implem arg |> Pa_passthru.implem0 arg)
+    fun arg fallback -> 
+      Some (z |> wrap_implem arg |> flatten_implem |> rewrite_implem arg |> fallback arg)
   ] } in
 
 let ef = EF.{ (ef) with
               interf = extfun ef.interf with [
     z ->
-    fun arg -> 
-      Some (z |> wrap_interf arg |> flatten_interf |> rewrite_interf arg |> Pa_passthru.interf0 arg)
+    fun arg fallback -> 
+      Some (z |> wrap_interf arg |> flatten_interf |> rewrite_interf arg |> fallback arg)
   ] } in
 
   Pa_passthru.(install { name = "pa_dock_doc_comment" ; ef = ef ; pass = Some 0 ; before = [] ; after = [] })

@@ -65,7 +65,7 @@ let ef = EF.{ (ef) with
   | <:expr:< [%test_result: $type:_$ ] >>
   | <:expr:< [%test_pred: $type:_$ ] >>
     as z ->
-    fun arg ->
+    fun arg fallback ->
       Some (rewrite_expr arg z)
   ] ;
             ctyp = extfun ef.ctyp with [
@@ -73,7 +73,7 @@ let ef = EF.{ (ef) with
   | <:ctyp:< [%test_result: $type:_$ ] >>
   | <:ctyp:< [%test_pred: $type:_$ ] >>
     as z ->
-    fun arg ->
+    fun arg fallback ->
       Some (rewrite_ctyp arg z)
   ] } in
 Pa_passthru.(install {

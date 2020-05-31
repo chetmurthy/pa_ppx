@@ -157,23 +157,25 @@ Next we write a function that pattern-matches on an expression
   ;
 
 And finally, we add this function to the "extensible function" for
-expressions.  The type ``EF.t`` is a dispatch table of "extension
-points", one for each important type in the Camlp5 ML AST.  All these
-extension-points start off empty, and we want to add our function to
-the extension-point for expressions.  Then we "install" this table in
-the ``Pa_passthru`` module, giving it a name.  We can specify that it
-comes before or after other rewriters, or specify a pass number
-(0..99), though this is almost never used.  Instead, by specifying
-which rewriters to run before or after, we give ``Pa_passthru`` the
-information to topologically sort all loaded rewriters before running
-them::
+expressions.  Notice the ``fallback`` argument below: if rewriting of
+subtrees of this AST node were needed after our rewrite, we could call
+that to make it happen.  The type ``EF.t`` is a dispatch table of
+"extension points", one for each important type in the Camlp5 ML AST.
+All these extension-points start off empty, and we want to add our
+function to the extension-point for expressions.  Then we "install"
+this table in the ``Pa_passthru`` module, giving it a name.  We can
+specify that it comes before or after other rewriters, or specify a
+pass number (0..99), though this is almost never used.  Instead, by
+specifying which rewriters to run before or after, we give
+``Pa_passthru`` the information to topologically sort all loaded
+rewriters before running them::
 
   value install () = 
   let ef = EF.mk () in 
   let ef = EF.{ (ef) with
             expr = extfun ef.expr with [
     <:expr:< [%here] >> as z ->
-    fun arg ->
+    fun arg fallback ->
       Some (rewrite_expr arg z)
   ] } in
   Pa_passthru.(install { name = "pa_here"; ef =  ef ; pass = None ; before = [] ; after = [] })

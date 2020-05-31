@@ -3,7 +3,7 @@ value debug : ref bool;
 type scratchdata_t = ..;
 module rec EF :
   sig
-    type extension_point α = Extfun.t α (Ctxt.t → option α);
+    type extension_point α = Extfun.t α (Ctxt.t → (Ctxt.t -> α -> α) -> option α);
     type t =
       { ctyp : extension_point MLast.ctyp;
         generic_constructor : extension_point MLast.generic_constructor;

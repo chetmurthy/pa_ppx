@@ -171,7 +171,7 @@ let ef = EF.mk () in
 let ef = EF.{ (ef) with
   case_branch = extfun ef.case_branch with [
     (<:patt< $_$ [@hashrecons $lid:_$ ; ] >>, _, _) as z ->
-    fun arg ->
+    fun arg _ ->
       Some (rewrite_case_branch arg z)
   ] } in
   Pa_passthru.(install { name = "pa_hashrecons" ; ef = ef ; pass = None ; before = [] ; after = [] })

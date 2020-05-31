@@ -161,15 +161,15 @@ end ;
 
 module DC = DerivingConfig ;  
 
-value implem arg x = do {
+value implem arg fallback x = do {
   DC.init arg ;
-  Some (Pa_passthru.implem0 arg x)
+  Some (fallback arg x)
 }
 ;
 
-value interf arg x = do {
+value interf arg fallback x = do {
   DC.init arg ;
-  Some (Pa_passthru.interf0 arg x)
+  Some (fallback arg x)
 }
 ;
 
@@ -188,13 +188,13 @@ value add_deriving_attributes ctxt attrs = do {
 }
 ;
 
-value sig_item arg = fun [
+value sig_item arg fallback = fun [
   <:sig_item:< type $_flag:_$ $list:tdl$ >> as z -> do {
     let td = fst (sep_last tdl) in
     let plugins = add_deriving_attributes arg (uv td.tdAttributes) in
     let dc = DC.get arg in
     let plugins = DC.start_decl loc dc plugins in
-    let rv = Pa_passthru.sig_item0 arg z in
+    let rv = fallback arg z in
     let attributes = DC.end_decl dc in
     let reg_short_form_attributes =
       plugins
@@ -242,13 +242,13 @@ value sig_item arg = fun [
 ]
 ;
 
-value str_item arg = fun [
+value str_item arg fallback = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> as z -> do {
     let td = fst (sep_last tdl) in
     let plugins = add_deriving_attributes arg (uv td.tdAttributes) in
     let dc = DC.get arg in
     let plugins = DC.start_decl loc dc plugins in
-    let rv = Pa_passthru.str_item0 arg z in
+    let rv = fallback arg z in
     let attributes = DC.end_decl dc in
     let reg_short_form_attributes =
       plugins
@@ -304,24 +304,24 @@ let ef = EF.{ (ef) with
             str_item = extfun ef.str_item with [
     <:str_item:< type $_flag:_$ $list:tdl$ >> as z
     when  1 = count is_deriving_attribute (uv (fst (sep_last tdl)).tdAttributes) ->
-    fun arg -> Some (str_item arg z)
+    fun arg fallback -> Some (str_item arg fallback z)
   ] } in
 let ef = EF.{ (ef) with
             sig_item = extfun ef.sig_item with [
     <:sig_item:< type $_flag:_$ $list:tdl$ >> as z
     when  1 = count is_deriving_attribute (uv (fst (sep_last tdl)).tdAttributes) ->
-    fun arg -> Some (sig_item arg z)
+    fun arg fallback -> Some (sig_item arg fallback z)
   ] } in
 
 let ef = EF.{ (ef) with
   ctyp = extfun ef.ctyp with [
     <:ctyp:< $_$ [@ $_attribute:attr$ ] >> ->
-      fun arg -> do {
+      fun arg _ -> do {
         add_current_attribute arg (attr_id attr) ;
         None
       }
   | <:ctyp:< [ $list:l$ ] >> ->
-      fun arg -> do {
+      fun arg _ -> do {
         List.iter (fun [
           (loc, cid, tyl, None, attrs) ->
           List.iter (fun a -> add_current_attribute arg (attr_id a)) (uv attrs)
@@ -335,16 +335,16 @@ let ef = EF.{ (ef) with
 let ef = EF.{ (ef) with
   implem = extfun ef.implem with [
     z ->
-      fun arg ->
-        let rv = implem arg z in do {
+      fun arg fallback ->
+        let rv = implem arg fallback z in do {
         if debug.val then Fmt.(DC.dump stderr (DC.get arg)) else () ;
         rv }
   ] } in
 let ef = EF.{ (ef) with
   interf = extfun ef.interf with [
     z ->
-      fun arg ->
-        let rv = interf arg z in do {
+      fun arg fallback ->
+        let rv = interf arg fallback z in do {
         if debug.val then Fmt.(DC.dump stderr (DC.get arg)) else () ;
         rv }
   ] } in

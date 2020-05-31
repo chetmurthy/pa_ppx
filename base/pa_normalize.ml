@@ -59,29 +59,29 @@ let ef = EF.mk() in
 let ef = EF.{ (ef) with
   implem = extfun ef.implem with [
     z ->
-      fun arg ->
-        Some (z |> flatten_implem arg |> Pa_passthru.implem0 arg)
+      fun arg fallback ->
+        Some (z |> flatten_implem arg |> fallback arg)
   ] } in
 
 let ef = EF.{ (ef) with
   interf = extfun ef.interf with [
     z ->
-      fun arg ->
-        Some (z |> flatten_interf arg |> Pa_passthru.interf0 arg)
+      fun arg fallback ->
+        Some (z |> flatten_interf arg |> fallback arg)
   ] } in
 
 let ef = EF.{ (ef) with
   signature = extfun ef.signature with [
     z ->
-      fun arg ->
-        Some (z |> flatten_signature arg |> Pa_passthru.signature0 arg)
+      fun arg fallback ->
+        Some (z |> flatten_signature arg |> fallback arg)
   ] } in
 
 let ef = EF.{ (ef) with
   structure = extfun ef.structure with [
     z ->
-      fun arg ->
-        Some (z |> flatten_structure arg |> Pa_passthru.structure0 arg)
+      fun arg fallback ->
+        Some (z |> flatten_structure arg |> fallback arg)
   ] } in
 
 Pa_passthru.(install { name = "pa_normalize" ; ef = ef ; pass = Some 99 ; before = [] ; after = [] })

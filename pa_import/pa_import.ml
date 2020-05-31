@@ -445,11 +445,11 @@ let ef = EF.mk() in
 let ef = EF.{ (ef) with
   str_item = extfun ef.str_item with [
     <:str_item:< type $flag:_$ $list:_$ >> as z ->
-      fun arg ->
+      fun arg _ ->
         Some (registered_str_item_extension arg z)
 
   | <:str_item< [%% import: $type:_$ ] $itemattrs:_$ >> as z -> 
-      fun arg ->
+      fun arg _ ->
         Some (registered_str_item_extension arg z)
 
   ] } in
@@ -457,11 +457,11 @@ let ef = EF.{ (ef) with
 let ef = EF.{ (ef) with
   sig_item = extfun ef.sig_item with [
     <:sig_item:< type $flag:_$ $list:_$ >> as z ->
-      fun arg ->
+      fun arg _ ->
         Some (registered_sig_item_extension arg z)
 
   | <:sig_item< [%% import: $type:_$ ] $itemattrs:_$ >> as z -> 
-      fun arg ->
+      fun arg _ ->
         Some (registered_sig_item_extension arg z)
 
   ] } in
@@ -469,7 +469,7 @@ let ef = EF.{ (ef) with
 let ef = EF.{ (ef) with
   module_type = extfun ef.module_type with [
     <:module_type:< [% import: $type:_$ ] >> as z ->
-      fun arg ->
+      fun arg _ ->
         registered_module_type_extension arg z
   ] } in
 Pa_passthru.(install { name = "pa_import" ; ef = ef ; pass = None ; before = [] ; after = [] })

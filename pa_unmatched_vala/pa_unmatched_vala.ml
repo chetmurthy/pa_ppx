@@ -156,12 +156,12 @@ let ef = EF.{ (ef) with
             expr = extfun ef.expr with [
     <:expr:< match $e$ with [ $list:branches$ ] >> as z
     when is_unmatched_vala_branches branches ->
-    fun arg ->
+    fun arg fallback ->
       Some (rewrite_expr arg z)
   | <:expr:< fun [ $list:branches$ ] >> as z
     when is_unmatched_vala_branches branches ->
-    fun arg ->
-      Some (expr0 arg (rewrite_expr arg z))
+    fun arg fallback ->
+      Some (fallback arg (rewrite_expr arg z))
   ] } in
   Pa_passthru.(install { name = "pa_unmatched_vala" ; ef = ef ; pass = None ; before = [] ; after = [] })
 ;

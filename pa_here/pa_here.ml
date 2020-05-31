@@ -22,7 +22,7 @@ let ef = EF.mk () in
 let ef = EF.{ (ef) with
             expr = extfun ef.expr with [
     <:expr:< [%here] >> as z ->
-    fun arg ->
+    fun arg fallback ->
       Some (rewrite_expr arg z)
   ] } in
   Pa_passthru.(install { name = "pa_here"; ef =  ef ; pass = None ; before = [] ; after = [] })

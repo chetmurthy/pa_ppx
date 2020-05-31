@@ -130,28 +130,28 @@ let ef = EF.mk() in
 let ef = EF.{ (ef) with
   implem = extfun ef.implem with [
     z ->
-      fun arg ->
+      fun arg fallback ->
         Some (registered_implem arg z)
   ] } in
 
 let ef = EF.{ (ef) with
   interf = extfun ef.interf with [
     z ->
-      fun arg ->
+      fun arg fallback ->
         Some (registered_interf arg z)
   ] } in
 
 let ef = EF.{ (ef) with
   signature = extfun ef.signature with [
     z ->
-      fun arg ->
+      fun arg fallback ->
         Some (registered_signature arg z)
   ] } in
 
 let ef = EF.{ (ef) with
   structure = extfun ef.structure with [
     z ->
-      fun arg ->
+      fun arg fallback ->
         Some (registered_structure arg z)
   ] } in
 

@@ -58,13 +58,13 @@ let ef = EF.{ (ef) with
             extension_constructor = extfun ef.extension_constructor with [
     <:extension_constructor:< $uid:ci$ of $list:_$ $algattrs:attrs$ >> as z
     when List.exists is_rebind_to_attribute attrs ->
-    fun arg ->
+    fun arg _ ->
       if get arg then
         Some (rebind_extension_constructor arg z)
       else None
   | <:extension_constructor:< $uid:ci$  $algattrs:attrs$ >> as z
     when List.exists is_rebind_to_attribute attrs ->
-    fun arg ->
+    fun arg _ ->
       if get arg then
         Some (rebind_extension_constructor arg z)
       else None
@@ -73,25 +73,25 @@ let ef = EF.{ (ef) with
 let ef = EF.{ (ef) with
   implem = extfun ef.implem with [
     z ->
-      fun arg ->
+      fun arg fallback ->
         let arg = init arg True in
-        Some (Pa_passthru.implem0 arg z)
+        Some (fallback arg z)
   ] } in
 
 let ef = EF.{ (ef) with
   interf = extfun ef.interf with [
     z ->
-      fun arg ->
+      fun arg fallback ->
         let arg = init arg False in
-        Some (Pa_passthru.interf0 arg z)
+        Some (fallback arg z)
   ] } in
 
 let ef = EF.{ (ef) with
   signature = extfun ef.signature with [
     z ->
-      fun arg ->
+      fun arg fallback ->
         let arg = update arg False in
-        Some (Pa_passthru.signature0 arg z)
+        Some (fallback arg z)
   ] } in
 
   Pa_passthru.(install { name = "pa_rebindto"; ef =  ef ; pass = None ; before = [] ; after = ["pa_deriving"] })
