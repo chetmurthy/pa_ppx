@@ -7,7 +7,7 @@ our $destdir = shift @ARGV ;
 
 print <<"EOF";
 # Specifications for the "pa_ppx" preprocessor:
-requires = "rresult,fmt"
+requires = "rresult,fmt,sexplib0"
 version = "$version"
 description = "pa_ppx runtime support"
 
