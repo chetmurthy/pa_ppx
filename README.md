@@ -37,31 +37,7 @@ unmodified; anything else is a bug with these packages**.
 
 # Installation
 
-This code depends on ocaml and a pre-release version of camlp5.
-
-Ocaml: version >= 4.10.0 -- install in the usual way using `opam create_switch 4.10.0` (etc)
-
-Camlp5 pre-8.00: [Camlp5](https://github.com/camlp5/camlp5/tree/pre-8.00)
-
-Eventually this version of Camlp5 will get released, and at that
-point, you'll be able to install it with opam.  For now, you need
-to build it in the usual way on the commandline
-(documented over at that camlp5 repo, but here's a quick synopsis):
-```
-make clean && ./configure -libdir `dirname $(ocamlc -where)` && make -j32 all
-make install
-```
-
-pa_ppx (this package):
-
-```
-make && make install
-```
-
-and you can run tests (some of them fail)
-```
-make test
-```
+Installation instructions can be found [in the documentation](./doc/_build/installation.rst)
 
 # Organization of Findlib packages
 

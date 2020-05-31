@@ -28,7 +28,7 @@ PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.make
 PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving_yojson
 PPXPACKAGES:=$(PPXPACKAGES),ppx_here
 
-PAPACKAGES:=camlp5.pa_o
+PAPACKAGES:=camlp5.pa_o.link
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)utils
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)runtime
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)dock.link
@@ -108,7 +108,7 @@ test_ppx_yojson.ppx.byte: test_ppx_yojson.ml testutil.cmo testutil2.cmo stuff.cm
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES),ppx_sexp_conv -linkall -linkpkg testutil.cmo testutil2.cmo stuff.cmo test_self_import.cmo test_ppx_yojson.ppx.ml -o $@
 
 test_passthru_hashrecons.byte: test_passthru_hashrecons.ml testutil.cmo testutil2.cmo hCPassthru.cmo
-	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),camlp5.pa_o,camlp5.pr_o,$(PACKAGEPREFIX)base.link,$(PACKAGEPREFIX)hashrecons \
+	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),camlp5.pa_o.link,camlp5.pr_o.link,$(PACKAGEPREFIX)base.link,$(PACKAGEPREFIX)hashrecons \
 	-linkall -linkpkg -syntax camlp5o testutil.cmo testutil2.cmo hCPassthru.cmo $< -o $@
 
 hCPassthru.cmo: hCPassthru.ml
