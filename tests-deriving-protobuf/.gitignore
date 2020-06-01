@@ -1,0 +1,5 @@
+test_ppx_yojson.pappx.ml
+test_ppx_yojson.ppx.ml
+*.ppo
+*.ppx.ml
+*.pappx.ml
