@@ -38,3 +38,4 @@ this project as an experiment to prove the following thesis:
    tutorial
    builtins
    build-systems
+   faq
