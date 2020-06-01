@@ -1,9 +1,9 @@
-========
-Tutorial
-========
+==========
+ Tutorial
+==========
 
 Using PPX Rewriters from Pa_ppx
--------------------------------
+===============================
 
 To use PPX Rewriters from Pa_ppx, let's start with a really simple file that works with the standard PPX rewriters (simple_show.ml)::
 
@@ -40,7 +40,7 @@ and ``inline_test``) because ``dune`` is adding those
 under-the-covers, and these instructions are all Makefile-friendly.
 
 Writing new PPX Rewriters upon Pa_ppx
--------------------------------------
+=====================================
 
 In this section, we'll describe at a high level the process of PPX
 rewriter execution in ``Pa_ppx``, and how that results in the process
@@ -98,7 +98,7 @@ rewriters).
 
 
 An Example PPX Rewriter based on Pa_ppx
----------------------------------------
+=======================================
 
 NOTE WELL: All code in this section is written in "revised" syntax.
 Much of this will work in "official" syntax, but since Camlp5 itself
@@ -187,4 +187,102 @@ An example of a rewriter that specifies a "before" constraint would be
 that a type can be imported, and then have type-based code derived
 from that imported type.
 
+Troubleshooting PPX Rewriter Invocations
+========================================
+
+Everybody eventually uses a PPX rewriter that doesn't produce the
+results they desire.  There are two ways of debugging that issue:
+
+1. using ``not-ocamlfind preprocess``
+2. using the toplevel
+
+Debugging using ``not-ocamlfind preprocess``
+--------------------------------------------
+
+Suppose that the ``ocamlfind ocamlc`` invocation above didn't produce
+the results we desired.  For instance, suppose that we forgot the
+``-syntax camlp5o``::
+
+  ocamlfind ocamlc -package pa_ppx.runtime,pa_ppx.deriving_plugins.show -c simple_show.ml
+  File "simple_show.ml", line 5, characters 18-22:
+  5 |   print_string ([%show: a1] (5,6))
+                      ^^^^
+  Error: Uninterpreted extension 'show'.
+
+We could start to debug the preprocessing process by using ``not-ocamlfind preprocess``::
+
+  not-ocamlfind preprocess -package pa_ppx.runtime,pa_ppx.deriving_plugins.show simple_show.ml
+  ppx_execute: ocamlfind not-ocamlfind/papr_official.exe -binary-output -impl simple_show.ml /tmp/simple_show4d8e59
+  format output file: ocamlfind not-ocamlfind/papr_official.exe -binary-input -impl /tmp/simple_show4d8e59
+  type a1 = (int * int)[@@deriving show]
+  let _ = print_string (([%show :a1]) (5, 6))
+
+This tells us we didn't actually invoke camlp5 (or any PPX rewriters).
+A different kind of information is given by adding ``-verbose``::
+
+  ocamlfind ocamlc -verbose -package pa_ppx.runtime,pa_ppx.deriving_plugins.show -c simple_show.ml
+  Effective set of compiler predicates: pkg_result,pkg_rresult,pkg_seq,pkg_stdlib-shims,pkg_fmt,pkg_sexplib0,pkg_pa_ppx.runtime,pkg_pa_ppx.deriving_plugins.show,autolink,byte
+
+This also tells us that camlp5 isn't being invoked (no mention of
+"preprocessor predicates"), and this would tell us that we needed to
+add ``-syntax camlp5o`` (and maybe the ``camlp5`` package)::
+
+  not-ocamlfind preprocess -package pa_ppx.runtime,pa_ppx.deriving_plugins.show -syntax camlp5o simple_show.ml
+
+will produce binary output, because we didn't specify what syntax we
+wanted to print (official or revised); adding ``camlp5.pr_o`` will fix that::
+
+  not-ocamlfind preprocess -package pa_ppx.runtime,pa_ppx.deriving_plugins.show,camlp5.pr_o -syntax camlp5o simple_show.ml
+
+Basically, any ``ocamlfind ocamlc`` command can be converted to
+``not-ocamlfind preprocess`` by removing any flags/arguments that are
+meant only for ocamlc (so: linking, warnings, ``-c``, etc) and adding
+a camlp5 printing package (so: ``camlp5.pr_o`` or ``camlp5.pr_r``).
+
+Debugging using the ocaml toplevel
+----------------------------------
+
+The other way to debug a ``Pa_ppx`` rewriter is via the Ocaml
+toplevel.  Camlp5 and ``pa_ppx`` packages can be loaded into the
+toplevel in the usual way.
+
+1. Load supporting modules::
+
+     #use "topfind.camlp5";;
+     #require "camlp5.pa_o";;
+     #require "camlp5.pr_o";;
+     #directory "../tests-ounit2";;
+
+     (* these are needed by this example, not by pa_ppx *)
+     #require "compiler-libs.common" ;;
+     #require "bos";;
+
+     #load "../tests-ounit2/papr_util.cmo";;
+     open Papr_util ;;
+
+2. Load the PPX rewriter::
+
+     #require "pa_ppx.deriving_plugins.show";;
+
+3. And run it on a file::
+
+     "simple_show.ml" |> Fpath.v |> Bos.OS.File.read
+     |> Rresult.R.get_ok |> PAPR.Implem.pa1
+     |> PAPR.Implem.pr |> print_string ;;
+     type a1 = int * int[@@deriving_inline show]let rec (pp_a1 : a1 Fmt.t) =
+       fun (ofmt : Format.formatter) arg ->
+	 (fun (ofmt : Format.formatter) (v0, v1) ->
+	    let open Pa_ppx_runtime.Runtime.Fmt in
+	    pf ofmt "(@[%a,@ %a@])"
+	      (fun ofmt arg ->
+		 let open Pa_ppx_runtime.Runtime.Fmt in pf ofmt "%d" arg)
+	      v0
+	      (fun ofmt arg ->
+		 let open Pa_ppx_runtime.Runtime.Fmt in pf ofmt "%d" arg)
+	      v1)
+	   ofmt arg[@@ocaml.warning "-39"] [@@ocaml.warning "-33"]
+     and (show_a1 : a1 -> Stdlib.String.t) =
+       fun arg -> Format.asprintf "%a" pp_a1 arg[@@ocaml.warning "-39"] [@@ocaml.warning "-33"][@@@end]let _ = print_string ((fun arg -> Format.asprintf "%a" pp_a1 arg) (5, 6))- : unit = ()
+     # 
+     
 .. container:: trailer

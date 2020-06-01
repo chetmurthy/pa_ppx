@@ -8,4 +8,5 @@ Welcome to Pa_ppx's documentation!
    intro
    installation
    tutorial
+   builtins
    build-systems

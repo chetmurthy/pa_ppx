@@ -39,7 +39,7 @@ value class_infos_map arg ~{attributes} f
 ;
 
 value rec ctyp (arg : Ctxt.t)  x =
-  match Extfun.apply arg.Ctxt.ef.EF.ctyp x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.ctyp x arg ctyp0 with [
     Some x -> x
   | None -> ctyp0 arg x
   | exception Extfun.Failure -> ctyp0 arg x
@@ -105,7 +105,7 @@ and ctyp0 arg =
   self0
 
 and generic_constructor arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.generic_constructor x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.generic_constructor x arg generic_constructor0 with [
     Some x -> x
   | None -> generic_constructor0 arg x
   | exception Extfun.Failure -> generic_constructor0 arg x
@@ -120,7 +120,7 @@ and poly_variant arg =
   | PvInh loc x1[@hashrecons z;] →
       PvInh loc (ctyp arg x1)[@hashrecons z;] ]
 and patt arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.patt x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.patt x arg patt0 with [
     Some x -> x
   | None -> patt0 arg x
   | exception Extfun.Failure -> patt0 arg x
@@ -192,7 +192,7 @@ and patt0 arg =
     ] in
   self0
 and expr arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.expr x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.expr x arg expr0 with [
     Some x -> x
   | None -> expr0 arg x
   | exception Extfun.Failure -> expr0 arg x
@@ -301,7 +301,7 @@ and expr0 arg =
   self0
 
 and case_branch arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.case_branch x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.case_branch x arg case_branch0 with [
     Some x -> x
   | None -> case_branch0 arg x
   | exception Extfun.Failure -> case_branch0 arg x
@@ -310,7 +310,7 @@ and case_branch0 arg = fun (x1, x2, x3) →
       (patt arg x1, vala_map (option_map (expr arg)) x2, expr arg x3)
 
 and module_type arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.module_type x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.module_type x arg module_type0 with [
     Some x -> x
   | None -> module_type0 arg x
   | exception Extfun.Failure -> module_type0 arg x
@@ -345,7 +345,7 @@ and module_type0 arg =
     ] in
     self0
 and sig_item arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.sig_item x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.sig_item x arg sig_item0 with [
     Some x -> x
   | None -> sig_item0 arg x
   | exception Extfun.Failure -> sig_item0 arg x
@@ -404,7 +404,7 @@ and sig_item0 arg =
     ] in
   self0
 and with_constr arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.with_constr x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.with_constr x arg with_constr0 with [
     Some x -> x
   | None -> with_constr0 arg x
   | exception Extfun.Failure -> with_constr0 arg x
@@ -420,7 +420,7 @@ and with_constr0 arg =
   | WcTys loc x1 x2 x3[@hashrecons z;] →
       WcTys loc (vala_map (longid_lident arg) x1) x2 (ctyp arg x3)[@hashrecons z;] ]
 and longid arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.longid x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.longid x arg longid0 with [
     Some x -> x
   | None -> longid0 arg x
   | exception Extfun.Failure -> longid0 arg x
@@ -438,7 +438,7 @@ and longid0 arg =
     ] in
   self0
 and module_expr arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.module_expr x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.module_expr x arg module_expr0 with [
     Some x -> x
   | None -> module_expr0 arg x
   | exception Extfun.Failure -> module_expr0 arg x
@@ -471,7 +471,7 @@ and module_expr0 arg =
     ] in
     self0
 and str_item arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.str_item x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.str_item x arg str_item0 with [
     Some x -> x
   | None -> str_item0 arg x
   | exception Extfun.Failure -> str_item0 arg x
@@ -535,7 +535,7 @@ and str_item0 arg =
     ] in
   self0
 and type_decl arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.type_decl x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.type_decl x arg type_decl0 with [
     Some x -> x
   | None -> type_decl0 arg x
   | exception Extfun.Failure -> type_decl0 arg x
@@ -552,7 +552,7 @@ and type_decl0 arg
          tdCon;
    tdAttributes = attributes arg tdAttributes}[@hashrecons z;]
 and type_extension arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.type_extension x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.type_extension x arg type_extension0 with [
     Some x -> x
   | None -> type_extension0 arg x
   | exception Extfun.Failure -> type_extension0 arg x
@@ -567,7 +567,7 @@ and type_extension0 arg
    teECs = vala_map (List.map (extension_constructor arg)) teECs ;
    teAttributes = attributes arg teAttributes}[@hashrecons z;]
 and extension_constructor arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.extension_constructor x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.extension_constructor x arg extension_constructor0 with [
     Some x -> x
   | None -> extension_constructor0 arg x
   | exception Extfun.Failure -> extension_constructor0 arg x
@@ -577,7 +577,7 @@ and extension_constructor0 arg = fun [
   | EcRebind x1 x2 x3 -> EcRebind x1 x2 (attributes arg x3)
 ]
 and class_type arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.class_type x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.class_type x arg class_type0 with [
     Some x -> x
   | None -> class_type0 arg x
   | exception Extfun.Failure -> class_type0 arg x
@@ -608,7 +608,7 @@ and class_type0 arg =
     ] in
   self0
 and class_sig_item arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.class_sig_item x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.class_sig_item x arg class_sig_item0 with [
     Some x -> x
   | None -> class_sig_item0 arg x
   | exception Extfun.Failure -> class_sig_item0 arg x
@@ -636,7 +636,7 @@ and class_sig_item0 arg =
     ] in
   self0
 and class_expr arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.class_expr x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.class_expr x arg class_expr0 with [
     Some x -> x
   | None -> class_expr0 arg x
   | exception Extfun.Failure -> class_expr0 arg x
@@ -674,7 +674,7 @@ and class_expr0 arg =
     ] in
   self0
 and class_str_item arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.class_str_item x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.class_str_item x arg class_str_item0 with [
     Some x -> x
   | None -> class_str_item0 arg x
   | exception Extfun.Failure -> class_str_item0 arg x
@@ -710,7 +710,7 @@ and longid_lident arg (x1, x2) =
     (option_map (longid arg) x1, x2)
 and attribute arg (x : attribute) = vala_map (attribute_body arg) x
 and attribute_body arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.attribute_body x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.attribute_body x arg attribute_body0 with [
     Some x -> x
   | None -> attribute_body0 arg x
   | exception Extfun.Failure -> attribute_body0 arg x
@@ -730,13 +730,21 @@ and attribute_body0 arg (s, p) =
 and attributes_no_anti arg x1 = List.map (attribute arg) x1
 and attributes arg x1 = vala_map (attributes_no_anti arg) x1
 and implem arg x =
-  match Extfun.apply arg.Ctxt.ef.EF.implem x arg with [
+  match Extfun.apply arg.Ctxt.ef.EF.implem x arg implem0 with [
     Some x -> x
   | None -> implem0 arg x
   | exception Extfun.Failure -> implem0 arg x
   ]
 and implem0 arg (l, status) =
     (List.map (fun (si, loc) -> (str_item arg si, loc)) l, status)
+and interf arg x =
+  match Extfun.apply arg.Ctxt.ef.EF.interf x arg interf0 with [
+    Some x -> x
+  | None -> interf0 arg x
+  | exception Extfun.Failure -> interf0 arg x
+  ]
+and interf0 arg (l, status) =
+    (List.map (fun (si, loc) -> (sig_item arg si, loc)) l, status)
 ;
 
 value onepass (ctxt,arg) (na, ef) = do {

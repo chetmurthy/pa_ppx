@@ -41,7 +41,7 @@ PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here
 
 ALL_PACKAGES := $(PACKAGES),$(PAPACKAGES),$(PPXPACKAGES)
 
-CMO=
+CMO=papr_util.cmo
 CMI := $(CMO:.cmo=.cmi)
 CMX := $(CMO:.cmo=.cmx)
 

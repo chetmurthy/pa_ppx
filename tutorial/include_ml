@@ -1,0 +1,23 @@
+#use "topfind.camlp5";;
+#require "camlp5.pa_o";;
+#require "camlp5.pr_o";;
+#require "pa_ppx.deriving_plugins.show";;
+
+(* these are needed by this example, not by pa_ppx *)
+#require "compiler-libs.common" ;;
+#require "bos";;
+
+#directory "../tests-ounit2";;
+#load "../tests-ounit2/papr_util.cmo";;
+open Papr_util ;;
+
+"simple_show.ml" |> Fpath.v |> Bos.OS.File.read
+  |> Rresult.R.get_ok |> PAPR.Implem.pa1
+  |> PAPR.Implem.pr |> print_string ;;
+
+(*
+;;; Local Variables: ***
+;;; mode:tuareg ***
+;;; End: ***
+
+*)
