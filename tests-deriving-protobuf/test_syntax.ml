@@ -21,10 +21,10 @@ type b = bool [@@deriving protobuf]
 let test_bool ctxt =
   assert_roundtrip string_of_bool b_to_protobuf b_from_protobuf
                    "\x08\x01" true
-#ifndef PAPPX
 
 type i1  = int                       [@@deriving protobuf]
 type i2  = int   [@encoding `zigzag] [@@deriving protobuf]
+#ifndef PAPPX
 type i3  = int   [@encoding `bits32] [@@deriving protobuf]
 type i4  = int   [@encoding `bits64] [@@deriving protobuf]
 type il1 = int32 [@encoding `varint] [@@deriving protobuf]

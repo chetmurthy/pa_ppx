@@ -53,9 +53,16 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< _ >> -> failwith "cannot derive yojson for type <<_>>"
 | <:ctyp:< Yojson.Safe.t >> -> <:expr< fun x -> x >>
 | <:ctyp:< unit >> -> <:expr< $runtime_module$.Yojson.unit_to_yojson >>
-| <:ctyp:< int >> -> <:expr< $runtime_module$.Yojson.int_to_yojson >>
+| <:ctyp:< int >> ->
+  <:expr< fun v encoder ->
+((let open! ((Pa_ppx_runtime.Runtime)[@ocaml.warning "-A";]) in
+      let _alias = v in
+      do { Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+       Protobuf.Encoder.varint (Int64.of_int _alias) encoder})
+  [@ocaml.warning "-A";])
+ >>
 | <:ctyp:< bool >> ->
- <:expr<
+  <:expr<
   fun v encoder -> (let open! ((Pa_ppx_runtime.Runtime)[@ocaml.warning "-A";]) in
       let _alias = v in do {
         Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
@@ -81,9 +88,6 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
-
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "to_yojson" ->
-    e
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
 
@@ -406,7 +410,33 @@ value of_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< Protobuf.Safe.t >> -> <:expr< fun x -> Result.Ok x >>
 | <:ctyp:< unit >> -> <:expr< $runtime_module$.Protobuf.unit_of_protobuf $str:msg$ >>
-| <:ctyp:< int >> -> <:expr< $runtime_module$.Protobuf.int_of_protobuf $str:msg$ >>
+| <:ctyp:< int >> -> 
+  <:expr<  fun decoder ->
+  ((let open! ((Pa_ppx_runtime.Runtime)[@ocaml.warning "-A";]) in
+      let _alias = ref None in
+      let rec read () =
+        match Protobuf.Decoder.key decoder with [
+          Some (1, Protobuf.Varint) ->
+            do {_alias.val :=
+               (Some
+                  (Protobuf.Decoder.int_of_int64 "Test_syntax.ml.ppx.i1"
+                     (Protobuf.Decoder.varint decoder)));
+             read () }
+        | Some (1, kind) ->
+            raise
+              (let open Protobuf.Decoder in
+                 Failure (Unexpected_payload ("Test_syntax.ml.ppx.i1", kind)))
+        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
+        | None -> () ] in do {
+      read ();
+      (match _alias.val with [
+        None ->
+           raise
+             (let open Protobuf.Decoder in
+                Failure (Missing_field "Test_syntax.ml.ppx.i1"))
+       | Some v -> v ]) })
+  [@ocaml.warning "-A";])
+  >>
 | <:ctyp:< bool >> ->
   <:expr< fun decoder ->
 ((let open! ((Pa_ppx_runtime.Runtime)[@ocaml.warning "-A";]) in
@@ -463,9 +493,6 @@ value of_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
-
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "of_protobuf" ->
-    e
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
 
@@ -824,37 +851,37 @@ end
 ;
 
 value str_item_funs arg td =
-  (if Ctxt.is_plugin_name arg "to_protobuf" || Ctxt.is_plugin_name arg "protobuf" then
+  (if Ctxt.is_plugin_name arg "protobuf" then
      To.str_item_funs arg td
    else []) @
-  (if Ctxt.is_plugin_name arg "of_protobuf" || Ctxt.is_plugin_name arg "protobuf" then
+  (if Ctxt.is_plugin_name arg "protobuf" then
      Of.str_item_funs arg td
    else [])
 ;
 
 value sig_items arg td =
-  (if Ctxt.is_plugin_name arg "to_protobuf" || Ctxt.is_plugin_name arg "protobuf" then
+  (if Ctxt.is_plugin_name arg "protobuf" then
      To.sig_items arg td
   else []) @
-  (if Ctxt.is_plugin_name arg "of_protobuf" || Ctxt.is_plugin_name arg "protobuf" then
+  (if Ctxt.is_plugin_name arg "protobuf" then
      Of.sig_items arg td
    else [])
 ;
 
 value extend_sig_items arg td =
-  (if Ctxt.is_plugin_name arg "to_protobuf" || Ctxt.is_plugin_name arg "protobuf" then
+  (if Ctxt.is_plugin_name arg "protobuf" then
      To.extend_sig_items arg td
   else []) @
-  (if Ctxt.is_plugin_name arg "of_protobuf" || Ctxt.is_plugin_name arg "protobuf" then
+  (if Ctxt.is_plugin_name arg "protobuf" then
      Of.extend_sig_items arg td
    else [])
 ;
 
 value extend_str_items arg td =
-  (if Ctxt.is_plugin_name arg "to_protobuf" || Ctxt.is_plugin_name arg "protobuf" then
+  (if Ctxt.is_plugin_name arg "protobuf" then
      To.extend_str_items arg td
   else []) @
-  (if Ctxt.is_plugin_name arg "of_protobuf" || Ctxt.is_plugin_name arg "protobuf" then
+  (if Ctxt.is_plugin_name arg "protobuf" then
      Of.extend_str_items arg td
    else [])
 ;
@@ -950,4 +977,5 @@ Pa_deriving.(Registry.add PI.{
 ; sig_item = sig_item_gen_protobuf
 })
 ;
+
 
