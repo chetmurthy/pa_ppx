@@ -1,4 +1,8 @@
+#ifdef PAPPX
+let filemod = "Test_syntax.ml"
+#else
 let filemod = "Test_syntax.ml.ppx"
+#endif
 open OUnit2
 
 type uint32 = Uint32.t
@@ -17,6 +21,7 @@ type b = bool [@@deriving protobuf]
 let test_bool ctxt =
   assert_roundtrip string_of_bool b_to_protobuf b_from_protobuf
                    "\x08\x01" true
+#ifndef PAPPX
 
 type i1  = int                       [@@deriving protobuf]
 type i2  = int   [@encoding `zigzag] [@@deriving protobuf]
@@ -395,3 +400,4 @@ let suite = "Test syntax" >::: [
   ]
 let _ =
   if not !Sys.interactive then run_test_tt_main suite
+#endif

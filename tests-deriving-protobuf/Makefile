@@ -14,7 +14,7 @@ LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,sexplib,oUnit,uint
+PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,sexplib,oUnit,uint,ppx_deriving_protobuf.runtime
 
 PPXPACKAGES:=ppx_import
 PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.show
@@ -36,6 +36,7 @@ PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)dock.link
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.protobuf
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)hashrecons
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here
 
@@ -47,8 +48,7 @@ CMX := $(CMO:.cmo=.cmx)
 
 TESTS= \
 	test_syntax.ppx.byte \
-
-#	test_syntax.byte \
+	test_syntax.byte \
 
 
 all: $(CMO) $(TESTS)
@@ -58,7 +58,7 @@ test: $(TESTS:.byte=)
 % : %.byte
 	./$<
 
-test_%.byte: test_%.ml testutil.cmo testutil2.cmo
+test_%.byte: test_%.ml
 	cppo -D PAPPX $< > $<.pappx.ml
 	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),$(PAPACKAGES),camlp5.pr_o \
 	-syntax camlp5o $<.pappx.ml > $<.pappx.ppo

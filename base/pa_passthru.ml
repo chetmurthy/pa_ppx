@@ -13,7 +13,7 @@ open Asttools;
 open MLast;
 open Ppxutil ;
 
-value debug = ref False ;
+value debug = ref True ;
 
 value class_infos_map arg ~{attributes} f x =
   {ciLoc = x.ciLoc; ciVir = x.ciVir;

@@ -15,9 +15,12 @@ SYSDIRS= util-lib runtime base pa_unmatched_vala \
 
 TESTDIRS= tests-ounit2 tests-inline tests-expect our-tests-inline
 
-all:
-	set -e; for i in $(SYSDIRS) $(TESTDIRS); do cd $$i; $(MAKE) all; cd ..; done
+all: sys
+	set -e; for i in $(TESTDIRS); do cd $$i; $(MAKE) all; cd ..; done
 	$(MAKE) camlp5o.pa_ppx camlp5o.pa_ppx.opt
+
+sys:
+	set -e; for i in $(SYSDIRS); do cd $$i; $(MAKE) all; cd ..; done
 
 doc: all
 	set -e; for i in $(SYSDIRS); do cd $$i; $(MAKE) doc; cd ..; done

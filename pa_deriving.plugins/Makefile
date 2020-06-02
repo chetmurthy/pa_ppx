@@ -25,6 +25,7 @@ ML=\
 	pa_deriving_make.ml \
 	pa_deriving_yojson.ml \
 	pa_deriving_sexp.ml \
+	pa_deriving_protobuf.ml \
 
 CMO := $(ML:.ml=.cmo)
 CMI := $(ML:.ml=.cmi)
