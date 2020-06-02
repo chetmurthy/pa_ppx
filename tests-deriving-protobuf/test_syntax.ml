@@ -369,9 +369,11 @@ end
 module Collection(Elem:Elem) = struct
   type t = Elem.t list [@@deriving protobuf]
 end
+#endif
 
 let suite = "Test syntax" >::: [
     "test_bool"           >:: test_bool;
+#ifndef PAPPX
     "test_ints"           >:: test_ints;
     "test_uints"          >:: test_uints;
     "test_floats"         >:: test_floats;
@@ -397,7 +399,8 @@ let suite = "Test syntax" >::: [
     "test_packed"         >:: test_packed;
     "test_errors"         >:: test_errors;
     "test_skip"           >:: test_skip;
+#endif
   ]
 let _ =
   if not !Sys.interactive then run_test_tt_main suite
-#endif
+
