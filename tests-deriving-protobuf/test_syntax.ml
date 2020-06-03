@@ -24,7 +24,6 @@ let test_bool ctxt =
 
 type i1  = int                       [@@deriving protobuf]
 type i2  = int   [@encoding `zigzag] [@@deriving protobuf]
-#ifndef PAPPX
 type i3  = int   [@encoding `bits32] [@@deriving protobuf]
 type i4  = int   [@encoding `bits64] [@@deriving protobuf]
 type il1 = int32 [@encoding `varint] [@@deriving protobuf]
@@ -63,6 +62,7 @@ let test_ints ctxt =
   assert_roundtrip Int64.to_string iL4_to_protobuf iL4_from_protobuf
                    "\x09\x2c\x01\x00\x00\x00\x00\x00\x00" 300L
 
+#ifndef PAPPX
 type ul1 = uint32 [@encoding `varint] [@@deriving protobuf]
 type ul2 = uint32 [@encoding `zigzag] [@@deriving protobuf]
 type ul3 = Uint32.t                   [@@deriving protobuf]
@@ -373,8 +373,8 @@ end
 
 let suite = "Test syntax" >::: [
     "test_bool"           >:: test_bool;
-#ifndef PAPPX
     "test_ints"           >:: test_ints;
+#ifndef PAPPX
     "test_uints"          >:: test_uints;
     "test_floats"         >:: test_floats;
     "test_string"         >:: test_string;
