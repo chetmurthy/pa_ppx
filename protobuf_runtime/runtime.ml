@@ -7,187 +7,187 @@ module Stdlib = Stdlib ;
 module Protobuf = Protobuf ;
 
 module Encode = struct
-value int__varint = fun v encoder ->
+value int__varint = fun key v encoder ->
 ((      let _alias = v in
-      do { Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+      do { Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.varint (Int64.of_int _alias) encoder}) (*  *)
   [@ocaml.warning "-A";]) ;
 
-value bool__varint = fun v encoder ->
+value bool__varint = fun key v encoder ->
       let _alias = v in do {
-        Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+        Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
         Protobuf.Encoder.varint (if _alias then 1L else 0L) encoder
       }
   [@ocaml.warning "-A";] ;
 
-value int__zigzag v encoder =
+value int__zigzag key v encoder =
   (
       let _alias = v in do
-      {Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+      {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.zigzag (Int64.of_int _alias) encoder}
   [@ocaml.warning "-A";]) ;
 
-value int__bits32 msg v encoder =
+value int__bits32 msg key v encoder =
   ((
       let _alias = v in
-      do {Protobuf.Encoder.key (1, Protobuf.Bits32) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bits32) encoder;
        Protobuf.Encoder.bits32
          (Protobuf.Encoder.int32_of_int msg _alias)
          encoder})
   [@ocaml.warning "-A";]) ;
 
-value int__bits64 v encoder =
+value int__bits64 key v encoder =
   ((
       let _alias = v in
-      do {Protobuf.Encoder.key (1, Protobuf.Bits64) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bits64) encoder;
        Protobuf.Encoder.bits64 (Int64.of_int _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value int32__varint _value encoder =
+value int32__varint key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.varint (Int64.of_int32 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
 (* TODO: There seems to be a bug here with the key *)
-value int32__zigzag _value encoder =
+value int32__zigzag key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.zigzag (Int64.of_int32 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value int32__bits32 _value encoder =
+value int32__bits32 key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Bits32) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bits32) encoder;
        Protobuf.Encoder.bits32 _alias encoder})
   [@ocaml.warning "-A";]) ;
 
-value int32__bits64 _value encoder =
+value int32__bits64 key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Bits64) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bits64) encoder;
        Protobuf.Encoder.bits64 (Int64.of_int32 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value int64__varint _value encoder =
+value int64__varint key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.varint _alias encoder})
   [@ocaml.warning "-A";]) ;
 
-value int64__zigzag _value encoder =
+value int64__zigzag key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.zigzag _alias encoder})
   [@ocaml.warning "-A";]) ;
 
-value int64__bits32 msg _value encoder =
+value int64__bits32 msg key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Bits32) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bits32) encoder;
        Protobuf.Encoder.bits32
          (Protobuf.Encoder.int32_of_int64 msg _alias)
          encoder})
   [@ocaml.warning "-A";]) ;
 
-value int64__bits64 _value encoder =
+value int64__bits64 key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Bits64) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bits64) encoder;
        Protobuf.Encoder.bits64 _alias encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint32__varint _value encoder =
+value uint32__varint key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.varint (Int64.of_int32 (Uint32.to_int32 _alias))
          encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint32__zigzag _value encoder =
+value uint32__zigzag key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.zigzag (Int64.of_int32 (Uint32.to_int32 _alias))
          encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint32__bits32 _value encoder =
+value uint32__bits32 key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Bits32) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bits32) encoder;
        Protobuf.Encoder.bits32 (Uint32.to_int32 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint32__bits64 _value encoder =
+value uint32__bits64 key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Bits64) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bits64) encoder;
        Protobuf.Encoder.bits64 (Int64.of_int32 (Uint32.to_int32 _alias))
          encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint64__varint _value encoder =
+value uint64__varint key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.varint (Uint64.to_int64 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint64__zigzag _value encoder =
+value uint64__zigzag key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.zigzag (Uint64.to_int64 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint64__bits32 msg _value encoder =
+value uint64__bits32 msg key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Bits32) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bits32) encoder;
        Protobuf.Encoder.bits32
          (Protobuf.Encoder.int32_of_int64 msg
             (Uint64.to_int64 _alias)) encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint64__bits64 _value encoder =
+value uint64__bits64 key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Bits64) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bits64) encoder;
        Protobuf.Encoder.bits64 (Uint64.to_int64 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value float__bits32 _value encoder =
+value float__bits32 key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Bits32) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bits32) encoder;
        Protobuf.Encoder.bits32 (Int32.bits_of_float _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value float__bits64 _value encoder =
+value float__bits64 key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Bits64) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bits64) encoder;
        Protobuf.Encoder.bits64 (Int64.bits_of_float _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value string__bytes _value encoder =
+value string__bytes key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Bytes) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bytes) encoder;
        Protobuf.Encoder.bytes (Bytes.of_string _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value bytes__bytes _value encoder =
+value bytes__bytes key _value encoder =
   ((
       let _alias = _value in
-      do {Protobuf.Encoder.key (1, Protobuf.Bytes) encoder;
+      do {Protobuf.Encoder.key (key, Protobuf.Bytes) encoder;
        Protobuf.Encoder.bytes _alias encoder})
   [@ocaml.warning "-A";]) ;
 

@@ -23,6 +23,7 @@ let test_bool ctxt =
                    "\x08\x01" true
 
 type i1  = int                       [@@deriving protobuf]
+type i1'  = int [@key 2]             [@@deriving protobuf]
 type i2  = int   [@encoding `zigzag] [@@deriving protobuf]
 type i3  = int   [@encoding `bits32] [@@deriving protobuf]
 type i4  = int   [@encoding `bits64] [@@deriving protobuf]
@@ -37,6 +38,10 @@ type iL4 = Int64.t                   [@@deriving protobuf]
 let test_ints ctxt =
   assert_roundtrip string_of_int i1_to_protobuf i1_from_protobuf
                    "\x08\xac\x02" 300;
+(*
+  assert_roundtrip string_of_int i1'_to_protobuf i1'_from_protobuf
+                   "\x08\xac\x02" 300;
+*)
   assert_roundtrip string_of_int i2_to_protobuf i2_from_protobuf
                    "\x08\xac\x02" 150;
   assert_roundtrip string_of_int i3_to_protobuf i3_from_protobuf

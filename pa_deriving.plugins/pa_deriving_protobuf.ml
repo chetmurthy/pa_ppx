@@ -35,7 +35,9 @@ module To = struct
 module PM = ParamMap(struct value arg_ctyp_f loc pty = <:ctyp< $pty$ -> Pa_ppx_protobuf.Runtime.Protobuf.Encoder.t -> unit >> ; end) ;
 
 type encoding_t = [ Varint | Zigzag | Bits32 | Bits64 ] ;
-type attrmod_t = [ Nobuiltin | Encoding of encoding_t ] ;
+type attrmod_t = { nobuiltin: bool ; encoding : option encoding_t ; key : option int } ;
+value mt_attrmod = { nobuiltin = False ; encoding = None ; key = None } ;
+value fmt_attrmod_key a = match a.key with [ None -> "1" | Some n -> string_of_int n ] ;
 
 value to_protobuf_fname arg tyname =
   tyname^"_to_protobuf"
@@ -45,9 +47,9 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   let runtime_module =
     let loc = loc_of_ctyp ty0 in
     Base.expr_runtime_module <:expr< Runtime >> in
-  let rec fmtrec ?{coercion} ?{attrmod=None} = fun [
+  let rec fmtrec ?{coercion} ?{attrmod=mt_attrmod} = fun [
 
-  <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
+  <:ctyp:< $lid:lid$ >> when attrmod.nobuiltin ->
   let fname = to_protobuf_fname arg lid in
   <:expr< $lid:fname$ >>
 
@@ -55,84 +57,84 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< Yojson.Safe.t >> -> <:expr< fun x -> x >>
 | <:ctyp:< unit >> -> <:expr< $runtime_module$.Yojson.unit_to_yojson >>
 
-| <:ctyp:< int >> when attrmod = Some (Encoding Zigzag) ->
-  <:expr< Pa_ppx_protobuf.Runtime.Encode.int__zigzag >>
+| <:ctyp:< int >> when attrmod.encoding = Some Zigzag ->
+  <:expr< Pa_ppx_protobuf.Runtime.Encode.int__zigzag $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< int >> when attrmod = Some (Encoding Bits32) ->
-  <:expr< Pa_ppx_protobuf.Runtime.Encode.int__bits32 $str:msg$ >>
+| <:ctyp:< int >> when attrmod.encoding = Some Bits32 ->
+  <:expr< Pa_ppx_protobuf.Runtime.Encode.int__bits32 $str:msg$ $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< int >> when attrmod = Some (Encoding Bits64) ->
-  <:expr< Pa_ppx_protobuf.Runtime.Encode.int__bits64 >>
+| <:ctyp:< int >> when attrmod.encoding = Some Bits64 ->
+  <:expr< Pa_ppx_protobuf.Runtime.Encode.int__bits64 $int:fmt_attrmod_key attrmod$ >>
 
 | <:ctyp:< int >> ->
-  <:expr< Pa_ppx_protobuf.Runtime.Encode.int__varint >>
+  <:expr< Pa_ppx_protobuf.Runtime.Encode.int__varint $int:fmt_attrmod_key attrmod$ >>
 | <:ctyp:< bool >> ->
-  <:expr< Pa_ppx_protobuf.Runtime.Encode.bool__varint >>
+  <:expr< Pa_ppx_protobuf.Runtime.Encode.bool__varint $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod = Some (Encoding Bits32) || attrmod = None ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.int32__bits32 >>
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Bits32 || attrmod.encoding = None ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.int32__bits32 $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod = Some (Encoding Bits64) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.int32__bits64 >>
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Bits64 ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.int32__bits64 $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod = Some (Encoding Varint) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.int32__varint >>
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Varint ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.int32__varint $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod = Some (Encoding Zigzag) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.int32__zigzag >>
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Zigzag ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.int32__zigzag $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Bits32) || attrmod = None ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.uint32__bits32 >>
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Bits32 || attrmod.encoding = None ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint32__bits32 $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Bits64) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.uint32__bits64 >>
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Bits64 ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint32__bits64 $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Varint) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.uint32__varint >>
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Varint ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint32__varint $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Zigzag) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.uint32__zigzag >>
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Zigzag ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint32__zigzag $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod = Some (Encoding Bits64) || attrmod = None ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.int64__bits64 >>
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Bits64 || attrmod.encoding = None ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.int64__bits64 $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod = Some (Encoding Bits32) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.int64__bits32 $str:msg$ >>
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Bits32 ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.int64__bits32 $str:msg$ $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod = Some (Encoding Varint) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.int64__varint >>
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Varint ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.int64__varint $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod = Some (Encoding Zigzag) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.int64__zigzag >>
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Zigzag ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.int64__zigzag $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Bits64) || attrmod = None ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.uint64__bits64 >>
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Bits64 || attrmod.encoding = None ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint64__bits64 $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Bits32) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.uint64__bits32 $str:msg$ >>
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Bits32 ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint64__bits32 $str:msg$ $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Varint) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.uint64__varint >>
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Varint ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint64__varint $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Zigzag) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.uint64__zigzag >>
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Zigzag ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint64__zigzag $int:fmt_attrmod_key attrmod$ >>
 
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  <:expr< Pa_ppx_protobuf.Runtime.Encode.string__bytes >>
+  <:expr< Pa_ppx_protobuf.Runtime.Encode.string__bytes $int:fmt_attrmod_key attrmod$ >>
 
 | (<:ctyp:< bytes >> | <:ctyp:< Stdlib.Bytes.t >> | <:ctyp:< Bytes.t >>) ->
-  <:expr< Pa_ppx_protobuf.Runtime.Encode.bytes__bytes >>
+  <:expr< Pa_ppx_protobuf.Runtime.Encode.bytes__bytes $int:fmt_attrmod_key attrmod$ >>
 
 | <:ctyp:< char >> -> <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (String.make 1 x) >>
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< $runtime_module$.Yojson.nativeint_to_yojson >>
 | <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> ->
     <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (Nativeint.to_string x) >>
 
-| <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod = None || attrmod = Some (Encoding Bits64) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.float__bits64 >>
+| <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod.encoding = None || attrmod.encoding = Some Bits64 ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.float__bits64 $int:fmt_attrmod_key attrmod$ >>
 
-| <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod = Some (Encoding Bits32) ->
- <:expr< Pa_ppx_protobuf.Runtime.Encode.float__bits32 >>
+| <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod.encoding = Some Bits32 ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.float__bits32 $int:fmt_attrmod_key attrmod$ >>
 
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Yojson.hashtbl_to_yojson >>
@@ -144,7 +146,14 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
     | <:expr< `bits32 >> -> Bits32
     | <:expr< `bits64 >> -> Bits64
     ] in
-    fmtrec ~{attrmod=Some (Encoding encoding)} t
+    fmtrec ~{attrmod={ (attrmod) with encoding = Some encoding } } t
+
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "nobuiltin" ->
+    fmtrec ~{attrmod={ (attrmod) with nobuiltin = True } } t
+
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $int:key$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "key" ->
+    let key = int_of_string key in
+    fmtrec ~{attrmod={ (attrmod) with key = Some key } } t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
 
@@ -450,7 +459,9 @@ module Of = struct
 module PM = ParamMap(struct value arg_ctyp_f loc pty = <:ctyp< Pa_ppx_protobuf.Runtime.Protobuf.Decoder.t -> $pty$ >> ; end) ;
 
 type encoding_t = [ Varint | Zigzag | Bits32 | Bits64 ] ;
-type attrmod_t = [ Nobuiltin | Encoding of encoding_t ] ;
+type attrmod_t = { nobuiltin: bool ; encoding : option encoding_t ; key : option int } ;
+value mt_attrmod = { nobuiltin = False ; encoding = None ; key = None } ;
+value fmt_attrmod_key a = match a.key with [ None -> "1" | Some n -> string_of_int n ] ;
 
 value of_protobuf_fname arg tyname =
   tyname^"_from_protobuf"
@@ -460,22 +471,22 @@ value of_expression arg ~{msg} param_map ty0 =
   let runtime_module =
     let loc = loc_of_ctyp ty0 in
     Base.expr_runtime_module <:expr< Runtime >> in
-  let rec fmtrec ?{attrmod=None} = fun [
+  let rec fmtrec ?{attrmod=mt_attrmod} = fun [
 
-  <:ctyp:< $lid:lid$ >> when attrmod = Some Nobuiltin ->
+  <:ctyp:< $lid:lid$ >> when attrmod.nobuiltin ->
   let fname = of_protobuf_fname arg lid in
   <:expr< $lid:fname$ >>
 
 | <:ctyp:< Protobuf.Safe.t >> -> <:expr< fun x -> Result.Ok x >>
 | <:ctyp:< unit >> -> <:expr< $runtime_module$.Protobuf.unit_of_protobuf $str:msg$ >>
 
-| <:ctyp:< int >> when attrmod = Some (Encoding Zigzag) -> 
+| <:ctyp:< int >> when attrmod.encoding = Some Zigzag -> 
   <:expr< Pa_ppx_protobuf.Runtime.Decode.int__zigzag $str:msg$ >>
 
-| <:ctyp:< int >> when attrmod = Some (Encoding Bits32) -> 
+| <:ctyp:< int >> when attrmod.encoding = Some Bits32 -> 
   <:expr< Pa_ppx_protobuf.Runtime.Decode.int__bits32 $str:msg$ >>
 
-| <:ctyp:< int >> when attrmod = Some (Encoding Bits64) -> 
+| <:ctyp:< int >> when attrmod.encoding = Some Bits64 -> 
   <:expr< Pa_ppx_protobuf.Runtime.Decode.int__bits64 $str:msg$ >>
 
 | <:ctyp:< int >> -> 
@@ -484,52 +495,52 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< bool >> ->
   <:expr< Pa_ppx_protobuf.Runtime.Decode.bool__variant $str:msg$ >>
 
-| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod = Some (Encoding Bits32) || attrmod = None ->
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Bits32 || attrmod.encoding = None ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.int32__bits32 $str:msg$ >>
 
-| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod = Some (Encoding Bits64) ->
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Bits64 ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.int32__bits64 $str:msg$ >>
 
-| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod = Some (Encoding Varint) ->
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Varint ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.int32__varint $str:msg$ >>
 
-| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod = Some (Encoding Zigzag) ->
+| <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Zigzag ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.int32__zigzag $str:msg$ >>
 
-| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Bits32) || attrmod = None ->
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Bits32 || attrmod.encoding = None ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.uint32__bits32 $str:msg$ >>
 
-| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Bits64) ->
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Bits64 ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.uint32__bits64 $str:msg$ >>
 
-| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Varint) ->
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Varint ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.uint32__varint $str:msg$ >>
 
-| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Zigzag) ->
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Zigzag ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.uint32__zigzag $str:msg$ >>
 
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod = Some (Encoding Bits64) || attrmod = None ->
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Bits64 || attrmod.encoding = None ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.int64__bits64 $str:msg$ >>
 
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod = Some (Encoding Bits32) ->
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Bits32 ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.int64__bits32 $str:msg$ >>
 
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod = Some (Encoding Varint) ->
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Varint ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.int64__varint $str:msg$ >>
 
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod = Some (Encoding Zigzag) ->
+| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Zigzag ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.int64__zigzag $str:msg$ >>
 
-| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Bits64) || attrmod = None ->
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Bits64 || attrmod.encoding = None ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.uint64__bits64 $str:msg$ >>
 
-| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Bits32) ->
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Bits32 ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.uint64__bits32 $str:msg$ >>
 
-| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Varint) ->
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Varint ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.uint64__varint $str:msg$ >>
 
-| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Zigzag) ->
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Zigzag ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.uint64__zigzag $str:msg$ >>
 
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
@@ -548,10 +559,10 @@ value of_expression arg ~{msg} param_map ty0 =
         `String x -> Result.Ok (Nativeint.of_string x)
       | _ -> Result.Error $str:msg$ ] >>
 
-| <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod = None || attrmod = Some (Encoding Bits64) ->
+| <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod.encoding = None || attrmod.encoding = Some Bits64 ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.float__bits64 $str:msg$ >>
 
-| <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod = Some (Encoding Bits32) ->
+| <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod.encoding = Some Bits32 ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.float__bits32 $str:msg$ >>
 
 | <:ctyp:< Hashtbl.t >> ->
@@ -564,7 +575,14 @@ value of_expression arg ~{msg} param_map ty0 =
     | <:expr< `bits32 >> -> Bits32
     | <:expr< `bits64 >> -> Bits64
     ] in
-    fmtrec ~{attrmod=Some (Encoding encoding)} t
+    fmtrec ~{attrmod= { (attrmod) with encoding = Some encoding } } t
+
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "nobuiltin" ->
+    fmtrec ~{attrmod={ (attrmod) with nobuiltin = True } } t
+
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $int:key$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "key" ->
+    let key = int_of_string key in
+    fmtrec ~{attrmod={ (attrmod) with key = Some key } } t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
 
