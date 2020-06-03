@@ -7,7 +7,7 @@ our $destdir = shift @ARGV ;
 
 print <<"EOF";
 # Specifications for the "pa_ppx" preprocessor:
-requires = "rresult,fmt,ppx_deriving_protobuf.runtime"
+requires = "rresult,fmt,ppx_deriving_protobuf.runtime,uint"
 version = "$version"
 description = "pa_ppx protobuf runtime support"
 

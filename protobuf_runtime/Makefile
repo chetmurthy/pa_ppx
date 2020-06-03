@@ -12,7 +12,7 @@ LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 
-PACKAGES := rresult,fmt,camlp5,ppx_deriving_protobuf.runtime
+PACKAGES := rresult,fmt,camlp5,ppx_deriving_protobuf.runtime,uint
 TARGET := pa_ppx_protobuf.cma
 ML := runtime.ml
 MLI := 

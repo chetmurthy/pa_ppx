@@ -102,6 +102,67 @@ value int64__bits64 _value encoder =
        Protobuf.Encoder.bits64 _alias encoder})
   [@ocaml.warning "-A";]) ;
 
+value uint32__varint _value encoder =
+  ((
+      let _alias = _value in
+      do {Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+       Protobuf.Encoder.varint (Int64.of_int32 (Uint32.to_int32 _alias))
+         encoder})
+  [@ocaml.warning "-A";]) ;
+
+value uint32__zigzag _value encoder =
+  ((
+      let _alias = _value in
+      do {Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+       Protobuf.Encoder.zigzag (Int64.of_int32 (Uint32.to_int32 _alias))
+         encoder})
+  [@ocaml.warning "-A";]) ;
+
+value uint32__bits32 _value encoder =
+  ((
+      let _alias = _value in
+      do {Protobuf.Encoder.key (1, Protobuf.Bits32) encoder;
+       Protobuf.Encoder.bits32 (Uint32.to_int32 _alias) encoder})
+  [@ocaml.warning "-A";]) ;
+
+value uint32__bits64 _value encoder =
+  ((
+      let _alias = _value in
+      do {Protobuf.Encoder.key (1, Protobuf.Bits64) encoder;
+       Protobuf.Encoder.bits64 (Int64.of_int32 (Uint32.to_int32 _alias))
+         encoder})
+  [@ocaml.warning "-A";]) ;
+
+value uint64__varint _value encoder =
+  ((
+      let _alias = _value in
+      do {Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+       Protobuf.Encoder.varint (Uint64.to_int64 _alias) encoder})
+  [@ocaml.warning "-A";]) ;
+
+value uint64__zigzag _value encoder =
+  ((
+      let _alias = _value in
+      do {Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
+       Protobuf.Encoder.zigzag (Uint64.to_int64 _alias) encoder})
+  [@ocaml.warning "-A";]) ;
+
+value uint64__bits32 msg _value encoder =
+  ((
+      let _alias = _value in
+      do {Protobuf.Encoder.key (1, Protobuf.Bits32) encoder;
+       Protobuf.Encoder.bits32
+         (Protobuf.Encoder.int32_of_int64 msg
+            (Uint64.to_int64 _alias)) encoder})
+  [@ocaml.warning "-A";]) ;
+
+value uint64__bits64 _value encoder =
+  ((
+      let _alias = _value in
+      do {Protobuf.Encoder.key (1, Protobuf.Bits64) encoder;
+       Protobuf.Encoder.bits64 (Uint64.to_int64 _alias) encoder})
+  [@ocaml.warning "-A";]) ;
+
 end ;
 
 module Decode = struct
@@ -435,5 +496,216 @@ value int64__bits64 msg decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-end ;
+value uint32__varint msg decoder =
+  ((
+      let _alias = ref None in
+      let rec read () =
+        match Protobuf.Decoder.key decoder with [
+          Some (1, Protobuf.Varint) ->
+            do {_alias.val :=
+               (Some
+                  (Uint32.of_int32
+                     (Protobuf.Decoder.int32_of_int64
+                        msg
+                        (Protobuf.Decoder.varint decoder))));
+             read ()}
+        | Some (1, kind) ->
+            raise
+              (let open Protobuf.Decoder in
+                 Failure
+                   (Unexpected_payload msg kind))
+        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
+        | None -> () ] in
+      do { read ();
+      (match _alias.val with [
+         None ->
+           raise
+             (let open Protobuf.Decoder in
+                Failure (Missing_field msg))
+       | Some v -> v ]) })
+  [@ocaml.warning "-A";]) ;
 
+value uint32__zigzag msg decoder =
+  ((
+      let _alias = ref None in
+      let rec read () =
+        match Protobuf.Decoder.key decoder with [
+          Some (1, Protobuf.Varint) ->
+            do {_alias.val :=
+               (Some
+                  (Uint32.of_int32
+                     (Protobuf.Decoder.int32_of_int64
+                        msg
+                        (Protobuf.Decoder.zigzag decoder))));
+             read ()}
+        | Some (1, kind) ->
+            raise
+              (let open Protobuf.Decoder in
+                 Failure
+                   (Unexpected_payload msg kind))
+        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
+        | None -> () ] in
+      do { read ();
+      (match _alias.val with [
+         None ->
+           raise
+             (let open Protobuf.Decoder in
+                Failure (Missing_field msg))
+       | Some v -> v ]) })
+  [@ocaml.warning "-A";]) ;
+
+value uint32__bits32 msg decoder =
+  ((
+      let _alias = ref None in
+      let rec read () =
+        match Protobuf.Decoder.key decoder with [
+          Some (1, Protobuf.Bits32) ->
+            do {_alias.val :=
+               (Some (Uint32.of_int32 (Protobuf.Decoder.bits32 decoder)));
+             read ()}
+        | Some (1, kind) ->
+            raise
+              (let open Protobuf.Decoder in
+                 Failure
+                   (Unexpected_payload msg kind))
+        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
+        | None -> () ] in
+      do { read ();
+      (match _alias.val with [
+         None ->
+           raise
+             (let open Protobuf.Decoder in
+                Failure (Missing_field msg))
+       | Some v -> v ]) })
+  [@ocaml.warning "-A";]) ;
+
+value uint32__bits64 msg decoder =
+  ((
+      let _alias = ref None in
+      let rec read () =
+        match Protobuf.Decoder.key decoder with [
+          Some (1, Protobuf.Bits64) ->
+            do {_alias.val :=
+               (Some
+                  (Uint32.of_int32
+                     (Protobuf.Decoder.int32_of_int64
+                        msg
+                        (Protobuf.Decoder.bits64 decoder))));
+             read ()}
+        | Some (1, kind) ->
+            raise
+              (let open Protobuf.Decoder in
+                 Failure
+                   (Unexpected_payload msg kind))
+        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
+        | None -> () ] in
+      do { read ();
+      (match _alias.val with [
+         None ->
+           raise
+             (let open Protobuf.Decoder in
+                Failure (Missing_field msg))
+       | Some v -> v ]) })
+  [@ocaml.warning "-A";]) ;
+
+value uint64__varint msg decoder =
+  ((
+      let _alias = ref None in
+      let rec read () =
+        match Protobuf.Decoder.key decoder with [
+          Some (1, Protobuf.Varint) ->
+            do {_alias.val :=
+               (Some (Uint64.of_int64 (Protobuf.Decoder.varint decoder)));
+             read ()}
+        | Some (1, kind) ->
+            raise
+              (let open Protobuf.Decoder in
+                 Failure
+                   (Unexpected_payload msg kind))
+        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
+        | None -> () ] in
+      do { read ();
+      (match _alias.val with [
+         None ->
+           raise
+             (let open Protobuf.Decoder in
+                Failure (Missing_field msg))
+       | Some v -> v ]) })
+  [@ocaml.warning "-A";]) ;
+
+value uint64__zigzag msg decoder =
+  ((
+      let _alias = ref None in
+      let rec read () =
+        match Protobuf.Decoder.key decoder with [
+          Some (1, Protobuf.Varint) ->
+            do {_alias.val :=
+               (Some (Uint64.of_int64 (Protobuf.Decoder.zigzag decoder)));
+             read ()}
+        | Some (1, kind) ->
+            raise
+              (let open Protobuf.Decoder in
+                 Failure
+                   (Unexpected_payload msg kind))
+        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
+        | None -> () ] in
+      do { read ();
+      (match _alias.val with [
+         None ->
+           raise
+             (let open Protobuf.Decoder in
+                Failure (Missing_field msg))
+       | Some v -> v ]) })
+  [@ocaml.warning "-A";]) ;
+
+value uint64__bits32 msg decoder =
+  ((
+      let _alias = ref None in
+      let rec read () =
+        match Protobuf.Decoder.key decoder with [
+          Some (1, Protobuf.Bits32) ->
+            do {_alias.val :=
+               (Some (Uint64.of_int32 (Protobuf.Decoder.bits32 decoder)));
+             read ()}
+        | Some (1, kind) ->
+            raise
+              (let open Protobuf.Decoder in
+                 Failure
+                   (Unexpected_payload msg kind))
+        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
+        | None -> () ] in
+      do { read ();
+      (match _alias.val with [
+         None ->
+           raise
+             (let open Protobuf.Decoder in
+                Failure (Missing_field msg))
+       | Some v -> v ]) })
+  [@ocaml.warning "-A";]) ;
+
+value uint64__bits64 msg decoder =
+  ((
+      let _alias = ref None in
+      let rec read () =
+        match Protobuf.Decoder.key decoder with [
+          Some (1, Protobuf.Bits64) ->
+            do {_alias.val :=
+               (Some (Uint64.of_int64 (Protobuf.Decoder.bits64 decoder)));
+             read ()}
+        | Some (1, kind) ->
+            raise
+              (let open Protobuf.Decoder in
+                 Failure
+                   (Unexpected_payload msg kind))
+        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
+        | None -> () ] in
+      do { read ();
+      (match _alias.val with [
+         None ->
+           raise
+             (let open Protobuf.Decoder in
+                Failure (Missing_field msg))
+       | Some v -> v ]) })
+  [@ocaml.warning "-A";]) ;
+
+end ;

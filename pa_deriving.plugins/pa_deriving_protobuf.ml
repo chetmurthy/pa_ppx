@@ -81,6 +81,18 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod = Some (Encoding Zigzag) ->
  <:expr< Pa_ppx_protobuf.Runtime.Encode.int32__zigzag >>
 
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Bits32) || attrmod = None ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint32__bits32 >>
+
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Bits64) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint32__bits64 >>
+
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Varint) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint32__varint >>
+
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Zigzag) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint32__zigzag >>
+
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod = Some (Encoding Bits64) || attrmod = None ->
  <:expr< Pa_ppx_protobuf.Runtime.Encode.int64__bits64 >>
 
@@ -92,6 +104,18 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod = Some (Encoding Zigzag) ->
  <:expr< Pa_ppx_protobuf.Runtime.Encode.int64__zigzag >>
+
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Bits64) || attrmod = None ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint64__bits64 >>
+
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Bits32) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint64__bits32 $str:msg$ >>
+
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Varint) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint64__varint >>
+
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Zigzag) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.uint64__zigzag >>
 
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
   <:expr< $runtime_module$.Yojson.string_to_yojson >>
@@ -464,6 +488,18 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod = Some (Encoding Zigzag) ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.int32__zigzag $str:msg$ >>
 
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Bits32) || attrmod = None ->
+ <:expr< Pa_ppx_protobuf.Runtime.Decode.uint32__bits32 $str:msg$ >>
+
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Bits64) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Decode.uint32__bits64 $str:msg$ >>
+
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Varint) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Decode.uint32__varint $str:msg$ >>
+
+| <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod = Some (Encoding Zigzag) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Decode.uint32__zigzag $str:msg$ >>
+
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod = Some (Encoding Bits64) || attrmod = None ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.int64__bits64 $str:msg$ >>
 
@@ -476,12 +512,18 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod = Some (Encoding Zigzag) ->
  <:expr< Pa_ppx_protobuf.Runtime.Decode.int64__zigzag $str:msg$ >>
 
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Bits64) || attrmod = None ->
+ <:expr< Pa_ppx_protobuf.Runtime.Decode.uint64__bits64 $str:msg$ >>
 
-| <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< $runtime_module$.Protobuf.int64_of_protobuf $str:msg$ >>
-| <:ctyp:< int64 [@encoding `string ; ] >> | <:ctyp:< Int64.t [@encoding `string ; ] >> ->
- <:expr< fun [
-        `String x -> Result.Ok (Int64.of_string x)
-      | _ -> Result.Error $str:msg$ ] >>
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Bits32) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Decode.uint64__bits32 $str:msg$ >>
+
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Varint) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Decode.uint64__varint $str:msg$ >>
+
+| <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod = Some (Encoding Zigzag) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Decode.uint64__zigzag $str:msg$ >>
+
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
   <:expr< $runtime_module$.Protobuf.string_of_protobuf $str:msg$ >>
 | <:ctyp:< bytes >> -> <:expr< fun [
