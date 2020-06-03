@@ -194,7 +194,17 @@ value bytes__bytes ~{key} ~{msg} _value encoder =
 end ;
 
 module Decode = struct
-value int__varint0 ~{wantkey} ~{msg} decoder =
+
+value required f ~{msg} decoder =
+  match f decoder with [
+    None ->
+      raise
+        (let open Protobuf.Decoder in
+            Failure (Missing_field msg))
+  | Some v -> v ]
+;
+
+value int__varint ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -211,18 +221,8 @@ value int__varint0 ~{wantkey} ~{msg} decoder =
                  Failure (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in do {
-      read ();
-      _alias.val })
+      read (); _alias.val })
   [@ocaml.warning "-A";]) ;
-
-value required f ~{msg} decoder =
-  match f decoder with [
-    None ->
-      raise
-        (let open Protobuf.Decoder in
-            Failure (Missing_field msg))
-  | Some v -> v ]
-;
 
 value bool__variant ~{wantkey} ~{msg} decoder =
 ((
@@ -241,18 +241,11 @@ value bool__variant ~{wantkey} ~{msg} decoder =
                  Failure (Unexpected_payload msg kind))
         | Some (_, kind) -> do { Protobuf.Decoder.skip decoder kind; read () }
         | None -> () ] in do {
-      read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ])
-      }
+      read (); _alias.val }
       )
   [@ocaml.warning "-A";]) ;
 
-value int__zigzag0 ~{wantkey} ~{msg} decoder =
+value int__zigzag ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -269,8 +262,7 @@ value int__zigzag0 ~{wantkey} ~{msg} decoder =
                  Failure (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in do {
-      read ();
-      _alias.val })
+      read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value int__bits32 ~{wantkey} ~{msg} decoder =
@@ -290,13 +282,7 @@ value int__bits32 ~{wantkey} ~{msg} decoder =
                  Failure (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value int__bits64 ~{wantkey} ~{msg} decoder =
@@ -316,13 +302,7 @@ value int__bits64 ~{wantkey} ~{msg} decoder =
                  Failure (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do {read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do {read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value int32__varint ~{wantkey} ~{msg} decoder =
@@ -343,13 +323,7 @@ value int32__varint ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload "Test_syntax.ml.ppx.il1" kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-        None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field "Test_syntax.ml.ppx.il1"))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value int32__zigzag ~{wantkey} ~{msg} decoder =
@@ -370,13 +344,7 @@ value int32__zigzag ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]);
 
 value int32__bits32 ~{wantkey} ~{msg} decoder =
@@ -393,13 +361,7 @@ value int32__bits32 ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value int32__bits64 ~{wantkey} ~{msg} decoder =
@@ -420,13 +382,7 @@ value int32__bits64 ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value int64__varint ~{wantkey} ~{msg} decoder =
@@ -443,13 +399,7 @@ value int64__varint ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value int64__zigzag ~{wantkey} ~{msg} decoder =
@@ -466,13 +416,7 @@ value int64__zigzag ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value int64__bits32 ~{wantkey} ~{msg} decoder =
@@ -491,13 +435,7 @@ value int64__bits32 ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value int64__bits64 ~{wantkey} ~{msg} decoder =
@@ -514,13 +452,7 @@ value int64__bits64 ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value uint32__varint ~{wantkey} ~{msg} decoder =
@@ -543,13 +475,7 @@ value uint32__varint ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value uint32__zigzag ~{wantkey} ~{msg} decoder =
@@ -572,13 +498,7 @@ value uint32__zigzag ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value uint32__bits32 ~{wantkey} ~{msg} decoder =
@@ -597,13 +517,7 @@ value uint32__bits32 ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value uint32__bits64 ~{wantkey} ~{msg} decoder =
@@ -626,13 +540,7 @@ value uint32__bits64 ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value uint64__varint ~{wantkey} ~{msg} decoder =
@@ -651,13 +559,7 @@ value uint64__varint ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value uint64__zigzag ~{wantkey} ~{msg} decoder =
@@ -676,13 +578,7 @@ value uint64__zigzag ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value uint64__bits32 ~{wantkey} ~{msg} decoder =
@@ -701,13 +597,7 @@ value uint64__bits32 ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value uint64__bits64 ~{wantkey} ~{msg} decoder =
@@ -726,13 +616,7 @@ value uint64__bits64 ~{wantkey} ~{msg} decoder =
                    (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value float__bits32 ~{wantkey} ~{msg} decoder =
@@ -750,13 +634,7 @@ value float__bits32 ~{wantkey} ~{msg} decoder =
                  Failure (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]);
 
 value float__bits64 ~{wantkey} ~{msg} decoder =
@@ -774,13 +652,7 @@ value float__bits64 ~{wantkey} ~{msg} decoder =
                  Failure (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value string__bytes ~{wantkey} ~{msg} decoder =
@@ -798,13 +670,7 @@ value string__bytes ~{wantkey} ~{msg} decoder =
                  Failure (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 value bytes__bytes ~{wantkey} ~{msg} decoder =
@@ -820,13 +686,7 @@ value bytes__bytes ~{wantkey} ~{msg} decoder =
                  Failure (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
-      do { read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      do { read (); _alias.val })
   [@ocaml.warning "-A";]) ;
 
 end ;

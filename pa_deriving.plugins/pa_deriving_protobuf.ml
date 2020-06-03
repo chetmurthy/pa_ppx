@@ -482,74 +482,95 @@ value of_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< int >> when attrmod.encoding = Some Zigzag -> 
   <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
-    required (int__zigzag0 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
+    required (int__zigzag ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< int >> when attrmod.encoding = Some Bits32 -> 
-  <:expr< Pa_ppx_protobuf.Runtime.Decode.int__bits32 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+  <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (int__bits32 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< int >> when attrmod.encoding = Some Bits64 -> 
-  <:expr< Pa_ppx_protobuf.Runtime.Decode.int__bits64 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+  <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (int__bits64 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< int >> -> 
   <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
-    required (int__varint0 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
+    required (int__varint ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< bool >> ->
-  <:expr< Pa_ppx_protobuf.Runtime.Decode.bool__variant ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+  <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (bool__variant ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Bits32 || attrmod.encoding = None ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.int32__bits32 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (int32__bits32 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Bits64 ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.int32__bits64 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (int32__bits64 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Varint ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.int32__varint ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (int32__varint ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Zigzag ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.int32__zigzag ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (int32__zigzag ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Bits32 || attrmod.encoding = None ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.uint32__bits32 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (uint32__bits32 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Bits64 ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.uint32__bits64 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (uint32__bits64 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Varint ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.uint32__varint ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (uint32__varint ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Zigzag ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.uint32__zigzag ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (uint32__zigzag ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Bits64 || attrmod.encoding = None ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.int64__bits64 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (int64__bits64 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Bits32 ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.int64__bits32 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (int64__bits32 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Varint ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.int64__varint ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (int64__varint ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Zigzag ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.int64__zigzag ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (int64__zigzag ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Bits64 || attrmod.encoding = None ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.uint64__bits64 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (uint64__bits64 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Bits32 ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.uint64__bits32 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (uint64__bits32 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Varint ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.uint64__varint ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (uint64__varint ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Zigzag ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.uint64__zigzag ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (uint64__zigzag ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.string__bytes ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (string__bytes ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | (<:ctyp:< bytes >> | <:ctyp:< Stdlib.Bytes.t >> | <:ctyp:< Bytes.t >>) ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.bytes__bytes ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (bytes__bytes ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< char >> -> <:expr< fun [ `String x ->
           if (String.length x) = 1
@@ -562,10 +583,12 @@ value of_expression arg ~{msg} param_map ty0 =
       | _ -> Result.Error $str:msg$ ] >>
 
 | <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod.encoding = None || attrmod.encoding = Some Bits64 ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.float__bits64 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (float__bits64 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod.encoding = Some Bits32 ->
- <:expr< Pa_ppx_protobuf.Runtime.Decode.float__bits32 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ } >>
+ <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+    required (float__bits32 ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }) ~{msg= $str:msg$ } >>
 
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Protobuf.hashtbl_of_protobuf >>
