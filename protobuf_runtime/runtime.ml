@@ -7,27 +7,27 @@ module Stdlib = Stdlib ;
 module Protobuf = Protobuf ;
 
 module Encode = struct
-value int__varint = fun key v encoder ->
+value int__varint = fun ~{key} ~{msg} v encoder ->
 ((      let _alias = v in
       do { Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.varint (Int64.of_int _alias) encoder}) (*  *)
   [@ocaml.warning "-A";]) ;
 
-value bool__varint = fun key v encoder ->
+value bool__varint = fun ~{key} ~{msg} v encoder ->
       let _alias = v in do {
         Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
         Protobuf.Encoder.varint (if _alias then 1L else 0L) encoder
       }
   [@ocaml.warning "-A";] ;
 
-value int__zigzag key v encoder =
+value int__zigzag ~{key} ~{msg} v encoder =
   (
       let _alias = v in do
       {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.zigzag (Int64.of_int _alias) encoder}
   [@ocaml.warning "-A";]) ;
 
-value int__bits32 msg key v encoder =
+value int__bits32 ~{key} ~{msg} v encoder =
   ((
       let _alias = v in
       do {Protobuf.Encoder.key (key, Protobuf.Bits32) encoder;
@@ -36,14 +36,14 @@ value int__bits32 msg key v encoder =
          encoder})
   [@ocaml.warning "-A";]) ;
 
-value int__bits64 key v encoder =
+value int__bits64 ~{key} ~{msg} v encoder =
   ((
       let _alias = v in
       do {Protobuf.Encoder.key (key, Protobuf.Bits64) encoder;
        Protobuf.Encoder.bits64 (Int64.of_int _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value int32__varint key _value encoder =
+value int32__varint ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
@@ -51,42 +51,42 @@ value int32__varint key _value encoder =
   [@ocaml.warning "-A";]) ;
 
 (* TODO: There seems to be a bug here with the key *)
-value int32__zigzag key _value encoder =
+value int32__zigzag ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.zigzag (Int64.of_int32 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value int32__bits32 key _value encoder =
+value int32__bits32 ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Bits32) encoder;
        Protobuf.Encoder.bits32 _alias encoder})
   [@ocaml.warning "-A";]) ;
 
-value int32__bits64 key _value encoder =
+value int32__bits64 ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Bits64) encoder;
        Protobuf.Encoder.bits64 (Int64.of_int32 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value int64__varint key _value encoder =
+value int64__varint ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.varint _alias encoder})
   [@ocaml.warning "-A";]) ;
 
-value int64__zigzag key _value encoder =
+value int64__zigzag ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.zigzag _alias encoder})
   [@ocaml.warning "-A";]) ;
 
-value int64__bits32 msg key _value encoder =
+value int64__bits32 ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Bits32) encoder;
@@ -95,14 +95,14 @@ value int64__bits32 msg key _value encoder =
          encoder})
   [@ocaml.warning "-A";]) ;
 
-value int64__bits64 key _value encoder =
+value int64__bits64 ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Bits64) encoder;
        Protobuf.Encoder.bits64 _alias encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint32__varint key _value encoder =
+value uint32__varint ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
@@ -110,7 +110,7 @@ value uint32__varint key _value encoder =
          encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint32__zigzag key _value encoder =
+value uint32__zigzag ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
@@ -118,14 +118,14 @@ value uint32__zigzag key _value encoder =
          encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint32__bits32 key _value encoder =
+value uint32__bits32 ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Bits32) encoder;
        Protobuf.Encoder.bits32 (Uint32.to_int32 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint32__bits64 key _value encoder =
+value uint32__bits64 ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Bits64) encoder;
@@ -133,21 +133,21 @@ value uint32__bits64 key _value encoder =
          encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint64__varint key _value encoder =
+value uint64__varint ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.varint (Uint64.to_int64 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint64__zigzag key _value encoder =
+value uint64__zigzag ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Varint) encoder;
        Protobuf.Encoder.zigzag (Uint64.to_int64 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint64__bits32 msg key _value encoder =
+value uint64__bits32 ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Bits32) encoder;
@@ -156,35 +156,35 @@ value uint64__bits32 msg key _value encoder =
             (Uint64.to_int64 _alias)) encoder})
   [@ocaml.warning "-A";]) ;
 
-value uint64__bits64 key _value encoder =
+value uint64__bits64 ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Bits64) encoder;
        Protobuf.Encoder.bits64 (Uint64.to_int64 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value float__bits32 key _value encoder =
+value float__bits32 ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Bits32) encoder;
        Protobuf.Encoder.bits32 (Int32.bits_of_float _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value float__bits64 key _value encoder =
+value float__bits64 ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Bits64) encoder;
        Protobuf.Encoder.bits64 (Int64.bits_of_float _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value string__bytes key _value encoder =
+value string__bytes ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Bytes) encoder;
        Protobuf.Encoder.bytes (Bytes.of_string _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
-value bytes__bytes key _value encoder =
+value bytes__bytes ~{key} ~{msg} _value encoder =
   ((
       let _alias = _value in
       do {Protobuf.Encoder.key (key, Protobuf.Bytes) encoder;
@@ -194,7 +194,7 @@ value bytes__bytes key _value encoder =
 end ;
 
 module Decode = struct
-value int__varint = fun msg wantkey decoder ->
+value int__varint0 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -212,15 +212,19 @@ value int__varint = fun msg wantkey decoder ->
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in do {
       read ();
-      (match _alias.val with [
-        None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      _alias.val })
   [@ocaml.warning "-A";]) ;
 
-value bool__variant = fun msg wantkey decoder ->
+value required f ~{msg} decoder =
+  match f decoder with [
+    None ->
+      raise
+        (let open Protobuf.Decoder in
+            Failure (Missing_field msg))
+  | Some v -> v ]
+;
+
+value bool__variant ~{wantkey} ~{msg} decoder =
 ((
       let _alias = ref None in
       let rec read () =
@@ -248,7 +252,7 @@ value bool__variant = fun msg wantkey decoder ->
       )
   [@ocaml.warning "-A";]) ;
 
-value int__zigzag msg wantkey decoder =
+value int__zigzag0 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -266,15 +270,10 @@ value int__zigzag msg wantkey decoder =
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in do {
       read ();
-      (match _alias.val with [
-        None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field msg))
-       | Some v -> v ]) })
+      _alias.val })
   [@ocaml.warning "-A";]) ;
 
-value int__bits32 msg wantkey decoder =
+value int__bits32 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -300,7 +299,7 @@ value int__bits32 msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value int__bits64 msg wantkey decoder =
+value int__bits64 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -326,7 +325,7 @@ value int__bits64 msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value int32__varint msg wantkey decoder =
+value int32__varint ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -353,7 +352,7 @@ value int32__varint msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value int32__zigzag msg wantkey decoder =
+value int32__zigzag ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -380,7 +379,7 @@ value int32__zigzag msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]);
 
-value int32__bits32 msg wantkey decoder =
+value int32__bits32 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -403,7 +402,7 @@ value int32__bits32 msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value int32__bits64 msg wantkey decoder =
+value int32__bits64 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -430,7 +429,7 @@ value int32__bits64 msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value int64__varint msg wantkey decoder =
+value int64__varint ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -453,7 +452,7 @@ value int64__varint msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value int64__zigzag msg wantkey decoder =
+value int64__zigzag ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -476,7 +475,7 @@ value int64__zigzag msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value int64__bits32 msg wantkey decoder =
+value int64__bits32 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -501,7 +500,7 @@ value int64__bits32 msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value int64__bits64 msg wantkey decoder =
+value int64__bits64 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -524,7 +523,7 @@ value int64__bits64 msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value uint32__varint msg wantkey decoder =
+value uint32__varint ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -553,7 +552,7 @@ value uint32__varint msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value uint32__zigzag msg wantkey decoder =
+value uint32__zigzag ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -582,7 +581,7 @@ value uint32__zigzag msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value uint32__bits32 msg wantkey decoder =
+value uint32__bits32 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -607,7 +606,7 @@ value uint32__bits32 msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value uint32__bits64 msg wantkey decoder =
+value uint32__bits64 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -636,7 +635,7 @@ value uint32__bits64 msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value uint64__varint msg wantkey decoder =
+value uint64__varint ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -661,7 +660,7 @@ value uint64__varint msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value uint64__zigzag msg wantkey decoder =
+value uint64__zigzag ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -686,7 +685,7 @@ value uint64__zigzag msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value uint64__bits32 msg wantkey decoder =
+value uint64__bits32 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -711,7 +710,7 @@ value uint64__bits32 msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value uint64__bits64 msg wantkey decoder =
+value uint64__bits64 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -736,7 +735,7 @@ value uint64__bits64 msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value float__bits32 msg wantkey decoder =
+value float__bits32 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -760,7 +759,7 @@ value float__bits32 msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]);
 
-value float__bits64 msg wantkey decoder =
+value float__bits64 ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -784,7 +783,7 @@ value float__bits64 msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value string__bytes msg wantkey decoder =
+value string__bytes ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
@@ -808,7 +807,7 @@ value string__bytes msg wantkey decoder =
        | Some v -> v ]) })
   [@ocaml.warning "-A";]) ;
 
-value bytes__bytes msg wantkey decoder =
+value bytes__bytes ~{wantkey} ~{msg} decoder =
   ((
       let _alias = ref None in
       let rec read () =
