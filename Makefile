@@ -12,8 +12,10 @@ SYSDIRS= util-lib runtime base pa_unmatched_vala \
 	pa_dock pa_here pa_undo_deriving pa_assert \
 	pa_inline_test pa_expect_test pa_hashrecons \
 	pa_deriving pa_deriving.plugins pa_import \
+	protobuf_runtime
 
-TESTDIRS= tests-ounit2 tests-inline tests-expect our-tests-inline
+TESTDIRS= tests-ounit2 our-tests-inline tests-deriving-protobuf \
+	 tests-inline tests-expect
 
 all: sys
 	set -e; for i in $(TESTDIRS); do cd $$i; $(MAKE) all; cd ..; done

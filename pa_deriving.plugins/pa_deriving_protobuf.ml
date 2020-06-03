@@ -32,9 +32,10 @@ value tupleexpr loc l = if List.length l = 1 then List.hd l else <:expr< ( $list
 
 module To = struct
 
-module PM = ParamMap(struct value arg_ctyp_f loc pty = <:ctyp< $pty$ -> Protobuf.Encoder.t -> unit >> ; end) ;
+module PM = ParamMap(struct value arg_ctyp_f loc pty = <:ctyp< $pty$ -> Pa_ppx_protobuf.Runtime.Protobuf.Encoder.t -> unit >> ; end) ;
 
-type attrmod_t = [ Nobuiltin ] ;
+type encoding_t = [ Varint | Zigzag | Bits32 | Bits64 ] ;
+type attrmod_t = [ Nobuiltin | Encoding of encoding_t ] ;
 
 value to_protobuf_fname arg tyname =
   tyname^"_to_protobuf"
@@ -54,22 +55,10 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< Yojson.Safe.t >> -> <:expr< fun x -> x >>
 | <:ctyp:< unit >> -> <:expr< $runtime_module$.Yojson.unit_to_yojson >>
 | <:ctyp:< int >> ->
-  <:expr< fun v encoder ->
-((let open! ((Pa_ppx_runtime.Runtime)[@ocaml.warning "-A";]) in
-      let _alias = v in
-      do { Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
-       Protobuf.Encoder.varint (Int64.of_int _alias) encoder})
-  [@ocaml.warning "-A";])
+  <:expr< Pa_ppx_protobuf.Runtime.Encode.int__varint
  >>
 | <:ctyp:< bool >> ->
-  <:expr<
-  fun v encoder -> (let open! ((Pa_ppx_runtime.Runtime)[@ocaml.warning "-A";]) in
-      let _alias = v in do {
-        Protobuf.Encoder.key (1, Protobuf.Varint) encoder;
-        Protobuf.Encoder.varint (if _alias then 1L else 0L) encoder
-      }
-  [@ocaml.warning "-A";])
- >>
+  <:expr< Pa_ppx_protobuf.Runtime.Encode.bool__varint >>
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< $runtime_module$.Yojson.int32_to_yojson >>
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< $runtime_module$.Yojson.int64_to_yojson >>
 | <:ctyp:< int64 [@encoding `string ; ] >> | <:ctyp:< Int64.t [@encoding `string ; ] >> ->
@@ -250,9 +239,9 @@ value sig_item_fun0 arg td =
   let tyname = uv tyname in
   let to_protobuffname = to_protobuf_fname arg tyname in
   let paramtys = List.map (fun p -> <:ctyp< ' $PM.type_id p$ >>) param_map in
-  let argfmttys = List.map (fun pty -> <:ctyp< $pty$ -> Protobuf.Encoder.t -> unit >>) paramtys in  
+  let argfmttys = List.map (fun pty -> <:ctyp< $pty$ -> Pa_ppx_protobuf.Runtime.Protobuf.Encoder.t -> unit >>) paramtys in  
   let ty = <:ctyp< $lid:tyname$ >> in
-  let toftype = Ctyp.arrows_list loc argfmttys <:ctyp< $(Ctyp.applist ty paramtys)$ -> Protobuf.Encoder.t -> unit >> in
+  let toftype = Ctyp.arrows_list loc argfmttys <:ctyp< $(Ctyp.applist ty paramtys)$ -> Pa_ppx_protobuf.Runtime.Protobuf.Encoder.t -> unit >> in
   (to_protobuffname, toftype)
 ;
 
@@ -390,7 +379,7 @@ end
 
 module Of = struct
 
-module PM = ParamMap(struct value arg_ctyp_f loc pty = <:ctyp< Protobuf.Decoder.t -> $pty$ >> ; end) ;
+module PM = ParamMap(struct value arg_ctyp_f loc pty = <:ctyp< Pa_ppx_protobuf.Runtime.Protobuf.Decoder.t -> $pty$ >> ; end) ;
 
 type attrmod_t = [ Nobuiltin ] ;
 
@@ -411,61 +400,10 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< Protobuf.Safe.t >> -> <:expr< fun x -> Result.Ok x >>
 | <:ctyp:< unit >> -> <:expr< $runtime_module$.Protobuf.unit_of_protobuf $str:msg$ >>
 | <:ctyp:< int >> -> 
-  <:expr<  fun decoder ->
-  ((let open! ((Pa_ppx_runtime.Runtime)[@ocaml.warning "-A";]) in
-      let _alias = ref None in
-      let rec read () =
-        match Protobuf.Decoder.key decoder with [
-          Some (1, Protobuf.Varint) ->
-            do {_alias.val :=
-               (Some
-                  (Protobuf.Decoder.int_of_int64 "Test_syntax.ml.ppx.i1"
-                     (Protobuf.Decoder.varint decoder)));
-             read () }
-        | Some (1, kind) ->
-            raise
-              (let open Protobuf.Decoder in
-                 Failure (Unexpected_payload ("Test_syntax.ml.ppx.i1", kind)))
-        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
-        | None -> () ] in do {
-      read ();
-      (match _alias.val with [
-        None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field "Test_syntax.ml.ppx.i1"))
-       | Some v -> v ]) })
-  [@ocaml.warning "-A";])
+  <:expr< Pa_ppx_protobuf.Runtime.Decode.int__varint
   >>
 | <:ctyp:< bool >> ->
-  <:expr< fun decoder ->
-((let open! ((Pa_ppx_runtime.Runtime)[@ocaml.warning "-A";]) in
-      let _alias = ref None in
-      let rec read () =
-        match Protobuf.Decoder.key decoder with [
-          Some (1, Protobuf.Varint) -> do {
-            _alias.val :=
-               (Some
-                  (Protobuf.Decoder.bool_of_int64 $str:msg$
-                     (Protobuf.Decoder.varint decoder)));
-             read () }
-        | Some (1, kind) ->
-            raise
-              (let open Protobuf.Decoder in
-                 Failure (Unexpected_payload ($str:msg$, kind)))
-        | Some (_, kind) -> do { Protobuf.Decoder.skip decoder kind; read () }
-        | None -> () ] in do {
-      read ();
-      (match _alias.val with [
-         None ->
-           raise
-             (let open Protobuf.Decoder in
-                Failure (Missing_field $str:msg$))
-       | Some v -> v ])
-      }
-      )
-  [@ocaml.warning "-A";])
-  >>
+  <:expr< Pa_ppx_protobuf.Runtime.Decode.bool__variant $str:msg$ >>
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< $runtime_module$.Protobuf.int32_of_protobuf $str:msg$ >>
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< $runtime_module$.Protobuf.int64_of_protobuf $str:msg$ >>
 | <:ctyp:< int64 [@encoding `string ; ] >> | <:ctyp:< Int64.t [@encoding `string ; ] >> ->
