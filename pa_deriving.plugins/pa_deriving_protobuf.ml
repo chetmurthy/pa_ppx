@@ -118,8 +118,11 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
  <:expr< Pa_ppx_protobuf.Runtime.Encode.uint64__zigzag >>
 
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  <:expr< $runtime_module$.Yojson.string_to_yojson >>
-| <:ctyp:< bytes >> -> <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (Bytes.to_string x) >>
+  <:expr< Pa_ppx_protobuf.Runtime.Encode.string__bytes >>
+
+| (<:ctyp:< bytes >> | <:ctyp:< Stdlib.Bytes.t >> | <:ctyp:< Bytes.t >>) ->
+  <:expr< Pa_ppx_protobuf.Runtime.Encode.bytes__bytes >>
+
 | <:ctyp:< char >> -> <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (String.make 1 x) >>
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< $runtime_module$.Yojson.nativeint_to_yojson >>
 | <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> ->
@@ -530,10 +533,11 @@ value of_expression arg ~{msg} param_map ty0 =
  <:expr< Pa_ppx_protobuf.Runtime.Decode.uint64__zigzag $str:msg$ >>
 
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  <:expr< $runtime_module$.Protobuf.string_of_protobuf $str:msg$ >>
-| <:ctyp:< bytes >> -> <:expr< fun [
-        `String x -> Result.Ok (Bytes.of_string x)
-      | _ -> Result.Error $str:msg$ ] >>
+ <:expr< Pa_ppx_protobuf.Runtime.Decode.string__bytes $str:msg$ >>
+
+| (<:ctyp:< bytes >> | <:ctyp:< Stdlib.Bytes.t >> | <:ctyp:< Bytes.t >>) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Decode.bytes__bytes $str:msg$ >>
+
 | <:ctyp:< char >> -> <:expr< fun [ `String x ->
           if (String.length x) = 1
           then Result.Ok (x.[0])

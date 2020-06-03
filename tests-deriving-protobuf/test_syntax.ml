@@ -100,17 +100,17 @@ let test_floats ctxt =
   assert_roundtrip string_of_float f3_to_protobuf f3_from_protobuf
                    "\x09\x00\x00\x00\x00\x00\x00\xF8\x3f" 1.5
 
-#ifndef PAPPX
 type s = string [@@deriving protobuf]
 let test_string ctxt =
   assert_roundtrip (fun x -> x) s_to_protobuf s_from_protobuf
                    "\x0a\x03abc" "abc"
 
 type by = bytes [@@deriving protobuf]
-let test_string ctxt =
+let test_bytes ctxt =
   assert_roundtrip (fun x -> Bytes.to_string x) by_to_protobuf by_from_protobuf
                    "\x0a\x03abc" (Bytes.of_string "abc")
 
+#ifndef PAPPX
 type o = int option [@@deriving protobuf]
 let test_option ctxt =
   let printer x = match x with None -> "None" | Some v -> "Some " ^ (string_of_int v) in
@@ -379,8 +379,9 @@ let suite = "Test syntax" >::: [
     "test_ints"           >:: test_ints;
     "test_uints"          >:: test_uints;
     "test_floats"         >:: test_floats;
-#ifndef PAPPX
     "test_string"         >:: test_string;
+    "test_bytes"         >:: test_bytes;
+#ifndef PAPPX
     "test_option"         >:: test_option;
     "test_list"           >:: test_list;
     "test_array"          >:: test_array;

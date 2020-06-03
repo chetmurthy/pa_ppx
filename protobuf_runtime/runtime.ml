@@ -177,6 +177,20 @@ value float__bits64 _value encoder =
        Protobuf.Encoder.bits64 (Int64.bits_of_float _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
+value string__bytes _value encoder =
+  ((
+      let _alias = _value in
+      do {Protobuf.Encoder.key (1, Protobuf.Bytes) encoder;
+       Protobuf.Encoder.bytes (Bytes.of_string _alias) encoder})
+  [@ocaml.warning "-A";]) ;
+
+value bytes__bytes _value encoder =
+  ((
+      let _alias = _value in
+      do {Protobuf.Encoder.key (1, Protobuf.Bytes) encoder;
+       Protobuf.Encoder.bytes _alias encoder})
+  [@ocaml.warning "-A";]) ;
+
 end ;
 
 module Decode = struct
@@ -755,6 +769,52 @@ value float__bits64 msg decoder =
             do {_alias.val :=
                (Some (Int64.float_of_bits (Protobuf.Decoder.bits64 decoder)));
              read ()}
+        | Some (1, kind) ->
+            raise
+              (let open Protobuf.Decoder in
+                 Failure (Unexpected_payload msg kind))
+        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
+        | None -> () ] in
+      do { read ();
+      (match _alias.val with [
+         None ->
+           raise
+             (let open Protobuf.Decoder in
+                Failure (Missing_field msg))
+       | Some v -> v ]) })
+  [@ocaml.warning "-A";]) ;
+
+value string__bytes msg decoder =
+  ((
+      let _alias = ref None in
+      let rec read () =
+        match Protobuf.Decoder.key decoder with [
+          Some (1, Protobuf.Bytes) ->
+            do {_alias.val :=
+               (Some (Bytes.to_string (Protobuf.Decoder.bytes decoder)));
+             read ()}
+        | Some (1, kind) ->
+            raise
+              (let open Protobuf.Decoder in
+                 Failure (Unexpected_payload msg kind))
+        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
+        | None -> () ] in
+      do { read ();
+      (match _alias.val with [
+         None ->
+           raise
+             (let open Protobuf.Decoder in
+                Failure (Missing_field msg))
+       | Some v -> v ]) })
+  [@ocaml.warning "-A";]) ;
+
+value bytes__bytes msg decoder =
+  ((
+      let _alias = ref None in
+      let rec read () =
+        match Protobuf.Decoder.key decoder with [
+          Some (1, Protobuf.Bytes) ->
+            do {_alias.val := (Some (Protobuf.Decoder.bytes decoder)); read ()}
         | Some (1, kind) ->
             raise
               (let open Protobuf.Decoder in
