@@ -163,6 +163,20 @@ value uint64__bits64 _value encoder =
        Protobuf.Encoder.bits64 (Uint64.to_int64 _alias) encoder})
   [@ocaml.warning "-A";]) ;
 
+value float__bits32 _value encoder =
+  ((
+      let _alias = _value in
+      do {Protobuf.Encoder.key (1, Protobuf.Bits32) encoder;
+       Protobuf.Encoder.bits32 (Int32.bits_of_float _alias) encoder})
+  [@ocaml.warning "-A";]) ;
+
+value float__bits64 _value encoder =
+  ((
+      let _alias = _value in
+      do {Protobuf.Encoder.key (1, Protobuf.Bits64) encoder;
+       Protobuf.Encoder.bits64 (Int64.bits_of_float _alias) encoder})
+  [@ocaml.warning "-A";]) ;
+
 end ;
 
 module Decode = struct
@@ -697,6 +711,54 @@ value uint64__bits64 msg decoder =
               (let open Protobuf.Decoder in
                  Failure
                    (Unexpected_payload msg kind))
+        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
+        | None -> () ] in
+      do { read ();
+      (match _alias.val with [
+         None ->
+           raise
+             (let open Protobuf.Decoder in
+                Failure (Missing_field msg))
+       | Some v -> v ]) })
+  [@ocaml.warning "-A";]) ;
+
+value float__bits32 msg decoder =
+  ((
+      let _alias = ref None in
+      let rec read () =
+        match Protobuf.Decoder.key decoder with [
+          Some (1, Protobuf.Bits32) ->
+            do {_alias.val :=
+               (Some (Int32.float_of_bits (Protobuf.Decoder.bits32 decoder)));
+             read ()}
+        | Some (1, kind) ->
+            raise
+              (let open Protobuf.Decoder in
+                 Failure (Unexpected_payload msg kind))
+        | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
+        | None -> () ] in
+      do { read ();
+      (match _alias.val with [
+         None ->
+           raise
+             (let open Protobuf.Decoder in
+                Failure (Missing_field msg))
+       | Some v -> v ]) })
+  [@ocaml.warning "-A";]);
+
+value float__bits64 msg decoder =
+  ((
+      let _alias = ref None in
+      let rec read () =
+        match Protobuf.Decoder.key decoder with [
+          Some (1, Protobuf.Bits64) ->
+            do {_alias.val :=
+               (Some (Int64.float_of_bits (Protobuf.Decoder.bits64 decoder)));
+             read ()}
+        | Some (1, kind) ->
+            raise
+              (let open Protobuf.Decoder in
+                 Failure (Unexpected_payload msg kind))
         | Some (_, kind) -> do {Protobuf.Decoder.skip decoder kind; read ()}
         | None -> () ] in
       do { read ();

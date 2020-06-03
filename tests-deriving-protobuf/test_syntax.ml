@@ -89,15 +89,18 @@ let test_uints ctxt =
   assert_roundtrip Uint64.to_string uL4_to_protobuf uL4_from_protobuf
                    "\x09\x2c\x01\x00\x00\x00\x00\x00\x00" (Uint64.of_int 300)
 
-#ifndef PAPPX
 type f1 = float [@encoding `bits32] [@@deriving protobuf]
 type f2 = float                    [@@deriving protobuf]
+type f3 = float [@encoding `bits64] [@@deriving protobuf]
 let test_floats ctxt =
   assert_roundtrip string_of_float f1_to_protobuf f1_from_protobuf
                    "\x0d\x00\x00\xC0\x3f" 1.5;
   assert_roundtrip string_of_float f2_to_protobuf f2_from_protobuf
+                   "\x09\x00\x00\x00\x00\x00\x00\xF8\x3f" 1.5;
+  assert_roundtrip string_of_float f3_to_protobuf f3_from_protobuf
                    "\x09\x00\x00\x00\x00\x00\x00\xF8\x3f" 1.5
 
+#ifndef PAPPX
 type s = string [@@deriving protobuf]
 let test_string ctxt =
   assert_roundtrip (fun x -> x) s_to_protobuf s_from_protobuf
@@ -375,8 +378,8 @@ let suite = "Test syntax" >::: [
     "test_bool"           >:: test_bool;
     "test_ints"           >:: test_ints;
     "test_uints"          >:: test_uints;
-#ifndef PAPPX
     "test_floats"         >:: test_floats;
+#ifndef PAPPX
     "test_string"         >:: test_string;
     "test_option"         >:: test_option;
     "test_list"           >:: test_list;

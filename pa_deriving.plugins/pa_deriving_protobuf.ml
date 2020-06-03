@@ -124,7 +124,12 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< $runtime_module$.Yojson.nativeint_to_yojson >>
 | <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> ->
     <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (Nativeint.to_string x) >>
-| <:ctyp:< float >> -> <:expr< $runtime_module$.Yojson.float_to_yojson >>
+
+| <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod = None || attrmod = Some (Encoding Bits64) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.float__bits64 >>
+
+| <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod = Some (Encoding Bits32) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Encode.float__bits32 >>
 
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Yojson.hashtbl_to_yojson >>
@@ -538,7 +543,12 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> -> <:expr< fun [
         `String x -> Result.Ok (Nativeint.of_string x)
       | _ -> Result.Error $str:msg$ ] >>
-| <:ctyp:< float >> -> <:expr< $runtime_module$.Protobuf.float_of_protobuf $str:msg$ >>
+
+| <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod = None || attrmod = Some (Encoding Bits64) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Decode.float__bits64 $str:msg$ >>
+
+| <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod = Some (Encoding Bits32) ->
+ <:expr< Pa_ppx_protobuf.Runtime.Decode.float__bits32 $str:msg$ >>
 
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Protobuf.hashtbl_of_protobuf >>
