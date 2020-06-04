@@ -149,11 +149,22 @@ let test_array ctxt =
                    "\x08\xac\x02\x08\x2a" [|300; 42|]
 
 type ts = int * string [@@deriving protobuf]
+type ts' = (string[@key 2]) * (int[@key 1]) [@@deriving protobuf]
+let ts_printer (x, y) = Printf.sprintf "%d, %s" x y 
+let ts'_printer (y, x) = Printf.sprintf "%s, %d" y x 
+
 let test_tuple ctxt =
-  let printer (x, y) = Printf.sprintf "%d, %s" x y in
-  assert_roundtrip printer ts_to_protobuf ts_from_protobuf
+  assert_roundtrip ts_printer ts_to_protobuf ts_from_protobuf
                    "\x08\xac\x02\x12\x08spartans" (300, "spartans")
+
 #ifndef PAPPX
+let test_tuple' ctxt =
+  assert_roundtrip ts'_printer ts'_to_protobuf ts'_from_protobuf
+                   "\x08\xac\x02\x12\x08spartans" ("spartans", 300)
+(*
+; assert_differential_roundtrip ts'_printer ts_to_protobuf ts'_from_protobuf
+                   "\x08\xac\x02\x12\x08spartans" (300, "spartans") ("spartans", 300)
+*)
 
 type r1 = {
   r1a : int    [@key 1];
@@ -400,6 +411,7 @@ let suite = "Test syntax" >::: [
     "test_array"          >:: test_array;
     "test_tuple"          >:: test_tuple;
 #ifndef PAPPX
+    "test_tuple'"          >:: test_tuple';
     "test_record"         >:: test_record;
     "test_nested"         >:: test_nested;
     "test_imm_tuple"      >:: test_imm_tuple;
