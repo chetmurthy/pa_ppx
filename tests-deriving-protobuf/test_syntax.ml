@@ -113,7 +113,6 @@ let test_bytes ctxt =
   assert_roundtrip (fun x -> Bytes.to_string x) by_to_protobuf by_from_protobuf
                    "\x0a\x03abc" (Bytes.of_string "abc")
 
-#ifndef PAPPX
 type o = int option [@@deriving protobuf]
 let test_option ctxt =
   let printer x = match x with None -> "None" | Some v -> "Some " ^ (string_of_int v) in
@@ -143,6 +142,7 @@ let test_tuple ctxt =
   let printer (x, y) = Printf.sprintf "%d, %s" x y in
   assert_roundtrip printer ts_to_protobuf ts_from_protobuf
                    "\x08\xac\x02\x12\x08spartans" (300, "spartans")
+#ifndef PAPPX
 
 type r1 = {
   r1a : int    [@key 1];
@@ -384,11 +384,11 @@ let suite = "Test syntax" >::: [
     "test_floats"         >:: test_floats;
     "test_string"         >:: test_string;
     "test_bytes"         >:: test_bytes;
-#ifndef PAPPX
     "test_option"         >:: test_option;
     "test_list"           >:: test_list;
     "test_array"          >:: test_array;
     "test_tuple"          >:: test_tuple;
+#ifndef PAPPX
     "test_record"         >:: test_record;
     "test_nested"         >:: test_nested;
     "test_imm_tuple"      >:: test_imm_tuple;
