@@ -231,6 +231,12 @@ value last ~{msg} f decoder =
   ] in drec None
 ;
 
+value required_last ~{msg} f decoder =
+  required ~{msg=msg} (last ~{msg} f) decoder
+;
+
+value optional_last = last ;
+
 value list ~{msg} f decoder =
   let rec drec acc =
   match f decoder with [

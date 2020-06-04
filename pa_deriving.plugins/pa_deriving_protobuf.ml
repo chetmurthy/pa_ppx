@@ -35,18 +35,20 @@ type attrmod_t = {
   nobuiltin: bool
 ; encoding : option encoding_t
 ; key : option int
-; optional : bool
-; repeated : option [ = `List | `Array ] } ;
+; message : bool
+; arity : option [ = `List | `Array | `Optional ] } ;
 
-value mt_attrmod = { nobuiltin = False ; encoding = None ; key = None ; optional = False ; repeated = None } ;
+value mt_attrmod = { nobuiltin = False ; encoding = None ; key = None ; message = False ; arity = None } ;
 value fmt_attrmod_key a = match a.key with [ None -> "1" | Some n -> string_of_int n ] ;
 value fmt_attrmod_modifier a =
  let loc = Ploc.dummy in
- match (a.optional, a.repeated) with [
+ match (a.message, a.arity) with [
   (False, None) -> <:expr< required >>
-| (True, None) -> <:expr< optional >>
-| (False, Some `List) -> <:expr< list >>
-| (False, Some `Array) -> <:expr< array >>
+| (False, Some `Optional) -> <:expr< optional >>
+| (_, Some `List) -> <:expr< list >>
+| (_, Some `Array) -> <:expr< array >>
+| (True, None) -> <:expr< required_last >>
+| (True, Some `Optional) -> <:expr< optional_last >>
 | _ -> assert False
 ] ;
 
@@ -222,18 +224,18 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
 
-| <:ctyp:< list $ty$ >> when not attrmod.optional && attrmod.repeated = None ->
-  fmtrec ~{attrmod = { (attrmod) with repeated = Some `List } } ty
+| <:ctyp:< list $ty$ >> when attrmod.arity = None ->
+  fmtrec ~{attrmod = { (attrmod) with arity = Some `List } } ty
 
-| <:ctyp:< array $ty$ >> when not attrmod.optional && attrmod.repeated = None ->
-  fmtrec ~{attrmod = { (attrmod) with repeated = Some `Array } } ty
+| <:ctyp:< array $ty$ >> when attrmod.arity = None ->
+  fmtrec ~{attrmod = { (attrmod) with arity = Some `Array } } ty
 
 | (<:ctyp:< ref $ty$ >> | <:ctyp:< Pervasives.ref $ty$ >>) ->
   let fmt1 = fmtrec ty in
   <:expr< $runtime_module$.Yojson.ref_to_yojson $fmt1$ >>
 
-| <:ctyp:< option $ty$ >> when not attrmod.optional ->
-  fmtrec ~{attrmod = { (attrmod) with optional = True } } ty
+| <:ctyp:< option $ty$ >> when attrmod.arity = None ->
+  fmtrec ~{attrmod = { (attrmod) with arity = Some `Optional } } ty
 
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 
@@ -527,7 +529,7 @@ value of_protobuf_fname arg tyname =
   tyname^"_from_protobuf"
 ;
 
-value of_expression arg ~{msg} param_map ty0 =
+value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   let runtime_module =
     let loc = loc_of_ctyp ty0 in
     Base.expr_runtime_module <:expr< Runtime >> in
@@ -696,18 +698,18 @@ value of_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
 
-| <:ctyp:< list $ty$ >> when not attrmod.optional && attrmod.repeated = None ->
-  fmtrec ~{attrmod = { (attrmod) with repeated = Some `List } } ty
+| <:ctyp:< list $ty$ >> when attrmod.arity = None ->
+  fmtrec ~{attrmod = { (attrmod) with arity = Some `List } } ty
 
-| <:ctyp:< array $ty$ >> when not attrmod.optional && attrmod.repeated = None ->
-  fmtrec ~{attrmod = { (attrmod) with repeated = Some `Array } } ty
+| <:ctyp:< array $ty$ >> when attrmod.arity = None ->
+  fmtrec ~{attrmod = { (attrmod) with arity = Some `Array } } ty
 
 | (<:ctyp:< ref $ty$ >> | <:ctyp:< Pervasives.ref $ty$ >>) ->
   let fmt1 = fmtrec ty in
   <:expr< $runtime_module$.Protobuf.ref_of_protobuf $fmt1$ >>
 
-| <:ctyp:< option $ty$ >> when not attrmod.optional ->
-  fmtrec ~{attrmod = { (attrmod) with optional = True } } ty
+| <:ctyp:< option $ty$ >> when attrmod.arity = None ->
+  fmtrec ~{attrmod = { (attrmod) with arity = Some `Optional } } ty
 
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 
@@ -893,13 +895,13 @@ and fmt_record ~{cid} loc arg fields =
 
   (<:patt< `Assoc xs >>, e)
 
-in fmtrec ty0
+in fmtrec ~{attrmod=attrmod} ty0
 ;
 
 value fmt_of_top arg ~{msg} params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
-  of_expression arg ~{msg=msg} params t2
-| t -> of_expression arg ~{msg=msg} params t
+  of_expression arg ~{attrmod= { (mt_attrmod) with message = True } } ~{msg=msg} params t2
+| t -> of_expression arg ~{attrmod= { (mt_attrmod) with message = True } } ~{msg=msg} params t
 ]
 ;
 
@@ -1016,7 +1018,7 @@ value rec extend_str_items arg si = match si with [
     ] in
     let gcl = List.concat (List.map ec2gc ecs) in
     let ty = <:ctyp< [ $list:gcl$ ] >> in
-    let e = of_expression arg ~{msg=String.escaped (Pp_MLast.show_longid_lident t)} param_map ty in
+    let e = of_expression arg ~{attrmod=mt_attrmod} ~{msg=String.escaped (Pp_MLast.show_longid_lident t)} param_map ty in
     let branches = match e with [
       <:expr< fun [ $list:branches$ ] >> -> branches
     | _ -> assert False

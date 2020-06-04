@@ -17,6 +17,15 @@ let assert_roundtrip printer encoder decoder str value =
   let d = Protobuf.Decoder.of_string str in
   assert_equal ~printer value (decoder d)
 
+let assert_differential_roundtrip printer encoder decoder str in_value out_value =
+  (* encode *)
+  let e = Protobuf.Encoder.create () in
+  encoder in_value e;
+  assert_equal ~printer:(Printf.sprintf "%S") str (Protobuf.Encoder.to_string e);
+  (* decode *)
+  let d = Protobuf.Decoder.of_string str in
+  assert_equal ~printer out_value (decoder d)
+
 type b = bool [@@deriving protobuf]
 let test_bool ctxt =
   assert_roundtrip string_of_bool b_to_protobuf b_from_protobuf
@@ -127,7 +136,9 @@ let test_list ctxt =
   assert_roundtrip printer l_to_protobuf l_from_protobuf
                    "" [] ;
   assert_roundtrip printer l_to_protobuf l_from_protobuf
-                   "\x08\xac\x02\x08\x2a" [300; 42]
+                   "\x08\xac\x02\x08\x2a" [300; 42] ;
+  assert_differential_roundtrip string_of_int l_to_protobuf i1_from_protobuf
+                   "\x08\xac\x02\x08\x2a" [300; 42] 42
 
 type a = int array [@@deriving protobuf]
 let test_array ctxt =

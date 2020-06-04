@@ -20,6 +20,7 @@ archive(native) = "pa_deriving_show.cmx pa_deriving_eq.cmx pa_deriving_ord.cmx p
   )
 
 # For the toploop:
+requires(toploop) = "camlp5,pa_ppx_deriving"
 archive(byte,toploop) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo pa_deriving_fold.cmo pa_deriving_make.cmo"
 
   # For the preprocessor itself:
