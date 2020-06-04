@@ -39,7 +39,8 @@ type attrmod_t = {
 ; arity : option [ = `List | `Array | `Optional ] } ;
 
 value mt_attrmod = { nobuiltin = False ; encoding = None ; key = None ; message = False ; arity = None } ;
-value fmt_attrmod_key a = match a.key with [ None -> "1" | Some n -> string_of_int n ] ;
+value attrmod_key a = match a.key with [ None -> 1 | Some n -> n ] ;
+value fmt_attrmod_key a = a |> attrmod_key |> string_of_int ;
 value fmt_attrmod_modifier a =
  let loc = Ploc.dummy in
  match (a.message, a.arity) with [
@@ -66,6 +67,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
     Base.expr_runtime_module <:expr< Runtime >> in
   let rec fmtrec ?{coercion} ?{attrmod=mt_attrmod} = fun [
 
+(*
   <:ctyp:< $lid:lid$ >> when attrmod.nobuiltin ->
   let fname = to_protobuf_fname arg lid in
   <:expr< $lid:fname$ >>
@@ -73,139 +75,165 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< _ >> -> failwith "cannot derive yojson for type <<_>>"
 | <:ctyp:< Yojson.Safe.t >> -> <:expr< fun x -> x >>
 | <:ctyp:< unit >> -> <:expr< $runtime_module$.Yojson.unit_to_yojson >>
-
-| <:ctyp:< int >> when attrmod.encoding = Some Zigzag ->
-  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
+*)
+  <:ctyp:< int >> when attrmod.encoding = Some Zigzag ->
+  (attrmod_key attrmod,
+   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (int__zigzag ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (int__zigzag ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< int >> when attrmod.encoding = Some Bits32 ->
-  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
+  (attrmod_key attrmod,
+   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (int__bits32 ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (int__bits32 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< int >> when attrmod.encoding = Some Bits64 ->
+  (attrmod_key attrmod,
   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (int__bits64 ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (int__bits64 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< int >> ->
+  (attrmod_key attrmod,
   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (int__varint ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (int__varint ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 | <:ctyp:< bool >> ->
+  (attrmod_key attrmod,
   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (bool__varint ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (bool__varint ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Bits32 || attrmod.encoding = None ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (int32__bits32 ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (int32__bits32 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Bits64 ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (int32__bits64 ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (int32__bits64 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Varint ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (int32__varint ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (int32__varint ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Zigzag ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (int32__zigzag ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (int32__zigzag ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Bits32 || attrmod.encoding = None ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (uint32__bits32 ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (uint32__bits32 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Bits64 ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (uint32__bits64 ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (uint32__bits64 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Varint ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (uint32__varint ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (uint32__varint ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Zigzag ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (uint32__zigzag ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (uint32__zigzag ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Bits64 || attrmod.encoding = None ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (int64__bits64 ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (int64__bits64 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Bits32 ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (int64__bits32 ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (int64__bits32 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Varint ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (int64__varint ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (int64__varint ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Zigzag ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (int64__zigzag ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (int64__zigzag ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Bits64 || attrmod.encoding = None ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (uint64__bits64 ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (uint64__bits64 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Bits32 ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (uint64__bits32 ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (uint64__bits32 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Varint ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (uint64__varint ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (uint64__varint ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Zigzag ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (uint64__zigzag ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (uint64__zigzag ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
+  (attrmod_key attrmod,
   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (string__bytes ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (string__bytes ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | (<:ctyp:< bytes >> | <:ctyp:< Stdlib.Bytes.t >> | <:ctyp:< Bytes.t >>) ->
+  (attrmod_key attrmod,
   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (bytes__bytes ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (bytes__bytes ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
+(*
 | <:ctyp:< char >> -> <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (String.make 1 x) >>
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< $runtime_module$.Yojson.nativeint_to_yojson >>
 | <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> ->
     <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (Nativeint.to_string x) >>
-
+*)
 | <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod.encoding = None || attrmod.encoding = Some Bits64 ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (float__bits64 ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
+    (float__bits64 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
 | <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod.encoding = Some Bits32 ->
+  (attrmod_key attrmod,
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
-    (float__bits32 ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg= $str:msg$ }) >>
-
+    (float__bits32 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
+(*
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Yojson.hashtbl_to_yojson >>
-
+*)
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "encoding" ->
     let encoding = match e with [
       <:expr< `varint >> -> Varint
@@ -229,14 +257,14 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 
 | <:ctyp:< array $ty$ >> when attrmod.arity = None ->
   fmtrec ~{attrmod = { (attrmod) with arity = Some `Array } } ty
-
+(*
 | (<:ctyp:< ref $ty$ >> | <:ctyp:< Pervasives.ref $ty$ >>) ->
   let fmt1 = fmtrec ty in
   <:expr< $runtime_module$.Yojson.ref_to_yojson $fmt1$ >>
-
+*)
 | <:ctyp:< option $ty$ >> when attrmod.arity = None ->
   fmtrec ~{attrmod = { (attrmod) with arity = Some `Optional } } ty
-
+(*
 | <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
 
 | <:ctyp:< '$i$ >> ->
@@ -324,25 +352,30 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
     (conspat, <:vala< None >>, <:expr< ($fmtf$ z) >>)
   ]) l in
   <:expr< fun [ $list:branches$ ] >>
-
+*)
 | <:ctyp:< ( $list:tyl$ ) >> ->
-    let fmts = List.mapi (fun i ty ->
+    let keys_fmts_vars = List.mapi (fun i ty ->
       let attrmod = { (mt_attrmod) with key = Some (i+1) } in
-      fmtrec ~{attrmod=attrmod} ty)
+      (fmtrec ~{attrmod=attrmod} ty, Printf.sprintf "v%d" i))
     tyl in
-    let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
-    let exps = List.map2 (fun fmt v -> <:expr< $fmt$ $lid:v$ encoder >>) fmts vars in
+    (* ordered by occurrence in tuple-type *)
+    let vars = List.map snd keys_fmts_vars in
+    (* ordered by key value *)
+    let keys_fmts_vars = List.sort (fun ((a, _),_) ((b, _),_) -> Int.compare a b) keys_fmts_vars in
+    let exps = List.map (fun ((_, fmt), v) -> <:expr< $fmt$ $lid:v$ encoder >>) keys_fmts_vars in
 
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
-    <:expr< fun ($list:varpats$) encoder -> do { $list:exps$ } >>
-
+  (attrmod_key attrmod,
+    <:expr< fun ($list:varpats$) encoder -> do { $list:exps$ } >>)
+(*
 | <:ctyp:< { $list:fields$ } >> ->
   let (recpat, body) = fmt_record loc arg fields in
   let recpat = match coercion with [ None -> recpat | Some ty -> <:patt< ( $recpat$ : $ty$ ) >> ] in
   <:expr< fun $recpat$ -> $body$ >>
-
+*)
 | [%unmatched_vala] -> failwith "pa_deriving_protobuf.to_expression"
 ]
+(*
 and fmt_record loc arg fields = 
   let labels_vars_fmts_defaults_jskeys = List.map (fun (_, fname, _, ty, attrs) ->
         let ty = ctyp_wrap_attrs ty (uv attrs) in
@@ -365,15 +398,15 @@ and fmt_record loc arg fields =
 
   let pl = List.map (fun (f, v, _, _, _) -> (<:patt< $lid:f$ >>, <:patt< $lid:v$ >>)) labels_vars_fmts_defaults_jskeys in
   (<:patt< { $list:pl$ } >>, <:expr< `Assoc $liste$ >>)
-
+*)
 in fmtrec ?{coercion=coercion} ty0
 ;
 
 
 value fmt_to_top arg ~{coercion} ~{msg} params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
-  to_expression arg ~{coercion=coercion} ~{msg=msg} params t2
-| t -> to_expression arg ~{coercion=coercion} ~{msg} params t
+  snd (to_expression arg ~{coercion=coercion} ~{msg=msg} params t2)
+| t -> snd (to_expression arg ~{coercion=coercion} ~{msg} params t)
 ]
 ;
 
@@ -493,7 +526,7 @@ value rec extend_str_items arg si = match si with [
     ] in
     let gcl = List.concat (List.map ec2gc ecs) in
     let ty = <:ctyp< [ $list:gcl$ ] >> in
-    let e = to_expression arg ~{msg=String.escaped (Pp_MLast.show_longid_lident t)} param_map ty in
+    let e = snd(to_expression arg ~{msg=String.escaped (Pp_MLast.show_longid_lident t)} param_map ty) in
     let branches = match e with [
       <:expr< fun [ $list:branches$ ] >> -> branches
     | _ -> assert False
