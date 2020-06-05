@@ -211,8 +211,16 @@ end ;
 
 module Decode = struct
 
-value required ~{msg} f decoder =
-  match f decoder with [
+value decoding_key f ~{wantkey} ~{msg} decoder =
+  let open Protobuf.Decoder in
+  match key decoder with [
+    Some (gotkey, gotkind) when wantkey = gotkey ->
+      Some (f ~{msg=msg} gotkind decoder)
+  | None -> None ]
+;
+
+value required f ~{msg} ~{wantkey} decoder =
+  match decoding_key f ~{msg=msg} ~{wantkey=wantkey} decoder with [
     None ->
       raise
         (let open Protobuf.Decoder in
@@ -220,33 +228,39 @@ value required ~{msg} f decoder =
   | Some v -> v ]
 ;
 
-value optional ~{msg} f decoder =
-   f decoder ;
+value optional f ~{msg} ~{wantkey} decoder =
+   decoding_key f ~{msg=msg} ~{wantkey=wantkey} decoder ;
 
-value last ~{msg} f decoder =
+value last f ~{msg} ~{wantkey} decoder =
   let rec drec prev =
-  match f decoder with [
+  match decoding_key f ~{msg} ~{wantkey} decoder with [
     None -> prev
   | Some v -> drec (Some v)
   ] in drec None
 ;
 
-value required_last ~{msg} f decoder =
-  required ~{msg=msg} (last ~{msg} f) decoder
+value required_last f ~{msg} ~{wantkey} decoder =
+  match last f ~{msg=msg} ~{wantkey=wantkey} decoder with [
+    Some v -> v
+  | None -> 
+      raise
+        (let open Protobuf.Decoder in
+            Failure (Missing_field msg))
+  ]
 ;
 
 value optional_last = last ;
 
-value list ~{msg} f decoder =
+value list ~{msg} ~{wantkey} f decoder =
   let rec drec acc =
-  match f decoder with [
+  match decoding_key f ~{msg} ~{wantkey} decoder with [
     None -> List.rev acc
   | Some v -> drec [v :: acc]
   ] in drec []
 ;
 
-value array ~{msg} f decoder =
-  let l = list f ~{msg} decoder in
+value array ~{msg} ~{wantkey} f decoder =
+  let l = list f ~{msg} ~{wantkey} decoder in
   Array.of_list l
 ;
 
@@ -259,25 +273,9 @@ type converter_t 'a 'b = {
 value decode0 c ~{msg} kind (decoder : Protobuf.Decoder.t) =
   let open Protobuf.Decoder in
   if c.kind = kind then
-    Some (c.convertf msg (c.decodef decoder))
+    c.convertf msg (c.decodef decoder)
   else
     raise (Failure (Unexpected_payload msg kind))
-;
-
-value decode1 c ~{wantkey} ~{msg} (decoder : Protobuf.Decoder.t) =
-  let open Protobuf.Decoder in
-  match key decoder with [
-    Some (gotkey, gotkind) when wantkey = gotkey ->
-      decode0 c ~{msg=msg} gotkind decoder
-  | None -> None ]
-;
-
-value decoding_key f ~{wantkey} ~{msg} decoder =
-  let open Protobuf.Decoder in
-  match key decoder with [
-    Some (gotkey, gotkind) when wantkey = gotkey ->
-      f ~{msg=msg} gotkind decoder
-  | None -> None ]
 ;
 
 value int__varint =

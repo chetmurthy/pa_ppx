@@ -152,28 +152,25 @@ type ts = int * string [@@deriving protobuf]
 type ts' = (string[@key 2]) * (int[@key 1]) [@@deriving protobuf]
 type tup3 = (string[@key 3]) * (int[@key 2]) * (int option [@key 1]) [@@deriving protobuf]
 let tup3_from_protobuf_manually decoder =
-  let update_v0 v0 newv = Some newv in
-  let update_v1 v1 newv = Some newv in
-  let update_v2 v2 newv = newv in
+  let update_v0 v0 (newv : string) = Some newv in
+  let update_v1 v1 (newv : int) = Some newv in
+  let update_v2 v2 (newv : int option)  = newv in
   let rec derec (v0, v1, v2) = match Protobuf.Decoder.key decoder with
     | Some (3, kind) ->
       let v0 = update_v0 v0 
       (let open Pa_ppx_protobuf.Runtime.Decode in
-          required ~msg:"Test_syntax.tup3"
             (decode0 string__bytes ~msg:"Test_syntax.tup3" kind) decoder) in
       derec (v0, v1, v2)
     | Some (2, kind) ->
       let v1 = update_v1 v1 
       (let open Pa_ppx_protobuf.Runtime.Decode in
-          required ~msg:"Test_syntax.tup3"
             (decode0 int__varint ~msg:"Test_syntax.tup3" kind) decoder)
        in
       derec (v0, v1, v2)
     | Some (1, kind) ->
       let v2 = update_v2 v2 
       (let open Pa_ppx_protobuf.Runtime.Decode in
-          optional ~msg:"Test_syntax.tup3"
-            (decode0 int__varint ~msg:"Test_syntax.tup3" kind) decoder)
+            Some ((decode0 int__varint ~msg:"Test_syntax.tup3" kind) decoder))
        in
       derec (v0, v1, v2)
     | Some (_, kind) -> ( Protobuf.Decoder.skip decoder kind ; derec (v0, v1, v2) )
