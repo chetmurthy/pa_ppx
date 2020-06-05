@@ -266,10 +266,18 @@ value decode0 c ~{msg} kind (decoder : Protobuf.Decoder.t) =
 
 value decode1 c ~{wantkey} ~{msg} (decoder : Protobuf.Decoder.t) =
   let open Protobuf.Decoder in
-        match key decoder with [
-          Some (gotkey, gotkind) when wantkey = gotkey ->
-            decode0 c ~{msg=msg} gotkind decoder
-        | None -> None ]
+  match key decoder with [
+    Some (gotkey, gotkind) when wantkey = gotkey ->
+      decode0 c ~{msg=msg} gotkind decoder
+  | None -> None ]
+;
+
+value decoding_key f ~{wantkey} ~{msg} decoder =
+  let open Protobuf.Decoder in
+  match key decoder with [
+    Some (gotkey, gotkind) when wantkey = gotkey ->
+      f ~{msg=msg} gotkind decoder
+  | None -> None ]
 ;
 
 value int__varint =
