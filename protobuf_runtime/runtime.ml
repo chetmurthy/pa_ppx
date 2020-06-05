@@ -316,157 +316,34 @@ value uint32__zigzag = decode1 ~{wantkind=Protobuf.Varint}
 value uint32__bits32 = decode1 ~{wantkind=Protobuf.Bits32}
   ~{convertf=forget1 Uint32.of_int32} ~{decodef=Protobuf.Decoder.bits32} ;
 
+value uint32_of_int64 msg n =
+  Uint32.of_int32 (Protobuf.Decoder.int32_of_int64 msg n) ;
 
-value uint32__bits64 ~{wantkey} ~{msg} decoder =
-  ((
-      let _alias = ref None in
-      let rec read () =
-        match Protobuf.Decoder.key decoder with [
-          Some (gotkey, Protobuf.Bits64) when wantkey = gotkey ->
-            do {_alias.val :=
-               (Some
-                  (Uint32.of_int32
-                     (Protobuf.Decoder.int32_of_int64
-                        msg
-                        (Protobuf.Decoder.bits64 decoder)))) }
-        | Some (gotkey, kind) when wantkey = gotkey ->
-            raise
-              (let open Protobuf.Decoder in
-                 Failure
-                   (Unexpected_payload msg kind))
-        | None -> () ] in
-      do { read (); _alias.val })
-  [@ocaml.warning "-A";]) ;
+value uint32__bits64 = decode1 ~{wantkind=Protobuf.Bits64}
+  ~{convertf=uint32_of_int64} ~{decodef=Protobuf.Decoder.bits64} ;
 
-value uint64__varint ~{wantkey} ~{msg} decoder =
-  ((
-      let _alias = ref None in
-      let rec read () =
-        match Protobuf.Decoder.key decoder with [
-          Some (gotkey, Protobuf.Varint) when wantkey = gotkey ->
-            do {_alias.val :=
-               (Some (Uint64.of_int64 (Protobuf.Decoder.varint decoder))) }
-        | Some (gotkey, kind) when wantkey = gotkey ->
-            raise
-              (let open Protobuf.Decoder in
-                 Failure
-                   (Unexpected_payload msg kind))
-        | None -> () ] in
-      do { read (); _alias.val })
-  [@ocaml.warning "-A";]) ;
+value uint64__varint = decode1 ~{wantkind=Protobuf.Varint}
+  ~{convertf=forget1 Uint64.of_int64} ~{decodef=Protobuf.Decoder.varint} ;
 
-value uint64__zigzag ~{wantkey} ~{msg} decoder =
-  ((
-      let _alias = ref None in
-      let rec read () =
-        match Protobuf.Decoder.key decoder with [
-          Some (gotkey, Protobuf.Varint) when wantkey = gotkey ->
-            do {_alias.val :=
-               (Some (Uint64.of_int64 (Protobuf.Decoder.zigzag decoder))) }
-        | Some (gotkey, kind) when wantkey = gotkey ->
-            raise
-              (let open Protobuf.Decoder in
-                 Failure
-                   (Unexpected_payload msg kind))
-        | None -> () ] in
-      do { read (); _alias.val })
-  [@ocaml.warning "-A";]) ;
+value uint64__zigzag = decode1 ~{wantkind=Protobuf.Varint}
+  ~{convertf=forget1 Uint64.of_int64} ~{decodef=Protobuf.Decoder.zigzag} ;
 
-value uint64__bits32 ~{wantkey} ~{msg} decoder =
-  ((
-      let _alias = ref None in
-      let rec read () =
-        match Protobuf.Decoder.key decoder with [
-          Some (gotkey, Protobuf.Bits32) when wantkey = gotkey ->
-            do {_alias.val :=
-               (Some (Uint64.of_int32 (Protobuf.Decoder.bits32 decoder))) }
-        | Some (gotkey, kind) when wantkey = gotkey ->
-            raise
-              (let open Protobuf.Decoder in
-                 Failure
-                   (Unexpected_payload msg kind))
-        | None -> () ] in
-      do { read (); _alias.val })
-  [@ocaml.warning "-A";]) ;
+value uint64__bits32 = decode1 ~{wantkind=Protobuf.Bits32}
+  ~{convertf=forget1 Uint64.of_int32} ~{decodef=Protobuf.Decoder.bits32} ;
 
-value uint64__bits64 ~{wantkey} ~{msg} decoder =
-  ((
-      let _alias = ref None in
-      let rec read () =
-        match Protobuf.Decoder.key decoder with [
-          Some (gotkey, Protobuf.Bits64) when wantkey = gotkey ->
-            do {_alias.val :=
-               (Some (Uint64.of_int64 (Protobuf.Decoder.bits64 decoder))) }
-        | Some (gotkey, kind) when wantkey = gotkey ->
-            raise
-              (let open Protobuf.Decoder in
-                 Failure
-                   (Unexpected_payload msg kind))
-        | None -> () ] in
-      do { read (); _alias.val })
-  [@ocaml.warning "-A";]) ;
+value uint64__bits64 = decode1 ~{wantkind=Protobuf.Bits64}
+  ~{convertf=forget1 Uint64.of_int64} ~{decodef=Protobuf.Decoder.bits64} ;
 
-value float__bits32 ~{wantkey} ~{msg} decoder =
-  ((
-      let _alias = ref None in
-      let rec read () =
-        match Protobuf.Decoder.key decoder with [
-          Some (gotkey, Protobuf.Bits32) when wantkey = gotkey ->
-            do {_alias.val :=
-               (Some (Int32.float_of_bits (Protobuf.Decoder.bits32 decoder))) }
-        | Some (gotkey, kind) when wantkey = gotkey ->
-            raise
-              (let open Protobuf.Decoder in
-                 Failure (Unexpected_payload msg kind))
-        | None -> () ] in
-      do { read (); _alias.val })
-  [@ocaml.warning "-A";]);
+value float__bits32 = decode1 ~{wantkind=Protobuf.Bits32}
+  ~{convertf=forget1 Int32.float_of_bits} ~{decodef=Protobuf.Decoder.bits32} ;
 
-value float__bits64 ~{wantkey} ~{msg} decoder =
-  ((
-      let _alias = ref None in
-      let rec read () =
-        match Protobuf.Decoder.key decoder with [
-          Some (gotkey, Protobuf.Bits64) when wantkey = gotkey ->
-            do {_alias.val :=
-               (Some (Int64.float_of_bits (Protobuf.Decoder.bits64 decoder))) }
-        | Some (gotkey, kind) when wantkey = gotkey ->
-            raise
-              (let open Protobuf.Decoder in
-                 Failure (Unexpected_payload msg kind))
-        | None -> () ] in
-      do { read (); _alias.val })
-  [@ocaml.warning "-A";]) ;
+value float__bits64 = decode1 ~{wantkind=Protobuf.Bits64}
+  ~{convertf=forget1 Int64.float_of_bits} ~{decodef=Protobuf.Decoder.bits64} ;
 
-value string__bytes ~{wantkey} ~{msg} decoder =
-  ((
-      let _alias = ref None in
-      let rec read () =
-        match Protobuf.Decoder.key decoder with [
-          Some (gotkey, Protobuf.Bytes) when wantkey = gotkey ->
-            do {_alias.val :=
-               (Some (Bytes.to_string (Protobuf.Decoder.bytes decoder))) }
-        | Some (gotkey, kind) when wantkey = gotkey ->
-            raise
-              (let open Protobuf.Decoder in
-                 Failure (Unexpected_payload msg kind))
-        | None -> () ] in
-      do { read (); _alias.val })
-  [@ocaml.warning "-A";]) ;
+value string__bytes = decode1 ~{wantkind=Protobuf.Bytes}
+  ~{convertf=forget1 Bytes.to_string} ~{decodef=Protobuf.Decoder.bytes} ;
 
-value bytes__bytes ~{wantkey} ~{msg} decoder =
-  ((
-      let _alias = ref None in
-      let rec read () =
-        match Protobuf.Decoder.key decoder with [
-          Some (gotkey, Protobuf.Bytes) when wantkey = gotkey ->
-            do {_alias.val := (Some (Protobuf.Decoder.bytes decoder)) }
-        | Some (gotkey, kind) when wantkey = gotkey ->
-            raise
-              (let open Protobuf.Decoder in
-                 Failure (Unexpected_payload msg kind))
-        | None -> () ] in
-      do { read (); _alias.val })
-  [@ocaml.warning "-A";]) ;
+value bytes__bytes = decode1 ~{wantkind=Protobuf.Bytes}
+  ~{convertf=forget1 id} ~{decodef=Protobuf.Decoder.bytes} ;
 
 end ;
