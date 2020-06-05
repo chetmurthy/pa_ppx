@@ -31,6 +31,27 @@ let test_bool ctxt =
   assert_roundtrip string_of_bool b_to_protobuf b_from_protobuf
                    "\x08\x01" true
 
+#ifdef PAPPX
+let i1_from_protobuf_manually decoder =
+  let v0 = None in
+  let update_v0 v0 (newv : int) = Some newv in
+  let rec derec v0 = match Protobuf.Decoder.key decoder with
+    | Some (1, kind) ->
+      let v0 = update_v0 v0 
+      (let open Pa_ppx_protobuf.Runtime.Decode in
+            ((decode0 int__varint ~msg:"Test_syntax.i1" kind) decoder))
+       in
+      derec v0
+    | Some (_, kind) -> ( Protobuf.Decoder.skip decoder kind ; derec v0 )
+    | None -> v0
+  in match derec v0 with
+    Some v0 -> v0
+  | _ -> raise
+        (let open Protobuf.Decoder in
+            Failure (Missing_field "Test_syntax.i1"))
+#endif
+
+#ifndef PAPPX
 type i1  = int                       [@@deriving protobuf]
 type i1'  = int [@key 2]             [@@deriving protobuf]
 type i2  = int   [@encoding `zigzag] [@@deriving protobuf]
@@ -198,8 +219,6 @@ let test_tuple' ctxt =
 let test_tup3 ctxt =
   assert_roundtrip tup3_printer tup3_to_protobuf tup3_from_protobuf_manually
                    "\b*\016\172\002\026\bspartans" ("spartans", 300, Some 42)
-#ifndef PAPPX
-
 
 type r1 = {
   r1a : int    [@key 1];
@@ -442,6 +461,7 @@ end
 
 let suite = "Test syntax" >::: [
     "test_bool"           >:: test_bool;
+#ifndef PAPPX
     "test_ints"           >:: test_ints;
     "test_uints"          >:: test_uints;
     "test_floats"         >:: test_floats;
@@ -450,7 +470,6 @@ let suite = "Test syntax" >::: [
     "test_option"         >:: test_option;
     "test_list"           >:: test_list;
     "test_array"          >:: test_array;
-#ifndef PAPPX
     "test_tuple"          >:: test_tuple;
     "test_tuple'"          >:: test_tuple';
     "test_tup3"          >:: test_tup3;
