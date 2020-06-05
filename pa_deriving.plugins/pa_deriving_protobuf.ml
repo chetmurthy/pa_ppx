@@ -882,14 +882,12 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
 | <:ctyp:< ( $list:tyl$ ) >> ->
     let am_fmt_vars = List.mapi (fun i ty ->
       let attrmod = { (mt_attrmod) with key = Some i } in
-      (fmtrec ~{attrmod=attrmod} ty, Printf.sprintf "v%d" (i+1))
+      (fmtrec ~{attrmod=attrmod} ty, Printf.sprintf "v%d" (i+1)))
     tyl in
-    let fmts = List.map snd fmts in
-    let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
-    let varexps = List.map (fun v -> <:expr< $lid:v$ >>) vars in
-    let e = List.fold_right2 (fun v fmt body ->
+    let varexps = List.map (fun (_,v) -> <:expr< $lid:v$ >>) am_fmt_vars in
+    let e = List.fold_right (fun ((_,fmt),v) body ->
       <:expr< let $lid:v$ = $fmt$ decoder in $body$ >>)
-      vars fmts <:expr< ( $list:varexps$ ) >> in
+      am_fmt_vars <:expr< ( $list:varexps$ ) >> in
   (attrmod,
     <:expr< fun decoder -> $e$ >>)
 (*

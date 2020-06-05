@@ -150,9 +150,43 @@ let test_array ctxt =
 
 type ts = int * string [@@deriving protobuf]
 type ts' = (string[@key 2]) * (int[@key 1]) [@@deriving protobuf]
+type tup3 = (string[@key 3]) * (int[@key 2]) * (int option [@key 1]) [@@deriving protobuf]
+let tup3_from_protobuf_manually decoder =
+  let update_v0 v0 newv = Some newv in
+  let update_v1 v1 newv = Some newv in
+  let update_v2 v2 newv = newv in
+  let rec derec (v0, v1, v2) = match Protobuf.Decoder.key decoder with
+    | Some (3, _) ->
+      let v0 = update_v0 v0 
+      (let open Pa_ppx_protobuf.Runtime.Decode in
+          required ~msg:"Test_syntax.tup3"
+            (string__bytes ~msg:"Test_syntax.tup3" ~wantkey:3) decoder) in
+      derec (v0, v1, v2)
+    | Some (2, _) ->
+      let v1 = update_v1 v1 
+      (let open Pa_ppx_protobuf.Runtime.Decode in
+          required ~msg:"Test_syntax.tup3"
+            (int__varint ~msg:"Test_syntax.tup3" ~wantkey:2) decoder)
+       in
+      derec (v0, v1, v2)
+    | Some (1, _) ->
+      let v2 = update_v2 v2 
+      (let open Pa_ppx_protobuf.Runtime.Decode in
+          optional ~msg:"Test_syntax.tup3"
+            (int__varint ~msg:"Test_syntax.tup3" ~wantkey:1) decoder)
+       in
+      derec (v0, v1, v2)
+    | Some (_, kind) -> ( Protobuf.Decoder.skip decoder kind ; derec (v0, v1, v2) )
+    | None -> (v0, v1, v2)
+  in match derec (None, None, None) with
+    (Some v0, Some v1, v2) -> (v0, v1, v2)
+  | _ -> failwith "failed"
+
 let ts_printer (x, y) = Printf.sprintf "%d, %s" x y 
 let ts'_printer (y, x) = Printf.sprintf "%s, %d" y x 
+let tup3_printer (x, y, z) = Printf.sprintf "%s, %d, %s" x y (match z with None -> "<>" | Some n -> string_of_int n)
 
+#ifndef PAPPX
 let test_tuple ctxt =
   assert_roundtrip ts_printer ts_to_protobuf ts_from_protobuf
                    "\x08\xac\x02\x12\x08spartans" (300, "spartans")
@@ -165,7 +199,11 @@ let test_tuple' ctxt =
                    "\x08\xac\x02\x12\x08spartans" (300, "spartans") ("spartans", 300)
 *)
 
-#ifndef PAPPX
+let test_tup3 ctxt =
+  assert_roundtrip tup3_printer tup3_to_protobuf tup3_from_protobuf
+                   "\b*\016\172\002\026\bspartans" ("spartans", 300, Some 42)
+
+
 type r1 = {
   r1a : int    [@key 1];
   r1b : string [@key 2];
@@ -409,9 +447,10 @@ let suite = "Test syntax" >::: [
     "test_option"         >:: test_option;
     "test_list"           >:: test_list;
     "test_array"          >:: test_array;
+#ifndef PAPPX
     "test_tuple"          >:: test_tuple;
     "test_tuple'"          >:: test_tuple';
-#ifndef PAPPX
+    "test_tup3"          >:: test_tup3;
     "test_record"         >:: test_record;
     "test_nested"         >:: test_nested;
     "test_imm_tuple"      >:: test_imm_tuple;

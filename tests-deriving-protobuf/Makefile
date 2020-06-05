@@ -69,7 +69,7 @@ test_%.byte: test_%.ml
 test_%.ppx.byte: test_%.ml
 	cppo -U PAPPX $< > $<.ppx.ml
 	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),ounit2,$(PPXPACKAGES) $<.ppx.ml > $<.ppx.ppo
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES) -linkall -linkpkg $<.ppx.ml -o $@
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES),$(PACKAGEPREFIX)protobuf_runtime -linkall -linkpkg $<.ppx.ml -o $@
 
 clean::
 	rm -f *.corrected *.pappx.ml *.ppx.ml
