@@ -250,100 +250,111 @@ value array ~{msg} f decoder =
   Array.of_list l
 ;
 
-value decode1 ~{wantkind} ~{decodef} ~{convertf} ~{wantkey} ~{msg} (decoder : Protobuf.Decoder.t) =
+type converter_t 'a 'b = {
+  kind : Protobuf.payload_kind
+; decodef : Protobuf.Decoder.t -> 'a
+; convertf : string -> 'a -> 'b
+} ;
+
+value decode0 c ~{msg} kind (decoder : Protobuf.Decoder.t) =
+  let open Protobuf.Decoder in
+  if c.kind = kind then
+    Some (c.convertf msg (c.decodef decoder))
+  else
+    raise (Failure (Unexpected_payload msg kind))
+;
+
+value decode1 c ~{wantkey} ~{msg} (decoder : Protobuf.Decoder.t) =
   let open Protobuf.Decoder in
         match key decoder with [
-          Some (gotkey, gotkind) when wantkey = gotkey && wantkind = gotkind ->
-          Some (convertf msg (decodef decoder))
-        | Some (gotkey, kind) when wantkey = gotkey ->
-            raise (Failure (Unexpected_payload msg kind))
-
+          Some (gotkey, gotkind) when wantkey = gotkey ->
+            decode0 c ~{msg=msg} gotkind decoder
         | None -> None ]
 ;
 
-value int__varint = decode1 ~{wantkind=Protobuf.Varint}
-  ~{convertf=Protobuf.Decoder.int_of_int64} ~{decodef=Protobuf.Decoder.varint} ;
+value int__varint =
+  { kind = Protobuf.Varint ; convertf=Protobuf.Decoder.int_of_int64; decodef=Protobuf.Decoder.varint } ;
 
-value bool__variant = decode1 ~{wantkind=Protobuf.Varint}
-  ~{convertf=Protobuf.Decoder.bool_of_int64} ~{decodef=Protobuf.Decoder.varint} ;
+value bool__variant = 
+  { kind = Protobuf.Varint ; convertf=Protobuf.Decoder.bool_of_int64; decodef=Protobuf.Decoder.varint } ;
 
-value int__zigzag = decode1 ~{wantkind=Protobuf.Varint}
-  ~{convertf=Protobuf.Decoder.int_of_int64} ~{decodef=Protobuf.Decoder.zigzag} ;
+value int__zigzag =
+  {kind=Protobuf.Varint; convertf=Protobuf.Decoder.int_of_int64; decodef=Protobuf.Decoder.zigzag } ;
 
-value int__bits32 = decode1 ~{wantkind=Protobuf.Bits32}
-  ~{convertf=Protobuf.Decoder.int_of_int32} ~{decodef=Protobuf.Decoder.bits32} ;
+value int__bits32 =
+  {kind=Protobuf.Bits32; convertf=Protobuf.Decoder.int_of_int32; decodef=Protobuf.Decoder.bits32} ;
 
-value int__bits64 = decode1 ~{wantkind=Protobuf.Bits64}
-  ~{convertf=Protobuf.Decoder.int_of_int64} ~{decodef=Protobuf.Decoder.bits64} ;
+value int__bits64 = 
+  {kind=Protobuf.Bits64 ; convertf=Protobuf.Decoder.int_of_int64; decodef=Protobuf.Decoder.bits64} ;
 
-value int32__varint = decode1 ~{wantkind=Protobuf.Varint}
-  ~{convertf=Protobuf.Decoder.int32_of_int64} ~{decodef=Protobuf.Decoder.varint} ;
+value int32__varint = 
+  {kind=Protobuf.Varint ; convertf=Protobuf.Decoder.int32_of_int64; decodef=Protobuf.Decoder.varint} ;
 
-value int32__zigzag = decode1 ~{wantkind=Protobuf.Varint}
-  ~{convertf=Protobuf.Decoder.int32_of_int64} ~{decodef=Protobuf.Decoder.zigzag} ;
+value int32__zigzag = 
+  {kind=Protobuf.Varint ; convertf=Protobuf.Decoder.int32_of_int64; decodef=Protobuf.Decoder.zigzag} ;
 
 value id x = x ;
 value forget1 f x y = f y ;
 
-value int32__bits32 = decode1 ~{wantkind=Protobuf.Bits32}
-  ~{convertf=forget1 id} ~{decodef=Protobuf.Decoder.bits32} ;
+value int32__bits32 = 
+  {kind=Protobuf.Bits32 ; convertf=forget1 id; decodef=Protobuf.Decoder.bits32} ;
 
-value int32__bits64 = decode1 ~{wantkind=Protobuf.Bits64}
-  ~{convertf=Protobuf.Decoder.int32_of_int64} ~{decodef=Protobuf.Decoder.bits64} ;
+value int32__bits64 = 
+  {kind=Protobuf.Bits64 ; convertf=Protobuf.Decoder.int32_of_int64; decodef=Protobuf.Decoder.bits64} ;
 
-value int64__varint = decode1 ~{wantkind=Protobuf.Varint}
-  ~{convertf=forget1 id} ~{decodef=Protobuf.Decoder.varint} ;
+value int64__varint = 
+  {kind=Protobuf.Varint ; convertf=forget1 id; decodef=Protobuf.Decoder.varint} ;
 
-value int64__zigzag = decode1 ~{wantkind=Protobuf.Varint}
-  ~{convertf=forget1 id} ~{decodef=Protobuf.Decoder.zigzag} ;
+value int64__zigzag = 
+  {kind=Protobuf.Varint ; convertf=forget1 id; decodef=Protobuf.Decoder.zigzag} ;
 
-value int64__bits32 = decode1 ~{wantkind=Protobuf.Bits32}
-  ~{convertf=forget1 Int64.of_int32} ~{decodef=Protobuf.Decoder.bits32} ;
+value int64__bits32 = 
+  {kind=Protobuf.Bits32 ; convertf=forget1 Int64.of_int32; decodef=Protobuf.Decoder.bits32} ;
 
-value int64__bits64 = decode1 ~{wantkind=Protobuf.Bits64}
-  ~{convertf=forget1 id} ~{decodef=Protobuf.Decoder.bits64} ;
+value int64__bits64 = 
+  {kind=Protobuf.Bits64 ; convertf=forget1 id; decodef=Protobuf.Decoder.bits64} ;
 
 value uint32_of_int64 msg n =
   Uint32.of_int32 (Protobuf.Decoder.int32_of_int64 msg n)
 ;
 
-value uint32__varint = decode1 ~{wantkind=Protobuf.Varint}
-  ~{convertf=uint32_of_int64} ~{decodef=Protobuf.Decoder.varint} ;
+value uint32__varint = 
+  {kind=Protobuf.Varint ; convertf=uint32_of_int64; decodef=Protobuf.Decoder.varint} ;
 
-value uint32__zigzag = decode1 ~{wantkind=Protobuf.Varint}
-  ~{convertf=uint32_of_int64} ~{decodef=Protobuf.Decoder.zigzag} ;
+value uint32__zigzag = 
+  {kind=Protobuf.Varint ; convertf=uint32_of_int64; decodef=Protobuf.Decoder.zigzag} ;
 
-value uint32__bits32 = decode1 ~{wantkind=Protobuf.Bits32}
-  ~{convertf=forget1 Uint32.of_int32} ~{decodef=Protobuf.Decoder.bits32} ;
+value uint32__bits32 = 
+  {kind=Protobuf.Bits32 ; convertf=forget1 Uint32.of_int32; decodef=Protobuf.Decoder.bits32} ;
 
 value uint32_of_int64 msg n =
   Uint32.of_int32 (Protobuf.Decoder.int32_of_int64 msg n) ;
 
-value uint32__bits64 = decode1 ~{wantkind=Protobuf.Bits64}
-  ~{convertf=uint32_of_int64} ~{decodef=Protobuf.Decoder.bits64} ;
+value uint32__bits64 = 
+  {kind=Protobuf.Bits64 ; convertf=uint32_of_int64; decodef=Protobuf.Decoder.bits64} ;
 
-value uint64__varint = decode1 ~{wantkind=Protobuf.Varint}
-  ~{convertf=forget1 Uint64.of_int64} ~{decodef=Protobuf.Decoder.varint} ;
+value uint64__varint = 
+  {kind=Protobuf.Varint ; convertf=forget1 Uint64.of_int64; decodef=Protobuf.Decoder.varint} ;
 
-value uint64__zigzag = decode1 ~{wantkind=Protobuf.Varint}
-  ~{convertf=forget1 Uint64.of_int64} ~{decodef=Protobuf.Decoder.zigzag} ;
+value uint64__zigzag = 
+  {kind=Protobuf.Varint ; convertf=forget1 Uint64.of_int64; decodef=Protobuf.Decoder.zigzag} ;
 
-value uint64__bits32 = decode1 ~{wantkind=Protobuf.Bits32}
-  ~{convertf=forget1 Uint64.of_int32} ~{decodef=Protobuf.Decoder.bits32} ;
+value uint64__bits32 = 
+  {kind=Protobuf.Bits32 ; convertf=forget1 Uint64.of_int32; decodef=Protobuf.Decoder.bits32} ;
 
-value uint64__bits64 = decode1 ~{wantkind=Protobuf.Bits64}
-  ~{convertf=forget1 Uint64.of_int64} ~{decodef=Protobuf.Decoder.bits64} ;
+value uint64__bits64 = 
+  {kind=Protobuf.Bits64 ; convertf=forget1 Uint64.of_int64; decodef=Protobuf.Decoder.bits64} ;
 
-value float__bits32 = decode1 ~{wantkind=Protobuf.Bits32}
-  ~{convertf=forget1 Int32.float_of_bits} ~{decodef=Protobuf.Decoder.bits32} ;
+value float__bits32 = 
+  {kind=Protobuf.Bits32 ; convertf=forget1 Int32.float_of_bits; decodef=Protobuf.Decoder.bits32} ;
 
-value float__bits64 = decode1 ~{wantkind=Protobuf.Bits64}
-  ~{convertf=forget1 Int64.float_of_bits} ~{decodef=Protobuf.Decoder.bits64} ;
+value float__bits64 = 
+  {kind=Protobuf.Bits64 ; convertf=forget1 Int64.float_of_bits; decodef=Protobuf.Decoder.bits64} ;
 
-value string__bytes = decode1 ~{wantkind=Protobuf.Bytes}
-  ~{convertf=forget1 Bytes.to_string} ~{decodef=Protobuf.Decoder.bytes} ;
+value string__bytes = 
+  {kind=Protobuf.Bytes ; convertf=forget1 Bytes.to_string; decodef=Protobuf.Decoder.bytes} ;
 
-value bytes__bytes = decode1 ~{wantkind=Protobuf.Bytes}
-  ~{convertf=forget1 id} ~{decodef=Protobuf.Decoder.bytes} ;
+value bytes__bytes = 
+  {kind=Protobuf.Bytes ; convertf=forget1 id; decodef=Protobuf.Decoder.bytes} ;
 
 end ;
