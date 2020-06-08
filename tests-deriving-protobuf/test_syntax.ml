@@ -51,7 +51,6 @@ let i1_from_protobuf_manually decoder =
             Failure (Missing_field "Test_syntax.i1"))
 #endif
 
-#ifndef PAPPX
 type i1  = int                       [@@deriving protobuf]
 type i1'  = int [@key 2]             [@@deriving protobuf]
 type i2  = int   [@encoding `zigzag] [@@deriving protobuf]
@@ -169,6 +168,7 @@ let test_array ctxt =
   assert_roundtrip printer a_to_protobuf a_from_protobuf
                    "\x08\xac\x02\x08\x2a" [|300; 42|]
 
+#ifndef PAPPX
 type ts = int * string [@@deriving protobuf]
 type ts' = (string[@key 2]) * (int[@key 1]) [@@deriving protobuf]
 type tup3 = (string[@key 3]) * (int[@key 2]) * (int option [@key 1]) [@@deriving protobuf]
@@ -461,7 +461,6 @@ end
 
 let suite = "Test syntax" >::: [
     "test_bool"           >:: test_bool;
-#ifndef PAPPX
     "test_ints"           >:: test_ints;
     "test_uints"          >:: test_uints;
     "test_floats"         >:: test_floats;
@@ -470,6 +469,7 @@ let suite = "Test syntax" >::: [
     "test_option"         >:: test_option;
     "test_list"           >:: test_list;
     "test_array"          >:: test_array;
+#ifndef PAPPX
     "test_tuple"          >:: test_tuple;
     "test_tuple'"          >:: test_tuple';
     "test_tup3"          >:: test_tup3;

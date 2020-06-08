@@ -563,6 +563,112 @@ value of_protobuf_fname arg tyname =
   tyname^"_from_protobuf"
 ;
 
+(**
+EXAMPLE (type i1 = int [@key 1])
+let i1_from_protobuf_manually decoder =
+  let v0 = None in
+  let update_v0 v0 (newv : int) = Some newv in
+  let rec derec v0 = match Protobuf.Decoder.key decoder with
+    | Some (1, kind) ->
+      let v0 = update_v0 v0 
+      (let open Pa_ppx_protobuf.Runtime.Decode in
+            ((decode0 int__varint ~msg:"Test_syntax.i1" kind) decoder))
+       in
+      derec v0
+    | Some (_, kind) -> ( Protobuf.Decoder.skip decoder kind ; derec v0 )
+    | None -> v0
+  in match derec v0 with
+    Some v0 -> v0
+  | _ -> raise
+        (let open Protobuf.Decoder in
+            Failure (Missing_field "Test_syntax.i1"))
+
+GENERALIZE
+let i1_from_protobuf_manually = (*e1*) fun decoder ->
+  (*e2*)<initialize vars v_i for each type with either None or the empty value of the type (for optional, list, array)>
+  (*e3*)<define updaters for each type>
+  (*e4*)let rec derec (<tuple-of-vars>) = match Protobuf.Decoder.key decoder with
+    (*branch5*)| Some (<key_i>, kind) ->
+      (*e5*)let v_i = update_v_i v_i
+      (let open Pa_ppx_protobuf.Runtime.Decode in
+            ((<decoder-expression for type> ~msg:"Test_syntax.i1" kind) decoder))
+       in
+      derec <tuple-of-vars>
+    | Some (_, kind) -> ( Protobuf.Decoder.skip decoder kind ; derec <tuple-of-vars> )
+    | None -> <tuple-of-vars>
+  in (*e6*)match derec <tuple-of-vars> with
+    <final-value-checks-projections-for-each-type>  -> <final-value-for-each-type>
+  | _ -> raise
+        (let open Protobuf.Decoder in
+            Failure (Missing_field "Test_syntax.i1"))
+*)
+value demarshal_to_tuple loc arg ~{msg} am_fmt_vars =
+  let initvals = List.map (fun (am, fmt, v) ->
+    let e = match am.arity with [
+      None | Some `Optional -> <:expr< None >>
+    | Some (`List | `Array)  -> <:expr< [] >>
+    ] in
+    (<:patt< $lid:v$ >>, e, <:vala< [] >>)) am_fmt_vars in
+  let updaters = List.map (fun (am, fmt, v) ->
+    let fname = Printf.sprintf "update_%s" v in
+    let e = match am.arity with [
+      None -> <:expr< Some newv >>
+    | Some `Optional -> <:expr< Some newv >>
+    | Some ( `List | `Array ) -> <:expr< [ newv :: $lid:v$ ] >>
+    ] in
+    (<:patt< $lid:fname$ >>,
+     <:expr< fun $lid:v$ newv -> $e$ >>, 
+     <:vala< [] >>)) am_fmt_vars in
+  let tuple_of_vars_patt =
+    let l = List.map (fun (_, _, v) -> <:patt< $lid:v$ >>) am_fmt_vars in
+    tuplepatt loc l in
+  let tuple_of_vars_expr =
+    let l = List.map (fun (_, _, v) -> <:expr< $lid:v$ >>) am_fmt_vars in
+    tupleexpr loc l in
+  let final_value_patts = List.map (fun (am, _, v) ->
+    match am.arity with [
+      None -> <:patt< Some $lid:v$ >>
+    | Some ( `List | `Array | `Optional ) -> <:patt< $lid:v$ >>
+    ]) am_fmt_vars in
+  let final_value_patt = tuplepatt loc final_value_patts in
+  let final_value_exprs = List.map (fun (am, _, v) ->
+    match am.arity with [
+      None -> <:expr< $lid:v$ >>
+    | Some `List -> <:expr< List.rev $lid:v$ >>
+    | Some `Array -> <:expr< Array.of_list (List.rev $lid:v$) >>
+    | Some `Optional -> <:expr< $lid:v$ >>
+    ]) am_fmt_vars in
+  let final_value_expr = tupleexpr loc final_value_exprs in
+
+  let e6 = <:expr< match derec $tuple_of_vars_expr$ with [
+     $final_value_patt$ -> $final_value_expr$
+   | _ -> raise (let open Protobuf.Decoder in Failure (Missing_field $str:msg$)) ] >> in
+
+  let branch5s = List.map (fun (am, fmt, v) ->
+    let updatename = Printf.sprintf "update_%s" v in
+    let e5 =
+      <:expr< let $lid:v$ = $lid:updatename$ $lid:v$
+       (let open Pa_ppx_protobuf.Runtime.Decode in
+         ($fmt$ ~{msg= $str:msg$ } kind) decoder)
+         in derec $tuple_of_vars_expr$ >> in
+      (<:patt< Some ($int:fmt_attrmod_key am$, kind) >>, <:vala< None >>, e5)
+  ) am_fmt_vars in
+
+  let fallback_branches = [
+    (<:patt< Some (_, kind) >>, <:vala< None >>,
+     <:expr< do { Protobuf.Decoder.skip decoder kind ; derec $tuple_of_vars_expr$ } >>) ;
+    (<:patt< None >>, <:vala< None >>, tuple_of_vars_expr)
+  ] in
+
+  let e4 = <:expr< let rec derec $tuple_of_vars_patt$ = match Protobuf.Decoder.key decoder with
+                   [ $list:branch5s@fallback_branches$ ]
+                   in $e6$ >> in
+
+  let e3 = <:expr< let $list:updaters$ in $e4$ >> in
+  let e2 = <:expr< let $list:initvals$ in $e3$ >> in
+  <:expr< fun decoder -> $e2$ >>
+;
+
 value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   let runtime_module =
     let loc = loc_of_ctyp ty0 in
@@ -834,17 +940,13 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
       let attrmod = { (mt_attrmod) with key = Some i } in
       let l = fmtrec ~{attrmod=attrmod} ty in do {
         assert (List.length l = 1) ;
-        (List.hd l, Printf.sprintf "v%d" (i+1))
+        let (am, fmt) = List.hd l in
+        (am, fmt, Printf.sprintf "v%d" (i+1))
       })
     tyl in
-    let varexps = List.map (fun (_,v) -> <:expr< $lid:v$ >>) am_fmt_vars in
-    let e = List.fold_right (fun ((attrmod,fmt),v) body ->
-      <:expr< let $lid:v$ =
-              ($fmt_attrmod_modifier attrmod$ ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }
-              $fmt$) decoder in $body$ >>)
-      am_fmt_vars <:expr< ( $list:varexps$ ) >> in
+    let e = demarshal_to_tuple loc arg ~{msg=msg} am_fmt_vars in
   [(attrmod,
-    <:expr< fun decoder -> $e$ >>)]
+    e)]
 (*
 | <:ctyp:< { $list:fields$ } >> ->
   let (recpat, body) = fmt_record ~{cid=None} loc arg fields in
@@ -913,13 +1015,11 @@ and fmt_record ~{cid} loc arg fields =
   in
   let l = fmtrec ~{attrmod=attrmod} ty0 in do {
   assert (List.length l = 1) ;
-  let (attrmod, e) = List.hd l in
+  let (attrmod, fmt) = List.hd l in
   let loc = loc_of_ctyp ty0 in
+  let e = demarshal_to_tuple loc arg ~{msg=msg} [(attrmod, fmt, "v")] in
   (attrmod,
-  <:expr<
-     let open Pa_ppx_protobuf.Runtime.Decode in
-     $fmt_attrmod_modifier attrmod$ ~{msg= $str:msg$ } ~{wantkey= $int:fmt_attrmod_key attrmod$ }
-     $e$ >>)
+  e)
   }
 ;
 
