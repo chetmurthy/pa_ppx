@@ -936,17 +936,13 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   <:expr< fun [ $list:branches$ ] >>
 *)
 | <:ctyp:< ( $list:tyl$ ) >> ->
-    let am_fmt_vars = List.mapi (fun i ty ->
-      let attrmod = { (mt_attrmod) with key = Some i } in
+    let am_fmts = List.mapi (fun i ty ->
+      let attrmod = { (mt_attrmod) with key = Some (i+1) } in
       let l = fmtrec ~{attrmod=attrmod} ty in do {
         assert (List.length l = 1) ;
-        let (am, fmt) = List.hd l in
-        (am, fmt, Printf.sprintf "v%d" (i+1))
-      })
-    tyl in
-    let e = demarshal_to_tuple loc arg ~{msg=msg} am_fmt_vars in
-  [(attrmod,
-    e)]
+        List.hd l
+      }) tyl in
+    am_fmts
 (*
 | <:ctyp:< { $list:fields$ } >> ->
   let (recpat, body) = fmt_record ~{cid=None} loc arg fields in
@@ -1013,11 +1009,11 @@ and fmt_record ~{cid} loc arg fields =
   (<:patt< `Assoc xs >>, e)
 *)
   in
-  let l = fmtrec ~{attrmod=attrmod} ty0 in do {
-  assert (List.length l = 1) ;
-  let (attrmod, fmt) = List.hd l in
+  let am_fmts = fmtrec ~{attrmod=attrmod} ty0 in do {
   let loc = loc_of_ctyp ty0 in
-  let e = demarshal_to_tuple loc arg ~{msg=msg} [(attrmod, fmt, "v")] in
+  let am_fmt_vars = List.mapi (fun i (am,fmt) ->
+    (am, fmt, Printf.sprintf "v_%d" i)) am_fmts in
+  let e = demarshal_to_tuple loc arg ~{msg=msg} am_fmt_vars in
   (attrmod,
   e)
   }

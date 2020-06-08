@@ -31,26 +31,6 @@ let test_bool ctxt =
   assert_roundtrip string_of_bool b_to_protobuf b_from_protobuf
                    "\x08\x01" true
 
-#ifdef PAPPX
-let i1_from_protobuf_manually decoder =
-  let v0 = None in
-  let update_v0 v0 (newv : int) = Some newv in
-  let rec derec v0 = match Protobuf.Decoder.key decoder with
-    | Some (1, kind) ->
-      let v0 = update_v0 v0 
-      (let open Pa_ppx_protobuf.Runtime.Decode in
-            ((decode0 int__varint ~msg:"Test_syntax.i1" kind) decoder))
-       in
-      derec v0
-    | Some (_, kind) -> ( Protobuf.Decoder.skip decoder kind ; derec v0 )
-    | None -> v0
-  in match derec v0 with
-    Some v0 -> v0
-  | _ -> raise
-        (let open Protobuf.Decoder in
-            Failure (Missing_field "Test_syntax.i1"))
-#endif
-
 type i1  = int                       [@@deriving protobuf]
 type i1'  = int [@key 2]             [@@deriving protobuf]
 type i2  = int   [@encoding `zigzag] [@@deriving protobuf]
@@ -168,37 +148,9 @@ let test_array ctxt =
   assert_roundtrip printer a_to_protobuf a_from_protobuf
                    "\x08\xac\x02\x08\x2a" [|300; 42|]
 
-#ifndef PAPPX
 type ts = int * string [@@deriving protobuf]
 type ts' = (string[@key 2]) * (int[@key 1]) [@@deriving protobuf]
 type tup3 = (string[@key 3]) * (int[@key 2]) * (int option [@key 1]) [@@deriving protobuf]
-let tup3_from_protobuf_manually decoder =
-  let update_v0 v0 (newv : string) = Some newv in
-  let update_v1 v1 (newv : int) = Some newv in
-  let update_v2 v2 (newv : int option)  = newv in
-  let rec derec (v0, v1, v2) = match Protobuf.Decoder.key decoder with
-    | Some (3, kind) ->
-      let v0 = update_v0 v0 
-      (let open Pa_ppx_protobuf.Runtime.Decode in
-            (decode0 string__bytes ~msg:"Test_syntax.tup3" kind) decoder) in
-      derec (v0, v1, v2)
-    | Some (2, kind) ->
-      let v1 = update_v1 v1 
-      (let open Pa_ppx_protobuf.Runtime.Decode in
-            (decode0 int__varint ~msg:"Test_syntax.tup3" kind) decoder)
-       in
-      derec (v0, v1, v2)
-    | Some (1, kind) ->
-      let v2 = update_v2 v2 
-      (let open Pa_ppx_protobuf.Runtime.Decode in
-            Some ((decode0 int__varint ~msg:"Test_syntax.tup3" kind) decoder))
-       in
-      derec (v0, v1, v2)
-    | Some (_, kind) -> ( Protobuf.Decoder.skip decoder kind ; derec (v0, v1, v2) )
-    | None -> (v0, v1, v2)
-  in match derec (None, None, None) with
-    (Some v0, Some v1, v2) -> (v0, v1, v2)
-  | _ -> failwith "failed"
 
 let ts_printer (x, y) = Printf.sprintf "%d, %s" x y 
 let ts'_printer (y, x) = Printf.sprintf "%s, %d" y x 
@@ -211,15 +163,14 @@ let test_tuple ctxt =
 let test_tuple' ctxt =
   assert_roundtrip ts'_printer ts'_to_protobuf ts'_from_protobuf
                    "\x08\xac\x02\x12\x08spartans" ("spartans", 300)
-(*
 ; assert_differential_roundtrip ts'_printer ts_to_protobuf ts'_from_protobuf
                    "\x08\xac\x02\x12\x08spartans" (300, "spartans") ("spartans", 300)
-*)
 
 let test_tup3 ctxt =
-  assert_roundtrip tup3_printer tup3_to_protobuf tup3_from_protobuf_manually
+  assert_roundtrip tup3_printer tup3_to_protobuf tup3_from_protobuf
                    "\b*\016\172\002\026\bspartans" ("spartans", 300, Some 42)
 
+#ifndef PAPPX
 type r1 = {
   r1a : int    [@key 1];
   r1b : string [@key 2];
@@ -469,10 +420,10 @@ let suite = "Test syntax" >::: [
     "test_option"         >:: test_option;
     "test_list"           >:: test_list;
     "test_array"          >:: test_array;
-#ifndef PAPPX
     "test_tuple"          >:: test_tuple;
     "test_tuple'"          >:: test_tuple';
     "test_tup3"          >:: test_tup3;
+#ifndef PAPPX
     "test_record"         >:: test_record;
     "test_nested"         >:: test_nested;
     "test_imm_tuple"      >:: test_imm_tuple;
