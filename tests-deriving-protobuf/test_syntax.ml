@@ -149,28 +149,33 @@ let test_array ctxt =
                    "\x08\xac\x02\x08\x2a" [|300; 42|]
 
 type ts = int * string [@@deriving protobuf]
-type ts' = (string[@key 2]) * (int[@key 1]) [@@deriving protobuf]
-type tup3 = (string[@key 3]) * (int[@key 2]) * (int option [@key 1]) [@@deriving protobuf]
-
 let ts_printer (x, y) = Printf.sprintf "%d, %s" x y 
-let ts'_printer (y, x) = Printf.sprintf "%s, %d" y x 
-let tup3_printer (x, y, z) = Printf.sprintf "%s, %d, %s" x y (match z with None -> "<>" | Some n -> string_of_int n)
-
 let test_tuple ctxt =
   assert_roundtrip ts_printer ts_to_protobuf ts_from_protobuf
                    "\x08\xac\x02\x12\x08spartans" (300, "spartans")
 
+type ts' = (string[@key 2]) * (int[@key 1]) [@@deriving protobuf]
+let ts'_printer (y, x) = Printf.sprintf "%s, %d" y x 
 let test_tuple' ctxt =
   assert_roundtrip ts'_printer ts'_to_protobuf ts'_from_protobuf
                    "\x08\xac\x02\x12\x08spartans" ("spartans", 300)
 ; assert_differential_roundtrip ts'_printer ts_to_protobuf ts'_from_protobuf
                    "\x08\xac\x02\x12\x08spartans" (300, "spartans") ("spartans", 300)
 
+type tup3 = (string[@key 3]) * (int[@key 2]) * (int option [@key 1]) [@@deriving protobuf]
+let tup3_printer (x, y, z) = Printf.sprintf "%s, %d, %s" x y (match z with None -> "<>" | Some n -> string_of_int n)
+
 let test_tup3 ctxt =
   assert_roundtrip tup3_printer tup3_to_protobuf tup3_from_protobuf
                    "\b*\016\172\002\026\bspartans" ("spartans", 300, Some 42)
 
 #ifndef PAPPX
+type tsts = (int * string) * string [@@deriving protobuf]
+let tsts_printer (x, y) = Printf.sprintf "%s, %s" (ts_printer x) y 
+let test_tsts ctxt =
+  assert_roundtrip tsts_printer tsts_to_protobuf tsts_from_protobuf
+                   "\n\b\b\172\002\018\003foo\018\bspartans" ((300, "foo"), "spartans")
+
 type r1 = {
   r1a : int    [@key 1];
   r1b : string [@key 2];
@@ -424,6 +429,7 @@ let suite = "Test syntax" >::: [
     "test_tuple'"          >:: test_tuple';
     "test_tup3"          >:: test_tup3;
 #ifndef PAPPX
+    "test_tsts"          >:: test_tsts;
     "test_record"         >:: test_record;
     "test_nested"         >:: test_nested;
     "test_imm_tuple"      >:: test_imm_tuple;

@@ -270,12 +270,9 @@ type converter_t 'a 'b = {
 ; convertf : string -> 'a -> 'b
 } ;
 
-value decode0 c ~{msg} kind (decoder : Protobuf.Decoder.t) =
+value decode0 c ~{msg} (decoder : Protobuf.Decoder.t) =
   let open Protobuf.Decoder in
-  if c.kind = kind then
-    c.convertf msg (c.decodef decoder)
-  else
-    raise (Failure (Unexpected_payload msg kind))
+  c.convertf msg (c.decodef decoder)
 ;
 
 value int__varint =
