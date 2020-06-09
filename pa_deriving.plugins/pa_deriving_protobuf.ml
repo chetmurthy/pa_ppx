@@ -27,6 +27,7 @@ module Ctxt = struct
   value is_plugin_name ctxt s = (s = plugin_name ctxt) ;
 end ;
 
+value tuplectyp loc l = if List.length l = 1 then List.hd l else <:ctyp< ( $list:l$ ) >> ;
 value tuplepatt loc l = if List.length l = 1 then List.hd l else <:patt< ( $list:l$ ) >> ;
 value tupleexpr loc l = if List.length l = 1 then List.hd l else <:expr< ( $list:l$ ) >> ;
 
@@ -68,16 +69,20 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
     Base.expr_runtime_module <:expr< Runtime >> in
   let rec fmtrec ?{coercion} ?{attrmod={ (mt_attrmod) with message = True } } = fun [
 
-(*
+
   <:ctyp:< $lid:lid$ >> when attrmod.nobuiltin ->
   let fname = to_protobuf_fname arg lid in
-  <:expr< $lid:fname$ >>
+  (attrmod, <:expr< fun v encoder -> do {
+            Protobuf.Encoder.key ($int:fmt_attrmod_key attrmod$, Protobuf.Bytes) encoder ;
+            Protobuf.Encoder.nested ($lid:fname$ v) encoder
+          } >>)
 
+(*
 | <:ctyp:< _ >> -> failwith "cannot derive yojson for type <<_>>"
 | <:ctyp:< Yojson.Safe.t >> -> <:expr< fun x -> x >>
 | <:ctyp:< unit >> -> <:expr< $runtime_module$.Yojson.unit_to_yojson >>
 *)
-  <:ctyp:< int >> when attrmod.encoding = Some Zigzag ->
+| <:ctyp:< int >> when attrmod.encoding = Some Zigzag ->
   (attrmod,
    <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
@@ -231,6 +236,15 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
  <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
     $fmt_attrmod_modifier attrmod$
     (float__bits32 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
+
+| <:ctyp:< $lid:lid$ >> ->
+  let fname = to_protobuf_fname arg lid in
+  (attrmod,
+   <:expr< fun v encoder -> do {
+            Protobuf.Encoder.key ($int:fmt_attrmod_key attrmod$, Protobuf.Bytes) encoder ;
+            Protobuf.Encoder.nested ($lid:fname$ v) encoder
+          } >>)
+
 (*
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Yojson.hashtbl_to_yojson >>
@@ -391,7 +405,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
         else () ;
         <:ctyp< $ty$ [@ $_attribute:List.hd keyattrs$ ] >>
       }) fields in
-    <:ctyp< ( $list:l$ ) >> in
+    tuplectyp loc l in
   let (_, e) = fmtrec ~{attrmod=attrmod} tupty in
   let fields_as_tuple =
     let l = List.map (fun (_, n, _, _, _) ->
@@ -705,15 +719,17 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
     let loc = loc_of_ctyp ty0 in
     Base.expr_runtime_module <:expr< Runtime >> in
   let rec fmtrec ?{attrmod=mt_attrmod} = fun [
-(*
+
   <:ctyp:< $lid:lid$ >> when attrmod.nobuiltin ->
   let fname = of_protobuf_fname arg lid in
-  <:expr< $lid:fname$ >>
+  (attrmod, <:patt< Protobuf.Bytes >>,
+  <:expr< fun ~{msg} decoder -> $lid:fname$ (Protobuf.Decoder.nested decoder) >>)
 
+(*
 | <:ctyp:< Protobuf.Safe.t >> -> <:expr< fun x -> Result.Ok x >>
 | <:ctyp:< unit >> -> <:expr< $runtime_module$.Protobuf.unit_of_protobuf $str:msg$ >>
 *)
-  <:ctyp:< int >> when attrmod.encoding = Some Zigzag -> 
+| <:ctyp:< int >> when attrmod.encoding = Some Zigzag -> 
   (attrmod, <:patt< Protobuf.Varint >>,
   <:expr< (decode0 int__zigzag) >>)
 
@@ -822,6 +838,12 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
 | <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod.encoding = Some Bits32 ->
   (attrmod, <:patt< Protobuf.Bits32 >>,
  <:expr< (decode0 float__bits32) >>)
+
+| <:ctyp:< $lid:lid$ >> ->
+  let fname = of_protobuf_fname arg lid in
+  (attrmod, <:patt< Protobuf.Bytes >>,
+  <:expr< fun ~{msg} decoder -> $lid:fname$ (Protobuf.Decoder.nested decoder) >>)
+
 (*
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Protobuf.hashtbl_of_protobuf >>
@@ -994,7 +1016,7 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
         else () ;
         <:ctyp< $ty$ [@ $_attribute:List.hd keyattrs$ ] >>
       }) fields in
-    <:ctyp< ( $list:l$ ) >> in
+    tuplectyp loc l in
   let (_, _, e) = fmtrec ~{attrmod=attrmod} tupty in
   let fields_as_tuple_patt =
     let l = List.map (fun (_, n, _, _, _) ->

@@ -162,6 +162,8 @@ let test_tuple' ctxt =
 ; assert_differential_roundtrip ts'_printer ts_to_protobuf ts'_from_protobuf
                    "\x08\xac\x02\x12\x08spartans" (300, "spartans") ("spartans", 300)
 
+type ts'' = ts [@@deriving protobuf]
+
 type tup3 = (string[@key 3]) * (int[@key 2]) * (int option [@key 1]) [@@deriving protobuf]
 let tup3_printer (x, y, z) = Printf.sprintf "%s, %d, %s" x y (match z with None -> "<>" | Some n -> string_of_int n)
 
@@ -175,6 +177,11 @@ let test_tsts ctxt =
   assert_roundtrip tsts_printer tsts_to_protobuf tsts_from_protobuf
                    "\n\b\b\172\002\018\003foo\018\bspartans" ((300, "foo"), "spartans")
 
+type tsts' = ts * string [@@deriving protobuf]
+let test_tsts' ctxt =
+  assert_roundtrip tsts_printer tsts'_to_protobuf tsts'_from_protobuf
+                   "\n\b\b\172\002\018\003foo\018\bspartans" ((300, "foo"), "spartans")
+
 type r1 = {
   r1a : int    [@key 1];
   r1b : string [@key 2];
@@ -184,8 +191,6 @@ let test_record ctxt =
   assert_roundtrip printer r1_to_protobuf r1_from_protobuf
                    "\x08\xac\x02\x12\x08spartans"
                    { r1a = 300; r1b = "spartans" }
-
-#ifndef PAPPX
 type r2 = {
   r2a : r1 [@key 1];
 } [@@deriving protobuf]
@@ -210,6 +215,7 @@ type r3' = {
 } [@@deriving protobuf]
 
 
+#ifndef PAPPX
 type v1 =
 | V1A [@key 1]
 | V1B [@key 2]
