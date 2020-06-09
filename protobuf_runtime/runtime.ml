@@ -10,10 +10,12 @@ module Encode = struct
 value required f v encoder =
   f v encoder
 ;
+value required_last = required ;
+
 value optional f v encoder =
   match v with [ None -> () | Some v -> f v encoder ]
 ;
-
+value optional_last = optional ;
 value list f v encoder =
   List.iter (fun e -> f e encoder) v
 ;

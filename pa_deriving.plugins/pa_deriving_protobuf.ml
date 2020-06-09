@@ -66,7 +66,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   let runtime_module =
     let loc = loc_of_ctyp ty0 in
     Base.expr_runtime_module <:expr< Runtime >> in
-  let rec fmtrec ?{coercion} ?{attrmod=mt_attrmod} = fun [
+  let rec fmtrec ?{coercion} ?{attrmod={ (mt_attrmod) with message = True } } = fun [
 
 (*
   <:ctyp:< $lid:lid$ >> when attrmod.nobuiltin ->
@@ -366,8 +366,13 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
     let exps = List.map (fun ((_, fmt), v) -> <:expr< $fmt$ $lid:v$ encoder >>) am_fmt_vars in
 
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
-  (attrmod,
-    <:expr< fun ($list:varpats$) encoder -> do { $list:exps$ } >>)
+    let e = <:expr< fun ($list:varpats$) encoder -> do { $list:exps$ } >> in
+    let e = if not attrmod.message then
+      <:expr< fun v encoder -> do {
+                Protobuf.Encoder.key ($int:fmt_attrmod_key attrmod$, Protobuf.Bytes) encoder;
+                Protobuf.Encoder.nested ($e$ v) encoder } >>
+      else e in
+  (attrmod, e)
 (*
 | <:ctyp:< { $list:fields$ } >> ->
   let (recpat, body) = fmt_record loc arg fields in
@@ -669,7 +674,7 @@ value demarshal_to_tuple loc arg ~{msg} am_kind_fmt_vars =
 
   let e3 = <:expr< let $list:updaters$ in $e4$ >> in
   let e2 = <:expr< let $list:initvals$ in $e3$ >> in
-  <:expr< fun decoder -> $e2$ >>
+  <:expr< fun ~{msg} decoder -> $e2$ >>
 ;
 
 value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
@@ -686,96 +691,96 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
 | <:ctyp:< unit >> -> <:expr< $runtime_module$.Protobuf.unit_of_protobuf $str:msg$ >>
 *)
   <:ctyp:< int >> when attrmod.encoding = Some Zigzag -> 
-  [(attrmod, <:patt< Protobuf.Varint >>,
-  <:expr< (decode0 int__zigzag) >>)]
+  (attrmod, <:patt< Protobuf.Varint >>,
+  <:expr< (decode0 int__zigzag) >>)
 
 | <:ctyp:< int >> when attrmod.encoding = Some Bits32 -> 
-  [(attrmod, <:patt< Protobuf.Bits32 >>,
-  <:expr< (decode0 int__bits32) >>)]
+  (attrmod, <:patt< Protobuf.Bits32 >>,
+  <:expr< (decode0 int__bits32) >>)
 
 | <:ctyp:< int >> when attrmod.encoding = Some Bits64 -> 
-  [(attrmod, <:patt< Protobuf.Bits64 >>,
-  <:expr< (decode0 int__bits64) >>)]
+  (attrmod, <:patt< Protobuf.Bits64 >>,
+  <:expr< (decode0 int__bits64) >>)
 
 | <:ctyp:< int >> -> 
-  [(attrmod, <:patt< Protobuf.Varint >>,
-  <:expr< (decode0 int__varint)>>)]
+  (attrmod, <:patt< Protobuf.Varint >>,
+  <:expr< (decode0 int__varint)>>)
 
 | <:ctyp:< bool >> ->
-  [(attrmod, <:patt< Protobuf.Varint >>,
-  <:expr< (decode0 bool__variant) >>)]
+  (attrmod, <:patt< Protobuf.Varint >>,
+  <:expr< (decode0 bool__variant) >>)
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Bits32 || attrmod.encoding = None ->
-  [(attrmod, <:patt< Protobuf.Bits32 >>,
- <:expr< (decode0 int32__bits32) >>)]
+  (attrmod, <:patt< Protobuf.Bits32 >>,
+ <:expr< (decode0 int32__bits32) >>)
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Bits64 ->
-  [(attrmod, <:patt< Protobuf.Bits64 >>,
- <:expr< (decode0 int32__bits64) >>)]
+  (attrmod, <:patt< Protobuf.Bits64 >>,
+ <:expr< (decode0 int32__bits64) >>)
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Varint ->
-  [(attrmod, <:patt< Protobuf.Varint >>,
- <:expr< (decode0 int32__varint) >>)]
+  (attrmod, <:patt< Protobuf.Varint >>,
+ <:expr< (decode0 int32__varint) >>)
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Zigzag ->
-  [(attrmod, <:patt< Protobuf.Varint >>,
- <:expr< (decode0 int32__zigzag) >>)]
+  (attrmod, <:patt< Protobuf.Varint >>,
+ <:expr< (decode0 int32__zigzag) >>)
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Bits32 || attrmod.encoding = None ->
-  [(attrmod, <:patt< Protobuf.Bits32 >>,
- <:expr< (decode0 uint32__bits32) >>)]
+  (attrmod, <:patt< Protobuf.Bits32 >>,
+ <:expr< (decode0 uint32__bits32) >>)
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Bits64 ->
-  [(attrmod, <:patt< Protobuf.Bits64 >>,
- <:expr< (decode0 uint32__bits64) >>)]
+  (attrmod, <:patt< Protobuf.Bits64 >>,
+ <:expr< (decode0 uint32__bits64) >>)
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Varint ->
-  [(attrmod, <:patt< Protobuf.Varint >>,
- <:expr< (decode0 uint32__varint) >>)]
+  (attrmod, <:patt< Protobuf.Varint >>,
+ <:expr< (decode0 uint32__varint) >>)
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Zigzag ->
-  [(attrmod, <:patt< Protobuf.Varint >>,
- <:expr< (decode0 uint32__zigzag) >>)]
+  (attrmod, <:patt< Protobuf.Varint >>,
+ <:expr< (decode0 uint32__zigzag) >>)
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Bits64 || attrmod.encoding = None ->
-  [(attrmod, <:patt< Protobuf.Bits64 >>,
- <:expr< (decode0 int64__bits64) >>)]
+  (attrmod, <:patt< Protobuf.Bits64 >>,
+ <:expr< (decode0 int64__bits64) >>)
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Bits32 ->
-  [(attrmod, <:patt< Protobuf.Bits32 >>,
- <:expr< (decode0 int64__bits32) >>)]
+  (attrmod, <:patt< Protobuf.Bits32 >>,
+ <:expr< (decode0 int64__bits32) >>)
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Varint ->
-  [(attrmod, <:patt< Protobuf.Varint >>,
- <:expr< (decode0 int64__varint) >>)]
+  (attrmod, <:patt< Protobuf.Varint >>,
+ <:expr< (decode0 int64__varint) >>)
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Zigzag ->
-  [(attrmod, <:patt< Protobuf.Varint >>,
- <:expr< (decode0 int64__zigzag) >>)]
+  (attrmod, <:patt< Protobuf.Varint >>,
+ <:expr< (decode0 int64__zigzag) >>)
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Bits64 || attrmod.encoding = None ->
-  [(attrmod, <:patt< Protobuf.Bits64 >>,
- <:expr< (decode0 uint64__bits64) >>)]
+  (attrmod, <:patt< Protobuf.Bits64 >>,
+ <:expr< (decode0 uint64__bits64) >>)
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Bits32 ->
-  [(attrmod, <:patt< Protobuf.Bits32 >>,
- <:expr< (decode0 uint64__bits32) >>)]
+  (attrmod, <:patt< Protobuf.Bits32 >>,
+ <:expr< (decode0 uint64__bits32) >>)
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Varint ->
-  [(attrmod, <:patt< Protobuf.Varint >>,
- <:expr< (decode0 uint64__varint) >>)]
+  (attrmod, <:patt< Protobuf.Varint >>,
+ <:expr< (decode0 uint64__varint) >>)
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Zigzag ->
-  [(attrmod, <:patt< Protobuf.Varint >>,
- <:expr< (decode0 uint64__zigzag) >>)]
+  (attrmod, <:patt< Protobuf.Varint >>,
+ <:expr< (decode0 uint64__zigzag) >>)
 
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  [(attrmod, <:patt< Protobuf.Bytes >>,
- <:expr< (decode0 string__bytes) >>)]
+  (attrmod, <:patt< Protobuf.Bytes >>,
+ <:expr< (decode0 string__bytes) >>)
 
 | (<:ctyp:< bytes >> | <:ctyp:< Stdlib.Bytes.t >> | <:ctyp:< Bytes.t >>) ->
-  [(attrmod, <:patt< Protobuf.Bytes >>,
- <:expr< (decode0 bytes__bytes) >>)]
+  (attrmod, <:patt< Protobuf.Bytes >>,
+ <:expr< (decode0 bytes__bytes) >>)
 (*
 | <:ctyp:< char >> -> <:expr< fun [ `String x ->
           if (String.length x) = 1
@@ -788,12 +793,12 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
       | _ -> Result.Error $str:msg$ ] >>
 *)
 | <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod.encoding = None || attrmod.encoding = Some Bits64 ->
-  [(attrmod, <:patt< Protobuf.Bits64 >>,
- <:expr< (decode0 float__bits64) >>)]
+  (attrmod, <:patt< Protobuf.Bits64 >>,
+ <:expr< (decode0 float__bits64) >>)
 
 | <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod.encoding = Some Bits32 ->
-  [(attrmod, <:patt< Protobuf.Bits32 >>,
- <:expr< (decode0 float__bits32) >>)]
+  (attrmod, <:patt< Protobuf.Bits32 >>,
+ <:expr< (decode0 float__bits32) >>)
 (*
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Protobuf.hashtbl_of_protobuf >>
@@ -939,13 +944,15 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   <:expr< fun [ $list:branches$ ] >>
 *)
 | <:ctyp:< ( $list:tyl$ ) >> ->
-    let am_fmts = List.mapi (fun i ty ->
+    let am_kind_fmt_vars = List.mapi (fun i ty ->
       let attrmod = { (mt_attrmod) with key = Some (i+1) } in
-      let l = fmtrec ~{attrmod=attrmod} ty in do {
-        assert (List.length l = 1) ;
-        List.hd l
-      }) tyl in
-    am_fmts
+      let (am, kind, fmt) = fmtrec ~{attrmod=attrmod} ty in
+      (am, kind, fmt, Printf.sprintf "v_%d" i)) tyl in
+    let e = demarshal_to_tuple loc arg ~{msg=msg} am_kind_fmt_vars in
+    let e = if not attrmod.message then
+      <:expr< fun ~{msg} decoder -> $e$ ~{msg=msg} (Protobuf.Decoder.nested decoder) >>
+    else e in
+    (attrmod, <:patt< Protobuf.Bytes >>, e)
 (*
 | <:ctyp:< { $list:fields$ } >> ->
   let (recpat, body) = fmt_record ~{cid=None} loc arg fields in
@@ -1012,14 +1019,14 @@ and fmt_record ~{cid} loc arg fields =
   (<:patt< `Assoc xs >>, e)
 *)
   in
-  let am_fmts = fmtrec ~{attrmod=attrmod} ty0 in do {
+  let (am, kind, fmt) = fmtrec ~{attrmod=attrmod} ty0 in
   let loc = loc_of_ctyp ty0 in
-  let am_fmt_vars = List.mapi (fun i (am, kind, fmt) ->
-    (am, kind, fmt, Printf.sprintf "v_%d" i)) am_fmts in
-  let e = demarshal_to_tuple loc arg ~{msg=msg} am_fmt_vars in
-  (attrmod,
-  e)
-  }
+  match ty0 with [
+    <:ctyp< ( $list:_$ ) >> -> (am, fmt)
+  | _ ->
+    let e = demarshal_to_tuple loc arg ~{msg=msg} [(am, kind, fmt, "v")] in
+    (attrmod, e)
+  ]
 ;
 
 value fmt_of_top arg ~{msg} params = fun [
@@ -1068,7 +1075,8 @@ value str_item_funs arg td = do {
   let paramfun_patts = List.map (PM.arg_patt ~{mono=True} loc) param_map in
   let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
   let paramfun_exprs = List.map (PM.arg_expr loc) param_map in
-  let body = fmt_of_top arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map ty in
+  let msg = Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname in
+  let body = fmt_of_top arg ~{msg=msg} param_map ty in
   let (fun1, ofun2) = sig_item_fun0 arg td in
   let e = 
     let of_e = <:expr< let open! $runtime_module$ in let open! Stdlib in $body$ >> in
@@ -1076,7 +1084,7 @@ value str_item_funs arg td = do {
     let fty = PM.quantify_over_ctyp param_map fty in
     (<:patt< ( $lid:of_protobuffname$ : $fty$ ) >>,
      Expr.abstract_over (paramtype_patts@paramfun_patts)
-       <:expr< fun arg -> $of_e$ arg >>, <:vala< [] >>) in
+       <:expr< fun arg -> $of_e$ $str:msg$ arg >>, <:vala< [] >>) in
    [e]
 }
 ;

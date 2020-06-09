@@ -169,13 +169,13 @@ let test_tup3 ctxt =
   assert_roundtrip tup3_printer tup3_to_protobuf tup3_from_protobuf
                    "\b*\016\172\002\026\bspartans" ("spartans", 300, Some 42)
 
-#ifndef PAPPX
 type tsts = (int * string) * string [@@deriving protobuf]
 let tsts_printer (x, y) = Printf.sprintf "%s, %s" (ts_printer x) y 
 let test_tsts ctxt =
   assert_roundtrip tsts_printer tsts_to_protobuf tsts_from_protobuf
                    "\n\b\b\172\002\018\003foo\018\bspartans" ((300, "foo"), "spartans")
 
+#ifndef PAPPX
 type r1 = {
   r1a : int    [@key 1];
   r1b : string [@key 2];
@@ -428,8 +428,8 @@ let suite = "Test syntax" >::: [
     "test_tuple"          >:: test_tuple;
     "test_tuple'"          >:: test_tuple';
     "test_tup3"          >:: test_tup3;
-#ifndef PAPPX
     "test_tsts"          >:: test_tsts;
+#ifndef PAPPX
     "test_record"         >:: test_record;
     "test_nested"         >:: test_nested;
     "test_imm_tuple"      >:: test_imm_tuple;
