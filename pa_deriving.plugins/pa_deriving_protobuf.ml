@@ -373,12 +373,35 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
                 Protobuf.Encoder.nested ($e$ v) encoder } >>
       else e in
   (attrmod, e)
-(*
-| <:ctyp:< { $list:fields$ } >> ->
-  let (recpat, body) = fmt_record loc arg fields in
-  let recpat = match coercion with [ None -> recpat | Some ty -> <:patt< ( $recpat$ : $ty$ ) >> ] in
-  <:expr< fun $recpat$ -> $body$ >>
-*)
+
+| <:ctyp:< { $list:fields$ } >> -> do {
+(* (1) convert fields into a tuple-type
+   (2) generate encoder
+   (3) convert record to tuple
+   (4) and apply encoder
+   N.B. since this is a record, it MUST be at top-level (attrmod.message=True).
+ *)
+  assert attrmod.message ;
+  assert (None = attrmod.key) ;
+  let tupty =
+    let l = List.map (fun (_, _, _, ty, attrs) ->
+      let keyattrs = List.find_all (DC.is_allowed_attribute (DC.get arg) "protobuf" "key") (uv attrs) in do {
+        if List.length keyattrs <> 1 then
+          Ploc.raise loc (Failure "MUST specify exactly one @key for each field")
+        else () ;
+        <:ctyp< $ty$ [@ $_attribute:List.hd keyattrs$ ] >>
+      }) fields in
+    <:ctyp< ( $list:l$ ) >> in
+  let (_, e) = fmtrec ~{attrmod=attrmod} tupty in
+  let fields_as_tuple =
+    let l = List.map (fun (_, n, _, _, _) ->
+      <:expr< v . $lid:n$ >>
+    ) fields in
+    tupleexpr loc l in
+  (attrmod, <:expr< fun v encoder -> $e$ $fields_as_tuple$ encoder >>)
+
+  }
+
 | [%unmatched_vala] -> failwith "pa_deriving_protobuf.to_expression"
 ]
 (*
@@ -953,11 +976,42 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
       <:expr< fun ~{msg} decoder -> $e$ ~{msg=msg} (Protobuf.Decoder.nested decoder) >>
     else e in
     (attrmod, <:patt< Protobuf.Bytes >>, e)
-(*
-| <:ctyp:< { $list:fields$ } >> ->
-  let (recpat, body) = fmt_record ~{cid=None} loc arg fields in
-  <:expr< fun [ $recpat$ -> $body$ | _ -> Result.Error $str:msg$ ] >>
-*)
+
+| <:ctyp:< { $list:fields$ } >> -> do {
+(* (1) convert fields into a tuple-type
+   (2) generate decoder
+   (3) apply encoder
+   (4) and convert tuple to record
+   N.B. since this is a record, it MUST be at top-level (attrmod.message=True).
+ *)
+  assert attrmod.message ;
+  assert (None = attrmod.key) ;
+  let tupty =
+    let l = List.map (fun (_, _, _, ty, attrs) ->
+      let keyattrs = List.find_all (DC.is_allowed_attribute (DC.get arg) "protobuf" "key") (uv attrs) in do {
+        if List.length keyattrs <> 1 then
+          Ploc.raise loc (Failure "MUST specify exactly one @key for each field")
+        else () ;
+        <:ctyp< $ty$ [@ $_attribute:List.hd keyattrs$ ] >>
+      }) fields in
+    <:ctyp< ( $list:l$ ) >> in
+  let (_, _, e) = fmtrec ~{attrmod=attrmod} tupty in
+  let fields_as_tuple_patt =
+    let l = List.map (fun (_, n, _, _, _) ->
+      <:patt< $lid:n$ >>
+    ) fields in
+    tuplepatt loc l in
+  let recexpr =
+    let l = List.map (fun (_, n, _, _, _) ->
+      (<:patt< $lid:n$ >>, <:expr< $lid:n$ >>)
+    ) fields in
+    <:expr< { $list:l$ } >> in
+  (attrmod, <:patt< Protobuf.Bytes >>,
+   <:expr< fun ~{msg} decoder -> match $e$ msg decoder with
+      [ $fields_as_tuple_patt$ -> $recexpr$ ] >>)
+  }
+
+
 | [%unmatched_vala] -> failwith "pa_deriving_protobuf.of_expression"
 ]
 (*

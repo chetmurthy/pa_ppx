@@ -175,7 +175,6 @@ let test_tsts ctxt =
   assert_roundtrip tsts_printer tsts_to_protobuf tsts_from_protobuf
                    "\n\b\b\172\002\018\003foo\018\bspartans" ((300, "foo"), "spartans")
 
-#ifndef PAPPX
 type r1 = {
   r1a : int    [@key 1];
   r1b : string [@key 2];
@@ -186,6 +185,7 @@ let test_record ctxt =
                    "\x08\xac\x02\x12\x08spartans"
                    { r1a = 300; r1b = "spartans" }
 
+#ifndef PAPPX
 type r2 = {
   r2a : r1 [@key 1];
 } [@@deriving protobuf]
