@@ -1219,7 +1219,7 @@ and fmt_record ~{cid} loc arg fields =
   let (am, kind, fmt) = fmtrec ~{attrmod=attrmod} ty0 in
   let loc = loc_of_ctyp ty0 in
   match ty0 with [
-    <:ctyp< ( $list:_$ ) >> | <:ctyp< { $list:_$ } >> -> (am, fmt)
+    <:ctyp< ( $list:_$ ) >> | <:ctyp< { $list:_$ } >> | <:ctyp< [ $list:_$ ] >> -> (am, fmt)
   | _ ->
     let e = demarshal_to_tuple loc arg ~{msg=msg} [(am, kind, fmt, "v")] in
     (attrmod, e)

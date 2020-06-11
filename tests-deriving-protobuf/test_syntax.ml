@@ -226,7 +226,6 @@ type r3' = {
   r3b : bool * bytes [@key 2];
 } [@@deriving protobuf]
 
-#ifndef PAPPX
 type v1 =
 | V1A [@key 1]
 | V1B [@key 2]
@@ -262,6 +261,7 @@ let test_variant_bare ctxt =
                    "\x08\x02" { r4a = V2B }
 
 
+#ifndef PAPPX
 type 'a r5 = {
   r5a: 'a [@key 1]
 } [@@deriving protobuf]
@@ -451,9 +451,9 @@ let suite = "Test syntax" >::: [
     "test_record"         >:: test_record;
     "test_nested"         >:: test_nested;
     "test_imm_tuple"      >:: test_imm_tuple;
-#ifndef PAPPX
     "test_variant"        >:: test_variant;
     "test_variant_bare"   >:: test_variant_bare;
+#ifndef PAPPX
     "test_tvar"           >:: test_tvar;
     "test_mylist"         >:: test_mylist;
     "test_poly_variant"   >:: test_poly_variant;
