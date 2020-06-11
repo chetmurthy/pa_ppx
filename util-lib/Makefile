@@ -14,8 +14,8 @@ NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 
 PACKAGES := $(PACKAGES),pcre,core_kernel
 TARGET := pa_ppx_utils.cma
-ML := std.ml coll.ml std2.ml uf.ml tsort0.ml tsort.ml
-MLI := std2.mli  std.mli  tsort0.mli  uf.mli
+ML := std.ml coll.ml std2.ml uf.ml tsort0.ml tsort.ml pack.ml hash.ml
+MLI := std2.mli  std.mli  tsort0.mli  uf.mli pack.mli
 CMO := $(ML:.ml=.cmo)
 CMI := $(ML:.ml=.cmi)
 CMX := $(ML:.ml=.cmx)

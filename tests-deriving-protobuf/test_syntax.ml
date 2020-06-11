@@ -4,24 +4,27 @@ let filemod = "Test_syntax.ml"
 let filemod = "Test_syntax.ml.ppx"
 #endif
 open OUnit2
+open Pa_ppx_utils
 
 type uint32 = Uint32.t
 type uint64 = Uint64.t
 
 let assert_roundtrip printer encoder decoder str value =
+  let fmt_hex_string s = Hash.hex_of_bytes (Bytes.of_string s) in
   (* encode *)
   let e = Protobuf.Encoder.create () in
   encoder value e;
-  assert_equal ~printer:(Printf.sprintf "%S") str (Protobuf.Encoder.to_string e);
+  assert_equal ~printer:fmt_hex_string str (Protobuf.Encoder.to_string e);
   (* decode *)
   let d = Protobuf.Decoder.of_string str in
   assert_equal ~printer value (decoder d)
 
 let assert_differential_roundtrip printer encoder decoder str in_value out_value =
+  let fmt_hex_string s = Hash.hex_of_bytes (Bytes.of_string s) in
   (* encode *)
   let e = Protobuf.Encoder.create () in
   encoder in_value e;
-  assert_equal ~printer:(Printf.sprintf "%S") str (Protobuf.Encoder.to_string e);
+  assert_equal ~printer:fmt_hex_string str (Protobuf.Encoder.to_string e);
   (* decode *)
   let d = Protobuf.Decoder.of_string str in
   assert_equal ~printer out_value (decoder d)
@@ -285,15 +288,6 @@ let test_tvar ctxt =
                    (r5_from_protobuf i1_from_protobuf)
                    "\x0a\x02\x08\x01" { r5a = 1 }
 
-#ifdef PAPPX
-module M = struct
-type 'a mylist =
-| Nil
-| Cons of 'a * 'a mylist
-
-end
-#endif
-
 type 'a mylist =
 | Nil [@key 1]
 | Cons of 'a * 'a mylist [@key 2]
@@ -327,7 +321,6 @@ let test_mylist ctxt =
                     "\x0a\x02\x08\x03\x12\x02\x08\x01")
                    (Cons (1, (Cons (2, (Cons (3, Nil))))))
 
-#ifndef PAPPX
 type v3 = [
   `V3A [@key 1]
 | `V3B of int [@key 2]
@@ -351,13 +344,14 @@ let test_poly_variant ctxt =
 type r6 = {
   r6a : [ `R6A [@key 1] | `R6B [@key 2] ] [@key 1];
 } [@@deriving protobuf]
-let test_imm_pvariant ctxt =
-  let printer { r6a } =
+let r6_printer { r6a } =
     match r6a with `R6A -> "{ r6a = `R6A }" | `R6B -> "{ r6a = `R6B }"
-  in
-  assert_roundtrip printer r6_to_protobuf r6_from_protobuf
+
+let test_imm_pvariant ctxt =
+  assert_roundtrip r6_printer r6_to_protobuf r6_from_protobuf
                    "\x0a\x02\x08\x02" { r6a = `R6B }
 
+#ifndef PAPPX
 type v4 = [ `V4A [@key 1] | `V4B [@key 2] ]
 and r7 = {
   r7a : v4 [@key 1] [@bare]
@@ -381,7 +375,9 @@ let test_imm_pv_bare ctxt =
   in
   assert_roundtrip printer r8_to_protobuf r8_from_protobuf
                    "\x08\x01\x10\x2a" { r8a = `Request; r8b = 42 }
+#endif
 
+#ifndef PAPPX
 type v5 =
 | V5A of int option [@key 1]
 | V5B of string list [@key 2]
@@ -495,9 +491,9 @@ let suite = "Test syntax" >::: [
 #endif
     "test_tvar"           >:: test_tvar;
     "test_mylist"         >:: test_mylist;
-#ifndef PAPPX
     "test_poly_variant"   >:: test_poly_variant;
     "test_imm_pvariant"   >:: test_imm_pvariant;
+#ifndef PAPPX
     "test_pvariant_bare"  >:: test_pvariant_bare;
     "test_imm_pv_bare"    >:: test_imm_pv_bare;
     "test_variant_optrep" >:: test_variant_optrep;

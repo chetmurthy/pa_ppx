@@ -2,6 +2,15 @@ coll.cmo : \
     std.cmi
 coll.cmx : \
     std.cmx
+hash.cmo : \
+    pack.cmi
+hash.cmx : \
+    pack.cmx
+pack.cmo : \
+    pack.cmi
+pack.cmx : \
+    pack.cmi
+pack.cmi :
 std.cmo : \
     std.cmi
 std.cmx : \
