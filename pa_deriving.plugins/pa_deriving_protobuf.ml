@@ -383,16 +383,6 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
     $fmt_attrmod_modifier attrmod$
     (float__bits32 ~{msg= $str:msg$ } ~{key= $int:fmt_attrmod_key attrmod$ }) >>)
 
-| <:ctyp:< $lid:lid$ >> ->
-  let fname = to_protobuf_fname arg lid in
-  (attrmod,
-   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
-    $fmt_attrmod_modifier attrmod$
-    (fun v encoder -> do {
-            Protobuf.Encoder.key ($int:fmt_attrmod_key attrmod$, Protobuf.Bytes) encoder ;
-            Protobuf.Encoder.nested ($lid:fname$ v) encoder
-          }) >>)
-
 (*
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Yojson.hashtbl_to_yojson >>
@@ -427,15 +417,48 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 *)
 | <:ctyp:< option $ty$ >> when attrmod.arity = None ->
   fmtrec ~{attrmod = { (attrmod) with arity = Some `Optional } } ty
-(*
-| <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
+
+| <:ctyp:< $_$ $_$ >> as ty ->
+  let (tyf, tyargs) = Ctyp.unapplist ty in
+  let lid = match tyf with [
+    <:ctyp:< $lid:lid$ >> -> lid
+  | _ -> Ploc.raise loc (Failure "type-application with lhs not a type-name")
+  ] in
+  let fmtargs = List.map (fun ty -> let (_, e) = fmtrec ~{attrmod=mt_attrmod} ty in e) tyargs in
+  let fname = to_protobuf_fname arg lid in
+  let f = Expr.applist <:expr< $lid:fname$ >> fmtargs in
+  (attrmod,
+   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
+    $fmt_attrmod_modifier attrmod$
+    (fun v encoder -> do {
+            Protobuf.Encoder.key ($int:fmt_attrmod_key attrmod$, Protobuf.Bytes) encoder ;
+            Protobuf.Encoder.nested ($f$ v) encoder
+          }) >>)
+
+| <:ctyp:< $lid:lid$ >> ->
+  let fname = to_protobuf_fname arg lid in
+  (attrmod,
+   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
+    $fmt_attrmod_modifier attrmod$
+    (fun v encoder -> do {
+            Protobuf.Encoder.key ($int:fmt_attrmod_key attrmod$, Protobuf.Bytes) encoder ;
+            Protobuf.Encoder.nested ($lid:fname$ v) encoder
+          }) >>)
 
 | <:ctyp:< '$i$ >> ->
   let p = match PM.find i param_map with [
-    x -> x | exception Not_found -> failwith "pa_deriving.yojson: unrecognized param-var in type-decl"
+    x -> x | exception Not_found -> failwith "pa_deriving.protobuf: unrecognized param-var in type-decl"
   ] in
-  PM.arg_expr loc p
+  let e = PM.arg_expr loc p in
+  (attrmod,
+   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
+    $fmt_attrmod_modifier attrmod$
+    (fun v encoder -> do {
+            Protobuf.Encoder.key ($int:fmt_attrmod_key attrmod$, Protobuf.Bytes) encoder ;
+            Protobuf.Encoder.nested ($e$ v) encoder
+          }) >>)
 
+(*
 | <:ctyp:< $lid:lid$ >> ->
   let fname = to_protobuf_fname arg lid in
   <:expr< $lid:fname$ >>
@@ -457,7 +480,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   let tuplety = Variant.to_tupletype loc arg branch_key_slotnums in
   let to_tuple_expr = Variant.totuple loc arg "v" (branch_key_slotnums, nslots) in
   let (_, fmt) = fmtrec ~{attrmod=attrmod} tuplety in
-  (attrmod, <:expr< fun v encoder -> $fmt$ ( $to_tuple_expr$ : $tuplety$ ) encoder >>)
+  (attrmod, <:expr< fun v encoder -> $fmt$ $to_tuple_expr$ encoder >>)
   }
 
 (*
@@ -975,11 +998,6 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   (attrmod, <:patt< Protobuf.Bits32 >>,
  <:expr< (decode0 float__bits32) >>)
 
-| <:ctyp:< $lid:lid$ >> ->
-  let fname = of_protobuf_fname arg lid in
-  (attrmod, <:patt< Protobuf.Bytes >>,
-  <:expr< fun ~{msg} decoder -> $lid:fname$ (Protobuf.Decoder.nested decoder) >>)
-
 (*
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Protobuf.hashtbl_of_protobuf >>
@@ -1014,15 +1032,33 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
 *)
 | <:ctyp:< option $ty$ >> when attrmod.arity = None ->
   fmtrec ~{attrmod = { (attrmod) with arity = Some `Optional } } ty
-(*
-| <:ctyp:< $t1$ $t2$ >> -> <:expr< $fmtrec t1$ $fmtrec t2$ >>
+
+| <:ctyp:< $_$ $_$ >> as ty ->
+  let (tyf, tyargs) = Ctyp.unapplist ty in
+  let lid = match tyf with [
+    <:ctyp:< $lid:lid$ >> -> lid
+  | _ -> Ploc.raise loc (Failure "type-application with lhs not a type-name")
+  ] in
+  let fmtargs = List.map (fun ty -> let (_, _, e) = fmtrec ~{attrmod=mt_attrmod} ty in e) tyargs in
+  let fname = of_protobuf_fname arg lid in
+  let fmtargs = List.map (fun e -> <:expr< $e$ ~{msg= $str:msg$ } >>) fmtargs in
+  let f = Expr.applist <:expr< $lid:fname$ >> fmtargs in
+  (attrmod, <:patt< Protobuf.Bytes >>,
+  <:expr< fun ~{msg} decoder -> $f$ (Protobuf.Decoder.nested decoder) >>)
+
+| <:ctyp:< $lid:lid$ >> ->
+  let fname = of_protobuf_fname arg lid in
+  (attrmod, <:patt< Protobuf.Bytes >>,
+  <:expr< fun ~{msg} decoder -> $lid:fname$ (Protobuf.Decoder.nested decoder) >>)
 
 | <:ctyp:< '$i$ >> ->
   let p = match PM.find i param_map with [
     x -> x | exception Not_found -> failwith "pa_deriving.protobuf: unrecognized param-var in type-decl"
   ] in
-  PM.arg_expr loc p
+  let e = PM.arg_expr loc p in
+  (attrmod, <:patt< Protobuf.Bytes >>, <:expr< fun ~{msg} decoder -> $e$ (Protobuf.Decoder.nested decoder) >>)
 
+(*
 | <:ctyp:< $lid:lid$ >> ->
   let fname = of_protobuf_fname arg lid in
   <:expr< $lid:fname$ >>

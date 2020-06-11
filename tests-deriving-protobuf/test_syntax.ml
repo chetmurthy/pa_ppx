@@ -275,7 +275,6 @@ let test_variant_bare ctxt =
                    "\x08\x02" { r4a = V2B }
 #endif
 
-#ifndef PAPPX
 type 'a r5 = {
   r5a: 'a [@key 1]
 } [@@deriving protobuf]
@@ -286,6 +285,16 @@ let test_tvar ctxt =
                    (r5_from_protobuf i1_from_protobuf)
                    "\x0a\x02\x08\x01" { r5a = 1 }
 
+#ifdef PAPPX
+module M = struct
+type 'a mylist =
+| Nil
+| Cons of 'a * 'a mylist
+
+end
+#endif
+
+#ifndef PAPPX
 type 'a mylist =
 | Nil [@key 1]
 | Cons of 'a * 'a mylist [@key 2]
@@ -299,10 +308,26 @@ let test_mylist ctxt =
   assert_roundtrip (printer string_of_int)
                    (mylist_to_protobuf i1_to_protobuf)
                    (mylist_from_protobuf i1_from_protobuf)
+                   "\b\001"
+                   Nil ;
+  assert_roundtrip (printer string_of_int)
+                   (mylist_to_protobuf i1_to_protobuf)
+                   (mylist_from_protobuf i1_from_protobuf)
+                   "\b\002\026\b\n\002\b\003\018\002\b\001"
+                   (Cons (3, Nil)) ;
+  assert_roundtrip (printer string_of_int)
+                   (mylist_to_protobuf i1_to_protobuf)
+                   (mylist_from_protobuf i1_from_protobuf)
+                   "\b\002\026\018\n\002\b\002\018\012\b\002\026\b\n\002\b\003\018\002\b\001"
+                   (Cons (2, (Cons (3, Nil)))) (* ;
+  assert_roundtrip (printer string_of_int)
+                   (mylist_to_protobuf i1_to_protobuf)
+                   (mylist_from_protobuf i1_from_protobuf)
                    ("\x08\x02\x1a\x1c\x0a\x02\x08\x01\x12\x16\x08\x02" ^
                     "\x1a\x12\x0a\x02\x08\x02\x12\x0c\x08\x02\x1a\x08" ^
                     "\x0a\x02\x08\x03\x12\x02\x08\x01")
                    (Cons (1, (Cons (2, (Cons (3, Nil))))))
+*)
 
 type v3 = [
   `V3A [@key 1]
@@ -469,8 +494,8 @@ let suite = "Test syntax" >::: [
 #ifndef PAPPX
     "test_variant_bare"   >:: test_variant_bare;
 #endif
-#ifndef PAPPX
     "test_tvar"           >:: test_tvar;
+#ifndef PAPPX
     "test_mylist"         >:: test_mylist;
     "test_poly_variant"   >:: test_poly_variant;
     "test_imm_pvariant"   >:: test_imm_pvariant;
