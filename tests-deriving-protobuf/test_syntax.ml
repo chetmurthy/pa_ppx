@@ -34,7 +34,7 @@ let test_bool ctxt =
   assert_roundtrip string_of_bool b_to_protobuf b_from_protobuf
                    "\x08\x01" true
 
-type i1  = int                       [@@deriving protobuf]
+type i1  = int                       [@@deriving protobuf, show]
 type i1'  = int [@key 2]             [@@deriving protobuf]
 type i2  = int   [@encoding `zigzag] [@@deriving protobuf]
 type i3  = int   [@encoding `bits32] [@@deriving protobuf]
@@ -377,6 +377,37 @@ let test_imm_pv_bare ctxt =
                    "\x08\x01\x10\x2a" { r8a = `Request; r8b = 42 }
 #endif
 
+type 'a optionmsg = { it : 'a option [@key 1] }[@@deriving show, protobuf]
+let test_optionmsg ctxt =
+  assert_roundtrip (show_optionmsg pp_i1) (optionmsg_to_protobuf i1_to_protobuf) (optionmsg_from_protobuf i1_from_protobuf)
+                   "" { it = None }
+; assert_roundtrip (show_optionmsg pp_i1) (optionmsg_to_protobuf i1_to_protobuf) (optionmsg_from_protobuf i1_from_protobuf)
+                   "\x0a\x03\x08\xac\x02" { it = Some 300 }
+
+
+type 'a listmsg = { it : 'a list [@key 1] }[@@deriving show, protobuf]
+let test_listmsg ctxt =
+  assert_roundtrip (show_listmsg pp_i1) (listmsg_to_protobuf i1_to_protobuf) (listmsg_from_protobuf i1_from_protobuf)
+                   "" { it = [] }
+; assert_roundtrip (show_listmsg pp_i1) (listmsg_to_protobuf i1_to_protobuf) (listmsg_from_protobuf i1_from_protobuf)
+                   "\x0a\x03\x08\xac\x02" { it = [300] }
+
+
+type 'a arraymsg = { it : 'a array [@key 1] }[@@deriving show, protobuf]
+let test_arraymsg ctxt =
+  assert_roundtrip (show_arraymsg pp_i1) (arraymsg_to_protobuf i1_to_protobuf) (arraymsg_from_protobuf i1_from_protobuf)
+                   "" { it = [||] }
+; assert_roundtrip (show_arraymsg pp_i1) (arraymsg_to_protobuf i1_to_protobuf) (arraymsg_from_protobuf i1_from_protobuf)
+                   "\x0a\x03\x08\xac\x02" { it = [|300|] }
+
+
+
+(*
+type i1oo = int option option [@@deriving show, protobuf]
+let test_i1oo ctxt =
+  assert_roundtrip show_i1oo i1oo_to_protobuf i1oo_from_protobuf
+                   "\x08\xac\x02" None
+*)
 #ifndef PAPPX
 type v5 =
 | V5A of int option [@key 1]
@@ -496,6 +527,11 @@ let suite = "Test syntax" >::: [
 #ifndef PAPPX
     "test_pvariant_bare"  >:: test_pvariant_bare;
     "test_imm_pv_bare"    >:: test_imm_pv_bare;
+#endif
+    "test_optionmsg"      >:: test_optionmsg;
+    "test_listmsg"        >:: test_listmsg;
+    "test_arraymsg"        >:: test_arraymsg;
+#ifndef PAPPX
     "test_variant_optrep" >:: test_variant_optrep;
     "test_nonpoly"        >:: test_nonpoly;
     "test_default"        >:: test_default;
