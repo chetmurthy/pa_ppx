@@ -33,13 +33,13 @@ value tupleexpr loc l = if List.length l = 1 then List.hd l else <:expr< ( $list
 
 type encoding_t = [ Varint | Zigzag | Bits32 | Bits64 ] ;
 type attrmod_t = {
-  nobuiltin: bool
-; encoding : option encoding_t
+  encoding : option encoding_t
 ; key : option int
 ; message : bool
+; bare : bool
 ; arity : option [ = `List | `Array | `Optional ] } ;
 
-value mt_attrmod = { nobuiltin = False ; encoding = None ; key = None ; message = False ; arity = None } ;
+value mt_attrmod = { encoding = None ; key = None ; message = False ; bare = False ; arity = None } ;
 value attrmod_key a = match a.key with [ None -> 1 | Some n -> n ] ;
 value attrmod_key_compare a b = Int.compare (attrmod_key a) (attrmod_key b) ;
 value fmt_attrmod_key a = a |> attrmod_key |> string_of_int ;
@@ -219,15 +219,9 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
     Base.expr_runtime_module <:expr< Runtime >> in
   let rec fmtrec ?{coercion} ?{attrmod={ (mt_attrmod) with message = True } } = fun [
 
-
-  <:ctyp:< $lid:lid$ >> when attrmod.nobuiltin ->
+  <:ctyp:< $lid:lid$ >> when attrmod.bare ->
   let fname = to_protobuf_fname arg lid in
-  (attrmod, <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
-    $fmt_attrmod_modifier attrmod$
-    (fun v encoder -> do {
-            Protobuf.Encoder.key ($int:fmt_attrmod_key attrmod$, Protobuf.Bytes) encoder ;
-            Protobuf.Encoder.nested ($lid:fname$ v) encoder
-          }) >>)
+  (attrmod, <:expr< $lid:fname$ >>)
 
 (*
 | <:ctyp:< _ >> -> failwith "cannot derive yojson for type <<_>>"
@@ -412,12 +406,12 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
     ] in
     fmtrec ~{attrmod={ (attrmod) with encoding = Some encoding } } t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "nobuiltin" ->
-    fmtrec ~{attrmod={ (attrmod) with nobuiltin = True } } t
-
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ $int:key$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "key" ->
     let key = int_of_string key in
     fmtrec ~{attrmod={ (attrmod) with key = Some key } } t
+
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "bare" ->
+    fmtrec ~{attrmod={ (attrmod) with bare = True } } t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
 
@@ -862,10 +856,10 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
     Base.expr_runtime_module <:expr< Runtime >> in
   let rec fmtrec ?{attrmod=mt_attrmod} = fun [
 
-  <:ctyp:< $lid:lid$ >> when attrmod.nobuiltin ->
+  <:ctyp:< $lid:lid$ >> when attrmod.bare ->
   let fname = of_protobuf_fname arg lid in
-  (attrmod, <:patt< Protobuf.Bytes >>,
-  <:expr< fun ~{msg} decoder -> $lid:fname$ (Protobuf.Decoder.nested decoder) >>)
+  (attrmod, <:patt< Protobuf.Varint >>,
+  <:expr< $lid:fname$ >>)
 
 (*
 | <:ctyp:< Protobuf.Safe.t >> -> <:expr< fun x -> Result.Ok x >>
@@ -998,13 +992,13 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
     | <:expr< `bits64 >> -> Bits64
     ] in
     fmtrec ~{attrmod= { (attrmod) with encoding = Some encoding } } t
-(*
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "nobuiltin" ->
-    fmtrec ~{attrmod={ (attrmod) with nobuiltin = True } } t
-*)
+
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ $int:key$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "key" ->
     let key = int_of_string key in
     fmtrec ~{attrmod={ (attrmod) with key = Some key } } t
+
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "bare" ->
+    fmtrec ~{attrmod={ (attrmod) with bare = True } } t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
 
@@ -1219,7 +1213,8 @@ and fmt_record ~{cid} loc arg fields =
   let (am, kind, fmt) = fmtrec ~{attrmod=attrmod} ty0 in
   let loc = loc_of_ctyp ty0 in
   match ty0 with [
-    <:ctyp< ( $list:_$ ) >> | <:ctyp< { $list:_$ } >> | <:ctyp< [ $list:_$ ] >> -> (am, fmt)
+    <:ctyp< ( $list:_$ ) >> | <:ctyp< { $list:_$ } >> | <:ctyp< [ $list:_$ ] >> ->
+    (am, <:expr< let open Pa_ppx_protobuf.Runtime.Decode in $fmt$ >>)
   | _ ->
     let e = demarshal_to_tuple loc arg ~{msg=msg} [(am, kind, fmt, "v")] in
     (attrmod, e)
@@ -1495,7 +1490,7 @@ Pa_deriving.(Registry.add PI.{
 ; options = ["optional" ; "protoc" ; "protoc_import" ]
 ; default_options = let loc = Ploc.dummy in
     [ ("optional", <:expr< False >>) ]
-; alg_attributes = ["key"; "default"; "encoding"; "bare"; "packed"; "nobuiltin"]
+; alg_attributes = ["key"; "default"; "encoding"; "bare"; "packed"]
 ; expr_extensions = []
 ; ctyp_extensions = []
 ; expr = (fun _ _ -> assert False)

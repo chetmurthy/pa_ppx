@@ -247,6 +247,20 @@ let test_variant ctxt =
   assert_roundtrip printer v1_to_protobuf v1_from_protobuf
                    "\x08\x04\x2a\x0a\x0a\x03foo\x12\x03bar" (V1D ("foo", "bar"))
 
+type v6 =
+| V6A [@key 1]
+| V6B [@key 2]
+[@@deriving protobuf]
+let test_v6 ctxt =
+  let printer v =
+    match v with
+    | V6A -> "V6A"
+    | V6B -> "V6B"
+  in
+  assert_roundtrip printer v6_to_protobuf v6_from_protobuf
+                   "\x08\x02" V6A;
+  ()
+#ifndef PAPPX
 type v2 =
 | V2A [@key 1]
 | V2B [@key 2]
@@ -259,7 +273,7 @@ let test_variant_bare ctxt =
   in
   assert_roundtrip printer r4_to_protobuf r4_from_protobuf
                    "\x08\x02" { r4a = V2B }
-
+#endif
 
 #ifndef PAPPX
 type 'a r5 = {
@@ -452,7 +466,9 @@ let suite = "Test syntax" >::: [
     "test_nested"         >:: test_nested;
     "test_imm_tuple"      >:: test_imm_tuple;
     "test_variant"        >:: test_variant;
+#ifndef PAPPX
     "test_variant_bare"   >:: test_variant_bare;
+#endif
 #ifndef PAPPX
     "test_tvar"           >:: test_tvar;
     "test_mylist"         >:: test_mylist;
