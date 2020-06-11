@@ -162,7 +162,13 @@ let test_tuple' ctxt =
 ; assert_differential_roundtrip ts'_printer ts_to_protobuf ts'_from_protobuf
                    "\x08\xac\x02\x12\x08spartans" (300, "spartans") ("spartans", 300)
 
-type ts'' = ts [@@deriving protobuf]
+type ts'' = ts option [@@deriving protobuf]
+let ts''_printer = function None -> "<>" | Some (x, y) -> Printf.sprintf "(%d, %s)" x y 
+let test_ts'' ctxt =
+  assert_roundtrip ts''_printer ts''_to_protobuf ts''_from_protobuf
+                   "\n\r\b\172\002\018\bspartans" (Some(300, "spartans"))
+; assert_roundtrip ts''_printer ts''_to_protobuf ts''_from_protobuf
+                   "" None
 
 type tup3 = (string[@key 3]) * (int[@key 2]) * (int option [@key 1]) [@@deriving protobuf]
 let tup3_printer (x, y, z) = Printf.sprintf "%s, %d, %s" x y (match z with None -> "<>" | Some n -> string_of_int n)
@@ -181,6 +187,12 @@ type tsts' = ts * string [@@deriving protobuf]
 let test_tsts' ctxt =
   assert_roundtrip tsts_printer tsts'_to_protobuf tsts'_from_protobuf
                    "\n\b\b\172\002\018\003foo\018\bspartans" ((300, "foo"), "spartans")
+
+type tsts'' = ts option * string [@@deriving protobuf]
+let tsts''_printer (x, y) = Printf.sprintf "%s, %s" (ts''_printer x) y 
+let test_tsts'' ctxt =
+  assert_roundtrip tsts''_printer tsts''_to_protobuf tsts''_from_protobuf
+                   "\n\b\b\172\002\018\003foo\018\bspartans" (Some (300, "foo"), "spartans")
 
 type r1 = {
   r1a : int    [@key 1];
@@ -213,7 +225,6 @@ type r3' = {
   r3a : (int [@encoding `bits32]) * string [@key 1];
   r3b : bool * bytes [@key 2];
 } [@@deriving protobuf]
-
 
 #ifndef PAPPX
 type v1 =
@@ -434,11 +445,13 @@ let suite = "Test syntax" >::: [
     "test_tuple"          >:: test_tuple;
     "test_tuple'"          >:: test_tuple';
     "test_tup3"          >:: test_tup3;
+    "test_ts''"          >:: test_ts'';
     "test_tsts"          >:: test_tsts;
-#ifndef PAPPX
+    "test_tsts''"          >:: test_tsts'';
     "test_record"         >:: test_record;
     "test_nested"         >:: test_nested;
     "test_imm_tuple"      >:: test_imm_tuple;
+#ifndef PAPPX
     "test_variant"        >:: test_variant;
     "test_variant_bare"   >:: test_variant_bare;
     "test_tvar"           >:: test_tvar;

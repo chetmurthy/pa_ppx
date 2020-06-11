@@ -55,6 +55,156 @@ value fmt_attrmod_modifier a =
 | _ -> assert False
 ] ;
 
+value attrs_to_key loc arg attrs =
+  match List.map uv (List.find_all (DC.is_allowed_attribute (DC.get arg) "protobuf" "key") (uv attrs)) with [
+    [  <:attribute_body< $_attrid:_$ $int:key$; >> ] -> int_of_string key
+  | _ -> Ploc.raise loc (Failure "MUST specify exactly one @key")
+  ]
+;
+
+module Variant = struct
+
+(** preprocess a variant type, returning a list of:
+
+  branch * (old key, new key) * slotnum
+
+  old key is the original key declared by the branch
+  new key is 1+ that (for convenience)
+  slotnum is the slot for this branch in the generated tuple type:
+    None if this is a branch without arguments (no slot)
+    Some n for the n-th slot.
+*)
+value preprocess loc arg attrmod l =
+  let (rev_branch_slotnums, nextslot) = List.fold_left (fun (acc, slotnum) -> fun [
+    (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) -> assert False
+
+  | (loc, cid, <:vala< [] >>, None, attrs) as b ->
+    let key = attrs_to_key loc arg attrs in
+    ([ (b, (key, key+1), None) :: acc], slotnum)
+
+  | (loc, cid, tyl, None, attrs) as b ->
+    let key = attrs_to_key loc arg attrs in
+    ([ (b, (key, key+1), Some slotnum) :: acc], slotnum+1)
+  ]) ([], 1) l in
+  let branch_key_slotnums = List.rev rev_branch_slotnums in
+  (branch_key_slotnums, nextslot-1)
+;
+
+(** convert a variant type into a tuple type.
+
+   By reference to the following type, I'll describe what we need:
+
+   type t = A [@key 1] | B [@key 2] | C of int [@key 3] | D [@key 4] | E of int * string [@key 5]
+
+   Each branch (MUST) has a key.  We must compute a "slot number"
+   for each branch in the tuple-type, which will be:
+
+   (int[@key 1] * option int [@key 3+1] * option(int * string) [@key 5+1])
+
+   Branches with arguments get slot-numbers.  All branches get keys (1+ the declared key).
+
+   The first int take the value of the original branch keys.
+*)
+value to_tupletype loc arg branch_key_slotnums =
+  let totuple_branch2tuplety = fun [
+    ((loc, cid, <:vala< [TyRec _ fields] >>, None, attrs), _, _) -> assert False
+  | ((loc, cid, <:vala< [] >>, None, attrs), _, _) ->
+    []
+  | ((loc, cid, tyl, None, attrs), (_, newkey), _) ->
+    let branchtuplety = tuplectyp loc (uv tyl) in
+    [<:ctyp< option $branchtuplety$ [@key $int:string_of_int newkey$; ] >>]
+  ] in
+    tuplectyp loc [ <:ctyp< int [@ key 1;] >> :: (List.concat (List.map totuple_branch2tuplety branch_key_slotnums)) ]
+;
+
+value all_nones_expr loc n = n |> Std.range |> List.map (fun _ -> <:expr< None >>) ;
+value all_nones_patt loc n = n |> Std.range |> List.map (fun _ -> <:patt< None >>) ;
+
+value none_except_i_expr loc n (k,e) =
+    n |> Std.range |> List.map (fun i ->
+      if i = k then e else <:expr< None >>) ;
+
+value none_except_i_patt loc n (k,e) =
+    n |> Std.range |> List.map (fun i ->
+      if i = k then e else <:patt< None >>) ;
+
+(** convert a variant value into a tuple. *)
+value totuple loc arg argvar (branch_key_slotnums, nslots) =
+
+  let all_nones_expr = all_nones_expr loc nslots in
+
+  let totuple_branch2tuple_expr argvars = fun [
+    ((loc, cid, <:vala< [TyRec _ fields] >>, None, attrs), _, _) -> assert False
+
+  | ((loc, cid, <:vala< [] >>, None, attrs), (oldkey, _), None) ->
+    tupleexpr loc [ <:expr< $int:string_of_int oldkey$ >> :: all_nones_expr ]
+
+  | ((loc, cid, tyl, None, attrs), (oldkey, _), Some slotnum) ->
+    (* (Some i, None ... None ..., Some <tuple-of-argvars>, None ...) *)
+    let argtuple_expr =  tupleexpr loc (List.map (fun v -> <:expr< $lid:v$ >>) argvars) in
+    tupleexpr loc [ <:expr< $int:string_of_int oldkey$ >>
+      :: none_except_i_expr loc nslots (slotnum, <:expr< Some $argtuple_expr$ >>) ]
+  ] in
+
+  let totuple_branch2branch_patt = fun [
+    ((loc, cid, <:vala< [TyRec _ fields] >>, None, attrs), _, _) -> assert False
+
+  | ((loc, cid, <:vala< [] >>, None, attrs), (oldkey, _), None) ->
+    (<:patt< $uid:uv cid$ >>, [])
+
+  | ((loc, cid, tyl, None, attrs), (oldkey, _), Some slotnum) ->
+    let argvars = List.mapi (fun i _ -> Printf.sprintf "v_%d" i) (uv tyl) in
+    (Patt.applist <:patt< $uid:uv cid$ >> (List.map (fun v -> <:patt< $lid:v$ >>) argvars),
+     argvars)
+
+  ] in
+
+  let totuple_branches = List.map (fun bks ->
+    let (patt,argvars) = totuple_branch2branch_patt bks in
+    let expr = totuple_branch2tuple_expr argvars bks in
+    (patt, <:vala< None >>, expr)) branch_key_slotnums in
+  <:expr< match v with [ $list:totuple_branches$ ] >>
+;
+
+value oftuple loc arg (branch_key_slotnums, nslots) =
+
+  let all_nones_patt = all_nones_patt loc nslots in
+
+  let oftuple_branch2tuple_patt argvars = fun [
+    ((loc, cid, <:vala< [TyRec _ fields] >>, None, attrs), _, _) -> assert False
+
+  | ((loc, cid, <:vala< [] >>, None, attrs), (oldkey, _), None) ->
+    tuplepatt loc [ <:patt< $int:string_of_int oldkey$ >> :: all_nones_patt ]
+
+  | ((loc, cid, tyl, None, attrs), (oldkey, _), Some slotnum) ->
+    (* (Some i, None ... None ..., Some <tuple-of-argvars>, None ...) *)
+    let argtuple_patt =  tuplepatt loc (List.map (fun v -> <:patt< $lid:v$ >>) argvars) in
+    tuplepatt loc [ <:patt< $int:string_of_int oldkey$ >>
+      :: none_except_i_patt loc nslots (slotnum, <:patt< Some $argtuple_patt$ >>) ]
+  ] in
+
+  let oftuple_branch2branch_expr = fun [
+    ((loc, cid, <:vala< [TyRec _ fields] >>, None, attrs), _, _) -> assert False
+
+  | ((loc, cid, <:vala< [] >>, None, attrs), (oldkey, _), None) ->
+    (<:expr< $uid:uv cid$ >>, [])
+
+  | ((loc, cid, tyl, None, attrs), (oldkey, _), Some slotnum) ->
+    let argvars = List.mapi (fun i _ -> Printf.sprintf "v_%d" i) (uv tyl) in
+    (Expr.applist <:expr< $uid:uv cid$ >> (List.map (fun v -> <:expr< $lid:v$ >>) argvars),
+     argvars)
+
+  ] in
+
+  let oftuple_branches = List.map (fun bks ->
+    let (expr,argvars) = oftuple_branch2branch_expr bks in
+    let patt = oftuple_branch2tuple_patt argvars bks in
+    (patt, <:vala< None >>, expr)) branch_key_slotnums in
+  <:expr< fun [ $list:oftuple_branches$ ] >>
+;
+
+end ;
+
 module To = struct
 
 module PM = ParamMap(struct value arg_ctyp_f loc pty = <:ctyp< $pty$ -> Pa_ppx_protobuf.Runtime.Protobuf.Encoder.t -> unit >> ; end) ;
@@ -72,10 +222,12 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 
   <:ctyp:< $lid:lid$ >> when attrmod.nobuiltin ->
   let fname = to_protobuf_fname arg lid in
-  (attrmod, <:expr< fun v encoder -> do {
+  (attrmod, <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
+    $fmt_attrmod_modifier attrmod$
+    (fun v encoder -> do {
             Protobuf.Encoder.key ($int:fmt_attrmod_key attrmod$, Protobuf.Bytes) encoder ;
             Protobuf.Encoder.nested ($lid:fname$ v) encoder
-          } >>)
+          }) >>)
 
 (*
 | <:ctyp:< _ >> -> failwith "cannot derive yojson for type <<_>>"
@@ -240,10 +392,12 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< $lid:lid$ >> ->
   let fname = to_protobuf_fname arg lid in
   (attrmod,
-   <:expr< fun v encoder -> do {
+   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
+    $fmt_attrmod_modifier attrmod$
+    (fun v encoder -> do {
             Protobuf.Encoder.key ($int:fmt_attrmod_key attrmod$, Protobuf.Bytes) encoder ;
             Protobuf.Encoder.nested ($lid:fname$ v) encoder
-          } >>)
+          }) >>)
 
 (*
 | <:ctyp:< Hashtbl.t >> ->
@@ -294,40 +448,25 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< $longid:li$ . $lid:lid$ >> ->
   let fname = to_protobuf_fname arg lid in
   Expr.prepend_longident li <:expr< $lid:fname$ >>
+*)
 
-| <:ctyp:< [ $list:l$ ] >> ->
-  let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
-    let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
-      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
-    ] in
-    let (recpat, body) = fmt_record loc arg (uv fields) in
+| <:ctyp:< [ $list:l$ ] >> -> do {
+(* (1) convert branches into a tuple-type
+   (2) generate encoder
+   (3) convert variant to tuple
+   (4) and apply encoder
+   N.B. since this is a variant, it MUST be at top-level (attrmod.message=True).
+ *)
+  assert attrmod.message ;
+  assert (None = attrmod.key) ;
+  let (branch_key_slotnums, nslots) = Variant.preprocess loc arg attrmod l in
+  let tuplety = Variant.to_tupletype loc arg branch_key_slotnums in
+  let to_tuple_expr = Variant.totuple loc arg "v" (branch_key_slotnums, nslots) in
+  let (_, fmt) = fmtrec ~{attrmod=attrmod} tuplety in
+  (attrmod, <:expr< fun v encoder -> $fmt$ ( $to_tuple_expr$ : $tuplety$ ) encoder >>)
+  }
 
-    let conspat = <:patt< $uid:cid$ $recpat$ >> in
-    (conspat, <:vala< None >>, <:expr< `List [ (`String $str:jscid$) ;  $body$ ] >>)
-
-  | (loc, cid, tyl, None, attrs) ->
-    let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
-      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
-    ] in
-    let tyl = uv tyl in
-    let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
-    let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
-    let conspat = List.fold_left (fun p vp -> <:patt< $p$ $vp$ >>)
-        <:patt< $uid:cid$ >> varpats in
-    let fmts = List.map fmtrec tyl in
-
-    let liste = List.fold_right2 (fun f v liste -> <:expr< [$f$ $lid:v$ :: $liste$] >>)
-        fmts vars <:expr< [] >> in
-
-    (conspat, <:vala< None >>, <:expr< `List [ (`String $str:jscid$) :: $liste$ ] >>)
-
-  | (_, _, _, Some _, _) -> assert False
-  ]) l in
-  <:expr< fun [ $list:branches$ ] >>
-
+(*
 | <:ctyp:< [= $list:l$ ] >> ->
   let branches = List.map (fun [
     PvTag loc cid _ tyl attrs -> do {
@@ -380,11 +519,14 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
     let exps = List.map (fun ((_, fmt), v) -> <:expr< $fmt$ $lid:v$ encoder >>) am_fmt_vars in
 
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
-    let e = <:expr< fun ($list:varpats$) encoder -> do { $list:exps$ } >> in
+    let tuple_varpats = tuplepatt loc varpats in
+    let e = <:expr< fun $tuple_varpats$ encoder -> do { $list:exps$ } >> in
     let e = if not attrmod.message then
-      <:expr< fun v encoder -> do {
+      <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
+    $fmt_attrmod_modifier attrmod$
+    (fun v encoder -> do {
                 Protobuf.Encoder.key ($int:fmt_attrmod_key attrmod$, Protobuf.Bytes) encoder;
-                Protobuf.Encoder.nested ($e$ v) encoder } >>
+                Protobuf.Encoder.nested ($e$ v) encoder }) >>
       else e in
   (attrmod, e)
 
@@ -405,7 +547,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
         else () ;
         <:ctyp< $ty$ [@ $_attribute:List.hd keyattrs$ ] >>
       }) fields in
-    tuplectyp loc l in
+    <:ctyp< ( $list:l$ ) >> in
   let (_, e) = fmtrec ~{attrmod=attrmod} tupty in
   let fields_as_tuple =
     let l = List.map (fun (_, n, _, _, _) ->
@@ -893,47 +1035,26 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
 | <:ctyp:< $longid:li$ . $lid:lid$ >> ->
   let fname = of_protobuf_fname arg lid in
   Expr.prepend_longident li <:expr< $lid:fname$ >>
+*)
 
-| <:ctyp:< [ $list:l$ ] >> ->
-  let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
-    let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
-      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
-    ] in
-    let (recpat, body) = fmt_record ~{cid=Some cid} loc arg (uv fields) in
+| <:ctyp:< [ $list:l$ ] >> -> do {
+(* (1) convert branches into a tuple-type
+   (2) generate decoder
+   (3) apply encoder
+   (4) and convert tuple to variant
+   N.B. since this is a variant, it MUST be at top-level (attrmod.message=True).
+ *)
+  assert attrmod.message ;
+  assert (None = attrmod.key) ;
+  let (branch_key_slotnums, nslots) = Variant.preprocess loc arg attrmod l in
+  let tuplety = Variant.to_tupletype loc arg branch_key_slotnums in
+  let of_tuple_expr = Variant.oftuple loc arg (branch_key_slotnums, nslots) in
+  let (_, _, fmt) = fmtrec ~{attrmod=attrmod} tuplety in
+  (attrmod, <:patt< Protobuf.Bytes >>,
+   <:expr< (fun ~{msg} decoder -> $of_tuple_expr$ ($fmt$ ~{msg=msg} decoder)) >>)
+  }
 
-    let conspat = <:patt< `List [ `String $str:jscid$ ; $recpat$ ] >> in
-    (conspat, <:vala< None >>, body)
-
-  | (loc, cid, tyl, None, attrs) ->
-    let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
-      None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
-    ] in
-    let tyl = uv tyl in
-    let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
-    let varexps = List.map (fun v -> <:expr< $lid:v$ >>) vars in
-    let fmts = List.map fmtrec tyl in
-
-    let conspat = List.fold_right (fun v rhs -> <:patt< [ $lid:v$ :: $rhs$ ] >>)
-        vars <:patt< [] >> in
-    let conspat = <:patt< `List [ (`String $str:jscid$) :: $conspat$ ] >> in
-
-    let consexp = Expr.applist <:expr< $uid:cid$ >> varexps in
-    let consexp = <:expr< Result.Ok $consexp$ >> in
-    let rhs = List.fold_right2 (fun v fmt rhs ->
-        <:expr< Rresult.R.bind ($fmt$ $lid:v$) (fun $lid:v$ -> $rhs$) >>)
-        vars fmts consexp in
-
-    (conspat, <:vala< None >>, rhs)
-
-  | (_, _, _, Some _, _) -> assert False
-  ]) l in
-  let catch_branch = (<:patt< _ >>, <:vala< None >>, <:expr< Result.Error $str:msg$ >>) in
-  let branches = branches @ [catch_branch] in
-  <:expr< fun [ $list:branches$ ] >>
-
+(*
 | <:ctyp:< [= $list:l$ ] >> as ty0 -> 
   let ty0 = monomorphize_ctyp ty0 in
   let branches = List.map (fun [
@@ -1016,7 +1137,7 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
         else () ;
         <:ctyp< $ty$ [@ $_attribute:List.hd keyattrs$ ] >>
       }) fields in
-    tuplectyp loc l in
+    <:ctyp< ( $list:l$ ) >> in
   let (_, _, e) = fmtrec ~{attrmod=attrmod} tupty in
   let fields_as_tuple_patt =
     let l = List.map (fun (_, n, _, _, _) ->
@@ -1028,9 +1149,9 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
       (<:patt< $lid:n$ >>, <:expr< $lid:n$ >>)
     ) fields in
     <:expr< { $list:l$ } >> in
-  (attrmod, <:patt< Protobuf.Bytes >>,
-   <:expr< fun ~{msg} decoder -> match $e$ msg decoder with
-      [ $fields_as_tuple_patt$ -> $recexpr$ ] >>)
+  let e = <:expr< fun ~{msg} decoder -> match $e$ msg decoder with
+      [ $fields_as_tuple_patt$ -> $recexpr$ ] >> in
+  (attrmod, <:patt< Protobuf.Bytes >>, e)
   }
 
 
@@ -1098,7 +1219,7 @@ and fmt_record ~{cid} loc arg fields =
   let (am, kind, fmt) = fmtrec ~{attrmod=attrmod} ty0 in
   let loc = loc_of_ctyp ty0 in
   match ty0 with [
-    <:ctyp< ( $list:_$ ) >> -> (am, fmt)
+    <:ctyp< ( $list:_$ ) >> | <:ctyp< { $list:_$ } >> -> (am, fmt)
   | _ ->
     let e = demarshal_to_tuple loc arg ~{msg=msg} [(am, kind, fmt, "v")] in
     (attrmod, e)
@@ -1160,7 +1281,7 @@ value str_item_funs arg td = do {
     let fty = PM.quantify_over_ctyp param_map fty in
     (<:patt< ( $lid:of_protobuffname$ : $fty$ ) >>,
      Expr.abstract_over (paramtype_patts@paramfun_patts)
-       <:expr< fun arg -> $of_e$ $str:msg$ arg >>, <:vala< [] >>) in
+       <:expr< fun arg -> $of_e$ ~{msg= $str:msg$ } arg >>, <:vala< [] >>) in
    [e]
 }
 ;
