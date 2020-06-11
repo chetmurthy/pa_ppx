@@ -377,37 +377,120 @@ let test_imm_pv_bare ctxt =
                    "\x08\x01\x10\x2a" { r8a = `Request; r8b = 42 }
 #endif
 
-type 'a optionmsg = { it : 'a option [@key 1] }[@@deriving show, protobuf]
+type 'a optionmsg = { it_option : 'a option [@key 1] }[@@deriving show, protobuf]
 let test_optionmsg ctxt =
   assert_roundtrip (show_optionmsg pp_i1) (optionmsg_to_protobuf i1_to_protobuf) (optionmsg_from_protobuf i1_from_protobuf)
-                   "" { it = None }
+                   "" { it_option = None }
 ; assert_roundtrip (show_optionmsg pp_i1) (optionmsg_to_protobuf i1_to_protobuf) (optionmsg_from_protobuf i1_from_protobuf)
-                   "\x0a\x03\x08\xac\x02" { it = Some 300 }
+                   "\x0a\x03\x08\xac\x02" { it_option = Some 300 }
 
+type i1om = i1 optionmsg [@@deriving show, protobuf]
+let test_i1om ctxt =
+  assert_roundtrip show_i1om i1om_to_protobuf i1om_from_protobuf
+                   "\x0a\x00" {it_option = None}
+; assert_roundtrip show_i1om i1om_to_protobuf i1om_from_protobuf
+                   "\x0a\x05\x0a\x03\x08\xac\x02" { it_option = (Some 300) }
 
-type 'a listmsg = { it : 'a list [@key 1] }[@@deriving show, protobuf]
+type i1omo = i1 optionmsg option [@@deriving show, protobuf]
+let test_i1omo ctxt =
+  assert_roundtrip show_i1omo i1omo_to_protobuf i1omo_from_protobuf
+                   "" None
+; assert_roundtrip show_i1omo i1omo_to_protobuf i1omo_from_protobuf
+                   "\x0a\x00" (Some {it_option = None})
+; assert_roundtrip show_i1omo i1omo_to_protobuf i1omo_from_protobuf
+                   "\x0a\x05\x0a\x03\x08\xac\x02" (Some { it_option = (Some 300) })
+
+type i1oml = i1 optionmsg list [@@deriving show, protobuf]
+let test_i1oml ctxt =
+  assert_roundtrip show_i1oml i1oml_to_protobuf i1oml_from_protobuf
+                   "" []
+; assert_roundtrip show_i1oml i1oml_to_protobuf i1oml_from_protobuf
+                   "\x0a\x00" [{it_option = None}]
+; assert_roundtrip show_i1oml i1oml_to_protobuf i1oml_from_protobuf
+                   "\x0a\x05\x0a\x03\x08\xac\x02" [{ it_option = (Some 300) }]
+; assert_roundtrip show_i1oml i1oml_to_protobuf i1oml_from_protobuf
+                   "\x0a\x05\x0a\x03\x08\xac\x02\x0a\x04\x0a\x02\x08\x2a" [{ it_option = (Some 300) }; { it_option = (Some 42) }]
+
+type 'a listmsg = { it_list : 'a list [@key 1] }[@@deriving show, protobuf]
 let test_listmsg ctxt =
   assert_roundtrip (show_listmsg pp_i1) (listmsg_to_protobuf i1_to_protobuf) (listmsg_from_protobuf i1_from_protobuf)
-                   "" { it = [] }
+                   "" { it_list = [] }
 ; assert_roundtrip (show_listmsg pp_i1) (listmsg_to_protobuf i1_to_protobuf) (listmsg_from_protobuf i1_from_protobuf)
-                   "\x0a\x03\x08\xac\x02" { it = [300] }
+                   "\x0a\x03\x08\xac\x02" { it_list = [300] }
 
+type i1lm = i1 listmsg [@@deriving show, protobuf]
+let test_i1lm ctxt =
+  assert_roundtrip show_i1lm i1lm_to_protobuf i1lm_from_protobuf
+                   "\x0a\x00" {it_list = []}
+; assert_roundtrip show_i1lm i1lm_to_protobuf i1lm_from_protobuf
+                   "\x0a\x05\x0a\x03\x08\xac\x02" { it_list = [300] }
+; assert_roundtrip show_i1lm i1lm_to_protobuf i1lm_from_protobuf
+                   "\x0a\x09\x0a\x03\x08\xac\x02\x0a\x02\x08\x2a" { it_list = [300; 42] }
 
-type 'a arraymsg = { it : 'a array [@key 1] }[@@deriving show, protobuf]
+type i1lml = i1 listmsg list [@@deriving show, protobuf]
+let test_i1lml ctxt =
+  assert_roundtrip show_i1lml i1lml_to_protobuf i1lml_from_protobuf
+                   "" []
+; assert_roundtrip show_i1lml i1lml_to_protobuf i1lml_from_protobuf
+                   "\x0a\x05\x0a\x03\x08\xac\x02" [{ it_list = [300] }]
+; assert_roundtrip show_i1lml i1lml_to_protobuf i1lml_from_protobuf
+                   "\x0a\x09\x0a\x03\x08\xac\x02\x0a\x02\x08\x2a" [{ it_list = [300; 42] }]
+; assert_roundtrip show_i1lml i1lml_to_protobuf i1lml_from_protobuf
+                   "\x0a\x09\x0a\x03\x08\xac\x02\x0a\x02\x08\x2a\x0a\x09\x0a\x03\x08\x90\x03\x0a\x02\x08\x16" [{ it_list = [300; 42] }; { it_list = [400; 22] }]
+
+type 'a arraymsg = { it_array : 'a array [@key 1] }[@@deriving show, protobuf]
 let test_arraymsg ctxt =
   assert_roundtrip (show_arraymsg pp_i1) (arraymsg_to_protobuf i1_to_protobuf) (arraymsg_from_protobuf i1_from_protobuf)
-                   "" { it = [||] }
+                   "" { it_array = [||] }
 ; assert_roundtrip (show_arraymsg pp_i1) (arraymsg_to_protobuf i1_to_protobuf) (arraymsg_from_protobuf i1_from_protobuf)
-                   "\x0a\x03\x08\xac\x02" { it = [|300|] }
+                   "\x0a\x03\x08\xac\x02" { it_array = [|300|] }
+
+type i1am = i1 arraymsg [@@deriving show, protobuf]
+let test_i1am ctxt =
+  assert_roundtrip show_i1am i1am_to_protobuf i1am_from_protobuf
+                   "\x0a\x00" {it_array = [||]}
+; assert_roundtrip show_i1am i1am_to_protobuf i1am_from_protobuf
+                   "\x0a\x05\x0a\x03\x08\xac\x02" { it_array = [|300|] }
+; assert_roundtrip show_i1am i1am_to_protobuf i1am_from_protobuf
+                   "\x0a\x09\x0a\x03\x08\xac\x02\x0a\x02\x08\x2a" { it_array = [|300; 42|] }
 
 
-
-(*
-type i1oo = int option option [@@deriving show, protobuf]
+#ifdef PAPPX
+type i1oo = i1 option option [@@deriving show, protobuf]
 let test_i1oo ctxt =
   assert_roundtrip show_i1oo i1oo_to_protobuf i1oo_from_protobuf
-                   "\x08\xac\x02" None
-*)
+                   "" None
+; assert_roundtrip show_i1oo i1oo_to_protobuf i1oo_from_protobuf
+                   "\x0a\x00" (Some None)
+; assert_roundtrip show_i1oo i1oo_to_protobuf i1oo_from_protobuf
+                   "\x0a\x05\x0a\x03\x08\xac\x02" (Some (Some 300))
+
+type i1ol = i1 option list [@@deriving show, protobuf]
+let test_i1ol ctxt =
+  assert_roundtrip show_i1ol i1ol_to_protobuf i1ol_from_protobuf
+                   "" []
+; assert_roundtrip show_i1ol i1ol_to_protobuf i1ol_from_protobuf
+                   "\x0a\x00" [None]
+; assert_roundtrip show_i1ol i1ol_to_protobuf i1ol_from_protobuf
+                   "\x0a\x05\x0a\x03\x08\xac\x02" [(Some 300)]
+; assert_roundtrip show_i1ol i1ol_to_protobuf i1ol_from_protobuf
+                   "\x0a\x05\x0a\x03\x08\xac\x02\x0a\x04\x0a\x02\x08\x2a" [(Some 300);(Some 42)]
+
+
+type i1ll = i1 list list [@@deriving show, protobuf]
+let test_i1ll ctxt =
+  assert_roundtrip show_i1ll i1ll_to_protobuf i1ll_from_protobuf
+                   "" []
+; assert_roundtrip show_i1ll i1ll_to_protobuf i1ll_from_protobuf
+                   "\x0a\x05\x0a\x03\x08\xac\x02" [[300]]
+; assert_roundtrip show_i1ll i1ll_to_protobuf i1ll_from_protobuf
+                   "\x0a\x09\x0a\x03\x08\xac\x02\x0a\x02\x08\x2a" [[300; 42]]
+; assert_roundtrip show_i1ll i1ll_to_protobuf i1ll_from_protobuf
+                   "\x0a\x09\x0a\x03\x08\xac\x02\x0a\x02\x08\x2a\x0a\x09\x0a\x03\x08\x90\x03\x0a\x02\x08\x16"
+                   [[300; 42];[400; 22]]
+
+#endif
+
 #ifndef PAPPX
 type v5 =
 | V5A of int option [@key 1]
@@ -529,8 +612,19 @@ let suite = "Test syntax" >::: [
     "test_imm_pv_bare"    >:: test_imm_pv_bare;
 #endif
     "test_optionmsg"      >:: test_optionmsg;
+    "test_i1om"           >:: test_i1om;
     "test_listmsg"        >:: test_listmsg;
-    "test_arraymsg"        >:: test_arraymsg;
+    "test_i1lm"           >:: test_i1lm;
+    "test_i1lml"          >:: test_i1lml;
+    "test_arraymsg"       >:: test_arraymsg;
+    "test_i1am"           >:: test_i1am;
+    "test_i1omo"          >:: test_i1omo;
+    "test_i1oml"          >:: test_i1oml;
+#ifdef PAPPX
+    "test_i1ol"           >:: test_i1ol;
+    "test_i1oo"           >:: test_i1oo;
+    "test_i1ll"           >:: test_i1ll;
+#endif
 #ifndef PAPPX
     "test_variant_optrep" >:: test_variant_optrep;
     "test_nonpoly"        >:: test_nonpoly;

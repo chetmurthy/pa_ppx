@@ -550,6 +550,11 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< list $ty$ >> when attrmod.arity = None ->
   fmtrec ~{attrmod = { (attrmod) with arity = Some `List } } ty
 
+| <:ctyp:< list $ty$ >> when attrmod.arity = Some `List ->
+  let (am, fmt) = fmtrec ~{attrmod = { (attrmod) with arity = Some `List } } <:ctyp< listmsg $ty$ >> in
+  (am,
+   <:expr< fun v encoder -> $fmt$ (List.map (fun v -> { it_list = v }) v) encoder >>)
+
 | <:ctyp:< array $ty$ >> when attrmod.arity = None ->
   fmtrec ~{attrmod = { (attrmod) with arity = Some `Array } } ty
 (*
@@ -559,6 +564,16 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 *)
 | <:ctyp:< option $ty$ >> when attrmod.arity = None ->
   fmtrec ~{attrmod = { (attrmod) with arity = Some `Optional } } ty
+
+| <:ctyp:< option $ty$ >> when attrmod.arity = Some `Optional ->
+  let (am, fmt) = fmtrec ~{attrmod = { (attrmod) with arity = Some `Optional } } <:ctyp< optionmsg $ty$ >> in
+  (am,
+   <:expr< fun v encoder -> $fmt$ (match v with [ None -> None | Some v -> Some { it_option = v } ]) encoder >>)
+
+| <:ctyp:< option $ty$ >> when attrmod.arity = Some `List ->
+  let (am, fmt) = fmtrec ~{attrmod = { (attrmod) with arity = Some `List } } <:ctyp< optionmsg $ty$ >> in
+  (am,
+   <:expr< fun v encoder -> $fmt$ (List.map (fun v -> { it_option = v }) v) encoder >>)
 
 | <:ctyp:< $_$ $_$ >> as ty ->
   let (tyf, tyargs) = Ctyp.unapplist ty in
@@ -1121,6 +1136,11 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
 | <:ctyp:< list $ty$ >> when attrmod.arity = None ->
   fmtrec ~{attrmod = { (attrmod) with arity = Some `List } } ty
 
+| <:ctyp:< list $ty$ >> when attrmod.arity = Some `List ->
+  let (am, kind, fmt) = fmtrec ~{attrmod = { (attrmod) with arity = Some `List } } <:ctyp< listmsg $ty$ >> in
+  (am, kind,
+   <:expr< fun decoder -> match $fmt$ decoder with [ {it_list=v} -> v ] >>)
+
 | <:ctyp:< array $ty$ >> when attrmod.arity = None ->
   fmtrec ~{attrmod = { (attrmod) with arity = Some `Array } } ty
 (*
@@ -1130,6 +1150,16 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
 *)
 | <:ctyp:< option $ty$ >> when attrmod.arity = None ->
   fmtrec ~{attrmod = { (attrmod) with arity = Some `Optional } } ty
+
+| <:ctyp:< option $ty$ >> when attrmod.arity = Some `Optional ->
+  let (am, kind, fmt) = fmtrec ~{attrmod = { (attrmod) with arity = Some `Optional } } <:ctyp< optionmsg $ty$ >> in
+  (am, kind,
+   <:expr< fun decoder -> match $fmt$ decoder with [ { it_option = it } -> it ] >>)
+
+| <:ctyp:< option $ty$ >> when attrmod.arity = Some `List ->
+  let (am, kind, fmt) = fmtrec ~{attrmod = { (attrmod) with arity = Some `List } } <:ctyp< optionmsg $ty$ >> in
+  (am, kind,
+   <:expr< fun decoder -> match $fmt$ decoder with [ { it_option = it } -> it ] >>)
 
 | <:ctyp:< $_$ $_$ >> as ty ->
   let (tyf, tyargs) = Ctyp.unapplist ty in
