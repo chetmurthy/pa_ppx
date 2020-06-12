@@ -62,9 +62,12 @@ test: $(TESTS:.byte=)
 test_%.byte: test_%.ml
 	cppo -D PAPPX $< > $<.pappx.ml
 	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),$(PAPACKAGES),camlp5.pr_o \
-	-syntax camlp5o $<.pappx.ml > $<.pappx.ppo
+	-syntax camlp5o $<.pappx.ml \
+	| perl -p -e 's,#.*$$,,' \
+	> $<.pappx.ppo
+	cp $<.pappx.ppo test_syntax_pappx.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PAPACKAGES) \
-	-linkall -linkpkg -syntax camlp5o $<.pappx.ml -o $@
+	-linkall -linkpkg -syntax camlp5o -impl test_syntax_pappx.ml -o $@
 
 test_%.ppx.byte: test_%.ml
 	cppo -U PAPPX $< > $<.ppx.ml
@@ -72,7 +75,7 @@ test_%.ppx.byte: test_%.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXPACKAGES),$(PACKAGEPREFIX)protobuf_runtime -linkall -linkpkg $<.ppx.ml -o $@
 
 clean::
-	rm -f *.corrected *.pappx.ml *.ppx.ml
+	rm -f *.corrected *.pappx.ml *.ppx.ml *.ppo.*
 
 EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(ALL_PACKAGES))
 $(CMO): $(EXTERNAL)
