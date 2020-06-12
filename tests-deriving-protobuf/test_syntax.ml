@@ -651,7 +651,6 @@ let test_nonpoly ctxt =
   assert_roundtrip printer r9_to_protobuf r9_from_protobuf
                    "\x0a\x04\x0a\x02\x08\x01" { r5a = 1 }
 
-#ifndef PAPPX
 type d = int [@default 42] [@@deriving protobuf]
 let test_default ctxt =
   assert_roundtrip string_of_int d_to_protobuf d_from_protobuf
@@ -659,6 +658,7 @@ let test_default ctxt =
   assert_roundtrip string_of_int d_to_protobuf d_from_protobuf
                    "\x08\x01" 1
 
+#ifndef PAPPX
 type p = int list [@packed] [@@deriving protobuf]
 let test_packed ctxt =
   let printer xs = Printf.sprintf "[%s]" (String.concat "; " (List.map string_of_int xs)) in
@@ -770,8 +770,8 @@ let suite = "Test syntax" >::: [
 #endif
     "test_variant_optrep" >:: test_variant_optrep;
     "test_nonpoly"        >:: test_nonpoly;
-#ifndef PAPPX
     "test_default"        >:: test_default;
+#ifndef PAPPX
     "test_packed"         >:: test_packed;
     "test_errors"         >:: test_errors;
     "test_skip"           >:: test_skip;

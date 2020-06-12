@@ -39,23 +39,13 @@ type attrmod_t = {
 ; bare : bool
 ; param : bool
 ; arity : option [ = `List | `Array | `Optional ]
+; default : option MLast.expr
 } ;
 
-value mt_attrmod = { encoding = None ; key = None ; message = False ; bare = False ; param = False ; arity = None } ;
+value mt_attrmod = { encoding = None ; key = None ; message = False ; bare = False ; param = False ; arity = None; default = None } ;
 value attrmod_key a = match a.key with [ None -> 1 | Some n -> n ] ;
 value attrmod_key_compare a b = Int.compare (attrmod_key a) (attrmod_key b) ;
 value fmt_attrmod_key a = a |> attrmod_key |> string_of_int ;
-value fmt_attrmod_modifier a =
- let loc = Ploc.dummy in
- match (a.message, a.arity) with [
-  (False, None) -> <:expr< required >>
-| (False, Some `Optional) -> <:expr< optional >>
-| (_, Some `List) -> <:expr< list >>
-| (_, Some `Array) -> <:expr< array >>
-| (True, None) -> <:expr< required_last >>
-| (True, Some `Optional) -> <:expr< optional_last >>
-| _ -> assert False
-] ;
 
 value attrs_to_key loc arg attrs =
   match List.map uv (List.find_all (DC.is_allowed_attribute (DC.get arg) "protobuf" "key") (uv attrs)) with [
@@ -436,6 +426,17 @@ value to_protobuf_fname arg tyname =
   tyname^"_to_protobuf"
 ;
 
+value fmt_attrmod_modifier a =
+ let loc = Ploc.dummy in
+ match a with [
+  {arity=None; default=None} -> <:expr< required >>
+| {arity=None; default=Some e} -> <:expr< required_default $e$ >>
+| {arity=Some `Optional} -> <:expr< optional >>
+| {arity=Some `List} -> <:expr< list >>
+| {arity=Some `Array} -> <:expr< array >>
+| _ -> assert False
+] ;
+
 value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   let runtime_module =
     let loc = loc_of_ctyp ty0 in
@@ -622,6 +623,9 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ $int:key$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "key" ->
     let key = int_of_string key in
     fmtrec ~{attrmod={ (attrmod) with key = Some key } } t
+
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:dflt$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "default" ->
+    fmtrec ~{attrmod={ (attrmod) with default = Some dflt } } t
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "bare" ->
     fmtrec ~{attrmod={ (attrmod) with bare = True } } t
@@ -989,6 +993,18 @@ value of_protobuf_fname arg tyname =
   tyname^"_from_protobuf"
 ;
 
+value fmt_attrmod_modifier a =
+ let loc = Ploc.dummy in
+ match (a.message, a.arity) with [
+  (False, None) -> <:expr< required >>
+| (False, Some `Optional) -> <:expr< optional >>
+| (_, Some `List) -> <:expr< list >>
+| (_, Some `Array) -> <:expr< array >>
+| (True, None) -> <:expr< required_last >>
+| (True, Some `Optional) -> <:expr< optional_last >>
+| _ -> assert False
+] ;
+
 (**
 EXAMPLE (type i1 = int [@key 1])
 let i1_from_protobuf_manually decoder =
@@ -1030,9 +1046,11 @@ let i1_from_protobuf_manually = (*e1*) fun decoder ->
 *)
 value demarshal_to_tuple loc arg am_kind_fmt_vars =
   let initvals = List.map (fun (am, kind, fmt, v) ->
-    let e = match am.arity with [
-      None | Some `Optional -> <:expr< None >>
-    | Some (`List | `Array)  -> <:expr< [] >>
+    let e = match am with [
+      {arity=None; default=Some e} -> <:expr< Some $e$ >>
+    | {arity=Some _; default=Some _} -> Ploc.raise loc (Failure "can only  specify default for required field")
+    | {arity=(None | Some `Optional)} -> <:expr< None >>
+    | {arity=(Some (`List | `Array))}  -> <:expr< [] >>
     ] in
     (<:patt< $lid:v$ >>, e, <:vala< [] >>)) am_kind_fmt_vars in
   let updaters = List.map (fun (am, _, _, v) ->
@@ -1239,6 +1257,9 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ $int:key$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "key" ->
     let key = int_of_string key in
     fmtrec ~{attrmod={ (attrmod) with key = Some key } } t
+
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:dflt$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "default" ->
+    fmtrec ~{attrmod={ (attrmod) with default = Some dflt } } t
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "bare" ->
     fmtrec ~{attrmod={ (attrmod) with bare = True } } t
