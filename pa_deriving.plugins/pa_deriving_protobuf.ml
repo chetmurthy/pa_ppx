@@ -555,8 +555,23 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   (am,
    <:expr< fun v encoder -> $fmt$ (List.map (fun v -> { it_list = v }) v) encoder >>)
 
+| <:ctyp:< list $ty$ >> when attrmod.arity = Some `Optional ->
+  let (am, fmt) = fmtrec ~{attrmod = { (attrmod) with arity = Some `Optional } } <:ctyp< listmsg $ty$ >> in
+  (am,
+   <:expr< fun v encoder -> $fmt$ (Option.map (fun v -> { it_list = v }) v) encoder >>)
+
 | <:ctyp:< array $ty$ >> when attrmod.arity = None ->
   fmtrec ~{attrmod = { (attrmod) with arity = Some `Array } } ty
+
+| <:ctyp:< array $ty$ >> when attrmod.arity = Some `Array ->
+  let (am, fmt) = fmtrec ~{attrmod = { (attrmod) with arity = Some `Array } } <:ctyp< arraymsg $ty$ >> in
+  (am,
+   <:expr< fun v encoder -> $fmt$ (Array.map (fun v -> { it_array = v }) v) encoder >>)
+
+| <:ctyp:< array $ty$ >> when attrmod.arity = Some `Optional ->
+  let (am, fmt) = fmtrec ~{attrmod = { (attrmod) with arity = Some `Optional } } <:ctyp< arraymsg $ty$ >> in
+  (am,
+   <:expr< fun v encoder -> $fmt$ (Option.map (fun v -> { it_array = v }) v) encoder >>)
 (*
 | (<:ctyp:< ref $ty$ >> | <:ctyp:< Pervasives.ref $ty$ >>) ->
   let fmt1 = fmtrec ty in
@@ -1141,8 +1156,25 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   (am, kind,
    <:expr< fun decoder -> match $fmt$ decoder with [ {it_list=v} -> v ] >>)
 
+| <:ctyp:< list $ty$ >> when attrmod.arity = Some `Optional ->
+  let (am, kind, fmt) = fmtrec ~{attrmod = { (attrmod) with arity = Some `Optional } } <:ctyp< listmsg $ty$ >> in
+  (am, kind,
+   <:expr< fun decoder -> match $fmt$ decoder with [ {it_list=v} -> v ] >>)
+
 | <:ctyp:< array $ty$ >> when attrmod.arity = None ->
   fmtrec ~{attrmod = { (attrmod) with arity = Some `Array } } ty
+
+| <:ctyp:< array $ty$ >> when attrmod.arity = Some `Array ->
+  let (am, kind, fmt) = fmtrec ~{attrmod = { (attrmod) with arity = Some `Array } } <:ctyp< arraymsg $ty$ >> in
+  (am, kind,
+   <:expr< fun decoder -> match $fmt$ decoder with [ {it_array=v} -> v ] >>)
+
+| <:ctyp:< array $ty$ >> when attrmod.arity = Some `Optional ->
+  let (am, kind, fmt) = fmtrec ~{attrmod = { (attrmod) with arity = Some `Optional } } <:ctyp< arraymsg $ty$ >> in
+  (am, kind,
+   <:expr< fun decoder -> match $fmt$ decoder with [ {it_array=v} -> v ] >>)
+
+
 (*
 | (<:ctyp:< ref $ty$ >> | <:ctyp:< Pervasives.ref $ty$ >>) ->
   let fmt1 = fmtrec ty in

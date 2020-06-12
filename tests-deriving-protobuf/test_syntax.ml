@@ -551,6 +551,24 @@ let test_i1ll ctxt =
                    "\x0a\x09\x0a\x03\x08\xac\x02\x0a\x02\x08\x2a\x0a\x09\x0a\x03\x08\x90\x03\x0a\x02\x08\x16"
                    [[300; 42];[400; 22]]
 
+type i1lo = i1 list option [@@deriving show, protobuf]
+let test_i1lo ctxt =
+  assert_roundtrip show_i1lo i1lo_to_protobuf i1lo_from_protobuf
+                   "" None
+; assert_roundtrip show_i1lo i1lo_to_protobuf i1lo_from_protobuf
+                   "\x0a\x05\x0a\x03\x08\xac\x02" (Some [300])
+; assert_roundtrip show_i1lo i1lo_to_protobuf i1lo_from_protobuf
+                   "\x0a\x09\x0a\x03\x08\xac\x02\x0a\x02\x08\x2a" (Some [300; 42])
+
+type i1ao = i1 array option [@@deriving show, protobuf]
+let test_i1ao ctxt =
+  assert_roundtrip show_i1ao i1ao_to_protobuf i1ao_from_protobuf
+                   "" None
+; assert_roundtrip show_i1ao i1ao_to_protobuf i1ao_from_protobuf
+                   "\x0a\x05\x0a\x03\x08\xac\x02" (Some [|300|])
+; assert_roundtrip show_i1ao i1ao_to_protobuf i1ao_from_protobuf
+                   "\x0a\x09\x0a\x03\x08\xac\x02\x0a\x02\x08\x2a" (Some [|300; 42|])
+
 #endif
 
 #ifndef PAPPX
@@ -694,7 +712,11 @@ let suite = "Test syntax" >::: [
 #ifdef PAPPX
     "test_i1ol"           >:: test_i1ol;
     "test_i1oo"           >:: test_i1oo;
+
     "test_i1ll"           >:: test_i1ll;
+    "test_i1lo"           >:: test_i1lo;
+
+    "test_i1ao"           >:: test_i1ao;
 #endif
 #ifndef PAPPX
     "test_variant_optrep" >:: test_variant_optrep;
