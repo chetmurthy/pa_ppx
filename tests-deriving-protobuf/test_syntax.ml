@@ -617,7 +617,6 @@ let test_i1aa ctxt =
 
 #endif
 
-#ifndef PAPPX
 type v5 =
 | V5A of int option [@key 1]
 | V5B of string list [@key 2]
@@ -652,6 +651,7 @@ let test_nonpoly ctxt =
   assert_roundtrip printer r9_to_protobuf r9_from_protobuf
                    "\x0a\x04\x0a\x02\x08\x01" { r5a = 1 }
 
+#ifndef PAPPX
 type d = int [@default 42] [@@deriving protobuf]
 let test_default ctxt =
   assert_roundtrip string_of_int d_to_protobuf d_from_protobuf
@@ -768,9 +768,9 @@ let suite = "Test syntax" >::: [
     "test_i1al"           >:: test_i1al;
     "test_i1aa"           >:: test_i1aa;
 #endif
-#ifndef PAPPX
     "test_variant_optrep" >:: test_variant_optrep;
     "test_nonpoly"        >:: test_nonpoly;
+#ifndef PAPPX
     "test_default"        >:: test_default;
     "test_packed"         >:: test_packed;
     "test_errors"         >:: test_errors;

@@ -38,7 +38,8 @@ type attrmod_t = {
 ; message : bool
 ; bare : bool
 ; param : bool
-; arity : option [ = `List | `Array | `Optional ] } ;
+; arity : option [ = `List | `Array | `Optional ]
+} ;
 
 value mt_attrmod = { encoding = None ; key = None ; message = False ; bare = False ; param = False ; arity = None } ;
 value attrmod_key a = match a.key with [ None -> 1 | Some n -> n ] ;
@@ -69,7 +70,8 @@ type preprocessed_t 'a = {
   it : 'a ;
   slotnum : option int ;
   oldkey : int ;
-  newkey : int
+  newkey : int ;
+  arity : option [ = `List | `Array | `Optional ]
 } ;
 
 (** preprocess a variant type, returning a list of:
@@ -88,11 +90,17 @@ value preprocess loc arg attrmod l =
 
   | (loc, cid, <:vala< [] >>, None, attrs) as b ->
     let key = attrs_to_key loc arg attrs in
-    ([ {it=b;  oldkey=key; newkey=key+1; slotnum=None} :: acc], slotnum)
+    ([ {it=b;  oldkey=key; newkey=key+1; arity=None; slotnum=None} :: acc], slotnum)
 
   | (loc, cid, tyl, None, attrs) as b ->
     let key = attrs_to_key loc arg attrs in
-    ([ {it=b; oldkey=key; newkey=key+1; slotnum=Some slotnum} :: acc], slotnum+1)
+    let arity = match uv tyl with [
+      [ <:ctyp< option $_$ >> ] -> Some `Optional
+    | [ <:ctyp< list $_$ >> ] -> Some `List
+    | [ <:ctyp< array $_$ >> ] -> Some `Array
+    | _ -> None
+    ] in
+    ([ {it=b; oldkey=key; newkey=key+1; arity=arity; slotnum=Some slotnum} :: acc], slotnum+1)
   ]) ([], 1) l in
   let branch_key_slotnums = List.rev rev_branch_slotnums in
   (branch_key_slotnums, nextslot-1)
@@ -120,40 +128,83 @@ value to_tupletype loc arg branch_key_slotnums =
   | {it=(loc, cid, <:vala< [] >>, None, attrs)} ->
     []
 
-  | {it=(loc, cid, tyl, None, attrs); newkey=newkey} ->
+  | {it=(loc, cid, tyl, None, attrs); newkey=newkey; arity = None} ->
     let branchtuplety = tuplectyp loc (uv tyl) in
     [<:ctyp< option $branchtuplety$ [@key $int:string_of_int newkey$; ] >>]
+
+  | {it=(loc, cid, tyl, None, attrs); newkey=newkey; arity = Some _} ->
+    let branchtuplety = tuplectyp loc (uv tyl) in
+    [<:ctyp< $branchtuplety$ [@key $int:string_of_int newkey$; ] >>]
+
   ] in
     tuplectyp loc [ <:ctyp< int [@ key 1;] >> :: (List.concat (List.map totuple_branch2tuplety branch_key_slotnums)) ]
 ;
 
-value all_nones_expr loc n = n |> Std.range |> List.map (fun _ -> <:expr< None >>) ;
-value all_nones_patt loc n = n |> Std.range |> List.map (fun _ -> <:patt< None >>) ;
+value all_empty_expr loc branch_key_slotnums =
+  branch_key_slotnums |> List.map (fun [
+    {slotnum=None} -> []
+  | {arity=None} -> [<:expr< None >>]
+  | {arity=Some `Optional} -> [<:expr< None >>]
+  | {arity=Some `List} -> [<:expr< [] >>]
+  | {arity=Some `Array} -> [<:expr< [||] >>]
+  ])
+  |> List.concat
+;
 
-value none_except_i_expr loc n (k,e) =
-    n |> Std.range |> List.map (fun i ->
-      if i = k then e else <:expr< None >>) ;
+value all_empty_patt loc branch_key_slotnums =
+  branch_key_slotnums |> List.map (fun [
+    {slotnum=None} -> []
+  | {arity=None} -> [<:patt< None >>]
+  | {arity=Some `Optional} -> [<:patt< None >>]
+  | {arity=Some `List} -> [<:patt< [] >>]
+  | {arity=Some `Array} -> [<:patt< [||] >>]
+  ])
+  |> List.concat
+;
 
-value none_except_i_patt loc n (k,e) =
-    n |> Std.range |> List.map (fun i ->
-      if i = k then e else <:patt< None >>) ;
+value empty_except_i_expr loc branch_key_slotnums (k,e) =
+  branch_key_slotnums |> List.map (fun [
+    {slotnum=None} -> []
+  | {slotnum=Some slotnum} when k = slotnum -> [e]
+  | {arity=None} -> [<:expr< None >>]
+  | {arity=Some `Optional} -> [<:expr< None >>]
+  | {arity=Some `List} -> [<:expr< [] >>]
+  | {arity=Some `Array} -> [<:expr< [||] >>]
+  ])
+  |> List.concat
+;
+value empty_except_i_patt loc branch_key_slotnums (k,e) =
+  branch_key_slotnums |> List.map (fun [
+    {slotnum=None} -> []
+  | {slotnum=Some slotnum} when k = slotnum -> [e]
+  | {arity=None} -> [<:patt< None >>]
+  | {arity=Some `Optional} -> [<:patt< None >>]
+  | {arity=Some `List} -> [<:patt< [] >>]
+  | {arity=Some `Array} -> [<:patt< [||] >>]
+  ])
+  |> List.concat
+;
 
 (** convert a variant value into a tuple. *)
 value totuple loc arg argvar (branch_key_slotnums, nslots) =
 
-  let all_nones_expr = all_nones_expr loc nslots in
+  let all_empty_expr = all_empty_expr loc branch_key_slotnums in
 
   let totuple_branch2tuple_expr argvars = fun [
     {it=(loc, cid, <:vala< [TyRec _ fields] >>, None, attrs)} -> assert False
 
   | {it=(loc, cid, <:vala< [] >>, None, attrs); oldkey=oldkey; slotnum=None} ->
-    tupleexpr loc [ <:expr< $int:string_of_int oldkey$ >> :: all_nones_expr ]
+    tupleexpr loc [ <:expr< $int:string_of_int oldkey$ >> :: all_empty_expr ]
 
-  | {it=(loc, cid, tyl, None, attrs); oldkey=oldkey; slotnum=Some slotnum} ->
+  | {it=(loc, cid, tyl, None, attrs); oldkey=oldkey; slotnum=Some slotnum; arity=arity} ->
     (* (Some i, None ... None ..., Some <tuple-of-argvars>, None ...) *)
     let argtuple_expr =  tupleexpr loc (List.map (fun v -> <:expr< $lid:v$ >>) argvars) in
+    let arg_expr = match arity with [
+      None -> <:expr< Some $argtuple_expr$ >>
+    | Some _ -> argtuple_expr
+    ] in
     tupleexpr loc [ <:expr< $int:string_of_int oldkey$ >>
-      :: none_except_i_expr loc nslots (slotnum, <:expr< Some $argtuple_expr$ >>) ]
+      :: empty_except_i_expr loc branch_key_slotnums (slotnum, arg_expr) ]
   ] in
 
   let totuple_branch2branch_patt = fun [
@@ -178,19 +229,23 @@ value totuple loc arg argvar (branch_key_slotnums, nslots) =
 
 value oftuple loc arg (branch_key_slotnums, nslots) =
 
-  let all_nones_patt = all_nones_patt loc nslots in
+  let all_empty_patt = all_empty_patt loc branch_key_slotnums in
 
   let oftuple_branch2tuple_patt argvars = fun [
     {it=(loc, cid, <:vala< [TyRec _ fields] >>, None, attrs)} -> assert False
 
   | {it=(loc, cid, <:vala< [] >>, None, attrs); oldkey=oldkey; slotnum=None} ->
-    tuplepatt loc [ <:patt< $int:string_of_int oldkey$ >> :: all_nones_patt ]
+    tuplepatt loc [ <:patt< $int:string_of_int oldkey$ >> :: all_empty_patt ]
 
-  | {it=(loc, cid, tyl, None, attrs); oldkey=oldkey; slotnum=Some slotnum} ->
+  | {it=(loc, cid, tyl, None, attrs); oldkey=oldkey; slotnum=Some slotnum; arity=arity} ->
     (* (Some i, None ... None ..., Some <tuple-of-argvars>, None ...) *)
     let argtuple_patt =  tuplepatt loc (List.map (fun v -> <:patt< $lid:v$ >>) argvars) in
+    let arg_patt = match arity with [
+      None -> <:patt< Some $argtuple_patt$ >>
+    | Some _ -> argtuple_patt
+    ] in
     tuplepatt loc [ <:patt< $int:string_of_int oldkey$ >>
-      :: none_except_i_patt loc nslots (slotnum, <:patt< Some $argtuple_patt$ >>) ]
+      :: empty_except_i_patt loc branch_key_slotnums (slotnum, arg_patt) ]
   ] in
 
   let oftuple_branch2branch_expr = fun [
@@ -221,7 +276,8 @@ type preprocessed_t 'a = Variant.preprocessed_t 'a == {
   it : 'a ;
   slotnum : option int ;
   oldkey : int ;
-  newkey : int
+  newkey : int ;
+  arity : option [ = `List | `Array | `Optional ]
 } ;
 
 (** preprocess a pvariant type, returning a list of:
@@ -238,11 +294,17 @@ value preprocess loc arg attrmod l =
   let (rev_branch_slotnums, nextslot) = List.fold_left (fun (acc, slotnum) -> fun [
     (PvTag loc cid _ <:vala< [] >> attrs) as b ->
     let key = attrs_to_key loc arg attrs in
-    ([ {it=b; oldkey=key; newkey=key+1; slotnum=None} :: acc], slotnum)
+    ([ {it=b; oldkey=key; newkey=key+1; arity=None; slotnum=None} :: acc], slotnum)
 
   | (PvTag loc cid _ tyl attrs) as b ->
     let key = attrs_to_key loc arg attrs in
-    ([ {it=b; oldkey=key; newkey=key+1; slotnum=Some slotnum} :: acc], slotnum+1)
+    let arity = match uv tyl with [
+      [ <:ctyp< option $_$ >> ] -> Some `Optional
+    | [ <:ctyp< list $_$ >> ] -> Some `List
+    | [ <:ctyp< array $_$ >> ] -> Some `Array
+    | _ -> None
+    ] in
+    ([ {it=b; oldkey=key; newkey=key+1; arity=arity; slotnum=Some slotnum} :: acc], slotnum+1)
   | (PvInh _ _) -> assert False
   ]) ([], 1) l in
   let branch_key_slotnums = List.rev rev_branch_slotnums in
@@ -268,40 +330,38 @@ value to_tupletype loc arg branch_key_slotnums =
   let totuple_branch2tuplety = fun [
     {it=(PvTag loc cid _ <:vala< [] >> attrs)} ->
     []
-  | {it=(PvTag loc cid _ tyl attrs);newkey=newkey} ->
+
+  | {it=(PvTag loc cid _ tyl attrs);newkey=newkey; arity=None} ->
     let branchtuplety = tuplectyp loc (uv tyl) in
     [<:ctyp< option $branchtuplety$ [@key $int:string_of_int newkey$; ] >>]
+
+  | {it=(PvTag loc cid _ tyl attrs);newkey=newkey; arity=Some _} ->
+    let branchtuplety = tuplectyp loc (uv tyl) in
+    [<:ctyp< $branchtuplety$ [@key $int:string_of_int newkey$; ] >>]
 
   | {it=PvInh _ _ } -> assert False
   ] in
     tuplectyp loc [ <:ctyp< int [@ key 1;] >> :: (List.concat (List.map totuple_branch2tuplety branch_key_slotnums)) ]
 ;
 
-value all_nones_expr loc n = n |> Std.range |> List.map (fun _ -> <:expr< None >>) ;
-value all_nones_patt loc n = n |> Std.range |> List.map (fun _ -> <:patt< None >>) ;
-
-value none_except_i_expr loc n (k,e) =
-    n |> Std.range |> List.map (fun i ->
-      if i = k then e else <:expr< None >>) ;
-
-value none_except_i_patt loc n (k,e) =
-    n |> Std.range |> List.map (fun i ->
-      if i = k then e else <:patt< None >>) ;
-
 (** convert a variant value into a tuple. *)
 value totuple loc arg argvar (branch_key_slotnums, nslots) =
 
-  let all_nones_expr = all_nones_expr loc nslots in
+  let all_empty_expr = Variant.all_empty_expr loc branch_key_slotnums in
 
   let totuple_branch2tuple_expr argvars = fun [
     {it=(PvTag loc cid _ <:vala< [] >> attrs); oldkey=oldkey; slotnum=None} ->
-    tupleexpr loc [ <:expr< $int:string_of_int oldkey$ >> :: all_nones_expr ]
+    tupleexpr loc [ <:expr< $int:string_of_int oldkey$ >> :: all_empty_expr ]
 
-  | {it=(PvTag loc cid _ tyl attrs); oldkey=oldkey; slotnum=Some slotnum} ->
+  | {it=(PvTag loc cid _ tyl attrs); oldkey=oldkey; slotnum=Some slotnum; arity=arity} ->
     (* (Some i, None ... None ..., Some <tuple-of-argvars>, None ...) *)
     let argtuple_expr =  tupleexpr loc (List.map (fun v -> <:expr< $lid:v$ >>) argvars) in
+    let arg_expr = match arity with [
+      None -> <:expr< Some $argtuple_expr$ >>
+    | Some _ -> argtuple_expr
+    ] in
     tupleexpr loc [ <:expr< $int:string_of_int oldkey$ >>
-      :: none_except_i_expr loc nslots (slotnum, <:expr< Some $argtuple_expr$ >>) ]
+      :: Variant.empty_except_i_expr loc branch_key_slotnums (slotnum, arg_expr) ]
 
   | {it=PvInh _ _ } -> assert False
   ] in
@@ -327,17 +387,22 @@ value totuple loc arg argvar (branch_key_slotnums, nslots) =
 
 value oftuple ~{coercion} loc arg (branch_key_slotnums, nslots) =
 
-  let all_nones_patt = all_nones_patt loc nslots in
+  let all_empty_patt = Variant.all_empty_patt loc branch_key_slotnums in
 
   let oftuple_branch2tuple_patt argvars = fun [
     {it=(PvTag loc cid _ <:vala< [] >> attrs); oldkey=oldkey; slotnum=None} ->
-    tuplepatt loc [ <:patt< $int:string_of_int oldkey$ >> :: all_nones_patt ]
+    tuplepatt loc [ <:patt< $int:string_of_int oldkey$ >> :: all_empty_patt ]
 
-  | {it=(PvTag loc cid _ tyl attrs); oldkey=oldkey; slotnum=Some slotnum} ->
+  | {it=(PvTag loc cid _ tyl attrs); oldkey=oldkey; slotnum=Some slotnum; arity=arity} ->
     (* (Some i, None ... None ..., Some <tuple-of-argvars>, None ...) *)
     let argtuple_patt =  tuplepatt loc (List.map (fun v -> <:patt< $lid:v$ >>) argvars) in
+    let argtuple_patt =  tuplepatt loc (List.map (fun v -> <:patt< $lid:v$ >>) argvars) in
+    let arg_patt = match arity with [
+      None -> <:patt< Some $argtuple_patt$ >>
+    | Some _ -> argtuple_patt
+    ] in
     tuplepatt loc [ <:patt< $int:string_of_int oldkey$ >>
-      :: none_except_i_patt loc nslots (slotnum, <:patt< Some $argtuple_patt$ >>) ]
+      :: Variant.empty_except_i_patt loc branch_key_slotnums (slotnum, arg_patt) ]
 
   | {it=PvInh _ _ } -> assert False
   ] in
