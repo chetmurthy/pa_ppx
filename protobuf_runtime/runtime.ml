@@ -54,6 +54,11 @@ value list_encode_packed ~{key} ~{msg} c v encoder =
   }
 ;
 
+
+value array_encode_packed ~{key} ~{msg} c v encoder =
+  list_encode_packed ~{key} ~{msg} c (Array.to_list v) encoder
+;
+
 value int64_of_bool = fun [ True -> 1L | False -> 0L ] ;
 
 value int__varint = { kind = Protobuf.Varint ; convertf = forget1 Int64.of_int ; encodef = Protobuf.Encoder.varint } ;

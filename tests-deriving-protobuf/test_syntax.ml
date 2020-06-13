@@ -670,6 +670,20 @@ let test_packed ctxt =
   let d = Protobuf.Decoder.of_string "\x0a\x01\x01\x0a\x02\x02\x03" in
   assert_equal ~printer [1; 2; 3] (p_from_protobuf d)
 
+type p' = int array [@packed] [@@deriving protobuf]
+let test_packed ctxt =
+  let printer xs =
+  let xs = Array.to_list xs in
+  Printf.sprintf "[%s]" (String.concat "; " (List.map string_of_int xs)) in
+  assert_roundtrip printer p'_to_protobuf p'_from_protobuf
+                   "" [||];
+  assert_roundtrip printer p'_to_protobuf p'_from_protobuf
+                   "\x0a\x01\x01" [|1|];
+  assert_roundtrip printer p'_to_protobuf p'_from_protobuf
+                   "\x0a\x03\x01\x02\x03" [|1; 2; 3|];
+  let d = Protobuf.Decoder.of_string "\x0a\x01\x01\x0a\x02\x02\x03" in
+  assert_equal ~printer [|1; 2; 3|] (p'_from_protobuf d)
+
 #ifndef PAPPX
 let test_errors ctxt =
   (* scalars *)

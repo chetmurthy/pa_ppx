@@ -458,6 +458,9 @@ value prim_encoder loc attrmod fname =
   | {arity=Some `List; packed=True} ->
     <:expr< list_encode_packed ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg=msg} $lid:fname$ >>
 
+  | {arity=Some `Array; packed=True} ->
+    <:expr< array_encode_packed ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg=msg} $lid:fname$ >>
+
   | {arity=Some `List} -> <:expr< list $encode0$ >>
   | {arity=Some `Array} -> <:expr< array $encode0$ >>
   | _ -> assert False
@@ -1061,7 +1064,7 @@ value demarshal_to_tuple loc arg am_kind_fmt_vars =
       <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
         let $lid:v$ = list_packed_rev_append $fmt$ decoder $lid:v$
          in derec $tuple_of_vars_expr$ >> in
-    let branch5_e5b = if am.arity = Some `List then
+    let branch5_e5b = if am.arity = Some `List ||  am.arity = Some `Array then
         [(<:patt< Some ($int:fmt_attrmod_key am$, Protobuf.Bytes) >>, <:vala< None >>, e5b)]
       else [] in
     let missing = <:expr< raise (let open Protobuf.Decoder in Failure (Missing_field msg)) >> in
