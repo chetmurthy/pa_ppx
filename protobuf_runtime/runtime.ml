@@ -172,6 +172,18 @@ value decode0 c ~{msg} (decoder : Protobuf.Decoder.t) =
   let open Protobuf.Decoder in
   c.convertf msg (c.decodef decoder)
 ;
+
+value list_packed_rev_append f decoder acc =
+  let decoder = Protobuf.Decoder.nested decoder in
+  let rec nrec acc =
+    if Protobuf.Decoder.at_end decoder then
+      acc
+    else
+      let v = f decoder in
+      nrec [ v :: acc ]
+   in nrec acc
+;
+
 (*
 value list_decode_packed ~{msg} ~{key} c decoder =
   let rec drec acc =

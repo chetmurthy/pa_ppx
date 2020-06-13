@@ -543,11 +543,15 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Zigzag ->
   (attrmod, prim_encoder loc attrmod "uint64__zigzag")
 
-| (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  (attrmod, prim_encoder loc attrmod "string__bytes")
+| (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) -> do {
+    if attrmod.packed then Ploc.raise loc (Failure "bytes fields cannot be packed") else () ;
+    (attrmod, prim_encoder loc attrmod "string__bytes")
+  }
 
-| (<:ctyp:< bytes >> | <:ctyp:< Stdlib.Bytes.t >> | <:ctyp:< Bytes.t >>) ->
-  (attrmod, prim_encoder loc attrmod "bytes__bytes")
+| (<:ctyp:< bytes >> | <:ctyp:< Stdlib.Bytes.t >> | <:ctyp:< Bytes.t >>) -> do {
+    if attrmod.packed then Ploc.raise loc (Failure "bytes fields cannot be packed") else () ;
+    (attrmod, prim_encoder loc attrmod "bytes__bytes")
+  }
 
 (*
 | <:ctyp:< char >> -> <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (String.make 1 x) >>
@@ -962,6 +966,11 @@ let i1_from_protobuf_manually decoder =
             ((decode0 int__varint ~msg:"Test_syntax.i1" kind) decoder))
        in
       derec v0
+    (* IF the field is packed+repeated (implies it's primitive, and NOT bytes) *)
+    | (Some 1, Protobuf.Bytes) ->
+      let v0 = list_packed_rev_append (decode0 int__varint ~msg:"Test_syntax.i1") decoder v0 in
+      derec v0
+
     | Some (_, kind) -> ( Protobuf.Decoder.skip decoder kind ; derec v0 )
     | None -> v0
   in match derec v0 with
@@ -975,12 +984,19 @@ let i1_from_protobuf_manually = (*e1*) fun decoder ->
   (*e2*)<initialize vars v_i for each type with either None or the empty value of the type (for optional, list, array)>
   (*e3*)<define updaters for each type>
   (*e4*)let rec derec (<tuple-of-vars>) = match Protobuf.Decoder.key decoder with
-    (*branch5*)| Some (<key_i>, kind) ->
+    (*BEGIN branch5*)| Some (<key_i>, kind) ->
       (*e5*)let v_i = update_v_i v_i
       (let open Pa_ppx_protobuf.Runtime.Decode in
             ((<decoder-expression for type> ~msg:"Test_syntax.i1" kind) decoder))
        in
       derec <tuple-of-vars>
+
+    | Some(<key_i>, Protobuf.Bytes) ->
+      (*e5b*)let open Pa_ppx_protobuf.Runtime.Decode in
+      let v_i = list_packed_rev_append (<decoder-expression for type> ~msg:"Test_syntax.i1") decoder v_i in
+      derec <tuple-of-vars>
+    (*END branch5*)
+
     | Some (_, kind) -> ( Protobuf.Decoder.skip decoder kind ; derec <tuple-of-vars> )
     | None -> <tuple-of-vars>
   in (*e6*)match derec <tuple-of-vars> with
@@ -1040,9 +1056,17 @@ value demarshal_to_tuple loc arg am_kind_fmt_vars =
        (let open Pa_ppx_protobuf.Runtime.Decode in
          $fmt$ decoder)
          in derec $tuple_of_vars_expr$ >> in
+    let branch5_e5 = [(<:patt< Some ($int:fmt_attrmod_key am$, $kind$) >>, <:vala< None >>, e5)] in
+    let e5b =
+      <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+        let $lid:v$ = list_packed_rev_append $fmt$ decoder $lid:v$
+         in derec $tuple_of_vars_expr$ >> in
+    let branch5_e5b = if am.arity = Some `List then
+        [(<:patt< Some ($int:fmt_attrmod_key am$, Protobuf.Bytes) >>, <:vala< None >>, e5b)]
+      else [] in
     let missing = <:expr< raise (let open Protobuf.Decoder in Failure (Missing_field msg)) >> in
-      [(<:patt< Some ($int:fmt_attrmod_key am$, $kind$) >>, <:vala< None >>, e5) ;
-       (<:patt< Some ($int:fmt_attrmod_key am$, _) >>, <:vala< None >>, missing)]
+    let branch5_missing = [(<:patt< Some ($int:fmt_attrmod_key am$, _) >>, <:vala< None >>, missing)] in
+    branch5_e5 @ branch5_e5b @ branch5_missing
   ) am_kind_fmt_vars in
   let branch5s = List.concat branch5s in
 
@@ -1160,13 +1184,17 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   (attrmod, <:patt< Protobuf.Varint >>,
  <:expr< (decode0 uint64__zigzag ~{msg=msg}) >>)
 
-| (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  (attrmod, <:patt< Protobuf.Bytes >>,
- <:expr< (decode0 string__bytes ~{msg=msg}) >>)
+| (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) -> do {
+    if attrmod.packed then Ploc.raise loc (Failure "bytes fields cannot be packed") else () ;
+    (attrmod, <:patt< Protobuf.Bytes >>,
+     <:expr< (decode0 string__bytes ~{msg=msg}) >>)
+  }
 
-| (<:ctyp:< bytes >> | <:ctyp:< Stdlib.Bytes.t >> | <:ctyp:< Bytes.t >>) ->
-  (attrmod, <:patt< Protobuf.Bytes >>,
- <:expr< (decode0 bytes__bytes ~{msg=msg}) >>)
+| (<:ctyp:< bytes >> | <:ctyp:< Stdlib.Bytes.t >> | <:ctyp:< Bytes.t >>) -> do {
+    if attrmod.packed then Ploc.raise loc (Failure "bytes fields cannot be packed") else () ;
+    (attrmod, <:patt< Protobuf.Bytes >>,
+     <:expr< (decode0 bytes__bytes ~{msg=msg}) >>)
+  }
 (*
 | <:ctyp:< char >> -> <:expr< fun [ `String x ->
           if (String.length x) = 1
