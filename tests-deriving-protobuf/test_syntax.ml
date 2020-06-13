@@ -658,7 +658,6 @@ let test_default ctxt =
   assert_roundtrip string_of_int d_to_protobuf d_from_protobuf
                    "\x08\x01" 1
 
-#ifndef PAPPX
 type p = int list [@packed] [@@deriving protobuf]
 let test_packed ctxt =
   let printer xs = Printf.sprintf "[%s]" (String.concat "; " (List.map string_of_int xs)) in
@@ -671,6 +670,7 @@ let test_packed ctxt =
   let d = Protobuf.Decoder.of_string "\x0a\x01\x01\x0a\x02\x02\x03" in
   assert_equal ~printer [1; 2; 3] (p_from_protobuf d)
 
+#ifndef PAPPX
 let test_errors ctxt =
   (* scalars *)
   let d = Protobuf.Decoder.of_string "" in
@@ -771,8 +771,8 @@ let suite = "Test syntax" >::: [
     "test_variant_optrep" >:: test_variant_optrep;
     "test_nonpoly"        >:: test_nonpoly;
     "test_default"        >:: test_default;
-#ifndef PAPPX
     "test_packed"         >:: test_packed;
+#ifndef PAPPX
     "test_errors"         >:: test_errors;
     "test_skip"           >:: test_skip;
 #endif
