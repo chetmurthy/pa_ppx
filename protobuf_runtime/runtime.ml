@@ -45,6 +45,15 @@ value encode0 c ~{key} ~{msg} v encoder =
   do { Protobuf.Encoder.key (key, c.kind) encoder;
        c.encodef (c.convertf msg v) encoder } ;
 
+value list_encode_packed ~{key} ~{msg} c v encoder =
+  if v = [] then () else do {
+    Protobuf.Encoder.key (key, Protobuf.Bytes) encoder;
+    Protobuf.Encoder.nested (fun encoder ->
+      List.iter
+        (fun v -> c.encodef (c.convertf msg v) encoder) v) encoder
+  }
+;
+
 value int64_of_bool = fun [ True -> 1L | False -> 0L ] ;
 
 value int__varint = { kind = Protobuf.Varint ; convertf = forget1 Int64.of_int ; encodef = Protobuf.Encoder.varint } ;
@@ -99,7 +108,7 @@ value bytes__bytes = { kind = Protobuf.Bytes ; convertf = forget1 id ; encodef =
 end ;
 
 module Decode = struct
-
+(*
 value decoding_key f ~{wantkey} ~{msg} decoder =
   let open Protobuf.Decoder in
   match key decoder with [
@@ -152,7 +161,7 @@ value array ~{msg} ~{wantkey} f decoder =
   let l = list f ~{msg} ~{wantkey} decoder in
   Array.of_list l
 ;
-
+*)
 type converter_t 'a 'b = {
   kind : Protobuf.payload_kind
 ; decodef : Protobuf.Decoder.t -> 'a
@@ -163,7 +172,31 @@ value decode0 c ~{msg} (decoder : Protobuf.Decoder.t) =
   let open Protobuf.Decoder in
   c.convertf msg (c.decodef decoder)
 ;
+(*
+value list_decode_packed ~{msg} ~{key} c decoder =
+  let rec drec acc =
+    match Protobuf.Decoder.key decoder with [
+      Some (gotkey, gotkind) when key = gotkey && c.kind = gotkind ->
+        let v = decode0 c ~{msg=msg} decoder in
+        drec [ v :: acc ]
+    | Some (gotkey, Protobuf.Bytes) when key = gotkey ->
+        let decoder = Protobuf.Decoder.nested decoder in
+        let rec nrec acc =
+          if Protobuf.Decoder.at_end decoder then
+            drec acc
+          else
+            let v = decode0 c ~{msg=msg} decoder in
+            nrec [ v :: acc ]
+        in nrec acc
+    | Some (gotkey, gotkind) when key = gotkey -> 
+        raise (let open Protobuf.Decoder in
+         Failure (Unexpected_payload msg gotkind))
 
+    | Some (_, kind) -> do { Protobuf.Decoder.skip decoder kind; drec acc }
+    | None -> List.rev acc ]
+  in drec []
+;
+*)
 value int__varint =
   { kind = Protobuf.Varint ; convertf=Protobuf.Decoder.int_of_int64; decodef=Protobuf.Decoder.varint } ;
 

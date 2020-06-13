@@ -447,19 +447,23 @@ value fmt_attrmod_modifier a =
 | _ -> assert False
 ] ;
 
-value prim_encoder attrmod fname =
-  let loc = Ploc.dummy in
-  let wrapper = match attrmod with [
-    {arity=None; default=None} -> <:expr< required >>
-  | {arity=None; default=Some e} -> <:expr< required_default $e$ >>
-  | {arity=Some `Optional} -> <:expr< optional >>
-  | {arity=Some `List} -> <:expr< list >>
-  | {arity=Some `Array} -> <:expr< array >>
+value prim_encoder loc attrmod fname =
+  let encode0 = <:expr< encode0 $lid:fname$ ~{msg=msg} ~{key= $int:fmt_attrmod_key attrmod$ } >> in
+  let wrapped = match attrmod with [
+    {arity=None; default=None} -> <:expr< required $encode0$ >>
+  | {arity=None; default=Some e} -> <:expr< required_default $e$ $encode0$ >>
+  | {default=Some _} -> Ploc.raise loc (Failure "can only specify default for required fields")
+  | {arity=Some `Optional} -> <:expr< optional $encode0$ >>
+
+  | {arity=Some `List; packed=True} ->
+    <:expr< list_encode_packed ~{key= $int:fmt_attrmod_key attrmod$ } ~{msg=msg} $lid:fname$ >>
+
+  | {arity=Some `List} -> <:expr< list $encode0$ >>
+  | {arity=Some `Array} -> <:expr< array $encode0$ >>
   | _ -> assert False
   ] in
   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
-    $wrapper$
-    (encode0 $lid:fname$ ~{msg=msg} ~{key= $int:fmt_attrmod_key attrmod$ }) >>
+    $wrapped$ >>
 ;
 
 value to_expression arg ?{coercion} ~{msg} param_map ty0 =
@@ -478,72 +482,72 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< unit >> -> <:expr< $runtime_module$.Yojson.unit_to_yojson >>
 *)
 | <:ctyp:< int >> when attrmod.encoding = Some Zigzag ->
-  (attrmod, prim_encoder attrmod "int__zigzag")
+  (attrmod, prim_encoder loc attrmod "int__zigzag")
 
 | <:ctyp:< int >> when attrmod.encoding = Some Bits32 ->
-  (attrmod, prim_encoder attrmod "int__bits32")
+  (attrmod, prim_encoder loc attrmod "int__bits32")
 
 | <:ctyp:< int >> when attrmod.encoding = Some Bits64 ->
-  (attrmod, prim_encoder attrmod "int__bits64")
+  (attrmod, prim_encoder loc attrmod "int__bits64")
 
 | <:ctyp:< int >> ->
-  (attrmod, prim_encoder attrmod "int__varint")
+  (attrmod, prim_encoder loc attrmod "int__varint")
 | <:ctyp:< bool >> ->
-  (attrmod, prim_encoder attrmod "bool__varint")
+  (attrmod, prim_encoder loc attrmod "bool__varint")
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Bits32 || attrmod.encoding = None ->
-  (attrmod, prim_encoder attrmod "int32__bits32")
+  (attrmod, prim_encoder loc attrmod "int32__bits32")
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Bits64 ->
-  (attrmod, prim_encoder attrmod "int32__bits64")
+  (attrmod, prim_encoder loc attrmod "int32__bits64")
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Varint ->
-  (attrmod, prim_encoder attrmod "int32__varint")
+  (attrmod, prim_encoder loc attrmod "int32__varint")
 
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> when attrmod.encoding = Some Zigzag ->
-  (attrmod, prim_encoder attrmod "int32__zigzag")
+  (attrmod, prim_encoder loc attrmod "int32__zigzag")
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Bits32 || attrmod.encoding = None ->
-  (attrmod, prim_encoder attrmod "uint32__bits32")
+  (attrmod, prim_encoder loc attrmod "uint32__bits32")
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Bits64 ->
-  (attrmod, prim_encoder attrmod "uint32__bits64")
+  (attrmod, prim_encoder loc attrmod "uint32__bits64")
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Varint ->
-  (attrmod, prim_encoder attrmod "uint32__varint")
+  (attrmod, prim_encoder loc attrmod "uint32__varint")
 
 | <:ctyp:< uint32 >> | <:ctyp:< Uint32.t >> when attrmod.encoding = Some Zigzag ->
-  (attrmod, prim_encoder attrmod "uint32__zigzag")
+  (attrmod, prim_encoder loc attrmod "uint32__zigzag")
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Bits64 || attrmod.encoding = None ->
-  (attrmod, prim_encoder attrmod "int64__bits64")
+  (attrmod, prim_encoder loc attrmod "int64__bits64")
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Bits32 ->
-  (attrmod, prim_encoder attrmod "int64__bits32")
+  (attrmod, prim_encoder loc attrmod "int64__bits32")
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Varint ->
-  (attrmod, prim_encoder attrmod "int64__varint")
+  (attrmod, prim_encoder loc attrmod "int64__varint")
 
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> when attrmod.encoding = Some Zigzag ->
-  (attrmod, prim_encoder attrmod "int64__zigzag")
+  (attrmod, prim_encoder loc attrmod "int64__zigzag")
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Bits64 || attrmod.encoding = None ->
-  (attrmod, prim_encoder attrmod "uint64__bits64")
+  (attrmod, prim_encoder loc attrmod "uint64__bits64")
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Bits32 ->
-  (attrmod, prim_encoder attrmod "uint64__bits32")
+  (attrmod, prim_encoder loc attrmod "uint64__bits32")
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Varint ->
-  (attrmod, prim_encoder attrmod "uint64__varint")
+  (attrmod, prim_encoder loc attrmod "uint64__varint")
 
 | <:ctyp:< uint64 >> | <:ctyp:< Uint64.t >> when attrmod.encoding = Some Zigzag ->
-  (attrmod, prim_encoder attrmod "uint64__zigzag")
+  (attrmod, prim_encoder loc attrmod "uint64__zigzag")
 
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
-  (attrmod, prim_encoder attrmod "string__bytes")
+  (attrmod, prim_encoder loc attrmod "string__bytes")
 
 | (<:ctyp:< bytes >> | <:ctyp:< Stdlib.Bytes.t >> | <:ctyp:< Bytes.t >>) ->
-  (attrmod, prim_encoder attrmod "bytes__bytes")
+  (attrmod, prim_encoder loc attrmod "bytes__bytes")
 
 (*
 | <:ctyp:< char >> -> <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (String.make 1 x) >>
@@ -552,10 +556,10 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
     <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (Nativeint.to_string x) >>
 *)
 | <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod.encoding = None || attrmod.encoding = Some Bits64 ->
-  (attrmod, prim_encoder attrmod "float__bits64")
+  (attrmod, prim_encoder loc attrmod "float__bits64")
 
 | <:ctyp:< float >> | <:ctyp:< Float.t >> when attrmod.encoding = Some Bits32 ->
-  (attrmod, prim_encoder attrmod "float__bits32")
+  (attrmod, prim_encoder loc attrmod "float__bits32")
 
 (*
 | <:ctyp:< Hashtbl.t >> ->
@@ -579,6 +583,9 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "bare" ->
     fmtrec ~{attrmod={ (attrmod) with bare = True } } t
+
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "packed" ->
+    fmtrec ~{attrmod={ (attrmod) with packed = True } } t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
 
@@ -943,18 +950,6 @@ value of_protobuf_fname arg tyname =
   tyname^"_from_protobuf"
 ;
 
-value fmt_attrmod_modifier a =
- let loc = Ploc.dummy in
- match (a.message, a.arity) with [
-  (False, None) -> <:expr< required >>
-| (False, Some `Optional) -> <:expr< optional >>
-| (_, Some `List) -> <:expr< list >>
-| (_, Some `Array) -> <:expr< array >>
-| (True, None) -> <:expr< required_last >>
-| (True, Some `Optional) -> <:expr< optional_last >>
-| _ -> assert False
-] ;
-
 (**
 EXAMPLE (type i1 = int [@key 1])
 let i1_from_protobuf_manually decoder =
@@ -1213,6 +1208,9 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
 
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "bare" ->
     fmtrec ~{attrmod={ (attrmod) with bare = True } } t
+
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "packed" ->
+    fmtrec ~{attrmod={ (attrmod) with packed = True } } t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
 
