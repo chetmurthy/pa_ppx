@@ -388,7 +388,20 @@ let test_pvariant_bare ctxt =
   in
   assert_roundtrip printer r7_to_protobuf r7_from_protobuf
                    "\x08\x01" { r7a = `V4A }
+#else
+type v4 = [ `V4A [@key 1] | `V4B [@key 2] ]
+and r7 = {
+  r7a : v4 [@key 1] [@bare]
+} [@@deriving protobuf { bare = ( v4 ) }]
+let test_pvariant_bare ctxt =
+  let printer { r7a } =
+    match r7a with `V4A -> "{ r7a = `V4A }" | `V4B -> "{ r7a = `V4B }"
+  in
+  assert_roundtrip printer r7_to_protobuf r7_from_protobuf
+                   "\x08\x01" { r7a = `V4A }
+#endif
 
+#ifndef PAPPX
 type r8 = {
   r8a : [ `Request [@key 1] | `Reply [@key 2] ] [@key 1] [@bare];
   r8b : int [@key 2];

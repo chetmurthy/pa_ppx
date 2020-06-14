@@ -817,6 +817,15 @@ value bare_to_expression arg ~{msg} ty0 =
     | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to ENUM [p]variants")
     ]) l in
     <:expr<fun [ $list:branches$ ] >>
+
+  | <:ctyp:< [= $list:l$ ] >> ->
+    let branches = List.map (fun [ PvTag _ cid _ <:vala< [] >> attrs ->
+      let key = attrs_to_key loc arg attrs in
+      (<:patt< ` $uv cid$ >>, <:vala< None >>, <:expr< $int64:string_of_int key$ >>)
+    | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to CLOSED ENUM [p]variants")
+    ]) l in
+    <:expr<fun [ $list:branches$ ] >>
+
   | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to enum [p]variants")
   ]
 ;
@@ -1482,6 +1491,19 @@ value bare_of_expression arg ~{msg} ty0 =
       let key = attrs_to_key loc arg attrs in
       (<:patt< $int64:string_of_int key$ >>, <:vala< None >>, <:expr< $_uid:cid$ >>)
     | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to ENUM [p]variants")
+    ]) l in
+    let branches = branches @ [
+      (<:patt< _ >>, <:vala< None >>,
+       <:expr< raise (let open Protobuf.Decoder in
+               Failure (Malformed_variant $str:msg$)) >>)
+    ] in
+    <:expr< fun [ $list:branches$ ] >>
+
+  | <:ctyp:< [= $list:l$ ] >> ->
+    let branches = List.map (fun [ PvTag _ cid _ <:vala< [] >> attrs ->
+      let key = attrs_to_key loc arg attrs in
+      (<:patt< $int64:string_of_int key$ >>, <:vala< None >>, <:expr< ` $uv cid$ >>)
+    | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to CLOSED ENUM [p]variants")
     ]) l in
     let branches = branches @ [
       (<:patt< _ >>, <:vala< None >>,
