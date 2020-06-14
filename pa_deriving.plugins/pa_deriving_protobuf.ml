@@ -54,9 +54,10 @@ type attrmod_t = {
 ; arity : option [ = `List | `Array | `Optional ]
 ; packed : bool
 ; default : option MLast.expr
+; field_name : string
 } ;
 
-value mt_attrmod = {
+value init_attrmod fld = {
   encoding = None
 ; key = None
 ; message = False
@@ -65,6 +66,7 @@ value mt_attrmod = {
 ; arity = None
 ; packed = False
 ; default = None
+; field_name = fld
 } ;
 value attrmod_key a = match a.key with [ None -> 1 | Some n -> n ] ;
 value attrmod_key_compare a b = Int.compare (attrmod_key a) (attrmod_key b) ;
@@ -76,6 +78,9 @@ value attrs_to_key loc arg attrs =
   | _ -> Ploc.raise loc (Failure "MUST specify exactly one @key")
   ]
 ;
+
+value format_msg ctxt field_name =
+  Printf.sprintf "%s.%s" (Ctxt.module_path_s ctxt) field_name ;
 
 module Variant = struct
 
@@ -240,8 +245,8 @@ value totuple loc arg argvar (branch_key_slotnums, nslots) =
   <:expr< match v with [ $list:totuple_branches$ ] >>
 ;
 
-value oftuple loc arg ~{msg} (branch_key_slotnums, nslots) =
-
+value oftuple loc arg ~{field_name} (branch_key_slotnums, nslots) =
+  let msg = format_msg arg field_name in
   let all_empty_patt = all_empty_patt loc branch_key_slotnums in
 
   let oftuple_branch2tuple_patt argvars = fun [
@@ -404,8 +409,8 @@ value totuple loc arg argvar (branch_key_slotnums, nslots) =
   <:expr< match v with [ $list:totuple_branches$ ] >>
 ;
 
-value oftuple ~{coercion} loc arg ~{msg} (branch_key_slotnums, nslots) =
-
+value oftuple ~{coercion} loc arg ~{field_name} (branch_key_slotnums, nslots) =
+  let msg = format_msg arg field_name in
   let all_empty_patt = Variant.all_empty_patt loc branch_key_slotnums in
 
   let oftuple_branch2tuple_patt argvars = fun [
@@ -494,7 +499,8 @@ value prim_encoder loc attrmod fname =
     $wrapped$ >>
 ;
 
-value bare_to_expression arg ~{msg} ty0 =
+value bare_to_expression arg ~{field_name} ty0 =
+  let msg = format_msg arg field_name in
   match ty0 with [
     <:ctyp:< [ $list:l$ ] >> ->
     let branches = List.map (fun [ (_, cid, <:vala< [] >>, _, attrs) ->
@@ -516,7 +522,7 @@ value bare_to_expression arg ~{msg} ty0 =
   ]
 ;
 
-value to_expression arg ?{coercion} ~{msg} param_map ty0 =
+value to_expression arg ?{coercion} ~{field_name} param_map ty0 =
   let runtime_module =
     let loc = loc_of_ctyp ty0 in
     Base.expr_runtime_module <:expr< Runtime >> in
@@ -640,6 +646,9 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "bare" ->
     fmtrec ~{attrmod={ (attrmod) with bare = True } } t
 
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $str:fld$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "fieldname" ->
+    fmtrec ~{attrmod={ (attrmod) with field_name = fld } } t
+
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "packed" ->
     fmtrec ~{attrmod={ (attrmod) with packed = True } } t
 
@@ -710,7 +719,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
     <:ctyp:< $lid:lid$ >> -> lid
   | _ -> Ploc.raise loc (Failure "type-application with lhs not a type-name")
   ] in
-  let fmtargs = List.map (fun ty -> let (_, e) = fmtrec ~{attrmod= { (mt_attrmod) with param = True } } ty in e) tyargs in
+  let fmtargs = List.map (fun ty -> let (_, e) = fmtrec ~{attrmod= { (init_attrmod attrmod.field_name) with param = True } } ty in e) tyargs in
   let fname = to_protobuf_fname arg lid in
   let f = Expr.applist <:expr< $lid:fname$ >> fmtargs in
   (attrmod,
@@ -773,7 +782,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   }
 
 | <:ctyp:< [= $list:l$ ] >> as ty0 when attrmod.bare ->
-  let f = bare_to_expression arg ~{msg=msg} ty0 in
+  let f = bare_to_expression arg ~{field_name=attrmod.field_name} ty0 in
   let enc = prim_encoder loc attrmod "int64__varint" in
   (attrmod, <:expr< fun v encoder -> $enc$ ($f$ v) encoder >>)
 
@@ -782,7 +791,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
     let tuplety = PVariant.to_tupletype loc arg branch_key_slotnums in
     let to_tuple_expr = PVariant.totuple loc arg "v" (branch_key_slotnums, nslots) in
     let (_, fmt) =
-      let attrmod = { (mt_attrmod) with message = attrmod.message } in
+      let attrmod = { (init_attrmod attrmod.field_name) with message = attrmod.message } in
       fmtrec ~{attrmod=attrmod} tuplety in
     let e = <:expr< fun v encoder -> $fmt$ $to_tuple_expr$ encoder >> in
     let e = if not attrmod.message then
@@ -796,7 +805,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 
 | <:ctyp:< ( $list:tyl$ ) >> ->
     let am_fmt_vars = List.mapi (fun i ty ->
-      let attrmod = { (mt_attrmod) with key = Some (i+1) } in
+      let attrmod = { (init_attrmod attrmod.field_name) with key = Some (i+1) } in
       (fmtrec ~{attrmod=attrmod} ty, Printf.sprintf "v%d" i))
     tyl in
     (* ordered by occurrence in tuple-type *)
@@ -827,8 +836,9 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   assert attrmod.message ;
   assert (None = attrmod.key) ;
   let tupty =
-    let l = List.map (fun (_, _, _, ty, attrs) ->
-        Ctyp.wrap_attrs ty (uv attrs)
+    let l = List.map (fun (_, fld, _, ty, attrs) ->
+        let fld = attrmod.field_name^"."^fld in
+        Ctyp.wrap_attrs <:ctyp< $ty$ [@fieldname $str:fld$ ;] >> (uv attrs)
      ) fields in
     <:ctyp< ( $list:l$ ) >> in
   let (_, e) = fmtrec ~{attrmod=attrmod} tupty in
@@ -844,15 +854,15 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | [%unmatched_vala] -> failwith "pa_deriving_protobuf.to_expression"
 ]
 in
-let (am, e) = fmtrec ?{coercion=coercion} ~{attrmod={ (mt_attrmod) with message = True } } ty0 in
+let (am, e) = fmtrec ?{coercion=coercion} ~{attrmod={ (init_attrmod field_name) with message = True } } ty0 in
 let loc = loc_of_expr e in
-(am, <:expr< let msg = $str:msg$ in $e$ >>)
+(am, <:expr< let msg = $str:format_msg arg field_name$ in $e$ >>)
 ;
 
-value fmt_to_top arg ~{coercion} ~{msg} params = fun [
+value fmt_to_top arg ~{coercion} ~{field_name} params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
-  snd (to_expression arg ~{coercion=coercion} ~{msg=msg} params t2)
-| t -> snd (to_expression arg ~{coercion=coercion} ~{msg} params t)
+  snd (to_expression arg ~{coercion=coercion} ~{field_name=field_name} params t2)
+| t -> snd (to_expression arg ~{coercion=coercion} ~{field_name=field_name} params t)
 ]
 ;
 
@@ -890,7 +900,7 @@ value bare_str_items arg td =
   let tk = td.tdDef in
   let to_protobuffname = to_protobuf_fname arg tyname in
   let bare_name = to_protobuffname^"_bare" in
-  let to_e = bare_to_expression arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} tk in
+  let to_e = bare_to_expression arg ~{field_name=tyname} tk in
   [(<:patt< $lid:bare_name$ >>, to_e, <:vala< [] >>)]
 }
 ;
@@ -910,7 +920,7 @@ value str_item_funs arg td = do {
   let coercion =
     monomorphize_ctyp ty in
   let to_protobuffname = to_protobuf_fname arg tyname in
-  let to_e = fmt_to_top arg ~{coercion=coercion} ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} param_map tk in
+  let to_e = fmt_to_top arg ~{coercion=coercion} ~{field_name=tyname} param_map tk in
   let to_e = <:expr< let open! $runtime_module$ in let open! Stdlib in $to_e$ >> in
   let paramfun_patts = List.map (PM.arg_patt ~{mono=True} loc) param_map in
   let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
@@ -988,7 +998,7 @@ value rec extend_str_items arg si = match si with [
     ] in
     let gcl = List.concat (List.map ec2gc ecs) in
     let ty = <:ctyp< [ $list:gcl$ ] >> in
-    let e = snd(to_expression arg ~{msg=String.escaped (Pp_MLast.show_longid_lident t)} param_map ty) in
+    let e = snd(to_expression arg ~{field_name=String.escaped (Pp_MLast.show_longid_lident t)} param_map ty) in
     let branches = match e with [
       <:expr< fun [ $list:branches$ ] >> -> branches
     | _ -> assert False
@@ -1045,7 +1055,15 @@ let i1_from_protobuf_manually decoder =
     | None -> v0
   in match derec v0 with
     Some v0 -> v0
-  | _ -> raise
+  | _ ->
+    (* a check for each field *)
+    if None = v0 then
+      raise
+        (let open Protobuf.Decoder in
+            Failure (Missing_field "Test_syntax.i1"))
+    else () ;
+    (* and then a catch-all which should never be triggered *)
+      raise
         (let open Protobuf.Decoder in
             Failure (Missing_field "Test_syntax.i1"))
 
@@ -1071,9 +1089,12 @@ let i1_from_protobuf_manually = (*e1*) fun decoder ->
     | None -> <tuple-of-vars>
   in (*e6*)match derec <tuple-of-vars> with
     <final-value-checks-projections-for-each-type>  -> <final-value-for-each-type>
-  | _ -> raise
+  | _ -> do {
+    <final-value-errors> ;
+    raise
         (let open Protobuf.Decoder in
             Failure (Missing_field "Test_syntax.i1"))
+    }
 *)
 value demarshal_to_tuple loc arg am_kind_fmt_vars =
   let initvals = List.map (fun (am, kind, fmt, v) ->
@@ -1105,6 +1126,17 @@ value demarshal_to_tuple loc arg am_kind_fmt_vars =
       None -> <:patt< Some $lid:v$ >>
     | Some ( `List | `Array | `Optional ) -> <:patt< $lid:v$ >>
     ]) am_kind_fmt_vars in
+  let final_value_errors = List.concat (List.map (fun (am, _, _, v) ->
+    match am.arity with [
+      None -> [<:expr< if None = $lid:v$ then
+        raise (let open Protobuf.Decoder in Failure (Missing_field $str:format_msg arg am.field_name$))
+      else ()
+      >>]
+    | Some ( `List | `Array | `Optional ) -> []
+    ]) (List.rev am_kind_fmt_vars)) in
+  let final_value_errors = final_value_errors @ [
+    <:expr< raise (let open Protobuf.Decoder in Failure (Missing_field msg)) >>
+  ] in
   let final_value_patt = tuplepatt loc final_value_patts in
   let final_value_exprs = List.map (fun (am, _, _, v) ->
     match am.arity with [
@@ -1117,7 +1149,7 @@ value demarshal_to_tuple loc arg am_kind_fmt_vars =
 
   let e6 = <:expr< match derec $tuple_of_vars_expr$ with [
      $final_value_patt$ -> $final_value_expr$
-   | _ -> raise (let open Protobuf.Decoder in Failure (Missing_field msg)) ] >> in
+   | _ -> do { $list:final_value_errors$ } ] >> in
 
   let branch5s = List.map (fun (am, kind, fmt, v) ->
     let updatename = Printf.sprintf "update_%s" v in
@@ -1134,7 +1166,7 @@ value demarshal_to_tuple loc arg am_kind_fmt_vars =
     let branch5_e5b = if am.arity = Some `List ||  am.arity = Some `Array then
         [(<:patt< Some ($int:fmt_attrmod_key am$, Protobuf.Bytes) >>, <:vala< None >>, e5b)]
       else [] in
-    let unexpected = <:expr< raise (let open Protobuf.Decoder in Failure (Unexpected_payload msg kind)) >> in
+    let unexpected = <:expr< raise (let open Protobuf.Decoder in Failure (Unexpected_payload $str:format_msg arg am.field_name$ kind)) >> in
     let branch5_unexpected = [(<:patt< Some ($int:fmt_attrmod_key am$, kind) >>, <:vala< None >>, unexpected)] in
     branch5_e5 @ branch5_e5b @ branch5_unexpected
   ) am_kind_fmt_vars in
@@ -1155,7 +1187,8 @@ value demarshal_to_tuple loc arg am_kind_fmt_vars =
   <:expr< fun decoder -> $e2$ >>
 ;
 
-value bare_of_expression arg ~{msg} ty0 =
+value bare_of_expression arg ~{field_name} ty0 =
+  let msg = format_msg arg field_name in
   match ty0 with [
     <:ctyp:< [ $list:l$ ] >> ->
     let branches = List.map (fun [ (_, cid, <:vala< [] >>, _, attrs) ->
@@ -1190,7 +1223,7 @@ value bare_of_expression arg ~{msg} ty0 =
 value trace_before_fmtrec (attrmod : attrmod_t) (ty : MLast.ctyp) = () ;
 value trace_after_fmtrec (attrmod : attrmod_t) (ty : MLast.ctyp) (rv : (attrmod_t * MLast.patt * MLast.expr)) = () ;
 
-value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
+value of_expression arg ~{attrmod} param_map ty0 =
   let runtime_module =
     let loc = loc_of_ctyp ty0 in
     Base.expr_runtime_module <:expr< Runtime >> in
@@ -1352,6 +1385,9 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "bare" ->
     fmtrec ~{attrmod={ (attrmod) with bare = True } } t
 
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $str:fld$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "fieldname" ->
+    fmtrec ~{attrmod={ (attrmod) with field_name = fld } } t
+
 | <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "packed" ->
     fmtrec ~{attrmod={ (attrmod) with packed = True } } t
 
@@ -1423,7 +1459,7 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
     <:ctyp:< $lid:lid$ >> -> lid
   | _ -> Ploc.raise loc (Failure "type-application with lhs not a type-name")
   ] in
-  let fmtargs = List.map (fun ty -> let (_, _, e) = fmtrec ~{attrmod={ (mt_attrmod) with param = True } } ty in e) tyargs in
+  let fmtargs = List.map (fun ty -> let (_, _, e) = fmtrec ~{attrmod={ (init_attrmod attrmod.field_name) with param = True } } ty in e) tyargs in
   let fname = of_protobuf_fname arg lid in
   let f = Expr.applist <:expr< $lid:fname$ >> fmtargs in
   (attrmod, <:patt< Protobuf.Bytes >>,
@@ -1465,14 +1501,14 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   assert (None = attrmod.key) ;
   let (branch_key_slotnums, nslots) = Variant.preprocess loc arg attrmod l in
   let tuplety = Variant.to_tupletype loc arg branch_key_slotnums in
-  let of_tuple_expr = Variant.oftuple loc arg ~{msg=msg} (branch_key_slotnums, nslots) in
+  let of_tuple_expr = Variant.oftuple loc arg ~{field_name=attrmod.field_name} (branch_key_slotnums, nslots) in
   let (_, _, fmt) = fmtrec ~{attrmod=attrmod} tuplety in
   (attrmod, <:patt< Protobuf.Bytes >>,
    <:expr< (fun decoder -> $of_tuple_expr$ ($fmt$ decoder)) >>)
   }
 
 | <:ctyp:< [= $list:l$ ] >> as ty0 when attrmod.bare ->
-  let f = bare_of_expression arg ~{msg=msg} ty0 in
+  let f = bare_of_expression arg ~{field_name=attrmod.field_name} ty0 in
   (attrmod, <:patt< Protobuf.Varint >>,
   <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
           decode0 { kind = Protobuf.Varint ; convertf = Pa_ppx_protobuf.Runtime.forget1 $f$ ; decodef = Protobuf.Decoder.varint } ~{msg=msg} >>)
@@ -1481,9 +1517,9 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   let ty0 = monomorphize_ctyp ty0 in
   let (branch_key_slotnums, nslots) = PVariant.preprocess loc arg attrmod l in
   let tuplety = PVariant.to_tupletype loc arg branch_key_slotnums in
-  let of_tuple_expr = PVariant.oftuple ~{coercion=ty0} loc arg ~{msg=msg} (branch_key_slotnums, nslots) in
+  let of_tuple_expr = PVariant.oftuple ~{coercion=ty0} loc arg ~{field_name=attrmod.field_name} (branch_key_slotnums, nslots) in
   let (am, kind, fmt) =
-    let attrmod = { (mt_attrmod) with message = attrmod.message } in
+    let attrmod = { (init_attrmod attrmod.field_name) with message = attrmod.message } in
     fmtrec ~{attrmod=attrmod} tuplety in
   let e = <:expr< (fun decoder -> $of_tuple_expr$ ($fmt$ decoder)) >> in
   let e = if not attrmod.message then
@@ -1496,7 +1532,7 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
 
 | <:ctyp:< ( $list:tyl$ ) >> ->
     let am_kind_fmt_vars = List.mapi (fun i ty ->
-      let attrmod = { (mt_attrmod) with key = Some (i+1) } in
+      let attrmod = { (init_attrmod attrmod.field_name) with key = Some (i+1) } in
       let (am, kind, fmt) = fmtrec ~{attrmod=attrmod} ty in
       (am, kind, fmt, Printf.sprintf "v_%d" i)) tyl in
     let e = demarshal_to_tuple loc arg am_kind_fmt_vars in
@@ -1515,8 +1551,9 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   assert attrmod.message ;
   assert (None = attrmod.key) ;
   let tupty =
-    let l = List.map (fun (_, _, _, ty, attrs) ->
-        Ctyp.wrap_attrs ty (uv attrs)
+    let l = List.map (fun (_, fld, _, ty, attrs) ->
+        let fld = attrmod.field_name^"."^fld in
+        Ctyp.wrap_attrs <:ctyp< $ty$ [@fieldname $str:fld$ ;] >> (uv attrs)
       ) fields in
     <:ctyp< ( $list:l$ ) >> in
   let (_, _, e) = fmtrec ~{attrmod=attrmod} tupty in
@@ -1550,14 +1587,14 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   ] in
   let e =
     let loc = loc_of_ctyp ty0 in
-    <:expr< let msg = $str:msg$ in $e$ >> in
+    <:expr< let msg = $str:format_msg arg am.field_name$ in $e$ >> in
   (am, e)
 ;
 
-value fmt_of_top arg ~{msg} params = fun [
+value fmt_of_top arg ~{field_name} params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
-  snd (of_expression arg ~{attrmod= { (mt_attrmod) with message = True } } ~{msg=msg} params t2)
-| t -> snd (of_expression arg ~{attrmod= { (mt_attrmod) with message = True } } ~{msg=msg} params t)
+  snd (of_expression arg ~{attrmod= { (init_attrmod field_name) with message = True } } params t2)
+| t -> snd (of_expression arg ~{attrmod= { (init_attrmod field_name) with message = True } } params t)
 ]
 ;
 
@@ -1598,7 +1635,7 @@ value bare_str_items arg td =
   let tk = td.tdDef in
   let of_protobuffname = of_protobuf_fname arg tyname in
   let bare_name = of_protobuffname^"_bare" in
-  let of_e = bare_of_expression arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} tk in
+  let of_e = bare_of_expression arg ~{field_name=tyname} tk in
   [(<:patt< $lid:bare_name$ >>, of_e, <:vala< [] >>)]
 }
 ;
@@ -1615,8 +1652,7 @@ value str_item_funs arg td = do {
   let paramfun_patts = List.map (PM.arg_patt ~{mono=True} loc) param_map in
   let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
   let paramfun_exprs = List.map (PM.arg_expr loc) param_map in
-  let msg = Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname in
-  let body = fmt_of_top arg ~{msg=msg} param_map ty in
+  let body = fmt_of_top arg ~{field_name=tyname} param_map ty in
   let (fun1, ofun2) = sig_item_fun0 arg td in
   let e = 
     let of_e = <:expr< let open! $runtime_module$ in let open! Stdlib in $body$ >> in
@@ -1690,7 +1726,8 @@ value rec extend_str_items arg si = match si with [
     ] in
     let gcl = List.concat (List.map ec2gc ecs) in
     let ty = <:ctyp< [ $list:gcl$ ] >> in
-    let e = snd (of_expression arg ~{attrmod=mt_attrmod} ~{msg=String.escaped (Pp_MLast.show_longid_lident t)} param_map ty) in
+    let field_name = String.escaped (Pp_MLast.show_longid_lident t) in
+    let e = snd (of_expression arg ~{attrmod=init_attrmod field_name} param_map ty) in
     let branches = match e with [
       <:expr< fun [ $list:branches$ ] >> -> branches
     | _ -> assert False
@@ -1800,7 +1837,7 @@ value expr_protobuf arg = fun [
     Base.module_expr_runtime_module <:module_expr< Runtime >> in
     let param_map = ty |> type_params |> To.PM.make_of_ids in
     let coercion = monomorphize_ctyp ty in
-    let e = To.fmt_to_top arg ~{coercion=coercion} ~{msg=Printf.sprintf "%s.to_protobuf"  (Ctxt.module_path_s arg)} param_map ty in
+    let e = To.fmt_to_top arg ~{coercion=coercion} ~{field_name="to_protobuf"} param_map ty in
     let e = <:expr< let open! $runtime_module$ in let open! Stdlib in $e$ >> in
     let parampats = List.map (To.PM.arg_patt ~{mono=True} loc) param_map in
     let paramtype_patts = List.map (fun p -> <:patt< (type $To.PM.type_id p$) >>) param_map in
@@ -1810,7 +1847,7 @@ value expr_protobuf arg = fun [
   let runtime_module =
     Base.module_expr_runtime_module <:module_expr< Runtime >> in
     let param_map = ty |> type_params |> Of.PM.make_of_ids in
-    let e = Of.fmt_of_top ~{msg=Printf.sprintf "%s.of_protobuf"  (Ctxt.module_path_s arg)} arg param_map ty in
+    let e = Of.fmt_of_top ~{field_name="of_protobuf"} arg param_map ty in
     let e = <:expr< let open! $runtime_module$ in let open! Stdlib in $e$ >> in
     let parampats = List.map (Of.PM.arg_patt ~{mono=True} loc) param_map in
     let paramtype_patts = List.map (fun p -> <:patt< (type $Of.PM.type_id p$) >>) param_map in
@@ -1838,7 +1875,7 @@ Pa_deriving.(Registry.add PI.{
 ; options = ["optional" ; "protoc" ; "protoc_import" ; "bare" ]
 ; default_options = let loc = Ploc.dummy in
     [ ("optional", <:expr< False >>) ; ("bare", <:expr< () >> ) ]
-; alg_attributes = ["key"; "default"; "encoding"; "bare"; "packed"]
+; alg_attributes = ["key"; "default"; "encoding"; "bare"; "packed"; "fieldname"]
 ; expr_extensions = []
 ; ctyp_extensions = []
 ; expr = (fun _ _ -> assert False)

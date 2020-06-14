@@ -719,34 +719,49 @@ let test_packed ctxt =
   let d = Protobuf.Decoder.of_string "\x0a\x01\x01\x0a\x02\x02\x03" in
   assert_equal ~printer [|1; 2; 3|] (p'_from_protobuf d)
 
+type s' = string [@fieldname "argle"] [@@deriving protobuf]
+
 let test_errors ctxt =
   (* scalars *)
-  let d = Protobuf.Decoder.of_string "" in
-  assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".s")))
-                (fun () -> s_from_protobuf d);
-  let d = Protobuf.Decoder.of_string "\x0d\x00\x00\xC0\x3f" in
-  assert_raises Protobuf.Decoder.(Failure (Unexpected_payload (filemod^".s", Protobuf.Bits32)))
-                (fun () -> s_from_protobuf d);
+  begin
+    let d = Protobuf.Decoder.of_string "" in
+    assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".s")))
+                  (fun () -> s_from_protobuf d)
+  end ;
+#ifdef PAPPX
+  begin
+    let d = Protobuf.Decoder.of_string "" in
+    assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".argle")))
+                  (fun () -> s'_from_protobuf d)
+  end ;
+#endif
+  begin
+    let d = Protobuf.Decoder.of_string "\x0d\x00\x00\xC0\x3f" in
+    assert_raises Protobuf.Decoder.(Failure (Unexpected_payload (filemod^".s", Protobuf.Bits32)))
+                (fun () -> s_from_protobuf d)
+  end ;
   (* records *)
-  let d = Protobuf.Decoder.of_string "" in
-#ifndef PAPPX
-  assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".r1.r1b")))
-#else
-  assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".r1")))
-#endif
-                (fun () -> r1_from_protobuf d);
+  begin
+    let d = Protobuf.Decoder.of_string "" in
+    assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".r1.r1b")))
+                (fun () -> r1_from_protobuf d)
+  end ;
   (* tuples *)
-  let d = Protobuf.Decoder.of_string "\x0a\x00" in
+  begin
+    let d = Protobuf.Decoder.of_string "\x0a\x00" in
 #ifndef PAPPX
-  assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".r3.r3a.1")))
+    assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".r3.r3a.1")))
 #else
-  assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".r3")))
+    assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".r3.r3a")))
 #endif
-                (fun () -> r3_from_protobuf d);
+                (fun () -> r3_from_protobuf d)
+  end ;
   (* variants *)
-  let d = Protobuf.Decoder.of_string "\x08\x03\x18\x1a" in
-  assert_raises Protobuf.Decoder.(Failure (Malformed_variant (filemod^".v1")))
+  begin
+    let d = Protobuf.Decoder.of_string "\x08\x03\x18\x1a" in
+    assert_raises Protobuf.Decoder.(Failure (Malformed_variant (filemod^".v1")))
                 (fun () -> v1_from_protobuf d)
+  end
 
 let test_skip ctxt =
   let d = Protobuf.Decoder.of_string "\x15\x00\x00\xC0\x3f" in
