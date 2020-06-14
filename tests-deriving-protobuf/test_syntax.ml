@@ -749,11 +749,7 @@ let test_errors ctxt =
   (* tuples *)
   begin
     let d = Protobuf.Decoder.of_string "\x0a\x00" in
-#ifndef PAPPX
     assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".r3.r3a.1")))
-#else
-    assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".r3.r3a")))
-#endif
                 (fun () -> r3_from_protobuf d)
   end ;
   (* variants *)

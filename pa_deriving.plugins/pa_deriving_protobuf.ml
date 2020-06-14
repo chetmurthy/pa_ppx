@@ -805,7 +805,8 @@ value to_expression arg ?{coercion} ~{field_name} param_map ty0 =
 
 | <:ctyp:< ( $list:tyl$ ) >> ->
     let am_fmt_vars = List.mapi (fun i ty ->
-      let attrmod = { (init_attrmod attrmod.field_name) with key = Some (i+1) } in
+      let fld = Printf.sprintf "%s.%d" attrmod.field_name i in
+      let attrmod = { (init_attrmod fld) with key = Some (i+1) } in
       (fmtrec ~{attrmod=attrmod} ty, Printf.sprintf "v%d" i))
     tyl in
     (* ordered by occurrence in tuple-type *)
@@ -1532,7 +1533,8 @@ value of_expression arg ~{attrmod} param_map ty0 =
 
 | <:ctyp:< ( $list:tyl$ ) >> ->
     let am_kind_fmt_vars = List.mapi (fun i ty ->
-      let attrmod = { (init_attrmod attrmod.field_name) with key = Some (i+1) } in
+      let fld = Printf.sprintf "%s.%d" attrmod.field_name i in
+      let attrmod = { (init_attrmod fld) with key = Some (i+1) } in
       let (am, kind, fmt) = fmtrec ~{attrmod=attrmod} ty in
       (am, kind, fmt, Printf.sprintf "v_%d" i)) tyl in
     let e = demarshal_to_tuple loc arg am_kind_fmt_vars in
