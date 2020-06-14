@@ -491,7 +491,8 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   <:ctyp:< $lid:lid$ >> when attrmod.bare ->
   let fname = to_protobuf_fname arg lid in
   let bare_fname = fname^"_bare" in
-  (attrmod, <:expr< $lid:bare_fname$ >>)
+  let f = prim_encoder loc attrmod "int64__varint" in
+  (attrmod, <:expr< fun v encoder -> $f$ ($lid:bare_fname$ v) encoder >>)
 
 (*
 | <:ctyp:< _ >> -> failwith "cannot derive yojson for type <<_>>"
@@ -815,10 +816,7 @@ value bare_to_expression arg ~{msg} ty0 =
       (<:patt< $_uid:cid$ >>, <:vala< None >>, <:expr< $int64:string_of_int key$ >>)
     | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to ENUM [p]variants")
     ]) l in
-    <:expr<fun v encoder -> ((
-      Protobuf.Encoder.varint (match v with [ $list:branches$ ])
-        encoder)[@ocaml.warning "-A";])
-    >>
+    <:expr<fun [ $list:branches$ ] >>
   | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to enum [p]variants")
   ]
 ;
@@ -1139,7 +1137,8 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   let fname = of_protobuf_fname arg lid in
   let bare_fname = fname^"_bare" in
   (attrmod, <:patt< Protobuf.Varint >>,
-  <:expr< $lid:bare_fname$ >>)
+  <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+          decode0 { kind = Protobuf.Varint ; convertf = Pa_ppx_protobuf.Runtime.forget1 $lid:bare_fname$ ; decodef = Protobuf.Decoder.varint } ~{msg=msg} >>)
 
 (*
 | <:ctyp:< Protobuf.Safe.t >> -> <:expr< fun x -> Result.Ok x >>
@@ -1489,8 +1488,7 @@ value bare_of_expression arg ~{msg} ty0 =
        <:expr< raise (let open Protobuf.Decoder in
                Failure (Malformed_variant $str:msg$)) >>)
     ] in
-    <:expr< fun decoder -> ((
-      match Protobuf.Decoder.varint decoder with [ $list:branches$ ])[@ocaml.warning "-A";]) >>
+    <:expr< fun [ $list:branches$ ] >>
 
   | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to enum [p]variants")
   ]
