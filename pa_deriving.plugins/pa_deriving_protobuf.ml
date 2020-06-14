@@ -25,6 +25,19 @@ module Ctxt = struct
     ]}
   ;
   value is_plugin_name ctxt s = (s = plugin_name ctxt) ;
+
+  value bare_types ctxt = do {
+    assert (List.mem_assoc "bare" ctxt.options) ;
+    match List.assoc "bare" ctxt.options with [
+      <:expr< () >> -> []
+    | <:expr:< $lid:l$ >> -> [l]
+    | <:expr:< ( $list:l$ ) >> ->
+      List.map (fun [ <:expr< $lid:t$ >> -> t
+                    | _ -> Ploc.raise loc (Failure "protobuf: bare option must be given lidents") ]) l
+    ]
+  } ;
+
+  value is_bare ctxt s = List.mem s (bare_types ctxt) ;
 end ;
 
 value tuplectyp loc l = if List.length l = 1 then List.hd l else <:ctyp< ( $list:l$ ) >> ;
@@ -477,7 +490,8 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 
   <:ctyp:< $lid:lid$ >> when attrmod.bare ->
   let fname = to_protobuf_fname arg lid in
-  (attrmod, <:expr< $lid:fname$ >>)
+  let bare_fname = fname^"_bare" in
+  (attrmod, <:expr< $lid:bare_fname$ >>)
 
 (*
 | <:ctyp:< _ >> -> failwith "cannot derive yojson for type <<_>>"
@@ -772,12 +786,8 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   assert (None = attrmod.key) ;
   let tupty =
     let l = List.map (fun (_, _, _, ty, attrs) ->
-      let keyattrs = List.find_all (DC.is_allowed_attribute (DC.get arg) "protobuf" "key") (uv attrs) in do {
-        if List.length keyattrs <> 1 then
-          Ploc.raise loc (Failure "MUST specify exactly one @key for each field")
-        else () ;
-        <:ctyp< $ty$ [@ $_attribute:List.hd keyattrs$ ] >>
-      }) fields in
+        Ctyp.wrap_attrs ty (uv attrs)
+     ) fields in
     <:ctyp< ( $list:l$ ) >> in
   let (_, e) = fmtrec ~{attrmod=attrmod} tupty in
   let fields_as_tuple =
@@ -797,6 +807,21 @@ let loc = loc_of_expr e in
 (am, <:expr< let msg = $str:msg$ in $e$ >>)
 ;
 
+value bare_to_expression arg ~{msg} ty0 =
+  match ty0 with [
+    <:ctyp:< [ $list:l$ ] >> ->
+    let branches = List.map (fun [ (_, cid, <:vala< [] >>, _, attrs) ->
+      let key = attrs_to_key loc arg attrs in
+      (<:patt< $_uid:cid$ >>, <:vala< None >>, <:expr< $int64:string_of_int key$ >>)
+    | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to ENUM [p]variants")
+    ]) l in
+    <:expr<fun v encoder -> ((
+      Protobuf.Encoder.varint (match v with [ $list:branches$ ])
+        encoder)[@ocaml.warning "-A";])
+    >>
+  | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to enum [p]variants")
+  ]
+;
 
 value fmt_to_top arg ~{coercion} ~{msg} params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
@@ -829,6 +854,21 @@ value sig_items arg td = do {
 }
 ;
 
+value bare_str_items arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let runtime_module =
+    Base.module_expr_runtime_module <:module_expr< Runtime >> in
+  let tyname = uv tyname in
+  if not (Ctxt.is_bare arg tyname) then [] else do {
+  assert ([] = uv td.tdPrm) ;
+  let tk = td.tdDef in
+  let to_protobuffname = to_protobuf_fname arg tyname in
+  let bare_name = to_protobuffname^"_bare" in
+  let to_e = bare_to_expression arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} tk in
+  [(<:patt< $lid:bare_name$ >>, to_e, <:vala< [] >>)]
+}
+;
+
 value str_item_funs arg td = do {
   assert (not (match td.tdDef with [ <:ctyp< .. >> | <:ctyp< $_$ == .. >> -> True | _ -> False ])) ;
   let (loc, tyname) = uv td.tdNam in
@@ -857,6 +897,7 @@ value str_item_funs arg td = do {
   [(<:patt< ( $lid:to_protobuffname$ : $fty$ ) >>,
     Expr.abstract_over (paramtype_patts@paramfun_patts)
       <:expr< fun arg encoder -> $to_e$ $argexp$ encoder >>, <:vala< [] >>)]
+  @ (bare_str_items arg td)
 }
 ;
 
@@ -1096,8 +1137,9 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
 
   <:ctyp:< $lid:lid$ >> when attrmod.bare ->
   let fname = of_protobuf_fname arg lid in
+  let bare_fname = fname^"_bare" in
   (attrmod, <:patt< Protobuf.Varint >>,
-  <:expr< $lid:fname$ >>)
+  <:expr< $lid:bare_fname$ >>)
 
 (*
 | <:ctyp:< Protobuf.Safe.t >> -> <:expr< fun x -> Result.Ok x >>
@@ -1396,12 +1438,8 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   assert (None = attrmod.key) ;
   let tupty =
     let l = List.map (fun (_, _, _, ty, attrs) ->
-      let keyattrs = List.find_all (DC.is_allowed_attribute (DC.get arg) "protobuf" "key") (uv attrs) in do {
-        if List.length keyattrs <> 1 then
-          Ploc.raise loc (Failure "MUST specify exactly one @key for each field")
-        else () ;
-        <:ctyp< $ty$ [@ $_attribute:List.hd keyattrs$ ] >>
-      }) fields in
+        Ctyp.wrap_attrs ty (uv attrs)
+      ) fields in
     <:ctyp< ( $list:l$ ) >> in
   let (_, _, e) = fmtrec ~{attrmod=attrmod} tupty in
   let fields_as_tuple_patt =
@@ -1438,6 +1476,26 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   (am, e)
 ;
 
+value bare_of_expression arg ~{msg} ty0 =
+  match ty0 with [
+    <:ctyp:< [ $list:l$ ] >> ->
+    let branches = List.map (fun [ (_, cid, <:vala< [] >>, _, attrs) ->
+      let key = attrs_to_key loc arg attrs in
+      (<:patt< $int64:string_of_int key$ >>, <:vala< None >>, <:expr< $_uid:cid$ >>)
+    | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to ENUM [p]variants")
+    ]) l in
+    let branches = branches @ [
+      (<:patt< _ >>, <:vala< None >>,
+       <:expr< raise (let open Protobuf.Decoder in
+               Failure (Malformed_variant $str:msg$)) >>)
+    ] in
+    <:expr< fun decoder -> ((
+      match Protobuf.Decoder.varint decoder with [ $list:branches$ ])[@ocaml.warning "-A";]) >>
+
+  | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to enum [p]variants")
+  ]
+;
+
 value fmt_of_top arg ~{msg} params = fun [
   <:ctyp< $t1$ == $_priv:_$ $t2$ >> ->
   snd (of_expression arg ~{attrmod= { (mt_attrmod) with message = True } } ~{msg=msg} params t2)
@@ -1472,6 +1530,21 @@ value sig_items arg td = do {
 }
 ;
 
+value bare_str_items arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let runtime_module =
+    Base.module_expr_runtime_module <:module_expr< Runtime >> in
+  let tyname = uv tyname in
+  if not (Ctxt.is_bare arg tyname) then [] else do {
+  assert ([] = uv td.tdPrm) ;
+  let tk = td.tdDef in
+  let of_protobuffname = of_protobuf_fname arg tyname in
+  let bare_name = of_protobuffname^"_bare" in
+  let of_e = bare_of_expression arg ~{msg=Printf.sprintf "%s.%s" (Ctxt.module_path_s arg) tyname} tk in
+  [(<:patt< $lid:bare_name$ >>, of_e, <:vala< [] >>)]
+}
+;
+
 value str_item_funs arg td = do {
   assert (not (match td.tdDef with [ <:ctyp< .. >> | <:ctyp< $_$ == .. >> -> True | _ -> False ])) ;
   let (loc, tyname) = uv td.tdNam in
@@ -1494,7 +1567,7 @@ value str_item_funs arg td = do {
     (<:patt< ( $lid:of_protobuffname$ : $fty$ ) >>,
      Expr.abstract_over (paramtype_patts@paramfun_patts)
        <:expr< fun arg -> $of_e$ arg >>, <:vala< [] >>) in
-   [e]
+   [e] @ (bare_str_items arg td)
 }
 ;
 
@@ -1704,9 +1777,9 @@ value ctyp_protobuf arg = fun [
 Pa_deriving.(Registry.add PI.{
   name = "protobuf"
 ; alternates = []
-; options = ["optional" ; "protoc" ; "protoc_import" ]
+; options = ["optional" ; "protoc" ; "protoc_import" ; "bare" ]
 ; default_options = let loc = Ploc.dummy in
-    [ ("optional", <:expr< False >>) ]
+    [ ("optional", <:expr< False >>) ; ("bare", <:expr< () >> ) ]
 ; alg_attributes = ["key"; "default"; "encoding"; "bare"; "packed"]
 ; expr_extensions = []
 ; ctyp_extensions = []

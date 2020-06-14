@@ -278,6 +278,32 @@ let test_variant_bare ctxt =
                    "\x08\x02" { r4a = V2B }
 #endif
 
+#ifdef PAPPX
+module Bare : sig
+type v2 =
+| V2A [@key 1]
+| V2B [@key 2]
+and r4 = {
+  r4a : v2 [@key 1] [@bare]
+} [@@deriving protobuf { bare = ( v2 ) } ]
+end = struct
+type v2 =
+| V2A [@key 1]
+| V2B [@key 2]
+and r4 = {
+  r4a : v2 [@key 1] [@bare]
+} [@@deriving protobuf { bare = ( v2 ) } ]
+end
+
+let test_variant_bare ctxt =
+  let open Bare in
+  let printer { r4a } =
+    match r4a with V2A -> "{ r4a = V2A }" | V2B -> "{ r4a = V2B }"
+  in
+  assert_roundtrip printer r4_to_protobuf r4_from_protobuf
+                   "\x08\x02" { r4a = V2B }
+#endif
+
 type 'a r5 = {
   r5a: 'a [@key 1]
 } [@@deriving protobuf]
@@ -740,9 +766,7 @@ let suite = "Test syntax" >::: [
     "test_nested"         >:: test_nested;
     "test_imm_tuple"      >:: test_imm_tuple;
     "test_variant"        >:: test_variant;
-#ifndef PAPPX
     "test_variant_bare"   >:: test_variant_bare;
-#endif
     "test_tvar"           >:: test_tvar;
     "test_mylist"         >:: test_mylist;
     "test_poly_variant"   >:: test_poly_variant;

@@ -60,6 +60,7 @@ test: $(TESTS:.byte=)
 	./$<
 
 test_%.byte: test_%.ml
+	rm -f test_syntax_pappx.ml
 	cppo -D PAPPX $< > $<.pappx.ml
 	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),$(PAPACKAGES),camlp5.pr_o \
 	-syntax camlp5o $<.pappx.ml \
