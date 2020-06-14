@@ -240,7 +240,7 @@ value totuple loc arg argvar (branch_key_slotnums, nslots) =
   <:expr< match v with [ $list:totuple_branches$ ] >>
 ;
 
-value oftuple loc arg (branch_key_slotnums, nslots) =
+value oftuple loc arg ~{msg} (branch_key_slotnums, nslots) =
 
   let all_empty_patt = all_empty_patt loc branch_key_slotnums in
 
@@ -278,6 +278,12 @@ value oftuple loc arg (branch_key_slotnums, nslots) =
     let (expr,argvars) = oftuple_branch2branch_expr bks in
     let patt = oftuple_branch2tuple_patt argvars bks in
     (patt, <:vala< None >>, expr)) branch_key_slotnums in
+  let oftuple_branches = oftuple_branches @ [
+    (<:patt< _ >>, <:vala< None >>,
+     <:expr< raise
+             (let open Protobuf.Decoder in
+                Failure (Malformed_variant $str:msg$)) >>)
+  ] in
   <:expr< fun [ $list:oftuple_branches$ ] >>
 ;
 
@@ -398,7 +404,7 @@ value totuple loc arg argvar (branch_key_slotnums, nslots) =
   <:expr< match v with [ $list:totuple_branches$ ] >>
 ;
 
-value oftuple ~{coercion} loc arg (branch_key_slotnums, nslots) =
+value oftuple ~{coercion} loc arg ~{msg} (branch_key_slotnums, nslots) =
 
   let all_empty_patt = Variant.all_empty_patt loc branch_key_slotnums in
 
@@ -436,6 +442,12 @@ value oftuple ~{coercion} loc arg (branch_key_slotnums, nslots) =
     let (expr,argvars) = oftuple_branch2branch_expr bks in
     let patt = oftuple_branch2tuple_patt argvars bks in
     (patt, <:vala< None >>, <:expr< ( $expr$ : $coercion$ ) >>)) branch_key_slotnums in
+  let oftuple_branches = oftuple_branches @ [
+    (<:patt< _ >>, <:vala< None >>,
+     <:expr< raise
+             (let open Protobuf.Decoder in
+                Failure (Malformed_variant $str:msg$)) >>)
+  ] in
   <:expr< fun [ $list:oftuple_branches$ ] >>
 ;
 
@@ -1122,9 +1134,9 @@ value demarshal_to_tuple loc arg am_kind_fmt_vars =
     let branch5_e5b = if am.arity = Some `List ||  am.arity = Some `Array then
         [(<:patt< Some ($int:fmt_attrmod_key am$, Protobuf.Bytes) >>, <:vala< None >>, e5b)]
       else [] in
-    let missing = <:expr< raise (let open Protobuf.Decoder in Failure (Missing_field msg)) >> in
-    let branch5_missing = [(<:patt< Some ($int:fmt_attrmod_key am$, _) >>, <:vala< None >>, missing)] in
-    branch5_e5 @ branch5_e5b @ branch5_missing
+    let unexpected = <:expr< raise (let open Protobuf.Decoder in Failure (Unexpected_payload msg kind)) >> in
+    let branch5_unexpected = [(<:patt< Some ($int:fmt_attrmod_key am$, kind) >>, <:vala< None >>, unexpected)] in
+    branch5_e5 @ branch5_e5b @ branch5_unexpected
   ) am_kind_fmt_vars in
   let branch5s = List.concat branch5s in
 
@@ -1453,7 +1465,7 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   assert (None = attrmod.key) ;
   let (branch_key_slotnums, nslots) = Variant.preprocess loc arg attrmod l in
   let tuplety = Variant.to_tupletype loc arg branch_key_slotnums in
-  let of_tuple_expr = Variant.oftuple loc arg (branch_key_slotnums, nslots) in
+  let of_tuple_expr = Variant.oftuple loc arg ~{msg=msg} (branch_key_slotnums, nslots) in
   let (_, _, fmt) = fmtrec ~{attrmod=attrmod} tuplety in
   (attrmod, <:patt< Protobuf.Bytes >>,
    <:expr< (fun decoder -> $of_tuple_expr$ ($fmt$ decoder)) >>)
@@ -1469,7 +1481,7 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   let ty0 = monomorphize_ctyp ty0 in
   let (branch_key_slotnums, nslots) = PVariant.preprocess loc arg attrmod l in
   let tuplety = PVariant.to_tupletype loc arg branch_key_slotnums in
-  let of_tuple_expr = PVariant.oftuple ~{coercion=ty0} loc arg (branch_key_slotnums, nslots) in
+  let of_tuple_expr = PVariant.oftuple ~{coercion=ty0} loc arg ~{msg=msg} (branch_key_slotnums, nslots) in
   let (am, kind, fmt) =
     let attrmod = { (mt_attrmod) with message = attrmod.message } in
     fmtrec ~{attrmod=attrmod} tuplety in

@@ -1,5 +1,5 @@
 #ifdef PAPPX
-let filemod = "Test_syntax.ml"
+let filemod = "Test_syntax"
 #else
 let filemod = "Test_syntax.ml.ppx"
 #endif
@@ -719,7 +719,6 @@ let test_packed ctxt =
   let d = Protobuf.Decoder.of_string "\x0a\x01\x01\x0a\x02\x02\x03" in
   assert_equal ~printer [|1; 2; 3|] (p'_from_protobuf d)
 
-#ifndef PAPPX
 let test_errors ctxt =
   (* scalars *)
   let d = Protobuf.Decoder.of_string "" in
@@ -730,11 +729,19 @@ let test_errors ctxt =
                 (fun () -> s_from_protobuf d);
   (* records *)
   let d = Protobuf.Decoder.of_string "" in
+#ifndef PAPPX
   assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".r1.r1b")))
+#else
+  assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".r1")))
+#endif
                 (fun () -> r1_from_protobuf d);
   (* tuples *)
   let d = Protobuf.Decoder.of_string "\x0a\x00" in
+#ifndef PAPPX
   assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".r3.r3a.1")))
+#else
+  assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".r3")))
+#endif
                 (fun () -> r3_from_protobuf d);
   (* variants *)
   let d = Protobuf.Decoder.of_string "\x08\x03\x18\x1a" in
@@ -746,6 +753,7 @@ let test_skip ctxt =
   assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".s")))
                 (fun () -> s_from_protobuf d)
 
+#ifndef PAPPX
 module type Elem = sig
   type t [@@deriving protobuf]
 end
@@ -817,10 +825,8 @@ let suite = "Test syntax" >::: [
     "test_nonpoly"        >:: test_nonpoly;
     "test_default"        >:: test_default;
     "test_packed"         >:: test_packed;
-#ifndef PAPPX
     "test_errors"         >:: test_errors;
     "test_skip"           >:: test_skip;
-#endif
   ]
 let _ =
   if not !Sys.interactive then run_test_tt_main suite
