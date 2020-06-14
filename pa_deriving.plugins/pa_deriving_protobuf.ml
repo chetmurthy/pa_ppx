@@ -482,6 +482,28 @@ value prim_encoder loc attrmod fname =
     $wrapped$ >>
 ;
 
+value bare_to_expression arg ~{msg} ty0 =
+  match ty0 with [
+    <:ctyp:< [ $list:l$ ] >> ->
+    let branches = List.map (fun [ (_, cid, <:vala< [] >>, _, attrs) ->
+      let key = attrs_to_key loc arg attrs in
+      (<:patt< $_uid:cid$ >>, <:vala< None >>, <:expr< $int64:string_of_int key$ >>)
+    | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to ENUM [p]variants")
+    ]) l in
+    <:expr<fun [ $list:branches$ ] >>
+
+  | <:ctyp:< [= $list:l$ ] >> ->
+    let branches = List.map (fun [ PvTag _ cid _ <:vala< [] >> attrs ->
+      let key = attrs_to_key loc arg attrs in
+      (<:patt< ` $uv cid$ >>, <:vala< None >>, <:expr< $int64:string_of_int key$ >>)
+    | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to CLOSED ENUM [p]variants")
+    ]) l in
+    <:expr<fun [ $list:branches$ ] >>
+
+  | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to enum [p]variants")
+  ]
+;
+
 value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   let runtime_module =
     let loc = loc_of_ctyp ty0 in
@@ -738,11 +760,18 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   (attrmod, <:expr< fun v encoder -> $fmt$ $to_tuple_expr$ encoder >>)
   }
 
+| <:ctyp:< [= $list:l$ ] >> as ty0 when attrmod.bare ->
+  let f = bare_to_expression arg ~{msg=msg} ty0 in
+  let enc = prim_encoder loc attrmod "int64__varint" in
+  (attrmod, <:expr< fun v encoder -> $enc$ ($f$ v) encoder >>)
+
 | <:ctyp:< [= $list:l$ ] >> ->
     let (branch_key_slotnums, nslots) = PVariant.preprocess loc arg attrmod l in
     let tuplety = PVariant.to_tupletype loc arg branch_key_slotnums in
     let to_tuple_expr = PVariant.totuple loc arg "v" (branch_key_slotnums, nslots) in
-    let (_, fmt) = fmtrec ~{attrmod=attrmod} tuplety in
+    let (_, fmt) =
+      let attrmod = { (mt_attrmod) with message = attrmod.message } in
+      fmtrec ~{attrmod=attrmod} tuplety in
     let e = <:expr< fun v encoder -> $fmt$ $to_tuple_expr$ encoder >> in
     let e = if not attrmod.message then
       <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
@@ -806,28 +835,6 @@ in
 let (am, e) = fmtrec ?{coercion=coercion} ~{attrmod={ (mt_attrmod) with message = True } } ty0 in
 let loc = loc_of_expr e in
 (am, <:expr< let msg = $str:msg$ in $e$ >>)
-;
-
-value bare_to_expression arg ~{msg} ty0 =
-  match ty0 with [
-    <:ctyp:< [ $list:l$ ] >> ->
-    let branches = List.map (fun [ (_, cid, <:vala< [] >>, _, attrs) ->
-      let key = attrs_to_key loc arg attrs in
-      (<:patt< $_uid:cid$ >>, <:vala< None >>, <:expr< $int64:string_of_int key$ >>)
-    | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to ENUM [p]variants")
-    ]) l in
-    <:expr<fun [ $list:branches$ ] >>
-
-  | <:ctyp:< [= $list:l$ ] >> ->
-    let branches = List.map (fun [ PvTag _ cid _ <:vala< [] >> attrs ->
-      let key = attrs_to_key loc arg attrs in
-      (<:patt< ` $uv cid$ >>, <:vala< None >>, <:expr< $int64:string_of_int key$ >>)
-    | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to CLOSED ENUM [p]variants")
-    ]) l in
-    <:expr<fun [ $list:branches$ ] >>
-
-  | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to enum [p]variants")
-  ]
 ;
 
 value fmt_to_top arg ~{coercion} ~{msg} params = fun [
@@ -1136,11 +1143,54 @@ value demarshal_to_tuple loc arg am_kind_fmt_vars =
   <:expr< fun decoder -> $e2$ >>
 ;
 
+value bare_of_expression arg ~{msg} ty0 =
+  match ty0 with [
+    <:ctyp:< [ $list:l$ ] >> ->
+    let branches = List.map (fun [ (_, cid, <:vala< [] >>, _, attrs) ->
+      let key = attrs_to_key loc arg attrs in
+      (<:patt< $int64:string_of_int key$ >>, <:vala< None >>, <:expr< $_uid:cid$ >>)
+    | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to ENUM [p]variants")
+    ]) l in
+    let branches = branches @ [
+      (<:patt< _ >>, <:vala< None >>,
+       <:expr< raise (let open Protobuf.Decoder in
+               Failure (Malformed_variant $str:msg$)) >>)
+    ] in
+    <:expr< fun [ $list:branches$ ] >>
+
+  | <:ctyp:< [= $list:l$ ] >> ->
+    let branches = List.map (fun [ PvTag _ cid _ <:vala< [] >> attrs ->
+      let key = attrs_to_key loc arg attrs in
+      (<:patt< $int64:string_of_int key$ >>, <:vala< None >>, <:expr< ` $uv cid$ >>)
+    | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to CLOSED ENUM [p]variants")
+    ]) l in
+    let branches = branches @ [
+      (<:patt< _ >>, <:vala< None >>,
+       <:expr< raise (let open Protobuf.Decoder in
+               Failure (Malformed_variant $str:msg$)) >>)
+    ] in
+    <:expr< fun [ $list:branches$ ] >>
+
+  | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to enum [p]variants")
+  ]
+;
+
+value trace_before_fmtrec (attrmod : attrmod_t) (ty : MLast.ctyp) = () ;
+value trace_after_fmtrec (attrmod : attrmod_t) (ty : MLast.ctyp) (rv : (attrmod_t * MLast.patt * MLast.expr)) = () ;
+
 value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
   let runtime_module =
     let loc = loc_of_ctyp ty0 in
     Base.expr_runtime_module <:expr< Runtime >> in
-  let rec fmtrec ~{attrmod} = fun [
+  let rec fmtrec ~{attrmod} ty = do {
+    trace_before_fmtrec attrmod ty ;
+    let rv = obs_fmtrec ~{attrmod=attrmod} ty in do {
+      trace_after_fmtrec attrmod ty rv ;
+      rv
+    }
+  }
+
+  and obs_fmtrec ~{attrmod} = fun [
 
   <:ctyp:< $lid:lid$ >> when attrmod.bare ->
   let fname = of_protobuf_fname arg lid in
@@ -1409,12 +1459,20 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
    <:expr< (fun decoder -> $of_tuple_expr$ ($fmt$ decoder)) >>)
   }
 
+| <:ctyp:< [= $list:l$ ] >> as ty0 when attrmod.bare ->
+  let f = bare_of_expression arg ~{msg=msg} ty0 in
+  (attrmod, <:patt< Protobuf.Varint >>,
+  <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+          decode0 { kind = Protobuf.Varint ; convertf = Pa_ppx_protobuf.Runtime.forget1 $f$ ; decodef = Protobuf.Decoder.varint } ~{msg=msg} >>)
+
 | <:ctyp:< [= $list:l$ ] >> as ty0 -> 
   let ty0 = monomorphize_ctyp ty0 in
   let (branch_key_slotnums, nslots) = PVariant.preprocess loc arg attrmod l in
   let tuplety = PVariant.to_tupletype loc arg branch_key_slotnums in
   let of_tuple_expr = PVariant.oftuple ~{coercion=ty0} loc arg (branch_key_slotnums, nslots) in
-  let (am, kind, fmt) = fmtrec ~{attrmod=attrmod} tuplety in
+  let (am, kind, fmt) =
+    let attrmod = { (mt_attrmod) with message = attrmod.message } in
+    fmtrec ~{attrmod=attrmod} tuplety in
   let e = <:expr< (fun decoder -> $of_tuple_expr$ ($fmt$ decoder)) >> in
   let e = if not attrmod.message then
     let e = demarshal_to_tuple loc arg [(am, kind, e, "v")] in
@@ -1482,38 +1540,6 @@ value of_expression arg ~{attrmod} ~{msg} param_map ty0 =
     let loc = loc_of_ctyp ty0 in
     <:expr< let msg = $str:msg$ in $e$ >> in
   (am, e)
-;
-
-value bare_of_expression arg ~{msg} ty0 =
-  match ty0 with [
-    <:ctyp:< [ $list:l$ ] >> ->
-    let branches = List.map (fun [ (_, cid, <:vala< [] >>, _, attrs) ->
-      let key = attrs_to_key loc arg attrs in
-      (<:patt< $int64:string_of_int key$ >>, <:vala< None >>, <:expr< $_uid:cid$ >>)
-    | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to ENUM [p]variants")
-    ]) l in
-    let branches = branches @ [
-      (<:patt< _ >>, <:vala< None >>,
-       <:expr< raise (let open Protobuf.Decoder in
-               Failure (Malformed_variant $str:msg$)) >>)
-    ] in
-    <:expr< fun [ $list:branches$ ] >>
-
-  | <:ctyp:< [= $list:l$ ] >> ->
-    let branches = List.map (fun [ PvTag _ cid _ <:vala< [] >> attrs ->
-      let key = attrs_to_key loc arg attrs in
-      (<:patt< $int64:string_of_int key$ >>, <:vala< None >>, <:expr< ` $uv cid$ >>)
-    | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to CLOSED ENUM [p]variants")
-    ]) l in
-    let branches = branches @ [
-      (<:patt< _ >>, <:vala< None >>,
-       <:expr< raise (let open Protobuf.Decoder in
-               Failure (Malformed_variant $str:msg$)) >>)
-    ] in
-    <:expr< fun [ $list:branches$ ] >>
-
-  | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to enum [p]variants")
-  ]
 ;
 
 value fmt_of_top arg ~{msg} params = fun [

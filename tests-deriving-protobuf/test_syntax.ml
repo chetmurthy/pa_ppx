@@ -276,9 +276,7 @@ let test_variant_bare ctxt =
   in
   assert_roundtrip printer r4_to_protobuf r4_from_protobuf
                    "\x08\x02" { r4a = V2B }
-#endif
-
-#ifdef PAPPX
+#else
 module Bare : sig
 type v2 =
 | V2A [@key 1]
@@ -401,7 +399,6 @@ let test_pvariant_bare ctxt =
                    "\x08\x01" { r7a = `V4A }
 #endif
 
-#ifndef PAPPX
 type r8 = {
   r8a : [ `Request [@key 1] | `Reply [@key 2] ] [@key 1] [@bare];
   r8b : int [@key 2];
@@ -414,7 +411,6 @@ let test_imm_pv_bare ctxt =
   in
   assert_roundtrip printer r8_to_protobuf r8_from_protobuf
                    "\x08\x01\x10\x2a" { r8a = `Request; r8b = 42 }
-#endif
 
 type 'a optionmsg = { it_option : 'a option [@key 1] }[@@deriving show, protobuf]
 let test_optionmsg ctxt =
@@ -784,10 +780,8 @@ let suite = "Test syntax" >::: [
     "test_mylist"         >:: test_mylist;
     "test_poly_variant"   >:: test_poly_variant;
     "test_imm_pvariant"   >:: test_imm_pvariant;
-#ifndef PAPPX
     "test_pvariant_bare"  >:: test_pvariant_bare;
     "test_imm_pv_bare"    >:: test_imm_pv_bare;
-#endif
     "test_optionmsg"      >:: test_optionmsg;
     "test_listmsg"        >:: test_listmsg;
     "test_arraymsg"       >:: test_arraymsg;
