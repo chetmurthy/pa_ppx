@@ -66,9 +66,8 @@ test_%.byte: test_%.ml
 	-syntax camlp5o $<.pappx.ml \
 	| perl -p -e 's,#.*$$,,' \
 	> $<.pappx.ppo
-	cp $<.pappx.ppo test_syntax_pappx.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PAPACKAGES) \
-	-linkall -linkpkg -syntax camlp5o -impl test_syntax_pappx.ml -o $@
+	-linkall -linkpkg -syntax camlp5o -impl $<.pappx.ml -o $@
 
 test_%.ppx.byte: test_%.ml
 	cppo -U PAPPX $< > $<.ppx.ml

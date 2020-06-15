@@ -35,7 +35,7 @@ let test_bool ctxt =
                    "\x08\x01" true
 
 type i1  = int                       [@@deriving protobuf, show]
-type i1'  = int [@key 2]             [@@deriving protobuf]
+type i1' = int   [@key 2]            [@@deriving protobuf]
 type i2  = int   [@encoding `zigzag] [@@deriving protobuf]
 type i3  = int   [@encoding `bits32] [@@deriving protobuf]
 type i4  = int   [@encoding `bits64] [@@deriving protobuf]
