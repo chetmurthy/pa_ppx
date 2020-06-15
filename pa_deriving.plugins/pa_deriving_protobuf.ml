@@ -756,14 +756,24 @@ value to_expression arg ?{coercion} ~{field_name} param_map ty0 =
             Protobuf.Encoder.nested ($e$ v) encoder
           }) >>)
 
-(*
-| <:ctyp:< $lid:lid$ >> ->
+| <:ctyp:< $longid:li$ . $lid:lid$ >> when attrmod.bare ->
   let fname = to_protobuf_fname arg lid in
-  <:expr< $lid:fname$ >>
+  let bare_fname = fname^"_bare" in
+  let bare_f = Expr.prepend_longident li <:expr< $lid:bare_fname$ >> in
+  let f = prim_encoder loc attrmod "int64__varint" in
+  (attrmod, <:expr< fun v encoder -> $f$ ($bare_f$ v) encoder >>)
+
 | <:ctyp:< $longid:li$ . $lid:lid$ >> ->
   let fname = to_protobuf_fname arg lid in
-  Expr.prepend_longident li <:expr< $lid:fname$ >>
-*)
+  let f = Expr.prepend_longident li <:expr< $lid:fname$ >> in
+  (attrmod,
+   if attrmod.param then f else
+   <:expr< let open Pa_ppx_protobuf.Runtime.Encode in
+    $fmt_attrmod_modifier attrmod$
+    (fun v encoder -> do {
+            Protobuf.Encoder.key ($int:fmt_attrmod_key attrmod$, Protobuf.Bytes) encoder ;
+            Protobuf.Encoder.nested ($f$ v) encoder
+          }) >>)
 
 | <:ctyp:< [ $list:l$ ] >> -> do {
 (* (1) convert branches into a tuple-type
@@ -883,11 +893,22 @@ value sig_item_funs arg td =
   [sig_item_fun0 arg td]
 ;
 
+value bare_sig_items arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let tyname = uv tyname in
+  if not (Ctxt.is_bare arg tyname) then [] else do {
+    assert ([] = uv td.tdPrm) ;
+    let to_protobuffname = to_protobuf_fname arg tyname in
+    let bare_name = to_protobuffname^"_bare" in
+    [<:sig_item< value $lid:bare_name$ : $lid:tyname$ -> Int64.t >>]
+  }
+;
+
 value sig_items arg td = do {
   assert (not (match td.tdDef with [ <:ctyp< .. >> | <:ctyp< $_$ == .. >> -> True | _ -> False ])) ;
   let (to_protobuffname, toftype) = sig_item_fun0 arg td in
   let loc = loc_of_type_decl td in
-  [ <:sig_item< value $lid:to_protobuffname$ : $toftype$>> ]
+  [ <:sig_item< value $lid:to_protobuffname$ : $toftype$>> ] @ (bare_sig_items arg td)
 }
 ;
 
@@ -936,92 +957,6 @@ value str_item_funs arg td = do {
       <:expr< fun arg encoder -> $to_e$ $argexp$ encoder >>, <:vala< [] >>)]
   @ (bare_str_items arg td)
 }
-;
-
-value extend_sig_items arg si = match si with [
-  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >>
-| <:sig_item< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
-  as z ->
-    let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
-    let (loc, tyname) = uv td.tdNam in
-    let param_map = PM.make "protobuf" loc (uv td.tdPrm) in
-    let (to_protobuffname, toftype) = sig_item_fun0 arg td in
-    let sil = [<:sig_item< value $lid:to_protobuffname$ : $toftype$>>] in
-    let modname = Printf.sprintf "M_%s" to_protobuffname in
-    let field_type = PM.quantify_over_ctyp param_map toftype in
-    [ <:sig_item< [@@@ocaml.text "/*" ;] >> ;
-      <:sig_item< module $uid:modname$ :
-    sig
-      type nonrec $lid:to_protobuffname$ = { f: mutable  $field_type$ } ;
-      value f : $lid:to_protobuffname$ ;
-    end >> ;
-      <:sig_item< [@@@ocaml.text "/*" ;] >> :: sil ]
-| _ -> assert False
-]
-;
-
-value rec extend_str_items arg si = match si with [
-  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >>
-| <:str_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
- as z ->
-    let td = match z with [ <:str_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
-    let param_map = PM.make "protobuf" loc (uv td.tdPrm) in
-    let (to_protobuffname, toftype) = sig_item_fun0 arg td in
-    let modname = Printf.sprintf "M_%s" to_protobuffname in
-    let msg1 = Printf.sprintf "%s: Maybe a [@@deriving protobuf] is missing when extending the type " to_protobuffname in
-    let msg2 = td.tdNam |> uv |> snd |> uv in
-
-    let field_type = PM.quantify_over_ctyp param_map toftype in
-    let fexp = <:expr< fun _ -> invalid_arg ($str:msg1$ ^ $str:msg2$) >> in
-    let fexp = Expr.abstract_over (List.map (PM.arg_patt ~{mono=True} loc) param_map) fexp in
-    let fexp = Expr.abstract_over (List.map (fun p -> <:patt< ( type $lid:PM.type_id p$ ) >>) param_map) fexp in
-    [ <:str_item< [@@@ocaml.text "/*" ;] >> ;
-      <:str_item< module $uid:modname$ =
-    struct
-      type nonrec $lid:to_protobuffname$ = { f: mutable  $field_type$ } ;
-      value f = { f = $fexp$ } ;
-    end >> ;
-      <:str_item< [@@@ocaml.text "/*" ;] >> ;
-      <:str_item< value $lid:to_protobuffname$ x = $uid:modname$ . f . $uid:modname$ . f x >>
-    ]
-
-| <:str_item:< type $lilongid:t$ $list:params$ += $_priv:_$ [ $list:ecs$ ] $_itemattrs:_$ >> ->
-    let modname = Printf.sprintf "M_%s" (to_protobuf_fname arg (uv (snd t))) in
-    let modname = match fst t with [
-      None -> <:longident< $uid:modname$ >>
-    | Some li -> <:longident< $longid:li$ . $uid:modname$ >>
-    ] in
-    let modname = module_expr_of_longident modname in
-    let param_map = PM.make "protobuf" loc params in
-    let ec2gc = fun [
-      EcTuple gc -> [gc]
-    | EcRebind _ _ _ -> []
-    ] in
-    let gcl = List.concat (List.map ec2gc ecs) in
-    let ty = <:ctyp< [ $list:gcl$ ] >> in
-    let e = snd(to_expression arg ~{field_name=String.escaped (Pp_MLast.show_longid_lident t)} param_map ty) in
-    let branches = match e with [
-      <:expr< fun [ $list:branches$ ] >> -> branches
-    | _ -> assert False
-    ] in
-    let paramexps = List.map (PM.arg_expr loc) param_map in
-    let parampats = List.map (PM.arg_patt ~{mono=True} loc) param_map in
-    let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
-    let catch_branch = (<:patt< z >>, <:vala< None >>,
-                        Expr.applist <:expr< fallback >> (paramexps@[ <:expr< z >> ])) in
-    let branches = branches @ [ catch_branch ] in
-    let e = <:expr< fun [ $list:branches$ ] >> in
-    let e = Expr.abstract_over (paramtype_patts@parampats) e in
-    [ <:str_item<
-      let open $!:False$ $modname$ in
-      let fallback = f . f in
-      f.f := $e$ >> ]
-
-  | <:str_item:< exception $excon:ec$ $itemattrs:attrs$ >> ->
-    extend_str_items arg <:str_item:< type Pa_ppx_runtime.Exceptions.t +=  [ $list:[ec]$ ] $itemattrs:attrs$ >>
-
-| _ -> assert False
-]
 ;
 
 end
@@ -1482,14 +1417,20 @@ value of_expression arg ~{attrmod} param_map ty0 =
    if attrmod.param then e else
    <:expr< fun decoder -> $e$ (Protobuf.Decoder.nested decoder) >>)
 
-(*
-| <:ctyp:< $lid:lid$ >> ->
+| <:ctyp:< $longid:li$ . $lid:lid$ >> when attrmod.bare ->
   let fname = of_protobuf_fname arg lid in
-  <:expr< $lid:fname$ >>
+  let bare_fname = fname^"_bare" in
+  let bare_f = Expr.prepend_longident li <:expr< $lid:bare_fname$ >> in
+  (attrmod, <:patt< Protobuf.Varint >>,
+  <:expr< let open Pa_ppx_protobuf.Runtime.Decode in
+          decode0 { kind = Protobuf.Varint ; convertf = Pa_ppx_protobuf.Runtime.forget1 $bare_f$ ; decodef = Protobuf.Decoder.varint } ~{msg=msg} >>)
+
 | <:ctyp:< $longid:li$ . $lid:lid$ >> ->
   let fname = of_protobuf_fname arg lid in
-  Expr.prepend_longident li <:expr< $lid:fname$ >>
-*)
+  let f = Expr.prepend_longident li <:expr< $lid:fname$ >> in
+  (attrmod, <:patt< Protobuf.Bytes >>,
+  if attrmod.param then f else
+  <:expr< fun decoder -> $f$ (Protobuf.Decoder.nested decoder) >>)
 
 | <:ctyp:< [ $list:l$ ] >> -> do {
 (* (1) convert branches into a tuple-type
@@ -1609,21 +1550,25 @@ value sig_item_fun0 arg td =
   let argfmttys = List.map (fun pty -> <:ctyp< Protobuf.Decoder.t -> $pty$ >>) paramtys in  
   let ty = <:ctyp< $lid:tyname$ >> in
   let offtype = Ctyp.arrows_list loc argfmttys <:ctyp< Protobuf.Decoder.t ->  $(Ctyp.applist ty paramtys)$ >> in
-  let e = (of_protobuffname, offtype) in
-   (e, None)
+  (of_protobuffname, offtype)
 ;
 
-value gen_sig_items arg td =
-  let loc = loc_of_type_decl td in
-  let mk1sig (fname, fty) = <:sig_item< value $lid:fname$ : $fty$>> in
-  match sig_item_fun0 arg td with [
-    (f, None) -> [mk1sig f]
-  | (f, Some g) -> [mk1sig f; mk1sig g] ]
+value bare_sig_items arg td =
+  let (loc, tyname) = uv td.tdNam in
+  let tyname = uv tyname in
+  if not (Ctxt.is_bare arg tyname) then [] else do {
+    assert ([] = uv td.tdPrm) ;
+    let of_protobuffname = of_protobuf_fname arg tyname in
+    let bare_name = of_protobuffname^"_bare" in
+    [<:sig_item< value $lid:bare_name$ : Int64.t -> $lid:tyname$ >>]
+  }
 ;
 
 value sig_items arg td = do {
   assert (not (match td.tdDef with [ <:ctyp< .. >> | <:ctyp< $_$ == .. >> -> True | _ -> False ])) ;
-  gen_sig_items arg td
+  let loc = loc_of_type_decl td in
+  let mk1sig (fname, fty) = <:sig_item< value $lid:fname$ : $fty$>> in
+  [mk1sig (sig_item_fun0 arg td)] @ (bare_sig_items arg td)
 }
 ;
 
@@ -1655,105 +1600,15 @@ value str_item_funs arg td = do {
   let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
   let paramfun_exprs = List.map (PM.arg_expr loc) param_map in
   let body = fmt_of_top arg ~{field_name=tyname} param_map ty in
-  let (fun1, ofun2) = sig_item_fun0 arg td in
   let e = 
     let of_e = <:expr< let open! $runtime_module$ in let open! Stdlib in $body$ >> in
-    let (_, fty) = fun1 in
+    let (_, fty) = sig_item_fun0 arg td in
     let fty = PM.quantify_over_ctyp param_map fty in
     (<:patt< ( $lid:of_protobuffname$ : $fty$ ) >>,
      Expr.abstract_over (paramtype_patts@paramfun_patts)
        <:expr< fun arg -> $of_e$ arg >>, <:vala< [] >>) in
    [e] @ (bare_str_items arg td)
 }
-;
-
-value extend_sig_items arg si = match si with [
-  <:sig_item< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >>
-| <:sig_item< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
-  as z ->
-    let td = match z with [ <:sig_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
-    let (loc, tyname) = uv td.tdNam in
-    let param_map = PM.make "protobuf" loc (uv td.tdPrm) in
-    let sil = gen_sig_items arg td in
-    let ((of_protobuffname, offtype), _) = sig_item_fun0 arg td in
-    let modname = Printf.sprintf "M_%s" of_protobuffname in
-    let field_type = PM.quantify_over_ctyp param_map offtype in
-    [ <:sig_item< [@@@ocaml.text "/*" ;] >> ;
-      <:sig_item< module $uid:modname$ :
-    sig
-      type nonrec $lid:of_protobuffname$ = { f: mutable  $field_type$ } ;
-      value f : $lid:of_protobuffname$ ;
-    end >> ;
-      <:sig_item< [@@@ocaml.text "/*" ;] >> :: sil ]
-| _ -> assert False
-]
-;
-
-value rec extend_str_items arg si = match si with [
-  <:str_item:< type $tp:_$ $list:_$ = $priv:_$ .. $_itemattrs:_$ >>
-| <:str_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
-   as z ->
-    let td = match z with [ <:str_item< type $_flag:_$ $list:tdl$ >> -> List.hd tdl | _ -> assert False ] in
-    let param_map = PM.make "protobuf" loc (uv td.tdPrm) in
-    let ((of_protobuffname, offtype), oexn) = sig_item_fun0 arg td in
-    let modname = Printf.sprintf "M_%s" of_protobuffname in
-    let msg1 = Printf.sprintf "%s: Maybe a [@@deriving protobuf] is missing when extending the type " of_protobuffname in
-    let msg2 = td.tdNam |> uv |> snd |> uv in
-
-    let field_type = PM.quantify_over_ctyp param_map offtype in
-    let fexp = <:expr< fun _ -> invalid_arg ($str:msg1$ ^ $str:msg2$) >> in
-    let fexp = Expr.abstract_over (List.map (PM.arg_patt ~{mono=True} loc) param_map) fexp in
-    let fexp = Expr.abstract_over (List.map (fun p -> <:patt< ( type $lid:PM.type_id p$ ) >>) param_map) fexp in
-    [ <:str_item< [@@@ocaml.text "/*" ;] >> ;
-      <:str_item< module $uid:modname$ =
-    struct
-      type nonrec $lid:of_protobuffname$ = { f: mutable  $field_type$ } ;
-      value f = { f = $fexp$ } ;
-    end >> ;
-      <:str_item< [@@@ocaml.text "/*" ;] >> ;
-      <:str_item< value $lid:of_protobuffname$ x = $uid:modname$ . f . $uid:modname$ . f x >>
-    ]
-
-| <:str_item:< type $lilongid:t$ $list:params$ += $_priv:_$ [ $list:ecs$ ] $_itemattrs:_$ >> ->
-    let modname = Printf.sprintf "M_%s" (of_protobuf_fname arg (uv (snd t))) in
-    let modname = match fst t with [
-      None -> <:longident< $uid:modname$ >>
-    | Some li -> <:longident< $longid:li$ . $uid:modname$ >>
-    ] in
-    let modname = module_expr_of_longident modname in
-    let param_map = PM.make "protobuf" loc params in
-    let ec2gc = fun [
-      EcTuple gc -> [gc]
-    | EcRebind _ _ _ -> []
-    ] in
-    let gcl = List.concat (List.map ec2gc ecs) in
-    let ty = <:ctyp< [ $list:gcl$ ] >> in
-    let field_name = String.escaped (Pp_MLast.show_longid_lident t) in
-    let e = snd (of_expression arg ~{attrmod=init_attrmod field_name} param_map ty) in
-    let branches = match e with [
-      <:expr< fun [ $list:branches$ ] >> -> branches
-    | _ -> assert False
-    ] in
-    (* remove the catch-branch *)
-    let (_, branches) = sep_last branches in 
-    let paramexps = List.map (PM.arg_expr loc) param_map in
-    let parampats = List.map (PM.arg_patt ~{mono=True} loc) param_map in
-    let paramtype_patts = List.map (fun p -> <:patt< (type $PM.type_id p$) >>) param_map in
-    let catch_branch = (<:patt< z >>, <:vala< None >>,
-                        Expr.applist <:expr< fallback >> (paramexps @[ <:expr< z >> ])) in
-    let branches = branches @ [ catch_branch ] in
-    let e = <:expr< fun [ $list:branches$ ] >> in
-    let e = Expr.abstract_over (paramtype_patts@parampats) e in
-    [ <:str_item<
-      let open $!:False$ $modname$ in
-      let fallback = f . f in
-      f.f := $e$ >> ]
-
-  | <:str_item:< exception $excon:ec$ $itemattrs:attrs$ >> ->
-    extend_str_items arg <:str_item:< type Pa_ppx_runtime.Exceptions.t +=  [ $list:[ec]$ ] $itemattrs:attrs$ >>
-
-| _ -> assert False
-]
 ;
 
 end
@@ -1777,56 +1632,15 @@ value sig_items arg td =
    else [])
 ;
 
-value extend_sig_items arg td =
-  (if Ctxt.is_plugin_name arg "protobuf" then
-     To.extend_sig_items arg td
-  else []) @
-  (if Ctxt.is_plugin_name arg "protobuf" then
-     Of.extend_sig_items arg td
-   else [])
-;
-
-value extend_str_items arg td =
-  (if Ctxt.is_plugin_name arg "protobuf" then
-     To.extend_str_items arg td
-  else []) @
-  (if Ctxt.is_plugin_name arg "protobuf" then
-     Of.extend_str_items arg td
-   else [])
-;
-
 value str_item_gen_protobuf name arg = fun [
-  <:str_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >>
-| <:str_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
-  as z ->
-    let l = extend_str_items arg z in
-    <:str_item< declare $list:l$ end >>
-
-| <:str_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ [ $list:_$ ] $_itemattrs:_$ >> as z ->
-    let l = extend_str_items arg z in
-    <:str_item< declare $list:l$ end >>
-
-| <:str_item:< exception $excon:_$ $itemattrs:_$ >> as z ->
-    let l = extend_str_items arg z in
-    <:str_item< declare $list:l$ end >>
-
-| <:str_item:< type $_flag:_$ $list:tdl$ >> ->
+  <:str_item:< type $_flag:_$ $list:tdl$ >> ->
     let l = List.concat (List.map (str_item_funs arg) tdl) in
     <:str_item< value rec $list:l$ >>
 | _ -> assert False ]
 ;
 
 value sig_item_gen_protobuf name arg = fun [
-  <:sig_item:< type $_tp:_$ $_list:_$ = $_priv:_$ .. $_itemattrs:_$ >>
-| <:sig_item:< type $tp:_$ $list:_$ = $_$ == $priv:_$ .. $_itemattrs:_$ >> 
-  as z ->
-    let l = extend_sig_items arg z in
-    <:sig_item< declare $list:l$ end >>
-
-| <:sig_item:< type $lilongid:_$ $_list:_$ += $_priv:_$ [ $list:_$ ] $_itemattrs:_$ >> as z ->
-    <:sig_item< declare $list:[]$ end >>
-
-| <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
+  <:sig_item:< type $_flag:_$ $list:tdl$ >> ->
     let l = List.concat (List.map (sig_items arg) tdl) in
     <:sig_item< declare $list:l$ end >>
 

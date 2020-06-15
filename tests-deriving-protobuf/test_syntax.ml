@@ -277,21 +277,20 @@ let test_variant_bare ctxt =
   assert_roundtrip printer r4_to_protobuf r4_from_protobuf
                    "\x08\x02" { r4a = V2B }
 #else
+
 module Bare : sig
 type v2 =
 | V2A [@key 1]
-| V2B [@key 2]
-and r4 = {
-  r4a : v2 [@key 1] [@bare]
-} [@@deriving protobuf { bare = ( v2 ) } ]
+| V2B [@key 2] [@@deriving protobuf { bare = ( v2 ) } ]
 end = struct
 type v2 =
 | V2A [@key 1]
-| V2B [@key 2]
-and r4 = {
-  r4a : v2 [@key 1] [@bare]
-} [@@deriving protobuf { bare = ( v2 ) } ]
+| V2B [@key 2] [@@deriving protobuf { bare = ( v2 ) } ]
 end
+
+type r4 = {
+  r4a : Bare.v2 [@key 1] [@bare]
+} [@@deriving protobuf { bare = ( v2 ) } ]
 
 let test_variant_bare ctxt =
   let open Bare in
