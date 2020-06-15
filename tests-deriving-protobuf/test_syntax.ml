@@ -763,7 +763,6 @@ let test_skip ctxt =
   assert_raises Protobuf.Decoder.(Failure (Missing_field (filemod^".s")))
                 (fun () -> s_from_protobuf d)
 
-#ifndef PAPPX
 module type Elem = sig
   type t [@@deriving protobuf]
 end
@@ -771,7 +770,6 @@ end
 module Collection(Elem:Elem) = struct
   type t = Elem.t list [@@deriving protobuf]
 end
-#endif
 
 let suite = "Test syntax" >::: [
     "test_bool"           >:: test_bool;
