@@ -41,6 +41,16 @@ packages needed::
        ppx_deriving_yojson ppx_import ppx_here sexplib bos \
        expect_test_helpers ppx_expect
 
+5. A few Perl packages
+
+  - ``IPC::System::Simple``
+  - ``String::ShellQuote``
+     
+   On Debian/Ubuntu systems, these can be installed with::
+
+  apt-get install libstring-shellquote-perl libipc-system-simple-perl
+
+
 Building and Installing
 -----------------------
 

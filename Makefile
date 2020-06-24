@@ -21,7 +21,7 @@ all: sys
 	set -e; for i in $(TESTDIRS); do cd $$i; $(MAKE) all; cd ..; done
 	$(MAKE) camlp5o.pa_ppx camlp5o.pa_ppx.opt
 
-sys:
+sys: prereqs
 	set -e; for i in $(SYSDIRS); do cd $$i; $(MAKE) all; cd ..; done
 
 doc: all
@@ -31,6 +31,11 @@ doc: all
 
 test: all
 	set -e; for i in $(TESTDIRS); do cd $$i; $(MAKE) test; cd ..; done
+
+prereqs:
+	(perl -MIPC::System::Simple -e 1 > /dev/null 2>&1) || (echo "MUST install Perl module IPC::System::Simple" && exit -1)
+	(perl -MString::ShellQuote -e 1 > /dev/null 2>&1) || (echo "MUST install Perl module String::ShellQuote" && exit -1)
+
 
 bootstrap:
 	$(MAKE) -C runtime bootstrap-exn bootstrap-exn-i
@@ -58,7 +63,7 @@ camlp5o.pa_ppx.opt:
 META: META.pl
 	./META.pl > META
 
-install: all META.pl
+install: sys META.pl
 	$(OCAMLFIND) remove pa_ppx || true
 	./META.pl > META
 	$(OCAMLFIND) install pa_ppx META local-install/lib/*/*.* camlp5o.pa_ppx camlp5o.pa_ppx.opt

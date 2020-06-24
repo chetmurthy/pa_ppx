@@ -31,6 +31,10 @@ type t +=
   | Error of string [@rebind_to Stream.Error][@name "Stream.Error"]
   | Break [@rebind_to Sys.Break][@name "Sys.Break"]
 [@@deriving show, sexp, yojson, eq]
+;;
+
+let print_exn exn = Some (show exn) ;;
+Printexc.register_printer print_exn ;;
 
 ELSE
 END

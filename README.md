@@ -37,7 +37,7 @@ unmodified; anything else is a bug with these packages**.
 
 # Installation
 
-Installation instructions can be found [in the documentation](./doc/_build/installation.rst)
+Installation instructions can be found [in the documentation](./doc/_build/installation.html)
 
 # Organization of Findlib packages
 

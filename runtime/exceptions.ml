@@ -577,4 +577,7 @@ f.f :=
 
 [@@@"end"];
 
+value print_exn exn = Some (show exn);
+Printexc.register_printer print_exn;
+
 
