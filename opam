@@ -36,6 +36,12 @@ doc: "https://github.com/chetmurthy/pa_ppx/doc"
 depends: [
   "ocaml"       { >= "4.10" & < "4.12.0" }
 ]
+depexts: [
+  [
+    "libstring-shellquote-perl"
+    "libipc-system-simple-perl"
+  ] {os-family = "debian"}
+]
 
 build: [
   [make "all"]

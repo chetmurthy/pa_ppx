@@ -13,7 +13,7 @@ OCAMLFIND=$(LAUNCH) ocamlfind
 NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
 
-PACKAGES := $(PACKAGES),fmt,bos,pa_ppx_base,pa_ppx_utils,camlp5.pa_r,camlp5.lexer,pa_ppx_unmatched_vala
+PACKAGES := $(PACKAGES),fmt,bos,pa_ppx_base,pa_ppx_utils,camlp5.pa_r,camlp5.pa_lexer,pa_ppx_unmatched_vala
 TARGET := pa_ppx_dock.cma
 ML := comment_lexer.ml pa_dock.ml
 MLI := pa_dock.mli
