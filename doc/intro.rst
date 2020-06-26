@@ -1,3 +1,5 @@
+.. _introduction:
+
 ============
 Introduction
 ============
@@ -32,9 +34,11 @@ architecture for writing PPX rewriters.  To prove this point,
 6. ``ppx_expect_test``: ``pa_ppx.expect_test``
 7. ``ppx_assert``: ``pa_ppx.assert``
 8. ``ppx_here``: ``pa_ppx.here``
+9. ``ppx_deriving_protobuf``: ``pa_ppx.deriving_plugins.protobuf``
 
 Several of these have improvements over the ones based on ``ppxlib``
-(better support for extensible variants/exceptions, better type-import support).
+(better support for extensible variants and exceptions, better
+type-import support).
 
 In this documentation, I'll try to document how to *use* these PPX
 rewriters, and how to *write* new ones with this infrastructure.

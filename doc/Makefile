@@ -1,3 +1,3 @@
-all:
+all html:
 	sphinx-build . _build
 

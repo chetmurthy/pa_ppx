@@ -28,6 +28,7 @@ doc: all
 	set -e; for i in $(SYSDIRS); do cd $$i; $(MAKE) doc; cd ..; done
 	rm -rf docs
 	tools/make-docs pa_ppx docs
+	make -C doc html
 
 test: all
 	set -e; for i in $(TESTDIRS); do cd $$i; $(MAKE) test; cd ..; done
