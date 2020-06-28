@@ -8,7 +8,7 @@ WD=$(shell pwd)
 DESTDIR=
 RM=rm
 
-SYSDIRS= util-lib runtime base pa_unmatched_vala \
+SYSDIRS= util-lib runtime runtime_fat base pa_unmatched_vala \
 	pa_dock pa_here pa_undo_deriving pa_assert \
 	pa_inline_test pa_expect_test pa_hashrecons \
 	pa_deriving pa_deriving.plugins pa_import \
@@ -40,6 +40,7 @@ prereqs:
 
 bootstrap:
 	$(MAKE) -C runtime bootstrap-exn bootstrap-exn-i
+	$(MAKE) -C runtime_fat bootstrap-exn bootstrap-exn-i
 	$(MAKE) -C base bootstrap-pp-MLast bootstrap-pp-MLast-i bootstrap-pp-parsetree bootstrap-pp-parsetree-i
 
 PACKAGES := pa_ppx_utils

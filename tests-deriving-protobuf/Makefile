@@ -14,7 +14,7 @@ LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,sexplib,oUnit,uint,ppx_deriving_protobuf.runtime,pa_ppx_utils
+PACKAGES := $(PACKAGES),ounit2,fmt,pcre,rresult,compiler-libs.common,sexplib,oUnit,uint,pa_ppx_utils
 
 PPXPACKAGES:=ppx_import
 PPXPACKAGES:=$(PPXPACKAGES),ppx_deriving.show
@@ -31,7 +31,6 @@ PPXPACKAGES:=$(PPXPACKAGES),ppx_here
 
 PAPACKAGES:=camlp5.pa_o.link
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)utils
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)runtime
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)dock.link
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)import
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std
@@ -39,7 +38,6 @@ PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.protobuf
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)hashrecons
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)protobuf_runtime
 
 ALL_PACKAGES := $(PACKAGES),$(PAPACKAGES),$(PPXPACKAGES)
 

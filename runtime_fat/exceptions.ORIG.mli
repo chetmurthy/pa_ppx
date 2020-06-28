@@ -3,7 +3,7 @@
 
 IFDEF BOOTSTRAP THEN
 
-type t = exn = .. [@@deriving show]
+type t = exn = .. [@@deriving show, sexp, yojson, eq]
 
 type t +=
     Help of string [@rebind_to Arg.Help]
@@ -30,7 +30,7 @@ type t +=
   | StreamFailure [@rebind_to Stream.Failure]
   | Error of string [@rebind_to Stream.Error]
   | Break [@rebind_to Sys.Break]
-[@@deriving show]
+[@@deriving show, sexp, yojson, eq]
 
 ELSE
 END

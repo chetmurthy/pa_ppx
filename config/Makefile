@@ -10,7 +10,7 @@ MKCAMLP5=mkcamlp5
 CAMLP5R=camlp5r -I $(CAMLP5LIB)
 INCLUDES=-I $(CAMLP5LIB)
 OCAMLCFLAGS=$(DEBUG) $(WARNERR) $(INCLUDES)
-PACKAGES=camlp5,compiler-libs.common,camlp5.quotations,camlp5.extfun
+PACKAGES=compiler-libs.common,camlp5.quotations,camlp5.extfun
 SYNTAX = camlp5r
 
 top: all

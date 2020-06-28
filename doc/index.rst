@@ -38,9 +38,13 @@ thesis:
     needs to provide facilities for manipulating the AST using the
     surface syntax, not merely the syntax of data-types in the
     language; this requires both *patterns* and *expressions* freely
-    available in code (for matching and constructing AST fragments)
-    with placeholders (anti-quotations) for binding sub-trees and
-    introducing computed fragments.
+    usable in code (for matching and constructing AST fragments) with
+    placeholders (anti-quotations) of all types, for binding sub-trees
+    and introducing computed fragments, again of all types that appear
+    in the AST.  Contrast this with the approach of `ppx_metaquot
+    <https://github.com/ocaml-ppx/ppx_tools/blob/master/ppx_metaquot.ml>`_
+    (project `ppx_tools <https://github.com/ocaml-ppx/ppx_tools>`_ )
+    where anti-quotations are of only a small number of types.
 
     A flexible and *transparent* mechanism for introducing rewriting
     code into the system is also necessary.
@@ -52,8 +56,8 @@ thesis:
     new rewriters into the system.
 
     The *transparency* and *comprehensibility* of the resulting
-    examples, is the point of the exercise.
-  
+    examples, is a major point of the exercise.  But also, I think
+    that this approach produces more *usable* rewriters.
 
 .. toctree::
    :maxdepth: 3

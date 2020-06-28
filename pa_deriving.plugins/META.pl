@@ -18,6 +18,7 @@ requires = "camlp5,pa_ppx_deriving.link"
 archive(byte) = "pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo pa_deriving_fold.cmo pa_deriving_make.cmo"
 archive(native) = "pa_deriving_show.cmx pa_deriving_eq.cmx pa_deriving_ord.cmx pa_deriving_enum.cmx pa_deriving_iter.cmx pa_deriving_map.cmx pa_deriving_fold.cmx pa_deriving_make.cmx"
   )
+  requires = "pa_ppx_runtime"
 
 # For the toploop:
 requires(toploop) = "camlp5,pa_ppx_deriving"
@@ -42,6 +43,7 @@ package "show" (
   requires(byte) = "camlp5,pa_ppx_deriving.link"
   archive(byte) = "pa_deriving_show.cmo"
   )
+  requires = "pa_ppx_runtime"
 )
 
 package "eq" (
@@ -55,6 +57,7 @@ package "eq" (
   requires(byte) = "camlp5,pa_ppx_deriving.link"
   archive(byte) = "pa_deriving_eq.cmo"
   )
+  requires = "pa_ppx_runtime"
 )
 
 package "ord" (
@@ -68,6 +71,7 @@ package "ord" (
   requires(byte) = "camlp5,pa_ppx_deriving.link"
   archive(byte) = "pa_deriving_ord.cmo"
   )
+  requires = "pa_ppx_runtime"
 )
 
 package "enum" (
@@ -81,6 +85,7 @@ package "enum" (
   requires(byte) = "camlp5,pa_ppx_deriving.link"
   archive(byte) = "pa_deriving_enum.cmo"
   )
+  requires = "pa_ppx_runtime"
 )
 
 package "iter" (
@@ -94,6 +99,7 @@ package "iter" (
   requires(byte) = "camlp5,pa_ppx_deriving.link"
   archive(byte) = "pa_deriving_iter.cmo"
   )
+  requires = "pa_ppx_runtime"
 )
 
 package "map" (
@@ -107,6 +113,7 @@ package "map" (
   requires(byte) = "camlp5,pa_ppx_deriving.link"
   archive(byte) = "pa_deriving_map.cmo"
   )
+  requires = "pa_ppx_runtime"
 )
 
 package "fold" (
@@ -120,6 +127,7 @@ package "fold" (
   requires(byte) = "camlp5,pa_ppx_deriving.link"
   archive(byte) = "pa_deriving_fold.cmo"
   )
+  requires = "pa_ppx_runtime"
 )
 
 package "make" (
@@ -133,6 +141,7 @@ package "make" (
   requires(byte) = "camlp5,pa_ppx_deriving.link"
   archive(byte) = "pa_deriving_make.cmo"
   )
+  requires = "pa_ppx_runtime"
 )
 
 package "yojson" (
@@ -147,6 +156,7 @@ package "yojson" (
   requires(byte) = "camlp5,pa_ppx_deriving.link"
   archive(byte) = "pa_deriving_yojson.cmo"
   )
+  requires = "pa_ppx_runtime"
 )
 
 package "sexp" (
@@ -161,6 +171,7 @@ package "sexp" (
   requires(byte) = "camlp5,pa_ppx_deriving.link"
   archive(byte) = "pa_deriving_sexp.cmo"
   )
+  requires = "pa_ppx_runtime"
 )
 
 
@@ -176,6 +187,7 @@ package "protobuf" (
   requires(byte) = "camlp5,pa_ppx_deriving.link"
   archive(byte) = "pa_deriving_protobuf.cmo"
   )
+  requires = "pa_ppx_runtime,pa_ppx_protobuf_runtime"
 )
 
 EOF

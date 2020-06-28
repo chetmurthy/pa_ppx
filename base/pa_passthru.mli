@@ -29,7 +29,10 @@ module rec EF :
         implem :
           extension_point (list (MLast.str_item * MLast.loc) * Pcaml.status);
         interf :
-          extension_point (list (MLast.sig_item * MLast.loc) * Pcaml.status) }
+          extension_point (list (MLast.sig_item * MLast.loc) * Pcaml.status) ;
+        top_phrase : extension_point (option MLast.str_item) ;
+        use_file : extension_point (list MLast.str_item * bool)
+      }
     ;
     value mk : unit → t;
   end

@@ -43,6 +43,6 @@ type-import support).
 In this documentation, I'll try to document how to *use* these PPX
 rewriters, and how to *write* new ones with this infrastructure.
 
-All of this requires a new version of Camlp5, as documented in the `Installation`_ section.
+All of this requires a new version of Camlp5, as documented in the :ref:`installation` section.
 
 .. container:: trailer

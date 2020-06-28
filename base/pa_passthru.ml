@@ -50,7 +50,9 @@ module rec EF : sig
     class_str_item : extension_point class_str_item ;
     attribute_body : extension_point attribute_body ;
     implem : extension_point (list (MLast.str_item * MLast.loc) * Pcaml.status) ;
-    interf : extension_point (list (MLast.sig_item * MLast.loc) * Pcaml.status)
+    interf : extension_point (list (MLast.sig_item * MLast.loc) * Pcaml.status) ;
+    top_phrase : extension_point (option MLast.str_item) ;
+    use_file : extension_point (list MLast.str_item * bool)
   } ;
   value mk : unit -> t ;
 end = struct
@@ -78,7 +80,9 @@ end = struct
     class_str_item : extension_point class_str_item ;
     attribute_body : extension_point attribute_body ;
     implem : extension_point (list (MLast.str_item * MLast.loc) * Pcaml.status) ;
-    interf : extension_point (list (MLast.sig_item * MLast.loc) * Pcaml.status)
+    interf : extension_point (list (MLast.sig_item * MLast.loc) * Pcaml.status) ;
+    top_phrase : extension_point (option MLast.str_item) ;
+    use_file : extension_point (list MLast.str_item * bool)
   } ;
   value mk () = {
     ctyp = Extfun.empty ;
@@ -103,7 +107,9 @@ end = struct
     class_str_item = Extfun.empty ;
     attribute_body = Extfun.empty ;
     implem = Extfun.empty ;
-    interf = Extfun.empty 
+    interf = Extfun.empty ;
+    top_phrase = Extfun.empty ;
+    use_file = Extfun.empty
   } ;
 end
 
@@ -919,6 +925,22 @@ and interf arg x =
   ]
 and interf0 arg (l, status) =
     (List.map (fun (si, loc) -> (sig_item arg si, loc)) l, status)
+and top_phrase arg x =
+  match Extfun.apply arg.Ctxt.ef.EF.top_phrase x arg top_phrase0 with [
+    Some x -> x
+  | None -> top_phrase0 arg x
+  | exception Extfun.Failure -> top_phrase0 arg x
+  ]
+and top_phrase0 arg siopt =
+    Std.map_option (str_item arg) siopt
+and use_file arg x =
+  match Extfun.apply arg.Ctxt.ef.EF.use_file x arg use_file0 with [
+    Some x -> x
+  | None -> use_file0 arg x
+  | exception Extfun.Failure -> use_file0 arg x
+  ]
+and use_file0 arg (l, b) =
+    (List.map (str_item arg) l, b)
 ;
 
 type pass_t = {
@@ -983,14 +1005,12 @@ value sort_passes passes = do {
 }
 ;
 
-value passthru implem passes pa_before arg = do {
+value passthru loc_f f passes pa_before arg = do {
   let passes = sort_passes passes in
   let rv = pa_before arg in
-  let (l, status) = rv in
-  assert (l <> []) ;
-  let (_, loc) = List.hd l in
+  let loc = loc_f rv in
   let ctxt = Ctxt.mk (EF.mk()) loc in
-  let (_, rv) = List.fold_left (onepass implem) (ctxt,(l,status)) passes in
+  let (_, rv) = List.fold_left (onepass f) (ctxt,rv) passes in
   if debug.val then
     Printf.(fprintf stderr "[done]\n%!")
   else ();
@@ -1007,7 +1027,24 @@ value install x = do {
   Std.push eflist x
 }
 ;
+
+value loc_of_implem (l, status) = do {
+  assert (l <> []) ;
+  let (_, loc) = List.hd l in
+  loc
+}
+;
 value before_implem = Pcaml.parse_implem.val ;
-Pcaml.parse_implem.val := (fun arg -> passthru implem (List.rev eflist.val) before_implem arg);
+Pcaml.parse_implem.val := (fun arg -> passthru loc_of_implem implem (List.rev eflist.val) before_implem arg);
+
+value loc_of_interf = loc_of_implem ;
 value before_interf = Pcaml.parse_interf.val ;
-Pcaml.parse_interf.val := (fun arg -> passthru interf (List.rev eflist.val) before_interf arg);
+Pcaml.parse_interf.val := (fun arg -> passthru loc_of_interf interf (List.rev eflist.val) before_interf arg);
+
+value loc_of_top_phrase = fun [ Some si -> loc_of_str_item si | None -> Ploc.dummy ] ;
+value before_top_phrase = Pcaml.parse_top_phrase.val ;
+Pcaml.parse_top_phrase.val := (fun arg -> passthru loc_of_top_phrase top_phrase (List.rev eflist.val) before_top_phrase arg);
+
+value loc_of_use_file (l, _) = loc_of_str_item (List.hd l) ;
+value before_use_file = Pcaml.parse_use_file.val ;
+Pcaml.parse_use_file.val := (fun arg -> passthru loc_of_use_file use_file (List.rev eflist.val) before_use_file arg);

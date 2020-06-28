@@ -173,6 +173,18 @@ value interf arg fallback x = do {
 }
 ;
 
+value top_phrase arg fallback x = do {
+  DC.init arg ;
+  Some (fallback arg x)
+}
+;
+
+value use_file arg fallback x = do {
+  DC.init arg ;
+  Some (fallback arg x)
+}
+;
+
 value add_current_attribute arg id =
   let dc = DC.get arg in
   DC.addset dc.current_attributes id
@@ -345,6 +357,22 @@ let ef = EF.{ (ef) with
     z ->
       fun arg fallback ->
         let rv = interf arg fallback z in do {
+        if debug.val then Fmt.(DC.dump stderr (DC.get arg)) else () ;
+        rv }
+  ] } in
+let ef = EF.{ (ef) with
+  top_phrase = extfun ef.top_phrase with [
+    z ->
+      fun arg fallback ->
+        let rv = top_phrase arg fallback z in do {
+        if debug.val then Fmt.(DC.dump stderr (DC.get arg)) else () ;
+        rv }
+  ] } in
+let ef = EF.{ (ef) with
+  use_file = extfun ef.use_file with [
+    z ->
+      fun arg fallback ->
+        let rv = use_file arg fallback z in do {
         if debug.val then Fmt.(DC.dump stderr (DC.get arg)) else () ;
         rv }
   ] } in

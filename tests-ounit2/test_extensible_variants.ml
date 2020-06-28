@@ -1,5 +1,6 @@
 let filemod = "Test_extensible_variants"
 open OUnit2
+module Pa_ppx_runtime = Pa_ppx_runtime_fat
 open Pa_ppx_runtime
 
 type json =

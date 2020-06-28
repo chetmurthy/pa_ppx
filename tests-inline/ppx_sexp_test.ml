@@ -2,7 +2,9 @@ open Ppx_sexp_conv_lib
 open Conv
 open Sexplib.Sexp
 open Sexplib.Std
-
+#ifdef PAPPX
+module Pa_ppx_runtime = Pa_ppx_runtime_fat
+#endif
 
 module Sum_and_polymorphic_variants = struct
   type poly =

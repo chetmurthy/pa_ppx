@@ -13,7 +13,7 @@ OCAMLFIND=$(LAUNCH) ocamlfind
 NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 
 PACKAGES = rresult,fmt,camlp5,yojson,sexplib
-TARGET = pa_ppx_runtime.cma
+TARGET = pa_ppx_runtime_fat.cma
 ML = runtime.ml exceptions.ml
 MLI = exceptions.mli
 CMO = $(ML:.ml=.cmo)
@@ -22,37 +22,37 @@ CMX = $(ML:.ml=.cmx)
 CMT = $(ML:.ml=.cmt)
 CMTI = $(MLI:.mli=.cmti)
 
-OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_runtime
+OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_runtime_fat
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) local-install
 
 doc: $(CMT) $(CMTI)
 
-pa_ppx_runtime.cmo: $(CMO)
-	$(OCAMLFIND) ocamlc $(DEBUG) -pack -o pa_ppx_runtime.cmo $^
+pa_ppx_runtime_fat.cmo: $(CMO)
+	$(OCAMLFIND) ocamlc $(DEBUG) -pack -o pa_ppx_runtime_fat.cmo $^
 
-pa_ppx_runtime.cmx: $(CMO:.cmo=.cmx)
-	$(OCAMLFIND) ocamlopt $(DEBUG) -pack -o pa_ppx_runtime.cmx $^
+pa_ppx_runtime_fat.cmx: $(CMO:.cmo=.cmx)
+	$(OCAMLFIND) ocamlopt $(DEBUG) -pack -o pa_ppx_runtime_fat.cmx $^
 
 META: META.pl
 	./META.pl > META
 install::
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_runtime -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(TARGET:.cma=.a) pa_ppx_runtime.cmx pa_ppx_runtime.cmi $(wildcard *.cmt*)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_runtime_fat -destdir $(DESTDIR)/lib META $(TARGET) $(TARGET:.cma=.cmxa) $(TARGET:.cma=.a) pa_ppx_runtime_fat.cmx pa_ppx_runtime_fat.cmi $(wildcard *.cmt*)
 	$(RM) -f META
 
 local-install::
 	$(MAKE) DESTDIR=$(WD)/$(TOP)/local-install/ install
 
 clean::
-	rm -rf META camlp5.pa_ppx_runtime
+	rm -rf META camlp5.pa_ppx_runtime_fat
 
-$(TARGET): pa_ppx_runtime.cmo
-	$(OCAMLFIND) ocamlc $(DEBUG) pa_ppx_runtime.cmo -a -o $(TARGET)
+$(TARGET): pa_ppx_runtime_fat.cmo
+	$(OCAMLFIND) ocamlc $(DEBUG) pa_ppx_runtime_fat.cmo -a -o $(TARGET)
 
-$(TARGET:.cma=.cmxa): pa_ppx_runtime.cmx
-	$(OCAMLFIND) ocamlopt $(DEBUG) pa_ppx_runtime.cmx -a -o $(TARGET:.cma=.cmxa)
+$(TARGET:.cma=.cmxa): pa_ppx_runtime_fat.cmx
+	$(OCAMLFIND) ocamlopt $(DEBUG) pa_ppx_runtime_fat.cmx -a -o $(TARGET:.cma=.cmxa)
 
 $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
@@ -96,6 +96,17 @@ refold-exn: exceptions.ml
 	-syntax camlp5r \
 	$< > $@.NEW
 	mv $@.NEW  exceptions.REFOLD.ml
+
+runtime.ml: ../runtime/runtime.ml
+	cp $^ .
+
+exceptions.ORIG.ml: ../runtime/exceptions.ORIG.ml
+	cp $^ .
+	perl -p -i -e 's|show\]|show, sexp, yojson, eq\]|' $@
+
+exceptions.ORIG.mli: ../runtime/exceptions.ORIG.mli
+	cp $^ .
+	perl -p -i -e 's|show\]|show, sexp, yojson, eq\]|' $@
 
 EXTERNAL = $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
 $(CMO) $(CMI) $(CMX): $(EXTERNAL)
