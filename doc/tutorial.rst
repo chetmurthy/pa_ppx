@@ -2,10 +2,14 @@
  Tutorial
 ==========
 
-Using PPX Rewriters from Pa_ppx
-===============================
+Using ``pa_ppx`` PPX Rewriters
+==============================
 
-To use PPX Rewriters from Pa_ppx, let's start with a really simple file that works with the standard PPX rewriters (simple_show.ml)::
+Batch compilation
+-----------------
+
+To use ``pa_ppx`` PPX rewriters, let's start with a really simple file
+that works with the standard PPX rewriters (simple_show.ml)::
 
   type a1 = int * int [@@deriving show]
   let _ = print_string ([%show: a1] (5,6))
@@ -21,7 +25,7 @@ Running it yields::
 
 To compile with ``pa_ppx``::
 
-  ocamlfind ocamlc -package pa_ppx.runtime,pa_ppx.deriving_plugins.show -syntax camlp5o simple_show.ml -linkall -linkpkg  -o simple_show.byte
+  ocamlfind ocamlc -package pa_ppx.deriving_plugins.show -syntax camlp5o simple_show.ml -linkpkg  -o simple_show.byte
 
 with identical output::
 
@@ -31,13 +35,47 @@ with identical output::
 There's really only two important differences:
 
 1. need to specify the syntax (``-syntax camlp5o``)
-2. need to specify the runtime support module ``pa_ppx.runtime``
+2. instead of ``ppx_deriving.show`` specify ``pa_ppx.deriving_plugins.show``
 
 The other linking flags, I just haven't figured out precisely how to get rid of.
 
 Sometimes more packages must be specified (e.g. for ``expect_test``
 and ``inline_test``) because ``dune`` is adding those
 under-the-covers, and these instructions are all Makefile-friendly.
+
+In the toplevel
+---------------
+
+It's also straightforward to use ``pa_ppx`` PPX rewriters in the toplevel:
+
+::
+
+           OCaml version 4.10.0
+   #use "topfind.camlp5";;
+   - : unit = ()
+   # #camlp5o ;;
+	Camlp5 parsing version 8.00-alpha01
+   # #require "pa_ppx.deriving_plugins.show";;
+
+   # type a1 = int * int [@@deriving show] ;;
+   type a1 = int * int
+   val pp_a1 : a1 Fmt.t = <fun>
+   val show_a1 : a1 -> String.t = <fun>
+   # let _ =
+     print_string ([%show: a1] (5,6)) ;;
+   (5, 6)- : unit = ()
+   # 
+
+And again, just the ocaml toplevel phrases:
+
+::
+
+   #use "topfind.camlp5";;
+   #camlp5o ;;
+   require "pa_ppx.deriving_plugins.show";;
+    type a1 = int * int [@@deriving show] ;;
+   let _ =
+     print_string ([%show: a1] (5,6)) ;;
 
 Writing new PPX Rewriters upon Pa_ppx
 =====================================
@@ -133,8 +171,8 @@ infrastructure for all PPX rewriters)::
 
 2. Implement a function that rewrites the simple extension-point,
 using ``camlp5`` "quotations".  The function ``quote_position`` uses
-quotations for expressions, with anti-quotations ("holes") for
-expressinos we want to fill with bits from the ``Lexing.position``::
+quotations for expressions that themselves have anti-quotations ("holes") for
+expressions we want to fill with bits from the ``Lexing.position``::
 
   value quote_position loc p =
     let open Lexing in
@@ -203,7 +241,7 @@ Suppose that the ``ocamlfind ocamlc`` invocation above didn't produce
 the results we desired.  For instance, suppose that we forgot the
 ``-syntax camlp5o``::
 
-  ocamlfind ocamlc -package pa_ppx.runtime,pa_ppx.deriving_plugins.show -c simple_show.ml
+  ocamlfind ocamlc -package pa_ppx.deriving_plugins.show -c simple_show.ml
   File "simple_show.ml", line 5, characters 18-22:
   5 |   print_string ([%show: a1] (5,6))
                       ^^^^
@@ -211,7 +249,7 @@ the results we desired.  For instance, suppose that we forgot the
 
 We could start to debug the preprocessing process by using ``not-ocamlfind preprocess``::
 
-  not-ocamlfind preprocess -package pa_ppx.runtime,pa_ppx.deriving_plugins.show simple_show.ml
+  not-ocamlfind preprocess -package pa_ppx.deriving_plugins.show simple_show.ml
   ppx_execute: ocamlfind not-ocamlfind/papr_official.exe -binary-output -impl simple_show.ml /tmp/simple_show4d8e59
   format output file: ocamlfind not-ocamlfind/papr_official.exe -binary-input -impl /tmp/simple_show4d8e59
   type a1 = (int * int)[@@deriving show]
@@ -220,19 +258,19 @@ We could start to debug the preprocessing process by using ``not-ocamlfind prepr
 This tells us we didn't actually invoke camlp5 (or any PPX rewriters).
 A different kind of information is given by adding ``-verbose``::
 
-  ocamlfind ocamlc -verbose -package pa_ppx.runtime,pa_ppx.deriving_plugins.show -c simple_show.ml
+  ocamlfind ocamlc -verbose -package pa_ppx.deriving_plugins.show -c simple_show.ml
   Effective set of compiler predicates: pkg_result,pkg_rresult,pkg_seq,pkg_stdlib-shims,pkg_fmt,pkg_sexplib0,pkg_pa_ppx.runtime,pkg_pa_ppx.deriving_plugins.show,autolink,byte
 
 This also tells us that camlp5 isn't being invoked (no mention of
 "preprocessor predicates"), and this would tell us that we needed to
 add ``-syntax camlp5o`` (and maybe the ``camlp5`` package)::
 
-  not-ocamlfind preprocess -package pa_ppx.runtime,pa_ppx.deriving_plugins.show -syntax camlp5o simple_show.ml
+  not-ocamlfind preprocess -package pa_ppx.deriving_plugins.show -syntax camlp5o simple_show.ml
 
 will produce binary output, because we didn't specify what syntax we
 wanted to print (official or revised); adding ``camlp5.pr_o`` will fix that::
 
-  not-ocamlfind preprocess -package pa_ppx.runtime,pa_ppx.deriving_plugins.show,camlp5.pr_o -syntax camlp5o simple_show.ml
+  not-ocamlfind preprocess -package pa_ppx.deriving_plugins.show,camlp5.pr_o -syntax camlp5o simple_show.ml
 
 Basically, any ``ocamlfind ocamlc`` command can be converted to
 ``not-ocamlfind preprocess`` by removing any flags/arguments that are

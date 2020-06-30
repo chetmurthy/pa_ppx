@@ -63,7 +63,7 @@ PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)inline_test
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),ppx_expect.evaluator
 
 test_inline_test.ppx.byte: test_inline_test.ml
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PPXINLINEPACKAGES) $(PPXINLINEOPT) -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 test_inline_test.ppx: test_inline_test.ppx.byte
 	./$< inline-test-runner foo -source-tree-root . -diff-cmd - || \
@@ -72,7 +72,7 @@ test_inline_test.ppx: test_inline_test.ppx.byte
 
 PAINLINEOPT=-ppopt -pa_inline_test-lib -ppopt foo
 test_inline_test.byte: test_inline_test.ml
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PAINLINEPACKAGES),camlp5.pr_o,ppx_inline_test.runtime-lib,ppx_inline_test.runner.lib -syntax camlp5o $(PAINLINEOPT) -linkall -linkpkg $< ppx_inline_test_epilogue.ml -o $@
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom $(WARNERR) -package $(PACKAGES),ounit2,$(PAINLINEPACKAGES),camlp5.pr_o,ppx_inline_test.runtime-lib,ppx_inline_test.runner.lib -syntax camlp5o $(PAINLINEOPT) -linkpkg $< ppx_inline_test_epilogue.ml -o $@
 
 test_inline_test: test_inline_test.byte
 	./$< inline-test-runner foo -verbose -require-tag js-only -source-tree-root . -diff-cmd - || \

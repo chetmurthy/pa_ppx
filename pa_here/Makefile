@@ -22,6 +22,8 @@ CMX := $(ML:.ml=.cmx)
 CMT := $(ML:.ml=.cmt)
 CMTI := $(MLI:.mli=.cmti)
 
+OCAMLCFLAGS := $(OCAMLCFLAGS) -linkall
+
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_here camlp5.pa_ppx_here.opt local-install
 
 doc: $(CMT) $(CMTI)

@@ -23,7 +23,7 @@ CMX := $(ML:.ml=.cmx)
 CMT := $(ML:.ml=.cmt)
 CMTI := $(MLI:.mli=.cmti)
 
-OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_base
+OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_base -linkall
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_base camlp5.pa_ppx_base.opt local-install
 

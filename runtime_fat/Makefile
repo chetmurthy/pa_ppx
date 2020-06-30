@@ -22,7 +22,7 @@ CMX = $(ML:.ml=.cmx)
 CMT = $(ML:.ml=.cmt)
 CMTI = $(MLI:.mli=.cmti)
 
-OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_runtime_fat
+OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_runtime_fat -linkall
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) local-install
 

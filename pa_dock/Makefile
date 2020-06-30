@@ -24,7 +24,7 @@ CMT := $(ML:.ml=.cmt)
 CMTI := $(MLI:.mli=.cmti)
 
 SYNTAX := camlp5r
-OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_dock
+OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Pa_ppx_dock -linkall
 
 all: $(TARGET) $(TARGET:.cma=.cmxa) camlp5.pa_ppx_dock camlp5.pa_ppx_dock.opt local-install
 
