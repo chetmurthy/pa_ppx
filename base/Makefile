@@ -36,7 +36,7 @@ pa_ppx_base.cmx: $(CMO:.cmo=.cmx)
 	$(OCAMLFIND) ocamlopt $(DEBUG) -pack -bin-annot -o pa_ppx_base.cmx $^
 
 initialize-pp-MLast-i:: pp_MLast.ORIG.mli
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
 	mv $@.NEW pp_MLast.mli
 
 bootstrap-pp-MLast-i: pp_MLast.ORIG.mli
@@ -54,7 +54,7 @@ refold-pp-MLast-i: pp_MLast.mli
 	mv $@.NEW  pp_MLast.REFOLD.mli
 
 initialize-pp-MLast:: pp_MLast.ORIG.ml
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
 	mv $@.NEW pp_MLast.ml
 
 bootstrap-pp-MLast: pp_MLast.ORIG.ml
@@ -72,7 +72,7 @@ refold-pp-MLast: pp_MLast.ml
 	mv $@.NEW  pp_MLast.REFOLD.ml
 
 initialize-pp-parsetree-i:: pp_parsetree.ORIG.mli
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
 	mv $@.NEW pp_parsetree.mli
 
 bootstrap-pp-parsetree-i: pp_parsetree.ORIG.mli
@@ -90,7 +90,7 @@ refold-pp-parsetree-i: pp_parsetree.mli
 	mv $@.NEW  pp_parsetree.REFOLD.mli
 
 initialize-pp-parsetree:: pp_parsetree.ORIG.ml
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
 	mv $@.NEW pp_parsetree.ml
 
 bootstrap-pp-parsetree: pp_parsetree.ORIG.ml
