@@ -58,7 +58,9 @@ $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
 initialize-exn-i:: exceptions.ORIG.mli
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r \
+	-ppopt -D -ppopt FAT \
+	-syntax camlp5o $< > $@.NEW
 	mv $@.NEW exceptions.mli
 
 bootstrap-exn-i: exceptions.ORIG.mli
@@ -66,6 +68,7 @@ bootstrap-exn-i: exceptions.ORIG.mli
 	-syntax camlp5o \
 	-ppopt -pa_ppx-runtime -ppopt "" \
 	-ppopt -D -ppopt BOOTSTRAP \
+	-ppopt -D -ppopt FAT \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
 	$< > $@.NEW
@@ -78,7 +81,9 @@ refold-exn-i: exceptions.mli
 	mv $@.NEW  exceptions.REFOLD.mli
 
 initialize-exn:: exceptions.ORIG.ml
-	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r -syntax camlp5o $< > $@.NEW
+	$(NOT_OCAMLFIND) preprocess $(DEBUG) -package $(PACKAGES),camlp5.macro,camlp5.pr_r \
+	-ppopt -D -ppopt FAT \
+	-syntax camlp5o $< > $@.NEW
 	mv $@.NEW exceptions.ml
 
 bootstrap-exn: exceptions.ORIG.ml
@@ -86,6 +91,7 @@ bootstrap-exn: exceptions.ORIG.ml
 	-syntax camlp5o \
 	-ppopt -pa_ppx-runtime -ppopt "" \
 	-ppopt -D -ppopt BOOTSTRAP \
+	-ppopt -D -ppopt FAT \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
 	$< > $@.NEW

@@ -9,7 +9,7 @@ module Expr :
   sig
     value print : MLast.expr → string;
     value to_string_list : MLast.expr → list string;
-    value prepend_longident : Pp_MLast.longid → MLast.expr → MLast.expr;
+    value prepend_longident : MLast.longid → MLast.expr → MLast.expr;
     value abstract_over : list MLast.patt → MLast.expr → MLast.expr;
     value applist : MLast.expr → list MLast.expr → MLast.expr;
     value unapplist : MLast.expr → (MLast.expr * list MLast.expr);

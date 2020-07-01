@@ -43,6 +43,11 @@ bootstrap:
 	$(MAKE) -C runtime_fat bootstrap-exn bootstrap-exn-i
 	$(MAKE) -C base bootstrap-pp-MLast bootstrap-pp-MLast-i bootstrap-pp-parsetree bootstrap-pp-parsetree-i
 
+initialize:
+	$(MAKE) -C runtime initialize-exn initialize-exn-i
+	$(MAKE) -C runtime_fat initialize-exn initialize-exn-i
+	$(MAKE) -C base initialize-pp-MLast initialize-pp-MLast-i initialize-pp-parsetree initialize-pp-parsetree-i
+
 PACKAGES := pa_ppx_utils
 PACKAGES := $(PACKAGES),pa_ppx_base
 PACKAGES := $(PACKAGES),pa_ppx_unmatched_vala
