@@ -10,6 +10,7 @@ our $version = "0.01" ;
 our %pkgmap = (
   'pa_ppx_utils' => 'pa_ppx.utils',
   'pa_ppx_runtime' => 'pa_ppx.runtime',
+  'pa_ppx_runtime_fat' => 'pa_ppx.runtime_fat',
   'pa_ppx_deriving' => 'pa_ppx.deriving',
   'pa_ppx_deriving_plugins' => 'pa_ppx.deriving_plugins',
   'pa_ppx_dock' => 'pa_ppx.dock',
@@ -27,6 +28,7 @@ our %pkgmap = (
 {
   my $utilsmeta = indent(2, fixdeps(capturex("./util-lib/META.pl"))) ;
   my $rtmeta = indent(2, fixdeps(capturex("./runtime/META.pl"))) ;
+  my $rtfmeta = indent(2, fixdeps(capturex("./runtime_fat/META.pl"))) ;
   my $basemeta = indent(2, fixdeps(capturex("./base/META.pl"))) ;
   my $impmeta = indent(2, fixdeps(capturex("./pa_import/META.pl"))) ;
   my $uvmeta = indent(2, fixdeps(capturex("./pa_unmatched_vala/META.pl"))) ;
@@ -49,6 +51,9 @@ $utilsmeta
 
 package "runtime" (
 $rtmeta
+)
+package "runtime_fat" (
+$rtfmeta
 )
 package "base" (
 $basemeta

@@ -263,7 +263,7 @@ let ends_with ~pat s =
 
 
 let apply_to_in_channel f fna =
-  let open Core_kernel.Exn in
+  let open Base.Exn in
   let ic = open_in fna in
     protect ~f:(fun () -> f ic)
       ~finally:(fun () -> close_in ic)

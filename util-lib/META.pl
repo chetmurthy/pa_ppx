@@ -7,7 +7,7 @@ our $destdir = shift @ARGV ;
 
 print <<"EOF";
 # Base libraries for "pa_ppx"
-requires = "pcre,core_kernel"
+requires = "pcre,unix,base"
 version = "$version"
 description = "pa_ppx base libraries"
 

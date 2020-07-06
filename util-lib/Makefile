@@ -12,7 +12,7 @@ LAUNCH=env TOP=$(TOP) $(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 
-PACKAGES := $(PACKAGES),pcre,core_kernel
+PACKAGES := $(PACKAGES),pcre,base
 TARGET := pa_ppx_utils.cma
 ML := std.ml coll.ml std2.ml uf.ml tsort0.ml tsort.ml pack.ml hash.ml
 MLI := std2.mli  std.mli  tsort0.mli  uf.mli pack.mli
