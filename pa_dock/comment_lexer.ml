@@ -66,7 +66,7 @@ and linedir_quote n s =
 ;
 
 value rec any_to_nl =
-  pa_lexer
+  lexer
   [ "\r" | "\n"
   | _ any_to_nl!
   | ]
@@ -76,7 +76,7 @@ value any ctx buf =
   parser bp [: `c :] -> do { ctx.line_cnt bp c; $add c }
 ;
 
-value rec skiplws = pa_lexer [
+value rec skiplws = lexer [
   ' '/ skiplws!
 | '\t'/ skiplws!
 |
@@ -84,7 +84,7 @@ value rec skiplws = pa_lexer [
 ;
 
 value rec string ctx bp =
-  pa_lexer
+  lexer
   [ "\""/
   | "\\"/ ?= [ "\n" ] "\n"/ skiplws! (string ctx bp)!
   | "\\"/ ?= [ "\n" | " " ] (any ctx) (string ctx bp)!
@@ -163,7 +163,7 @@ value comment_rawstring ctx bp (buf : Plexing.Lexbuf.t) strm =
 
 value comment ctx bp =
   comment where rec comment =
-    pa_lexer
+    lexer
     [ "*)"
     | "*" comment!
     | "{" (comment_rawstring ctx bp)! comment!
