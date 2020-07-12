@@ -27,5 +27,4 @@ ppxutil.cmo : \
 ppxutil.cmx : \
     pp_MLast.cmx \
     ppxutil.cmi
-ppxutil.cmi : \
-    pp_MLast.cmi
+ppxutil.cmi :
