@@ -34,7 +34,20 @@ dev-repo: "git+https://github.com/chetmurthy/pa_ppx.git"
 doc: "https://github.com/chetmurthy/pa_ppx/doc"
 
 depends: [
-  "ocaml"       { = "4.10" }
+  "ocaml"       { = "4.10.0" }
+  "camlp5"      { >= "8.00~alpha01" }
+  "not-ocamlfind" { >= "0.01" }
+  "pcre" { >= "7.4.3" }
+  "yojson" { >= "1.7.0" }
+  "bos" { >= "0.2.0" }
+  "ppx_deriving_protobuf" { >= "2.7" }
+  "uint" { >= "2.0.1" }
+  "ounit2" { >= "2.2.3" }
+  "ppx_import" { >= "1.7.1" }
+  "ppx_deriving_yojson" { >= "3.5.2" }
+  "ppx_here" { >= "0.13.0" }
+  "ppx_sexp_conv" { >= "0.13.0" }
+  "expect_test_helpers" { >= "0.13.0" }
 ]
 depexts: [
   [
