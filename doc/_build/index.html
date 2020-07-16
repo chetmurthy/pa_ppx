@@ -1,0 +1,290 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Pa_ppx Documentation &mdash; Pa_ppx  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Introduction" href="intro.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home"> Pa_ppx
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="builtins.html">Built-in PPX Rewriters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Pa_ppx</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>Pa_ppx Documentation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/camlp5/camlp5/blob/master/docindex.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="pa-ppx-documentation">
+<h1>Pa_ppx Documentation<a class="headerlink" href="#pa-ppx-documentation" title="Permalink to this headline">¶</a></h1>
+<p>This is the documentation for the <a class="reference external" href="https://github.com/chetmurthy/pa_ppx">pa_ppx</a> project, a re-implementation
+of many “standard” PPX rewriters, but using <a class="reference external" href="https://github.com/camlp5/camlp5">Camlp5</a> infrastructure.</p>
+<p>You can learn more about <code class="docutils literal notranslate"><span class="pre">pa_ppx</span></code> at <a class="reference internal" href="intro.html#introduction"><span class="std std-ref">Introduction</span></a> but
+quickly, <code class="docutils literal notranslate"><span class="pre">pa_ppx</span></code> provides implementations of</p>
+<ol class="arabic simple">
+<li><p>all of <code class="docutils literal notranslate"><span class="pre">ppx_deriving</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.deriving_plugins.{enum,eq,fold,iter,make,map,ord,show}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ppx_import</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.import</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ppx_deriving_yojson</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.deriving_plugins.yojson</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ppx_sexp_conv</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.deriving_plugins.sexp</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ppx_inline_test</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.inline_test</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ppx_expect_test</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.expect_test</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ppx_assert</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.assert</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ppx_here</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.here</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ppx_deriving_protobuf</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.deriving_plugins.protobuf</span></code></p></li>
+</ol>
+<p>and a few other experimental PPX rewriters.  For many of the
+re-implementations, there are extensions beyond what the original
+implementation provided (e.g. support everywhere possible, for
+extensible variants and exceptions, better type-import suppor).  All
+of this is built on an infrastructure for writing PPX rewriters, based
+on Camlp5.</p>
+<div class="section" id="rationale-for-pa-ppx">
+<h2>Rationale for <code class="docutils literal notranslate"><span class="pre">pa_ppx</span></code><a class="headerlink" href="#rationale-for-pa-ppx" title="Permalink to this headline">¶</a></h2>
+<p>One can think of this project as an experiment to prove the following
+thesis:</p>
+<blockquote>
+<div><p>To build an effective and usable macro-preprocessor system for a
+language with the rich and complex AST structure of Ocaml, one
+needs to provide facilities for manipulating the AST using the
+surface syntax, not merely the syntax of data-types in the
+language; this requires both <em>patterns</em> and <em>expressions</em> freely
+usable in code (for matching and constructing AST fragments) with
+placeholders (anti-quotations) of all types, for binding sub-trees
+and introducing computed fragments, again of all types that appear
+in the AST.  Contrast this with the approach of <a class="reference external" href="https://github.com/ocaml-ppx/ppx_tools/blob/master/ppx_metaquot.ml">ppx_metaquot</a>
+(project <a class="reference external" href="https://github.com/ocaml-ppx/ppx_tools">ppx_tools</a> )
+where anti-quotations are of only a small number of types.</p>
+<p>A flexible and <em>transparent</em> mechanism for introducing rewriting
+code into the system is also necessary.</p>
+<p>In this project, we’re trying to prove this thesis by using
+Camlp5: specifically its system of <strong>quotations</strong> and
+<strong>antiquotations</strong> for <em>patterns</em> and <em>expressions</em>, as well as
+<strong>extensible functions</strong> as the chief mechanism for introducing
+new rewriters into the system.</p>
+<p>The <em>transparency</em> and <em>comprehensibility</em> of the resulting
+examples, is a major point of the exercise.  But also, I think
+that this approach produces more <em>usable</em> rewriters.</p>
+</div></blockquote>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#building-and-installing">Building and Installing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#using-pa-ppx-ppx-rewriters">Using <code class="docutils literal notranslate"><span class="pre">pa_ppx</span></code> PPX Rewriters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorial.html#batch-compilation">Batch compilation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial.html#in-the-toplevel">In the toplevel</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#writing-new-ppx-rewriters-upon-pa-ppx">Writing new PPX Rewriters upon Pa_ppx</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#an-example-ppx-rewriter-based-on-pa-ppx">An Example PPX Rewriter based on Pa_ppx</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#troubleshooting-ppx-rewriter-invocations">Troubleshooting PPX Rewriter Invocations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorial.html#debugging-using-not-ocamlfind-preprocess">Debugging using <code class="docutils literal notranslate"><span class="pre">not-ocamlfind</span> <span class="pre">preprocess</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial.html#debugging-using-the-ocaml-toplevel">Debugging using the ocaml toplevel</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="builtins.html">Built-in PPX Rewriters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="builtins.html#type-decl-related-rewriters-deriving-and-import">Type-Decl-Related Rewriters (<code class="docutils literal notranslate"><span class="pre">deriving</span></code> and <code class="docutils literal notranslate"><span class="pre">import</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="builtins.html#test-related-rewriters">Test-Related Rewriters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="builtins.html#miscellaneous-standard-rewriters">Miscellaneous Standard Rewriters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="builtins.html#useful-pa-ppx-only-rewriters">Useful <code class="docutils literal notranslate"><span class="pre">Pa_ppx</span></code>-only Rewriters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#why-isn-t-this-project-compatible-with-ppxlib-and-other-standard-ppx-rewriter-infrastructure">Why isn’t this project compatible with <code class="docutils literal notranslate"><span class="pre">ppxlib</span></code> and other standard PPX rewriter infrastructure?</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="intro.html" class="btn btn-neutral float-right" title="Introduction" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Chet Murthy. All rights reserved.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

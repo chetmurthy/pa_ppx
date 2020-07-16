@@ -17,6 +17,8 @@ SYSDIRS= util-lib runtime runtime_fat base pa_unmatched_vala \
 TESTDIRS= tests-ounit2 our-tests-inline tests-deriving-protobuf \
 	 tests-inline tests-expect
 
+setup: get-generated
+
 all: sys
 	set -e; for i in $(TESTDIRS); do cd $$i; $(MAKE) all; cd ..; done
 	$(MAKE) camlp5o.pa_ppx camlp5o.pa_ppx.opt
@@ -47,6 +49,18 @@ initialize:
 	$(MAKE) -C runtime initialize-exn initialize-exn-i
 	$(MAKE) -C runtime_fat initialize-exn initialize-exn-i
 	$(MAKE) -C base initialize-pp-MLast initialize-pp-MLast-i initialize-pp-parsetree initialize-pp-parsetree-i
+
+GENERATED=base/pp_MLast.ml base/pp_MLast.mli base/pp_MLast.ml base/pp_MLast.mli \
+	runtime/exceptions.ml runtime/exceptions.mli \
+	runtime_fat/exceptions.ml runtime_fat/exceptions.mli
+OCAMLVERSION=$(shell ocamlc --version)
+
+save-generated:
+	mkdir -p generated_src/$(OCAMLVERSION)
+	tar -cf - $(GENERATED) | tar -C generated_src/$(OCAMLVERSION) -xvBf -
+
+get-generated: generated_src/$(OCAMLVERSION)
+	tar -C generated_src/$(OCAMLVERSION) -cf - . | tar -xvBf -
 
 PACKAGES := pa_ppx_utils
 PACKAGES := $(PACKAGES),pa_ppx_base
