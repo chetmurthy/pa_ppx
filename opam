@@ -18,7 +18,7 @@ pa_ppx.unmatched_vala: expands to match-cases (support library for camlp5-based 
 pa_ppx.hashrecons: support for writing AST rewriters that automatically fills in hash-consing boilerplate
 pa_dock: implements doc-comment extraction for camlp5 preprocessors
 
-Many of the "reimplementation" in fact offer significant enhanced
+Many of the reimplementations in fact offer significant enhanced
 function, described in the pa_ppx documentation.  In addition, there
 is an extensive test-suite, much of it slightly modified versions of
 the tests for the respective PPX rewriters.
