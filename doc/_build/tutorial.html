@@ -20,11 +20,20 @@
   <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'./',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -84,7 +93,7 @@
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#using-pa-ppx-ppx-rewriters">Using <code class="docutils literal notranslate"><span class="pre">pa_ppx</span></code> PPX Rewriters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#using-pa-ppx-ppx-rewriters">Using <code class="docutils literal"><span class="pre">pa_ppx</span></code> PPX Rewriters</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#batch-compilation">Batch compilation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#in-the-toplevel">In the toplevel</a></li>
 </ul>
@@ -92,7 +101,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#writing-new-ppx-rewriters-upon-pa-ppx">Writing new PPX Rewriters upon Pa_ppx</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#an-example-ppx-rewriter-based-on-pa-ppx">An Example PPX Rewriter based on Pa_ppx</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#troubleshooting-ppx-rewriter-invocations">Troubleshooting PPX Rewriter Invocations</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#debugging-using-not-ocamlfind-preprocess">Debugging using <code class="docutils literal notranslate"><span class="pre">not-ocamlfind</span> <span class="pre">preprocess</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#debugging-using-not-ocamlfind-preprocess">Debugging using <code class="docutils literal"><span class="pre">not-ocamlfind</span> <span class="pre">preprocess</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#debugging-using-the-ocaml-toplevel">Debugging using the ocaml toplevel</a></li>
 </ul>
 </li>
@@ -169,47 +178,47 @@
   <div class="section" id="tutorial">
 <h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="using-pa-ppx-ppx-rewriters">
-<h2>Using <code class="docutils literal notranslate"><span class="pre">pa_ppx</span></code> PPX Rewriters<a class="headerlink" href="#using-pa-ppx-ppx-rewriters" title="Permalink to this headline">¶</a></h2>
+<h2>Using <code class="docutils literal"><span class="pre">pa_ppx</span></code> PPX Rewriters<a class="headerlink" href="#using-pa-ppx-ppx-rewriters" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="batch-compilation">
 <h3>Batch compilation<a class="headerlink" href="#batch-compilation" title="Permalink to this headline">¶</a></h3>
-<p>To use <code class="docutils literal notranslate"><span class="pre">pa_ppx</span></code> PPX rewriters, let’s start with a really simple file
+<p>To use <code class="docutils literal"><span class="pre">pa_ppx</span></code> PPX rewriters, let’s start with a really simple file
 that works with the standard PPX rewriters (simple_show.ml):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">type</span> <span class="n">a1</span> <span class="o">=</span> <span class="nb">int</span> <span class="o">*</span> <span class="nb">int</span> <span class="p">[</span><span class="o">@</span><span class="nd">@deriving</span> <span class="n">show</span><span class="p">]</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nb">type</span> <span class="n">a1</span> <span class="o">=</span> <span class="nb">int</span> <span class="o">*</span> <span class="nb">int</span> <span class="p">[</span><span class="o">@</span><span class="nd">@deriving</span> <span class="n">show</span><span class="p">]</span>
 <span class="n">let</span> <span class="n">_</span> <span class="o">=</span> <span class="n">print_string</span> <span class="p">([</span><span class="o">%</span><span class="n">show</span><span class="p">:</span> <span class="n">a1</span><span class="p">]</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>and we compile it thus:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ocamlfind</span> <span class="n">ocamlc</span> <span class="o">-</span><span class="n">package</span> <span class="n">ppx_deriving</span><span class="o">.</span><span class="n">show</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>  <span class="o">-</span><span class="n">o</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">byte</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ocamlfind</span> <span class="n">ocamlc</span> <span class="o">-</span><span class="n">package</span> <span class="n">ppx_deriving</span><span class="o">.</span><span class="n">show</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>  <span class="o">-</span><span class="n">o</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">byte</span>
 </pre></div>
 </div>
 <p>Running it yields:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./simple_show.byte
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ ./simple_show.byte
 (5, 6)
 </pre></div>
 </div>
-<p>To compile with <code class="docutils literal notranslate"><span class="pre">pa_ppx</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ocamlfind</span> <span class="n">ocamlc</span> <span class="o">-</span><span class="n">package</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span> <span class="o">-</span><span class="n">syntax</span> <span class="n">camlp5o</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span> <span class="o">-</span><span class="n">linkpkg</span>  <span class="o">-</span><span class="n">o</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">byte</span>
+<p>To compile with <code class="docutils literal"><span class="pre">pa_ppx</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ocamlfind</span> <span class="n">ocamlc</span> <span class="o">-</span><span class="n">package</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span> <span class="o">-</span><span class="n">syntax</span> <span class="n">camlp5o</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span> <span class="o">-</span><span class="n">linkpkg</span>  <span class="o">-</span><span class="n">o</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">byte</span>
 </pre></div>
 </div>
 <p>with identical output:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./simple_show.byte
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ ./simple_show.byte
 (5, 6)
 </pre></div>
 </div>
 <p>There’s really only two important differences:</p>
 <ol class="arabic simple">
-<li><p>need to specify the syntax (<code class="docutils literal notranslate"><span class="pre">-syntax</span> <span class="pre">camlp5o</span></code>)</p></li>
-<li><p>instead of <code class="docutils literal notranslate"><span class="pre">ppx_deriving.show</span></code> specify <code class="docutils literal notranslate"><span class="pre">pa_ppx.deriving_plugins.show</span></code></p></li>
+<li>need to specify the syntax (<code class="docutils literal"><span class="pre">-syntax</span> <span class="pre">camlp5o</span></code>)</li>
+<li>instead of <code class="docutils literal"><span class="pre">ppx_deriving.show</span></code> specify <code class="docutils literal"><span class="pre">pa_ppx.deriving_plugins.show</span></code></li>
 </ol>
 <p>The other linking flags, I just haven’t figured out precisely how to get rid of.</p>
-<p>Sometimes more packages must be specified (e.g. for <code class="docutils literal notranslate"><span class="pre">expect_test</span></code>
-and <code class="docutils literal notranslate"><span class="pre">inline_test</span></code>) because <code class="docutils literal notranslate"><span class="pre">dune</span></code> is adding those
+<p>Sometimes more packages must be specified (e.g. for <code class="docutils literal"><span class="pre">expect_test</span></code>
+and <code class="docutils literal"><span class="pre">inline_test</span></code>) because <code class="docutils literal"><span class="pre">dune</span></code> is adding those
 under-the-covers, and these instructions are all Makefile-friendly.</p>
 </div>
 <div class="section" id="in-the-toplevel">
 <h3>In the toplevel<a class="headerlink" href="#in-the-toplevel" title="Permalink to this headline">¶</a></h3>
-<p>It’s also straightforward to use <code class="docutils literal notranslate"><span class="pre">pa_ppx</span></code> PPX rewriters in the toplevel:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>        <span class="n">OCaml</span> <span class="n">version</span> <span class="mf">4.10</span><span class="o">.</span><span class="mi">0</span>
+<p>It’s also straightforward to use <code class="docutils literal"><span class="pre">pa_ppx</span></code> PPX rewriters in the toplevel:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>        <span class="n">OCaml</span> <span class="n">version</span> <span class="mf">4.10</span><span class="o">.</span><span class="mi">0</span>
 <span class="c1">#use &quot;topfind.camlp5&quot;;;</span>
 <span class="o">-</span> <span class="p">:</span> <span class="n">unit</span> <span class="o">=</span> <span class="p">()</span>
 <span class="c1"># #camlp5o ;;</span>
@@ -227,7 +236,7 @@ under-the-covers, and these instructions are all Makefile-friendly.</p>
 </pre></div>
 </div>
 <p>And again, just the ocaml toplevel phrases:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#use &quot;topfind.camlp5&quot;;;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">#use &quot;topfind.camlp5&quot;;;</span>
 <span class="c1">#camlp5o ;;</span>
 <span class="n">require</span> <span class="s2">&quot;pa_ppx.deriving_plugins.show&quot;</span><span class="p">;;</span>
  <span class="nb">type</span> <span class="n">a1</span> <span class="o">=</span> <span class="nb">int</span> <span class="o">*</span> <span class="nb">int</span> <span class="p">[</span><span class="o">@</span><span class="nd">@deriving</span> <span class="n">show</span><span class="p">]</span> <span class="p">;;</span>
@@ -240,12 +249,12 @@ under-the-covers, and these instructions are all Makefile-friendly.</p>
 <div class="section" id="writing-new-ppx-rewriters-upon-pa-ppx">
 <h2>Writing new PPX Rewriters upon Pa_ppx<a class="headerlink" href="#writing-new-ppx-rewriters-upon-pa-ppx" title="Permalink to this headline">¶</a></h2>
 <p>In this section, we’ll describe at a high level the process of PPX
-rewriter execution in <code class="docutils literal notranslate"><span class="pre">Pa_ppx</span></code>, and how that results in the process
+rewriter execution in <code class="docutils literal"><span class="pre">Pa_ppx</span></code>, and how that results in the process
 for writing new ones.</p>
-<p>In <code class="docutils literal notranslate"><span class="pre">Pa_ppx</span></code> rewriters are “installed” into the <code class="docutils literal notranslate"><span class="pre">camlp5</span></code>
+<p>In <code class="docutils literal"><span class="pre">Pa_ppx</span></code> rewriters are “installed” into the <code class="docutils literal"><span class="pre">camlp5</span></code>
 preprocessor (which loads them all, unlike with standard PPX
 rewriters, which are sometimes run in separate processes).  The
-<code class="docutils literal notranslate"><span class="pre">Pa_ppx_base</span></code> module accumulates the list of all loaded rewriters,
+<code class="docutils literal"><span class="pre">Pa_ppx_base</span></code> module accumulates the list of all loaded rewriters,
 and just before applying them to an AST, it topologically sorts them
 based on declared constraints.  Then each rewriter is called with a
 “context” object (where it can stash information for later passes, or
@@ -255,9 +264,9 @@ AST.  This AST is then passed along to the next rewriter, and so on
 until a final AST is produced, which is then output to the Ocaml main
 compiler process.</p>
 <p>Each rewriter in turn is passed an AST.  The Camlp5 ML AST has a
-number of “important” types (e.g. <code class="docutils literal notranslate"><span class="pre">expr</span></code>, <code class="docutils literal notranslate"><span class="pre">patt</span></code>, <code class="docutils literal notranslate"><span class="pre">module_expr</span></code>,
-<code class="docutils literal notranslate"><span class="pre">module_type</span></code>, <code class="docutils literal notranslate"><span class="pre">ctyp</span></code>, etc).  A function much like what would be
-generated by <code class="docutils literal notranslate"><span class="pre">ppx_deriving.map</span></code> is called on the AST, and it
+number of “important” types (e.g. <code class="docutils literal"><span class="pre">expr</span></code>, <code class="docutils literal"><span class="pre">patt</span></code>, <code class="docutils literal"><span class="pre">module_expr</span></code>,
+<code class="docutils literal"><span class="pre">module_type</span></code>, <code class="docutils literal"><span class="pre">ctyp</span></code>, etc).  A function much like what would be
+generated by <code class="docutils literal"><span class="pre">ppx_deriving.map</span></code> is called on the AST, and it
 recursively walks the entire AST.  But at each of these major types,
 there is an “extensible function” that gets called before calling the
 (as-if-)generated “map” function, and that extensible function can
@@ -265,14 +274,14 @@ rewrite the AST (or decline and do nothing).</p>
 <p>So to implement a rewriter typically means to add some code to the
 extension-points that correspond to the AST types that might need to
 be rewritten.  For example, in the next section we present an example
-where the sole extension point would be <code class="docutils literal notranslate"><span class="pre">expr</span></code>.  In
-<code class="docutils literal notranslate"><span class="pre">pa_ppx.deriving</span></code>, the types <code class="docutils literal notranslate"><span class="pre">str_item</span></code> (structure-item) and
-<code class="docutils literal notranslate"><span class="pre">sig_item</span></code> (signature-item) are rewritten.  Typically, a single
+where the sole extension point would be <code class="docutils literal"><span class="pre">expr</span></code>.  In
+<code class="docutils literal"><span class="pre">pa_ppx.deriving</span></code>, the types <code class="docutils literal"><span class="pre">str_item</span></code> (structure-item) and
+<code class="docutils literal"><span class="pre">sig_item</span></code> (signature-item) are rewritten.  Typically, a single
 rewriter only rewrites AST nodes of a few types, and then only when
 they match certain criteria.  So in both extensible functions, and
 normal code that does rewriting, we’ll make extensive use of
-<code class="docutils literal notranslate"><span class="pre">camlp5</span></code> “quotations” (text that looks like ML surface syntax, but
-is expanded by <code class="docutils literal notranslate"><span class="pre">camlp5</span></code> into ML code for patterns or expressions,
+<code class="docutils literal"><span class="pre">camlp5</span></code> “quotations” (text that looks like ML surface syntax, but
+is expanded by <code class="docutils literal"><span class="pre">camlp5</span></code> into ML code for patterns or expressions,
 depending on context).</p>
 <p>Now we can describe the steps in writing a PPX rewriter:</p>
 <p>1. write some code that, for the specific AST nodes of interest,
@@ -282,7 +291,7 @@ or maybe stash information there for other code.</p>
 <p>2. Extend the specific extensible-functions for the AST node types we
 need to rewrite, using pattern-matching to select suitable nodes and
 then calling our rewrite functions from step 1.</p>
-<p>3. Then install these extensible functions into <code class="docutils literal notranslate"><span class="pre">Pa_ppx_base</span></code> with
+<p>3. Then install these extensible functions into <code class="docutils literal"><span class="pre">Pa_ppx_base</span></code> with
 indications of when they should be run (before/after which other PPX
 rewriters).</p>
 </div>
@@ -292,14 +301,14 @@ rewriters).</p>
 Much of this will work in “official” syntax, but since Camlp5 itself
 is written in revised syntax, I kept on going that way.</p>
 <p>In this section, we will describe the simplest rewriter
-(<code class="docutils literal notranslate"><span class="pre">pa_ppx.here</span></code>).  This rewriter replaces the extension point
-<code class="docutils literal notranslate"><span class="pre">[%here]</span></code> with code that produces a <code class="docutils literal notranslate"><span class="pre">Lexing.position</span></code> of the
+(<code class="docutils literal"><span class="pre">pa_ppx.here</span></code>).  This rewriter replaces the extension point
+<code class="docutils literal"><span class="pre">[%here]</span></code> with code that produces a <code class="docutils literal"><span class="pre">Lexing.position</span></code> of the
 position in the file where the extension-point was found.  So a line (in a file “test_here.ml”):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">vslue</span> <span class="n">here</span> <span class="o">=</span> <span class="p">[</span><span class="o">%</span><span class="n">here</span><span class="p">]</span> <span class="p">;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">vslue</span> <span class="n">here</span> <span class="o">=</span> <span class="p">[</span><span class="o">%</span><span class="n">here</span><span class="p">]</span> <span class="p">;</span>
 </pre></div>
 </div>
 <p>is rewritten to:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">value</span> <span class="n">here</span> <span class="o">=</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">value</span> <span class="n">here</span> <span class="o">=</span>
   <span class="n">let</span> <span class="nb">open</span> <span class="n">Lexing</span> <span class="ow">in</span>
   <span class="p">{</span><span class="n">pos_fname</span> <span class="o">=</span> <span class="s2">&quot;test_here.ml&quot;</span><span class="p">;</span> <span class="n">pos_lnum</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span> <span class="n">pos_bol</span> <span class="o">=</span> <span class="mi">32</span><span class="p">;</span>
    <span class="n">pos_cnum</span> <span class="o">=</span> <span class="mi">43</span><span class="p">}</span>
@@ -307,21 +316,21 @@ position in the file where the extension-point was found.  So a line (in a file 
 </pre></div>
 </div>
 <p>We won’t go into excruciating detail, because this depends on a number
-of <code class="docutils literal notranslate"><span class="pre">camlp5</span></code> and <code class="docutils literal notranslate"><span class="pre">pa_ppx</span></code> facilities that are described in more
-detail either in the <code class="docutils literal notranslate"><span class="pre">camlp5</span></code> documentation, or elsewhere in this
+of <code class="docutils literal"><span class="pre">camlp5</span></code> and <code class="docutils literal"><span class="pre">pa_ppx</span></code> facilities that are described in more
+detail either in the <code class="docutils literal"><span class="pre">camlp5</span></code> documentation, or elsewhere in this
 documentation.</p>
-<p>1. Open necessary libraries (<code class="docutils literal notranslate"><span class="pre">Pa_ppx_base</span></code> contains support
+<p>1. Open necessary libraries (<code class="docutils literal"><span class="pre">Pa_ppx_base</span></code> contains support
 infrastructure for all PPX rewriters):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">open</span> <span class="n">Pa_ppx_base</span> <span class="p">;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nb">open</span> <span class="n">Pa_ppx_base</span> <span class="p">;</span>
 <span class="nb">open</span> <span class="n">Pa_passthru</span> <span class="p">;</span>
 <span class="nb">open</span> <span class="n">Ppxutil</span> <span class="p">;</span>
 </pre></div>
 </div>
 <p>2. Implement a function that rewrites the simple extension-point,
-using <code class="docutils literal notranslate"><span class="pre">camlp5</span></code> “quotations”.  The function <code class="docutils literal notranslate"><span class="pre">quote_position</span></code> uses
+using <code class="docutils literal"><span class="pre">camlp5</span></code> “quotations”.  The function <code class="docutils literal"><span class="pre">quote_position</span></code> uses
 quotations for expressions that themselves have anti-quotations (“holes”) for
-expressions we want to fill with bits from the <code class="docutils literal notranslate"><span class="pre">Lexing.position</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>value quote_position loc p =
+expressions we want to fill with bits from the <code class="docutils literal"><span class="pre">Lexing.position</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>value quote_position loc p =
   let open Lexing in
   &lt;:expr&lt; let open Lexing in {
     pos_fname = $str:p.pos_fname$ ;
@@ -332,8 +341,8 @@ expressions we want to fill with bits from the <code class="docutils literal not
 </pre></div>
 </div>
 <p>Next we write a function that pattern-matches on an expression
-(expected to be <code class="docutils literal notranslate"><span class="pre">[%here]</span></code>) and rewrites it using <code class="docutils literal notranslate"><span class="pre">quote_position</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">value</span> <span class="n">rewrite_expr</span> <span class="n">arg</span> <span class="o">=</span> <span class="n">fun</span> <span class="p">[</span>
+(expected to be <code class="docutils literal"><span class="pre">[%here]</span></code>) and rewrites it using <code class="docutils literal"><span class="pre">quote_position</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">value</span> <span class="n">rewrite_expr</span> <span class="n">arg</span> <span class="o">=</span> <span class="n">fun</span> <span class="p">[</span>
   <span class="o">&lt;</span><span class="p">:</span><span class="n">expr</span><span class="p">:</span><span class="o">&lt;</span> <span class="p">[</span><span class="o">%</span><span class="n">here</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="o">-&gt;</span>
     <span class="n">let</span> <span class="n">pos</span> <span class="o">=</span> <span class="n">start_position_of_loc</span> <span class="n">loc</span> <span class="ow">in</span>
     <span class="n">quote_position</span> <span class="n">loc</span> <span class="n">pos</span>
@@ -343,19 +352,19 @@ expressions we want to fill with bits from the <code class="docutils literal not
 </pre></div>
 </div>
 <p>And finally, we add this function to the “extensible function” for
-expressions.  Notice the <code class="docutils literal notranslate"><span class="pre">fallback</span></code> argument below: if rewriting of
+expressions.  Notice the <code class="docutils literal"><span class="pre">fallback</span></code> argument below: if rewriting of
 subtrees of this AST node were needed after our rewrite, we could call
-that to make it happen.  The type <code class="docutils literal notranslate"><span class="pre">EF.t</span></code> is a dispatch table of
+that to make it happen.  The type <code class="docutils literal"><span class="pre">EF.t</span></code> is a dispatch table of
 “extension points”, one for each important type in the Camlp5 ML AST.
 All these extension-points start off empty, and we want to add our
 function to the extension-point for expressions.  Then we “install”
-this table in the <code class="docutils literal notranslate"><span class="pre">Pa_passthru</span></code> module, giving it a name.  We can
+this table in the <code class="docutils literal"><span class="pre">Pa_passthru</span></code> module, giving it a name.  We can
 specify that it comes before or after other rewriters, or specify a
 pass number (0..99), though this is almost never used.  Instead, by
 specifying which rewriters to run before or after, we give
-<code class="docutils literal notranslate"><span class="pre">Pa_passthru</span></code> the information to topologically sort all loaded
+<code class="docutils literal"><span class="pre">Pa_passthru</span></code> the information to topologically sort all loaded
 rewriters before running them:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">value</span> <span class="n">install</span> <span class="p">()</span> <span class="o">=</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">value</span> <span class="n">install</span> <span class="p">()</span> <span class="o">=</span>
 <span class="n">let</span> <span class="n">ef</span> <span class="o">=</span> <span class="n">EF</span><span class="o">.</span><span class="n">mk</span> <span class="p">()</span> <span class="ow">in</span>
 <span class="n">let</span> <span class="n">ef</span> <span class="o">=</span> <span class="n">EF</span><span class="o">.</span><span class="p">{</span> <span class="p">(</span><span class="n">ef</span><span class="p">)</span> <span class="k">with</span>
           <span class="n">expr</span> <span class="o">=</span> <span class="n">extfun</span> <span class="n">ef</span><span class="o">.</span><span class="n">expr</span> <span class="k">with</span> <span class="p">[</span>
@@ -369,7 +378,7 @@ rewriters before running them:</p>
 </pre></div>
 </div>
 <p>An example of a rewriter that specifies a “before” constraint would be
-<code class="docutils literal notranslate"><span class="pre">pa_ppx.import</span></code>, which should be run before <code class="docutils literal notranslate"><span class="pre">pa_ppx.deriving</span></code>, so
+<code class="docutils literal"><span class="pre">pa_ppx.import</span></code>, which should be run before <code class="docutils literal"><span class="pre">pa_ppx.deriving</span></code>, so
 that a type can be imported, and then have type-based code derived
 from that imported type.</p>
 </div>
@@ -378,23 +387,23 @@ from that imported type.</p>
 <p>Everybody eventually uses a PPX rewriter that doesn’t produce the
 results they desire.  There are two ways of debugging that issue:</p>
 <ol class="arabic simple">
-<li><p>using <code class="docutils literal notranslate"><span class="pre">not-ocamlfind</span> <span class="pre">preprocess</span></code></p></li>
-<li><p>using the toplevel</p></li>
+<li>using <code class="docutils literal"><span class="pre">not-ocamlfind</span> <span class="pre">preprocess</span></code></li>
+<li>using the toplevel</li>
 </ol>
 <div class="section" id="debugging-using-not-ocamlfind-preprocess">
-<h3>Debugging using <code class="docutils literal notranslate"><span class="pre">not-ocamlfind</span> <span class="pre">preprocess</span></code><a class="headerlink" href="#debugging-using-not-ocamlfind-preprocess" title="Permalink to this headline">¶</a></h3>
-<p>Suppose that the <code class="docutils literal notranslate"><span class="pre">ocamlfind</span> <span class="pre">ocamlc</span></code> invocation above didn’t produce
+<h3>Debugging using <code class="docutils literal"><span class="pre">not-ocamlfind</span> <span class="pre">preprocess</span></code><a class="headerlink" href="#debugging-using-not-ocamlfind-preprocess" title="Permalink to this headline">¶</a></h3>
+<p>Suppose that the <code class="docutils literal"><span class="pre">ocamlfind</span> <span class="pre">ocamlc</span></code> invocation above didn’t produce
 the results we desired.  For instance, suppose that we forgot the
-<code class="docutils literal notranslate"><span class="pre">-syntax</span> <span class="pre">camlp5o</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ocamlfind</span> <span class="n">ocamlc</span> <span class="o">-</span><span class="n">package</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span> <span class="o">-</span><span class="n">c</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>
+<code class="docutils literal"><span class="pre">-syntax</span> <span class="pre">camlp5o</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ocamlfind</span> <span class="n">ocamlc</span> <span class="o">-</span><span class="n">package</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span> <span class="o">-</span><span class="n">c</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>
 <span class="n">File</span> <span class="s2">&quot;simple_show.ml&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">5</span><span class="p">,</span> <span class="n">characters</span> <span class="mi">18</span><span class="o">-</span><span class="mi">22</span><span class="p">:</span>
 <span class="mi">5</span> <span class="o">|</span>   <span class="n">print_string</span> <span class="p">([</span><span class="o">%</span><span class="n">show</span><span class="p">:</span> <span class="n">a1</span><span class="p">]</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
                     <span class="o">^^^^</span>
 <span class="n">Error</span><span class="p">:</span> <span class="n">Uninterpreted</span> <span class="n">extension</span> <span class="s1">&#39;show&#39;</span><span class="o">.</span>
 </pre></div>
 </div>
-<p>We could start to debug the preprocessing process by using <code class="docutils literal notranslate"><span class="pre">not-ocamlfind</span> <span class="pre">preprocess</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ow">not</span><span class="o">-</span><span class="n">ocamlfind</span> <span class="n">preprocess</span> <span class="o">-</span><span class="n">package</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>
+<p>We could start to debug the preprocessing process by using <code class="docutils literal"><span class="pre">not-ocamlfind</span> <span class="pre">preprocess</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="ow">not</span><span class="o">-</span><span class="n">ocamlfind</span> <span class="n">preprocess</span> <span class="o">-</span><span class="n">package</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>
 <span class="n">ppx_execute</span><span class="p">:</span> <span class="n">ocamlfind</span> <span class="ow">not</span><span class="o">-</span><span class="n">ocamlfind</span><span class="o">/</span><span class="n">papr_official</span><span class="o">.</span><span class="n">exe</span> <span class="o">-</span><span class="n">binary</span><span class="o">-</span><span class="n">output</span> <span class="o">-</span><span class="n">impl</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">simple_show4d8e59</span>
 <span class="nb">format</span> <span class="n">output</span> <span class="n">file</span><span class="p">:</span> <span class="n">ocamlfind</span> <span class="ow">not</span><span class="o">-</span><span class="n">ocamlfind</span><span class="o">/</span><span class="n">papr_official</span><span class="o">.</span><span class="n">exe</span> <span class="o">-</span><span class="n">binary</span><span class="o">-</span><span class="nb">input</span> <span class="o">-</span><span class="n">impl</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">simple_show4d8e59</span>
 <span class="nb">type</span> <span class="n">a1</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span> <span class="o">*</span> <span class="nb">int</span><span class="p">)[</span><span class="o">@</span><span class="nd">@deriving</span> <span class="n">show</span><span class="p">]</span>
@@ -402,35 +411,35 @@ the results we desired.  For instance, suppose that we forgot the
 </pre></div>
 </div>
 <p>This tells us we didn’t actually invoke camlp5 (or any PPX rewriters).
-A different kind of information is given by adding <code class="docutils literal notranslate"><span class="pre">-verbose</span></code>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ocamlfind</span> <span class="n">ocamlc</span> <span class="o">-</span><span class="n">verbose</span> <span class="o">-</span><span class="n">package</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span> <span class="o">-</span><span class="n">c</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>
+A different kind of information is given by adding <code class="docutils literal"><span class="pre">-verbose</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ocamlfind</span> <span class="n">ocamlc</span> <span class="o">-</span><span class="n">verbose</span> <span class="o">-</span><span class="n">package</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span> <span class="o">-</span><span class="n">c</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>
 <span class="n">Effective</span> <span class="nb">set</span> <span class="n">of</span> <span class="n">compiler</span> <span class="n">predicates</span><span class="p">:</span> <span class="n">pkg_result</span><span class="p">,</span><span class="n">pkg_rresult</span><span class="p">,</span><span class="n">pkg_seq</span><span class="p">,</span><span class="n">pkg_stdlib</span><span class="o">-</span><span class="n">shims</span><span class="p">,</span><span class="n">pkg_fmt</span><span class="p">,</span><span class="n">pkg_sexplib0</span><span class="p">,</span><span class="n">pkg_pa_ppx</span><span class="o">.</span><span class="n">runtime</span><span class="p">,</span><span class="n">pkg_pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span><span class="p">,</span><span class="n">autolink</span><span class="p">,</span><span class="n">byte</span>
 </pre></div>
 </div>
 <p>This also tells us that camlp5 isn’t being invoked (no mention of
 “preprocessor predicates”), and this would tell us that we needed to
-add <code class="docutils literal notranslate"><span class="pre">-syntax</span> <span class="pre">camlp5o</span></code> (and maybe the <code class="docutils literal notranslate"><span class="pre">camlp5</span></code> package):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ow">not</span><span class="o">-</span><span class="n">ocamlfind</span> <span class="n">preprocess</span> <span class="o">-</span><span class="n">package</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span> <span class="o">-</span><span class="n">syntax</span> <span class="n">camlp5o</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>
+add <code class="docutils literal"><span class="pre">-syntax</span> <span class="pre">camlp5o</span></code> (and maybe the <code class="docutils literal"><span class="pre">camlp5</span></code> package):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="ow">not</span><span class="o">-</span><span class="n">ocamlfind</span> <span class="n">preprocess</span> <span class="o">-</span><span class="n">package</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span> <span class="o">-</span><span class="n">syntax</span> <span class="n">camlp5o</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>
 </pre></div>
 </div>
 <p>will produce binary output, because we didn’t specify what syntax we
-wanted to print (official or revised); adding <code class="docutils literal notranslate"><span class="pre">camlp5.pr_o</span></code> will fix that:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ow">not</span><span class="o">-</span><span class="n">ocamlfind</span> <span class="n">preprocess</span> <span class="o">-</span><span class="n">package</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span><span class="p">,</span><span class="n">camlp5</span><span class="o">.</span><span class="n">pr_o</span> <span class="o">-</span><span class="n">syntax</span> <span class="n">camlp5o</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>
+wanted to print (official or revised); adding <code class="docutils literal"><span class="pre">camlp5.pr_o</span></code> will fix that:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="ow">not</span><span class="o">-</span><span class="n">ocamlfind</span> <span class="n">preprocess</span> <span class="o">-</span><span class="n">package</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span><span class="p">,</span><span class="n">camlp5</span><span class="o">.</span><span class="n">pr_o</span> <span class="o">-</span><span class="n">syntax</span> <span class="n">camlp5o</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>
 </pre></div>
 </div>
-<p>Basically, any <code class="docutils literal notranslate"><span class="pre">ocamlfind</span> <span class="pre">ocamlc</span></code> command can be converted to
-<code class="docutils literal notranslate"><span class="pre">not-ocamlfind</span> <span class="pre">preprocess</span></code> by removing any flags/arguments that are
-meant only for ocamlc (so: linking, warnings, <code class="docutils literal notranslate"><span class="pre">-c</span></code>, etc) and adding
-a camlp5 printing package (so: <code class="docutils literal notranslate"><span class="pre">camlp5.pr_o</span></code> or <code class="docutils literal notranslate"><span class="pre">camlp5.pr_r</span></code>).</p>
+<p>Basically, any <code class="docutils literal"><span class="pre">ocamlfind</span> <span class="pre">ocamlc</span></code> command can be converted to
+<code class="docutils literal"><span class="pre">not-ocamlfind</span> <span class="pre">preprocess</span></code> by removing any flags/arguments that are
+meant only for ocamlc (so: linking, warnings, <code class="docutils literal"><span class="pre">-c</span></code>, etc) and adding
+a camlp5 printing package (so: <code class="docutils literal"><span class="pre">camlp5.pr_o</span></code> or <code class="docutils literal"><span class="pre">camlp5.pr_r</span></code>).</p>
 </div>
 <div class="section" id="debugging-using-the-ocaml-toplevel">
 <h3>Debugging using the ocaml toplevel<a class="headerlink" href="#debugging-using-the-ocaml-toplevel" title="Permalink to this headline">¶</a></h3>
-<p>The other way to debug a <code class="docutils literal notranslate"><span class="pre">Pa_ppx</span></code> rewriter is via the Ocaml
-toplevel.  Camlp5 and <code class="docutils literal notranslate"><span class="pre">pa_ppx</span></code> packages can be loaded into the
+<p>The other way to debug a <code class="docutils literal"><span class="pre">Pa_ppx</span></code> rewriter is via the Ocaml
+toplevel.  Camlp5 and <code class="docutils literal"><span class="pre">pa_ppx</span></code> packages can be loaded into the
 toplevel in the usual way.</p>
 <ol class="arabic">
-<li><p>Load supporting modules:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#use &quot;topfind.camlp5&quot;;;</span>
+<li><p class="first">Load supporting modules:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">#use &quot;topfind.camlp5&quot;;;</span>
 <span class="c1">#require &quot;camlp5.pa_o&quot;;;</span>
 <span class="c1">#require &quot;camlp5.pr_o&quot;;;</span>
 <span class="c1">#directory &quot;../tests-ounit2&quot;;;</span>
@@ -444,13 +453,13 @@ toplevel in the usual way.</p>
 </pre></div>
 </div>
 </li>
-<li><p>Load the PPX rewriter:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#require &quot;pa_ppx.deriving_plugins.show&quot;;;</span>
+<li><p class="first">Load the PPX rewriter:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1">#require &quot;pa_ppx.deriving_plugins.show&quot;;;</span>
 </pre></div>
 </div>
 </li>
-<li><p>And run it on a file:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;simple_show.ml&quot;</span> <span class="o">|&gt;</span> <span class="n">Fpath</span><span class="o">.</span><span class="n">v</span> <span class="o">|&gt;</span> <span class="n">Bos</span><span class="o">.</span><span class="n">OS</span><span class="o">.</span><span class="n">File</span><span class="o">.</span><span class="n">read</span>
+<li><p class="first">And run it on a file:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="s2">&quot;simple_show.ml&quot;</span> <span class="o">|&gt;</span> <span class="n">Fpath</span><span class="o">.</span><span class="n">v</span> <span class="o">|&gt;</span> <span class="n">Bos</span><span class="o">.</span><span class="n">OS</span><span class="o">.</span><span class="n">File</span><span class="o">.</span><span class="n">read</span>
 <span class="o">|&gt;</span> <span class="n">Rresult</span><span class="o">.</span><span class="n">R</span><span class="o">.</span><span class="n">get_ok</span> <span class="o">|&gt;</span> <span class="n">PAPR</span><span class="o">.</span><span class="n">Implem</span><span class="o">.</span><span class="n">pa1</span>
 <span class="o">|&gt;</span> <span class="n">PAPR</span><span class="o">.</span><span class="n">Implem</span><span class="o">.</span><span class="n">pr</span> <span class="o">|&gt;</span> <span class="n">print_string</span> <span class="p">;;</span>
 <span class="nb">type</span> <span class="n">a1</span> <span class="o">=</span> <span class="nb">int</span> <span class="o">*</span> <span class="nb">int</span><span class="p">[</span><span class="o">@</span><span class="nd">@deriving_inline</span> <span class="n">show</span><span class="p">]</span><span class="n">let</span> <span class="n">rec</span> <span class="p">(</span><span class="n">pp_a1</span> <span class="p">:</span> <span class="n">a1</span> <span class="n">Fmt</span><span class="o">.</span><span class="n">t</span><span class="p">)</span> <span class="o">=</span>

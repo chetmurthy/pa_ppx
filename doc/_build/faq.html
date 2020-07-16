@@ -20,11 +20,20 @@
   <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'./',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -85,7 +94,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="builtins.html">Built-in PPX Rewriters</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Frequently Asked Questions</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#why-isn-t-this-project-compatible-with-ppxlib-and-other-standard-ppx-rewriter-infrastructure">Why isn’t this project compatible with <code class="docutils literal notranslate"><span class="pre">ppxlib</span></code> and other standard PPX rewriter infrastructure?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#why-isn-t-this-project-compatible-with-ppxlib-and-other-standard-ppx-rewriter-infrastructure">Why isn’t this project compatible with <code class="docutils literal"><span class="pre">ppxlib</span></code> and other standard PPX rewriter infrastructure?</a></li>
 </ul>
 </li>
 </ul>
@@ -157,9 +166,9 @@
   <div class="section" id="frequently-asked-questions">
 <h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="why-isn-t-this-project-compatible-with-ppxlib-and-other-standard-ppx-rewriter-infrastructure">
-<h2>Why isn’t this project compatible with <code class="docutils literal notranslate"><span class="pre">ppxlib</span></code> and other standard PPX rewriter infrastructure?<a class="headerlink" href="#why-isn-t-this-project-compatible-with-ppxlib-and-other-standard-ppx-rewriter-infrastructure" title="Permalink to this headline">¶</a></h2>
+<h2>Why isn’t this project compatible with <code class="docutils literal"><span class="pre">ppxlib</span></code> and other standard PPX rewriter infrastructure?<a class="headerlink" href="#why-isn-t-this-project-compatible-with-ppxlib-and-other-standard-ppx-rewriter-infrastructure" title="Permalink to this headline">¶</a></h2>
 <blockquote>
-<div><p>One of the theses of this project, is that using Camlp5, and
+<div>One of the theses of this project, is that using Camlp5, and
 specifically Camlp5’s AST, makes for faster and more-precise PPX
 rewriters.  Camlp5’s AST is translated into Ocaml’s AST as a final
 step, but for now there is no mechanism to go in the other
@@ -168,8 +177,7 @@ would still manipulate Camlp5 AST framents, not Ocaml AST
 fragments.  Ocaml’s AST has been designed to be efficient and
 commodious for type-checking and compilation; Camlp5’s has been
 designed for efficient and programmer-friendly manipulation (for
-rewriting and macro-preprocessing generally).</p>
-</div></blockquote>
+rewriting and macro-preprocessing generally).</div></blockquote>
 </div>
 </div>
 

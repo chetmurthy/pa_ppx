@@ -20,11 +20,20 @@
   <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'./',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -35,6 +44,7 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Frequently Asked Questions" href="faq.html" />
     <link rel="prev" title="Tutorial" href="tutorial.html" /> 
 </head>
 
@@ -84,12 +94,13 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Built-in PPX Rewriters</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#type-decl-related-rewriters-deriving-and-import">Type-Decl-Related Rewriters (<code class="docutils literal notranslate"><span class="pre">deriving</span></code> and <code class="docutils literal notranslate"><span class="pre">import</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#type-decl-related-rewriters-deriving-and-import">Type-Decl-Related Rewriters (<code class="docutils literal"><span class="pre">deriving</span></code> and <code class="docutils literal"><span class="pre">import</span></code>)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#test-related-rewriters">Test-Related Rewriters</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#miscellaneous-standard-rewriters">Miscellaneous Standard Rewriters</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#useful-pa-ppx-only-rewriters">Useful <code class="docutils literal notranslate"><span class="pre">Pa_ppx</span></code>-only Rewriters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#useful-pa-ppx-only-rewriters">Useful <code class="docutils literal"><span class="pre">Pa_ppx</span></code>-only Rewriters</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a></li>
 </ul>
 
             
@@ -158,53 +169,53 @@
             
   <div class="section" id="built-in-ppx-rewriters">
 <h1>Built-in PPX Rewriters<a class="headerlink" href="#built-in-ppx-rewriters" title="Permalink to this headline">¶</a></h1>
-<p><code class="docutils literal notranslate"><span class="pre">Pa_ppx</span></code> comes with a number of PPX rewriters.  In this section
+<p><code class="docutils literal"><span class="pre">Pa_ppx</span></code> comes with a number of PPX rewriters.  In this section
 we’ll document them all, and describe their commonalities and
 differences where relevant.</p>
 <div class="section" id="type-decl-related-rewriters-deriving-and-import">
-<h2>Type-Decl-Related Rewriters (<code class="docutils literal notranslate"><span class="pre">deriving</span></code> and <code class="docutils literal notranslate"><span class="pre">import</span></code>)<a class="headerlink" href="#type-decl-related-rewriters-deriving-and-import" title="Permalink to this headline">¶</a></h2>
+<h2>Type-Decl-Related Rewriters (<code class="docutils literal"><span class="pre">deriving</span></code> and <code class="docutils literal"><span class="pre">import</span></code>)<a class="headerlink" href="#type-decl-related-rewriters-deriving-and-import" title="Permalink to this headline">¶</a></h2>
 <p>There are two kinds of type-decl-related rewriters:
-<code class="docutils literal notranslate"><span class="pre">pa_ppx.deriving</span></code> and <code class="docutils literal notranslate"><span class="pre">pa_ppx.import</span></code>.  The former are documented
+<code class="docutils literal"><span class="pre">pa_ppx.deriving</span></code> and <code class="docutils literal"><span class="pre">pa_ppx.import</span></code>.  The former are documented
 (<a class="reference external" href="https://github.com/ocaml-ppx/ppx_deriving">here (ppx_deriving</a>,
 <a class="reference external" href="https://github.com/ocaml-ppx/ppx_deriving_yojson">here (ppx_deriving_yojson)</a>, and <a class="reference external" href="https://github.com/janestreet/ppx_sexp_conv">here
 (ppx_sexp_conv)</a>).
 They comprise:</p>
 <ol class="arabic">
-<li><p>enum, eq, ord, fold, iter, make, map, show</p>
-<p>These are all part of <code class="docutils literal notranslate"><span class="pre">ppx_deriving</span></code> and implement things like
+<li><p class="first">enum, eq, ord, fold, iter, make, map, show</p>
+<p>These are all part of <code class="docutils literal"><span class="pre">ppx_deriving</span></code> and implement things like
 automated generation of equality/compare operators, prety-printing,
 etc.</p>
 </li>
-<li><p>yojson, sexp</p>
+<li><p class="first">yojson, sexp</p>
 <p>conversion to/from json and sexpressions</p>
 </li>
-<li><p>import</p>
+<li><p class="first">import</p>
 <p>import of types from some CMI or MLI so they can be used for the above rewriters.</p>
 </li>
 </ol>
 <p>There are inconsistencies in some of the standard PPX rewriters, and
 specifically in the way they deal with extensible variants and
-exceptions: those have been remedied in the <code class="docutils literal notranslate"><span class="pre">pa_ppx</span></code> implementation.</p>
-<p>Similarly, <code class="docutils literal notranslate"><span class="pre">ppx_import</span></code> is able to import single types from other
+exceptions: those have been remedied in the <code class="docutils literal"><span class="pre">pa_ppx</span></code> implementation.</p>
+<p>Similarly, <code class="docutils literal"><span class="pre">ppx_import</span></code> is able to import single types from other
 modules, but not entire groups of recursively-defined types; this has
-been remedied in <code class="docutils literal notranslate"><span class="pre">pa_ppx.import</span></code>.</p>
+been remedied in <code class="docutils literal"><span class="pre">pa_ppx.import</span></code>.</p>
 </div>
 <div class="section" id="test-related-rewriters">
 <h2>Test-Related Rewriters<a class="headerlink" href="#test-related-rewriters" title="Permalink to this headline">¶</a></h2>
 <p>There are three rewriters related to tests that we’ve implemented:</p>
 <ol class="arabic simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">pa_ppx.assert</span></code>: based on <a href="#id1"><span class="problematic" id="id2">`ppx_assert&lt;https://github.com/janestreet/ppx_assert&gt;`_</span></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pa_ppx.inline_test</span></code>: based on <a href="#id3"><span class="problematic" id="id4">`ppx_inline_test&lt;https://github.com/janestreet/ppx_inline_test&gt;`_</span></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pa_ppx.expect_test</span></code>: based on <a href="#id5"><span class="problematic" id="id6">`ppx_expect&lt;https://github.com/janestreet/ppx_expect&gt;`_</span></a></p></li>
+<li><code class="docutils literal"><span class="pre">pa_ppx.assert</span></code>: based on <a href="#id1"><span class="problematic" id="id2">`ppx_assert&lt;https://github.com/janestreet/ppx_assert&gt;`_</span></a></li>
+<li><code class="docutils literal"><span class="pre">pa_ppx.inline_test</span></code>: based on <a href="#id3"><span class="problematic" id="id4">`ppx_inline_test&lt;https://github.com/janestreet/ppx_inline_test&gt;`_</span></a></li>
+<li><code class="docutils literal"><span class="pre">pa_ppx.expect_test</span></code>: based on <a href="#id5"><span class="problematic" id="id6">`ppx_expect&lt;https://github.com/janestreet/ppx_expect&gt;`_</span></a></li>
 </ol>
 <p>These are all works-in-progress, though they do work.</p>
 </div>
 <div class="section" id="miscellaneous-standard-rewriters">
 <h2>Miscellaneous Standard Rewriters<a class="headerlink" href="#miscellaneous-standard-rewriters" title="Permalink to this headline">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">pa_ppx.here</span></code> is the only miscellaneous standard rewriter we’ve implemented.</p>
+<p><code class="docutils literal"><span class="pre">pa_ppx.here</span></code> is the only miscellaneous standard rewriter we’ve implemented.</p>
 </div>
 <div class="section" id="useful-pa-ppx-only-rewriters">
-<h2>Useful <code class="docutils literal notranslate"><span class="pre">Pa_ppx</span></code>-only Rewriters<a class="headerlink" href="#useful-pa-ppx-only-rewriters" title="Permalink to this headline">¶</a></h2>
+<h2>Useful <code class="docutils literal"><span class="pre">Pa_ppx</span></code>-only Rewriters<a class="headerlink" href="#useful-pa-ppx-only-rewriters" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -215,6 +226,8 @@ been remedied in <code class="docutils literal notranslate"><span class="pre">pa
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="faq.html" class="btn btn-neutral float-right" title="Frequently Asked Questions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="tutorial.html" class="btn btn-neutral float-left" title="Tutorial" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

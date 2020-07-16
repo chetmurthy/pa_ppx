@@ -20,11 +20,20 @@
   <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'./',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -160,7 +169,7 @@ parser, as in <a class="reference external" href="http://camlp5.github.io">Camlp
 more about PPX</a>, but here we’ll
 assume you know how they work.  To refresh the memory, PPX consists in
 <em>annotations</em> and <em>extensions</em> in the parse-tree, viz.:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">type</span> <span class="n">a2</span> <span class="o">=</span> <span class="n">int32</span> <span class="p">[</span><span class="o">@</span><span class="nd">@deriving</span> <span class="n">show</span><span class="p">]</span> <span class="p">(</span><span class="o">*</span> <span class="n">this</span> <span class="ow">is</span> <span class="n">an</span> <span class="n">annotation</span> <span class="o">*</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nb">type</span> <span class="n">a2</span> <span class="o">=</span> <span class="n">int32</span> <span class="p">[</span><span class="o">@</span><span class="nd">@deriving</span> <span class="n">show</span><span class="p">]</span> <span class="p">(</span><span class="o">*</span> <span class="n">this</span> <span class="ow">is</span> <span class="n">an</span> <span class="n">annotation</span> <span class="o">*</span><span class="p">)</span>
 <span class="n">let</span> <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="o">%</span><span class="n">getenv</span> <span class="s2">&quot;FOO&quot;</span><span class="p">]</span>           <span class="p">(</span><span class="o">*</span> <span class="n">this</span> <span class="ow">is</span> <span class="n">an</span> <span class="n">extension</span> <span class="o">*</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -168,22 +177,22 @@ assume you know how they work.  To refresh the memory, PPX consists in
 parse-tree (parsed by the standard Ocaml parser, with standard syntax)
 and <em>rewrite</em> those annotations and extensions to plain Ocaml code.
 There are several support libraries for writing PPX rewriters (<a class="reference external" href="https://github.com/ocaml-ppx/ppxlib">ppxlib</a>, <a class="reference external" href="https://github.com/ocaml-ppx/ppx_deriving">ppx_deriving</a>, probably others).</p>
-<p><code class="docutils literal notranslate"><span class="pre">Pa_ppx</span></code> consists in infrastructure to allow writing those PPX
+<p><code class="docutils literal"><span class="pre">Pa_ppx</span></code> consists in infrastructure to allow writing those PPX
 rewriters using Camlp5 as a base, and hence offers a competing
 architecture for writing PPX rewriters.  To prove this point,
-<code class="docutils literal notranslate"><span class="pre">Pa_ppx</span></code> includes re-implementations of many PPX rewriters:</p>
+<code class="docutils literal"><span class="pre">Pa_ppx</span></code> includes re-implementations of many PPX rewriters:</p>
 <ol class="arabic simple">
-<li><p>all of <code class="docutils literal notranslate"><span class="pre">ppx_deriving</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.deriving_plugins.{enum,eq,fold,iter,make,map,ord,show}</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ppx_import</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.import</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ppx_deriving_yojson</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.deriving_plugins.yojson</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ppx_sexp_conv</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.deriving_plugins.sexp</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ppx_inline_test</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.inline_test</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ppx_expect_test</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.expect_test</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ppx_assert</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.assert</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ppx_here</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.here</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ppx_deriving_protobuf</span></code>: <code class="docutils literal notranslate"><span class="pre">pa_ppx.deriving_plugins.protobuf</span></code></p></li>
+<li>all of <code class="docutils literal"><span class="pre">ppx_deriving</span></code>: <code class="docutils literal"><span class="pre">pa_ppx.deriving_plugins.{enum,eq,fold,iter,make,map,ord,show}</span></code></li>
+<li><code class="docutils literal"><span class="pre">ppx_import</span></code>: <code class="docutils literal"><span class="pre">pa_ppx.import</span></code></li>
+<li><code class="docutils literal"><span class="pre">ppx_deriving_yojson</span></code>: <code class="docutils literal"><span class="pre">pa_ppx.deriving_plugins.yojson</span></code></li>
+<li><code class="docutils literal"><span class="pre">ppx_sexp_conv</span></code>: <code class="docutils literal"><span class="pre">pa_ppx.deriving_plugins.sexp</span></code></li>
+<li><code class="docutils literal"><span class="pre">ppx_inline_test</span></code>: <code class="docutils literal"><span class="pre">pa_ppx.inline_test</span></code></li>
+<li><code class="docutils literal"><span class="pre">ppx_expect_test</span></code>: <code class="docutils literal"><span class="pre">pa_ppx.expect_test</span></code></li>
+<li><code class="docutils literal"><span class="pre">ppx_assert</span></code>: <code class="docutils literal"><span class="pre">pa_ppx.assert</span></code></li>
+<li><code class="docutils literal"><span class="pre">ppx_here</span></code>: <code class="docutils literal"><span class="pre">pa_ppx.here</span></code></li>
+<li><code class="docutils literal"><span class="pre">ppx_deriving_protobuf</span></code>: <code class="docutils literal"><span class="pre">pa_ppx.deriving_plugins.protobuf</span></code></li>
 </ol>
-<p>Several of these have improvements over the ones based on <code class="docutils literal notranslate"><span class="pre">ppxlib</span></code>
+<p>Several of these have improvements over the ones based on <code class="docutils literal"><span class="pre">ppxlib</span></code>
 (better support for extensible variants and exceptions, better
 type-import support).</p>
 <p>In this documentation, I’ll try to document how to <em>use</em> these PPX
