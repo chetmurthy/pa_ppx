@@ -62,17 +62,15 @@ reasoning there -- it could be a source of hard-to-understand bugs).
 
 There are copious examples in the `tests-*` directories: these are copied
 over almost-verbatim from ppx_deriving and other projects, and show almost all the
-functionality being exercised.  Here is a simple one, stripped-down to
-the minimum:
+functionality being exercised.  Here, I'll use the simple example from the
+`tutorial` directory:
 ```
-ocamlfind ocamlc -verbose -package rresult,ounit2,pa_ppx.runtime,pa_ppx.deriving_plugins.std \
-	-syntax camlp5o -linkpkg test_deriving_show.ml -o test_deriving_show.byte
+ocamlfind ocamlc -package pa_ppx.deriving_plugins.std \
+	-syntax camlp5o -linkpkg simple_show.ml -o simple_show.byte
 ```
 
 1. specify syntax `-syntax camlp5o`
-2. specify packages needed by the test itself: `rresult,ounit2`
-3. specify pa_ppx runtime support package: `pa_ppx.runtime`
-4. specify the rewriter packages: `pa_ppx.deriving_plugins.std`
+2. specify the rewriter packages: `pa_ppx.deriving_plugins.std`
 
 # Using with Dune
 
@@ -81,7 +79,7 @@ compile.  Since this is cumbersome to do with ocamlfind, `pa_ppx`
 builds such a preprocessor and installs it as part of the package,
 linked with all the rewriting plugins.  This can be invoked this:
 ```
-ocamlfind pa_ppx/camlp5o.pa_ppx  ./test_deriving_show.ml
+ocamlfind pa_ppx/camlp5o.pa_ppx  ./simple_show.ml
 ```
 [BTW, this command was built using `mkcamlp5`, and you can see the build command in the `pa_ppx` top-level Makefile.]
 

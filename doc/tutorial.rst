@@ -5,8 +5,8 @@
 Using ``pa_ppx`` PPX Rewriters
 ==============================
 
-Batch compilation
------------------
+Batch compilation with Make
+---------------------------
 
 To use ``pa_ppx`` PPX rewriters, let's start with a really simple file
 that works with the standard PPX rewriters (simple_show.ml)::
@@ -42,6 +42,63 @@ The other linking flags, I just haven't figured out precisely how to get rid of.
 Sometimes more packages must be specified (e.g. for ``expect_test``
 and ``inline_test``) because ``dune`` is adding those
 under-the-covers, and these instructions are all Makefile-friendly.
+
+Batch compilation with Dune
+---------------------------
+
+Dune requires that we provide a command that will preprocess, but not
+compile.  Since this is cumbersome to do with ocamlfind, `pa_ppx`
+builds a number of such preprocessors (basically, one for each
+subdirectory, and one that includes them all) and installs them as
+part of the package.  In the case of ``simple_show.ml``, we want the
+deriving plugins, which can be invoked thus:
+
+::
+   ocamlfind pa_ppx/camlp5o.pa_ppx_deriving_plugins  ./simple_show.ml
+
+[BTW, this command was built using ``mkcamlp5``, and you can see the
+build command in the ``pa_ppx/pa_deriving.plugins`` Makefile.]
+
+With this command, we can modify a dune file pretty easily.  Here's the modification for
+[yara-ocaml](https://github.com/XVilka/yara-ocaml):
+
+::
+
+   @@ -2,7 +2,13 @@
+     (name yara)
+     (public_name yara)
+     (wrapped false)
+   - (preprocess
+   -  (pps ppx_deriving.std))
+   +
+   +;; (preprocess
+   +;;  (pps ppx_deriving.std))
+   +
+   + (preprocess (action
+   +      (run ocamlfind pa_ppx/camlp5o.pa_ppx_deriving_plugins %{input-file})
+   +    ))
+   +
+
+
+and here's a dunefile that will compile ``test_deriving_show.ml``:
+
+::
+   (env
+     (dev
+       (flags (:standard -w -27 -w -32))))
+   
+   (executable
+    (name simple_show)
+    (libraries fmt pa_ppx.runtime ppx_deriving.runtime)
+    (preprocess (action
+         (run ocamlfind pa_ppx/camlp5o.pa_ppx_deriving_plugins %{input-file})
+         )))
+
+[The warnings must be silenced b/c the test itself elicits warnings,
+and I didn't want to modify it.  OTOH, I didn't silence all warnings
+b/c if there are warnings produced by the generated code, I'd like to
+know about them.]
+
 
 In the toplevel
 ---------------

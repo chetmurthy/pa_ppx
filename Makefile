@@ -17,13 +17,32 @@ SYSDIRS= util-lib runtime runtime_fat base pa_unmatched_vala \
 TESTDIRS= tests-ounit2 our-tests-inline tests-deriving-protobuf \
 	 tests-inline tests-expect
 
+PACKAGES := pa_ppx_utils
+PACKAGES := $(PACKAGES),pa_ppx_base
+PACKAGES := $(PACKAGES),pa_ppx_unmatched_vala
+PACKAGES := $(PACKAGES),pa_ppx_here
+PACKAGES := $(PACKAGES),pa_ppx_assert
+PACKAGES := $(PACKAGES),pa_ppx_inline_test
+PACKAGES := $(PACKAGES),pa_ppx_expect_test
+PACKAGES := $(PACKAGES),pa_ppx_deriving
+PACKAGES := $(PACKAGES),pa_ppx_deriving_plugins.std
+PACKAGES := $(PACKAGES),pa_ppx_deriving_plugins.yojson
+PACKAGES := $(PACKAGES),pa_ppx_hashrecons
+PACKAGES := $(PACKAGES),pa_ppx_import
+
+BATCHTOP = camlp5o.pa_ppx camlp5o.pa_ppx.opt \
+	camlp5r.pa_ppx camlp5r.pa_ppx.opt
+
 setup: get-generated
 
 all: sys
 	set -e; for i in $(TESTDIRS); do cd $$i; $(MAKE) all; cd ..; done
-	$(MAKE) camlp5o.pa_ppx camlp5o.pa_ppx.opt
 
-sys: prereqs
+sys: plugins $(BATCHTOP)
+
+$(BATCHTOP): plugins
+
+plugins: prereqs
 	set -e; for i in $(SYSDIRS); do cd $$i; $(MAKE) all; cd ..; done
 
 doc: all
@@ -62,18 +81,11 @@ save-generated:
 get-generated: generated_src/$(OCAMLVERSION)
 	tar -C generated_src/$(OCAMLVERSION) -cf - . | tar -xvBf -
 
-PACKAGES := pa_ppx_utils
-PACKAGES := $(PACKAGES),pa_ppx_base
-PACKAGES := $(PACKAGES),pa_ppx_unmatched_vala
-PACKAGES := $(PACKAGES),pa_ppx_here
-PACKAGES := $(PACKAGES),pa_ppx_assert
-PACKAGES := $(PACKAGES),pa_ppx_inline_test
-PACKAGES := $(PACKAGES),pa_ppx_expect_test
-PACKAGES := $(PACKAGES),pa_ppx_deriving
-PACKAGES := $(PACKAGES),pa_ppx_deriving_plugins.std
-PACKAGES := $(PACKAGES),pa_ppx_deriving_plugins.yojson
-PACKAGES := $(PACKAGES),pa_ppx_hashrecons
-PACKAGES := $(PACKAGES),pa_ppx_import
+camlp5r.pa_ppx:
+	tools/LAUNCH $(MKCAMLP5) -verbose -package camlp5.pa_r,camlp5.pr_r,$(PACKAGES) -o $@
+
+camlp5r.pa_ppx.opt:
+	tools/LAUNCH $(MKCAMLP5).opt -verbose -package camlp5.pa_r,camlp5.pr_r,$(PACKAGES) -o $@
 
 camlp5o.pa_ppx:
 	tools/LAUNCH $(MKCAMLP5) -verbose -package camlp5.pa_o,camlp5.pr_o,$(PACKAGES) -o $@
@@ -87,7 +99,7 @@ META: META.pl
 install: sys META.pl
 	$(OCAMLFIND) remove pa_ppx || true
 	./META.pl > META
-	$(OCAMLFIND) install pa_ppx META local-install/lib/*/*.* camlp5o.pa_ppx camlp5o.pa_ppx.opt
+	$(OCAMLFIND) install pa_ppx META local-install/lib/*/*.*
 
 uninstall:
 	$(OCAMLFIND) remove pa_ppx || true

@@ -32,33 +32,41 @@ CMI := $(ML:.ml=.cmi)
 CMX := $(ML:.ml=.cmx)
 CMT := $(ML:.ml=.cmt)
 CMTI := $(MLI:.mli=.cmti)
+BATCHTOP=camlp5o.pa_ppx_deriving_plugins camlp5o.pa_ppx_deriving_plugins.opt \
+	camlp5r.pa_ppx_deriving_plugins camlp5r.pa_ppx_deriving_plugins.opt
 
-all: $(CMO) camlp5.pa_ppx_deriving_plugins camlp5.pa_ppx_deriving_plugins.opt local-install
+all: $(CMO) $(BATCHTOP) local-install
 
 doc: $(CMT) $(CMTI)
 
 KITS=$(CMO)
 
-camlp5.pa_ppx_deriving_plugins: $(KITS)
+camlp5r.pa_ppx_deriving_plugins: $(KITS)
 	$(MKCAMLP5) -verbose -package camlp5.pa_r,camlp5.pr_r,pa_ppx_deriving $(KITS) -o $@
 
-camlp5.pa_ppx_deriving_plugins.opt: $(KITS:.cmo=.cmx)
+camlp5r.pa_ppx_deriving_plugins.opt: $(KITS:.cmo=.cmx)
 	$(MKCAMLP5).opt -verbose -package camlp5.pa_r,camlp5.pr_r,pa_ppx_deriving $(KITS:.cmo=.cmx) -o $@
+
+camlp5o.pa_ppx_deriving_plugins: $(KITS)
+	$(MKCAMLP5) -verbose -package camlp5.pa_o,camlp5.pr_o,pa_ppx_deriving $(KITS) -o $@
+
+camlp5o.pa_ppx_deriving_plugins.opt: $(KITS:.cmo=.cmx)
+	$(MKCAMLP5).opt -verbose -package camlp5.pa_o,camlp5.pr_o,pa_ppx_deriving $(KITS:.cmo=.cmx) -o $@
 
 META: META.pl
 	./META.pl > META
 
-install::
+install:: $(BATCHTOP)
 	mkdir -p $(DESTDIR)/lib
 	./META.pl $(DESTDIR)/lib > META
-	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_deriving_plugins -destdir $(DESTDIR)/lib META $(CMO) $(CMX) $(MLI:.mli=.cmi) $(KITS:.cmo=.o) $(wildcard *.cmt*)
+	$(NOT_OCAMLFIND) reinstall-if-diff pa_ppx_deriving_plugins -destdir $(DESTDIR)/lib META $(CMO) $(CMX) $(MLI:.mli=.cmi) $(KITS:.cmo=.o) $(wildcard *.cmt*) $(BATCHTOP)
 	$(RM) -f META
 
 local-install::
 	$(MAKE) DESTDIR=$(WD)/$(TOP)/local-install/ install
 
 clean::
-	rm -rf META camlp5.pa_ppx_deriving_plugins*
+	rm -rf META camlp5*.pa_ppx_deriving_plugins*
 
 EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
 $(CMO): $(EXTERNAL)

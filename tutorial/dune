@@ -1,0 +1,10 @@
+(env
+  (dev
+    (flags (:standard -w -27 -w -32))))
+
+(executable
+ (name simple_show)
+ (libraries fmt pa_ppx.runtime ppx_deriving.runtime)
+ (preprocess (action
+      (run ocamlfind pa_ppx/camlp5o.pa_ppx_deriving_plugins %{input-file})
+      )))
