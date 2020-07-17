@@ -2,6 +2,26 @@
  Tutorial
 ==========
 
+Organization of Findlib Packages
+================================
+
+There are a bunch of findlib packages.  Maybe too many and too
+confusing, I can't tell.  But the general idea is that for each
+rewriter or group of rewriters, there are two packages:
+
+1. the package for linking into a program, viz. ``pa_ppx.deriving_plugins.show.link``
+2. the package for loading into the toplevel or adding to camlp5 during preprocessing,
+viz. ``pa_ppx.deriving_plugins.show``
+
+Note the ``.link`` at the end there.  These are separated like this so
+we can specify "preprocess with the show plugin, but don't link it
+into the program" and separately "link the show plugin into the
+program, but don't preprocess with it".
+
+[I thought of having a "virtual package" that just required the both,
+but it turns out that findlib doesn't support that (and I can see the
+reasoning there -- it could be a source of hard-to-understand bugs).
+
 Using ``pa_ppx`` PPX Rewriters
 ==============================
 

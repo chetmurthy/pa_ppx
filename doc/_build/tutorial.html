@@ -93,6 +93,7 @@
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#organization-of-findlib-packages">Organization of Findlib Packages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#using-pa-ppx-ppx-rewriters">Using <code class="docutils literal"><span class="pre">pa_ppx</span></code> PPX Rewriters</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#batch-compilation-with-make">Batch compilation with Make</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#batch-compilation-with-dune">Batch compilation with Dune</a></li>
@@ -178,6 +179,24 @@
             
   <div class="section" id="tutorial">
 <h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="organization-of-findlib-packages">
+<h2>Organization of Findlib Packages<a class="headerlink" href="#organization-of-findlib-packages" title="Permalink to this headline">¶</a></h2>
+<p>There are a bunch of findlib packages.  Maybe too many and too
+confusing, I can’t tell.  But the general idea is that for each
+rewriter or group of rewriters, there are two packages:</p>
+<ol class="arabic simple">
+<li>the package for linking into a program, viz. <code class="docutils literal"><span class="pre">pa_ppx.deriving_plugins.show.link</span></code></li>
+</ol>
+<p>2. the package for loading into the toplevel or adding to camlp5 during preprocessing,
+viz. <code class="docutils literal"><span class="pre">pa_ppx.deriving_plugins.show</span></code></p>
+<p>Note the <code class="docutils literal"><span class="pre">.link</span></code> at the end there.  These are separated like this so
+we can specify “preprocess with the show plugin, but don’t link it
+into the program” and separately “link the show plugin into the
+program, but don’t preprocess with it”.</p>
+<p>[I thought of having a “virtual package” that just required the both,
+but it turns out that findlib doesn’t support that (and I can see the
+reasoning there – it could be a source of hard-to-understand bugs).</p>
+</div>
 <div class="section" id="using-pa-ppx-ppx-rewriters">
 <h2>Using <code class="docutils literal"><span class="pre">pa_ppx</span></code> PPX Rewriters<a class="headerlink" href="#using-pa-ppx-ppx-rewriters" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="batch-compilation-with-make">

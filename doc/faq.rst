@@ -16,4 +16,14 @@ Why isn't this project compatible with ``ppxlib`` and other standard PPX rewrite
    designed for efficient and programmer-friendly manipulation (for
    rewriting and macro-preprocessing generally).
 
+Why do the packages for ``pa_ppx`` have different names than the equivalents from Jane Street et. al. ?
+*******************************************************************************************************
+
+Obviously, one would want to install both the "standard" PPX rewriter
+packages, and these from ``pa_ppx`` at the same time, to build and run
+unit-tests.  But most importantly, it would be a kind of piracy to
+take over those names, and so instead I've tried to make the names
+different, while still being as close as possible to those of the
+original PPX rewriters.
+
 .. container:: trailer
