@@ -9,7 +9,8 @@ tests-*/_build
 local-install
 */.depend.NEW
 META
-camlp5o.pa_ppx
+*/camlp5*.pa_*
+camlp5*.pa_*
 tests-*/*.corrected
 */*.odoc
 docs

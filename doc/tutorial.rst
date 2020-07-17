@@ -54,6 +54,7 @@ part of the package.  In the case of ``simple_show.ml``, we want the
 deriving plugins, which can be invoked thus:
 
 ::
+
    ocamlfind pa_ppx/camlp5o.pa_ppx_deriving_plugins  ./simple_show.ml
 
 [BTW, this command was built using ``mkcamlp5``, and you can see the
