@@ -28,7 +28,7 @@ rewriter (this last bit is definitely work-in-progress).
 
 Quickly, this code (re-)implements:
 
-1. all of ppx_deriving
+1. all of ppx_deriving (enum,eq,fold,iter,make,map,ord,show)
 2. ppx_import
 3. ppx_deriving_yojson
 4. ppx_sexp_conv
