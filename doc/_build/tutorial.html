@@ -94,7 +94,8 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#using-pa-ppx-ppx-rewriters">Using <code class="docutils literal"><span class="pre">pa_ppx</span></code> PPX Rewriters</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#batch-compilation">Batch compilation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#batch-compilation-with-make">Batch compilation with Make</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#batch-compilation-with-dune">Batch compilation with Dune</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#in-the-toplevel">In the toplevel</a></li>
 </ul>
 </li>
@@ -179,8 +180,8 @@
 <h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="using-pa-ppx-ppx-rewriters">
 <h2>Using <code class="docutils literal"><span class="pre">pa_ppx</span></code> PPX Rewriters<a class="headerlink" href="#using-pa-ppx-ppx-rewriters" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="batch-compilation">
-<h3>Batch compilation<a class="headerlink" href="#batch-compilation" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="batch-compilation-with-make">
+<h3>Batch compilation with Make<a class="headerlink" href="#batch-compilation-with-make" title="Permalink to this headline">¶</a></h3>
 <p>To use <code class="docutils literal"><span class="pre">pa_ppx</span></code> PPX rewriters, let’s start with a really simple file
 that works with the standard PPX rewriters (simple_show.ml):</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="nb">type</span> <span class="n">a1</span> <span class="o">=</span> <span class="nb">int</span> <span class="o">*</span> <span class="nb">int</span> <span class="p">[</span><span class="o">@</span><span class="nd">@deriving</span> <span class="n">show</span><span class="p">]</span>
@@ -214,6 +215,64 @@ that works with the standard PPX rewriters (simple_show.ml):</p>
 <p>Sometimes more packages must be specified (e.g. for <code class="docutils literal"><span class="pre">expect_test</span></code>
 and <code class="docutils literal"><span class="pre">inline_test</span></code>) because <code class="docutils literal"><span class="pre">dune</span></code> is adding those
 under-the-covers, and these instructions are all Makefile-friendly.</p>
+</div>
+<div class="section" id="batch-compilation-with-dune">
+<h3>Batch compilation with Dune<a class="headerlink" href="#batch-compilation-with-dune" title="Permalink to this headline">¶</a></h3>
+<p>Dune requires that we provide a command that will preprocess, but not
+compile.  Since this is cumbersome to do with ocamlfind, <cite>pa_ppx</cite>
+builds a number of such preprocessors (basically, one for each
+subdirectory, and one that includes them all) and installs them as
+part of the package.  In the case of <code class="docutils literal"><span class="pre">simple_show.ml</span></code>, we want the
+deriving plugins, which can be invoked thus:</p>
+<dl class="docutils">
+<dt>::</dt>
+<dd>ocamlfind pa_ppx/camlp5o.pa_ppx_deriving_plugins  ./simple_show.ml</dd>
+</dl>
+<p>[BTW, this command was built using <code class="docutils literal"><span class="pre">mkcamlp5</span></code>, and you can see the
+build command in the <code class="docutils literal"><span class="pre">pa_ppx/pa_deriving.plugins</span></code> Makefile.]</p>
+<p>With this command, we can modify a dune file pretty easily.  Here’s the modification for
+[yara-ocaml](<a class="reference external" href="https://github.com/XVilka/yara-ocaml">https://github.com/XVilka/yara-ocaml</a>):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">@@</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">7</span> <span class="o">+</span><span class="mi">2</span><span class="p">,</span><span class="mi">13</span> <span class="o">@@</span>
+  <span class="p">(</span><span class="n">name</span> <span class="n">yara</span><span class="p">)</span>
+  <span class="p">(</span><span class="n">public_name</span> <span class="n">yara</span><span class="p">)</span>
+  <span class="p">(</span><span class="n">wrapped</span> <span class="n">false</span><span class="p">)</span>
+<span class="o">-</span> <span class="p">(</span><span class="n">preprocess</span>
+<span class="o">-</span>  <span class="p">(</span><span class="n">pps</span> <span class="n">ppx_deriving</span><span class="o">.</span><span class="n">std</span><span class="p">))</span>
+<span class="o">+</span>
+<span class="o">+</span><span class="p">;;</span> <span class="p">(</span><span class="n">preprocess</span>
+<span class="o">+</span><span class="p">;;</span>  <span class="p">(</span><span class="n">pps</span> <span class="n">ppx_deriving</span><span class="o">.</span><span class="n">std</span><span class="p">))</span>
+<span class="o">+</span>
+<span class="o">+</span> <span class="p">(</span><span class="n">preprocess</span> <span class="p">(</span><span class="n">action</span>
+<span class="o">+</span>      <span class="p">(</span><span class="n">run</span> <span class="n">ocamlfind</span> <span class="n">pa_ppx</span><span class="o">/</span><span class="n">camlp5o</span><span class="o">.</span><span class="n">pa_ppx_deriving_plugins</span> <span class="o">%</span><span class="p">{</span><span class="nb">input</span><span class="o">-</span><span class="n">file</span><span class="p">})</span>
+<span class="o">+</span>    <span class="p">))</span>
+<span class="o">+</span>
+</pre></div>
+</div>
+<p>and here’s a dunefile that will compile <code class="docutils literal"><span class="pre">test_deriving_show.ml</span></code>:</p>
+<dl class="docutils">
+<dt>::</dt>
+<dd><dl class="first last docutils">
+<dt>(env</dt>
+<dd><dl class="first last docutils">
+<dt>(dev</dt>
+<dd>(flags (:standard -w -27 -w -32))))</dd>
+</dl>
+</dd>
+<dt>(executable</dt>
+<dd><p class="first">(name simple_show)
+(libraries fmt pa_ppx.runtime ppx_deriving.runtime)
+(preprocess (action</p>
+<blockquote class="last">
+<div>(run ocamlfind pa_ppx/camlp5o.pa_ppx_deriving_plugins %{input-file})
+)))</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>[The warnings must be silenced b/c the test itself elicits warnings,
+and I didn’t want to modify it.  OTOH, I didn’t silence all warnings
+b/c if there are warnings produced by the generated code, I’d like to
+know about them.]</p>
 </div>
 <div class="section" id="in-the-toplevel">
 <h3>In the toplevel<a class="headerlink" href="#in-the-toplevel" title="Permalink to this headline">¶</a></h3>
