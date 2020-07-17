@@ -61,7 +61,7 @@ deriving plugins, which can be invoked thus:
 build command in the ``pa_ppx/pa_deriving.plugins`` Makefile.]
 
 With this command, we can modify a dune file pretty easily.  Here's the modification for
-[yara-ocaml](https://github.com/XVilka/yara-ocaml):
+`Yara <https://github.com/XVilka/yara-ocaml>`_:
 
 ::
 
