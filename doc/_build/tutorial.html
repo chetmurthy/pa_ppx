@@ -224,14 +224,13 @@ builds a number of such preprocessors (basically, one for each
 subdirectory, and one that includes them all) and installs them as
 part of the package.  In the case of <code class="docutils literal"><span class="pre">simple_show.ml</span></code>, we want the
 deriving plugins, which can be invoked thus:</p>
-<dl class="docutils">
-<dt>::</dt>
-<dd>ocamlfind pa_ppx/camlp5o.pa_ppx_deriving_plugins  ./simple_show.ml</dd>
-</dl>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ocamlfind</span> <span class="n">pa_ppx</span><span class="o">/</span><span class="n">camlp5o</span><span class="o">.</span><span class="n">pa_ppx_deriving_plugins</span>  <span class="o">./</span><span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>
+</pre></div>
+</div>
 <p>[BTW, this command was built using <code class="docutils literal"><span class="pre">mkcamlp5</span></code>, and you can see the
 build command in the <code class="docutils literal"><span class="pre">pa_ppx/pa_deriving.plugins</span></code> Makefile.]</p>
 <p>With this command, we can modify a dune file pretty easily.  Here’s the modification for
-[yara-ocaml](<a class="reference external" href="https://github.com/XVilka/yara-ocaml">https://github.com/XVilka/yara-ocaml</a>):</p>
+<a class="reference external" href="https://github.com/XVilka/yara-ocaml">Yara</a>:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">@@</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="mi">7</span> <span class="o">+</span><span class="mi">2</span><span class="p">,</span><span class="mi">13</span> <span class="o">@@</span>
   <span class="p">(</span><span class="n">name</span> <span class="n">yara</span><span class="p">)</span>
   <span class="p">(</span><span class="n">public_name</span> <span class="n">yara</span><span class="p">)</span>
@@ -249,26 +248,18 @@ build command in the <code class="docutils literal"><span class="pre">pa_ppx/pa_
 </pre></div>
 </div>
 <p>and here’s a dunefile that will compile <code class="docutils literal"><span class="pre">test_deriving_show.ml</span></code>:</p>
-<dl class="docutils">
-<dt>::</dt>
-<dd><dl class="first last docutils">
-<dt>(env</dt>
-<dd><dl class="first last docutils">
-<dt>(dev</dt>
-<dd>(flags (:standard -w -27 -w -32))))</dd>
-</dl>
-</dd>
-<dt>(executable</dt>
-<dd><p class="first">(name simple_show)
-(libraries fmt pa_ppx.runtime ppx_deriving.runtime)
-(preprocess (action</p>
-<blockquote class="last">
-<div>(run ocamlfind pa_ppx/camlp5o.pa_ppx_deriving_plugins %{input-file})
-)))</div></blockquote>
-</dd>
-</dl>
-</dd>
-</dl>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">(</span><span class="n">env</span>
+  <span class="p">(</span><span class="n">dev</span>
+    <span class="p">(</span><span class="n">flags</span> <span class="p">(:</span><span class="n">standard</span> <span class="o">-</span><span class="n">w</span> <span class="o">-</span><span class="mi">27</span> <span class="o">-</span><span class="n">w</span> <span class="o">-</span><span class="mi">32</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="n">executable</span>
+ <span class="p">(</span><span class="n">name</span> <span class="n">simple_show</span><span class="p">)</span>
+ <span class="p">(</span><span class="n">libraries</span> <span class="n">fmt</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">runtime</span> <span class="n">ppx_deriving</span><span class="o">.</span><span class="n">runtime</span><span class="p">)</span>
+ <span class="p">(</span><span class="n">preprocess</span> <span class="p">(</span><span class="n">action</span>
+      <span class="p">(</span><span class="n">run</span> <span class="n">ocamlfind</span> <span class="n">pa_ppx</span><span class="o">/</span><span class="n">camlp5o</span><span class="o">.</span><span class="n">pa_ppx_deriving_plugins</span> <span class="o">%</span><span class="p">{</span><span class="nb">input</span><span class="o">-</span><span class="n">file</span><span class="p">})</span>
+      <span class="p">)))</span>
+</pre></div>
+</div>
 <p>[The warnings must be silenced b/c the test itself elicits warnings,
 and I didn’t want to modify it.  OTOH, I didn’t silence all warnings
 b/c if there are warnings produced by the generated code, I’d like to
