@@ -44,3 +44,9 @@ the re-implementations of ppx_deriving and ppx_import pass all their
 unit-tests and use the same syntax of attributes as the original
 rewriters.  **You should be able to use your code with these packages
 unmodified; anything else is a bug with these packages**.
+
+# Documentation
+
+All the documentation for ``pa_ppx`` is in Sphinx/RST format, and can
+be found [in this distribution](./doc/_build/index.html) and also [at
+readthedocs](https://pa-ppx.readthedocs.io/en/latest/index.html).
