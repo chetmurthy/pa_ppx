@@ -226,7 +226,7 @@ In this section, we will describe the simplest rewriter
 ``[%here]`` with code that produces a ``Lexing.position`` of the
 position in the file where the extension-point was found.  So a line (in a file "test_here.ml")::
 
-  vslue here = [%here] ;
+  value here = [%here] ;
 
 is rewritten to::
 
