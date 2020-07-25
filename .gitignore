@@ -14,3 +14,9 @@ camlp5*.pa_*
 tests-*/*.corrected
 */*.odoc
 docs
+.tramp_history
+*/.tramp_history
+*/*/.tramp_history
+.merlin
+*/.merlin
+*/*/.merlin
