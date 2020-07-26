@@ -366,22 +366,23 @@ rewriters).</p>
 </div>
 <div class="section" id="an-example-ppx-rewriter-based-on-pa-ppx">
 <h2>An Example PPX Rewriter based on Pa_ppx<a class="headerlink" href="#an-example-ppx-rewriter-based-on-pa-ppx" title="Permalink to this headline">¶</a></h2>
-<p>NOTE WELL: All code in this section is written in “revised” syntax.
-Much of this will work in “official” syntax, but since Camlp5 itself
-is written in revised syntax, I kept on going that way.</p>
+<p>NOTE WELL: This code is taken from <code class="docutils literal"><span class="pre">pa_ppx/pa_here_original</span></code>, an
+“original syntax” version of <code class="docutils literal"><span class="pre">pa_ppx/pa_here</span></code> . The function of
+these two PPX rewriters is identical: <code class="docutils literal"><span class="pre">pa_here_original</span></code> is written
+in original syntax to show that it’s straightforward to do so (no
+revised syntax required (except in quotations)).</p>
 <p>In this section, we will describe the simplest rewriter
-(<code class="docutils literal"><span class="pre">pa_ppx.here</span></code>).  This rewriter replaces the extension point
+(<code class="docutils literal"><span class="pre">pa_ppx.here_original</span></code>).  This rewriter replaces the extension point
 <code class="docutils literal"><span class="pre">[%here]</span></code> with code that produces a <code class="docutils literal"><span class="pre">Lexing.position</span></code> of the
 position in the file where the extension-point was found.  So a line (in a file “test_here.ml”):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">vslue</span> <span class="n">here</span> <span class="o">=</span> <span class="p">[</span><span class="o">%</span><span class="n">here</span><span class="p">]</span> <span class="p">;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">let</span> <span class="n">here</span> <span class="o">=</span> <span class="p">[</span><span class="o">%</span><span class="n">here</span><span class="p">]</span>
 </pre></div>
 </div>
 <p>is rewritten to:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">value</span> <span class="n">here</span> <span class="o">=</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">let</span> <span class="n">here</span> <span class="o">=</span>
   <span class="n">let</span> <span class="nb">open</span> <span class="n">Lexing</span> <span class="ow">in</span>
   <span class="p">{</span><span class="n">pos_fname</span> <span class="o">=</span> <span class="s2">&quot;test_here.ml&quot;</span><span class="p">;</span> <span class="n">pos_lnum</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span> <span class="n">pos_bol</span> <span class="o">=</span> <span class="mi">32</span><span class="p">;</span>
    <span class="n">pos_cnum</span> <span class="o">=</span> <span class="mi">43</span><span class="p">}</span>
-<span class="p">;</span>
 </pre></div>
 </div>
 <p>We won’t go into excruciating detail, because this depends on a number
@@ -390,60 +391,59 @@ detail either in the <code class="docutils literal"><span class="pre">camlp5</sp
 documentation.</p>
 <p>1. Open necessary libraries (<code class="docutils literal"><span class="pre">Pa_ppx_base</span></code> contains support
 infrastructure for all PPX rewriters):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nb">open</span> <span class="n">Pa_ppx_base</span> <span class="p">;</span>
-<span class="nb">open</span> <span class="n">Pa_passthru</span> <span class="p">;</span>
-<span class="nb">open</span> <span class="n">Ppxutil</span> <span class="p">;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="nb">open</span> <span class="n">Pa_ppx_base</span>
+<span class="nb">open</span> <span class="n">Pa_passthru</span>
+<span class="nb">open</span> <span class="n">Ppxutil</span>
 </pre></div>
 </div>
 <p>2. Implement a function that rewrites the simple extension-point,
 using <code class="docutils literal"><span class="pre">camlp5</span></code> “quotations”.  The function <code class="docutils literal"><span class="pre">quote_position</span></code> uses
 quotations for expressions that themselves have anti-quotations (“holes”) for
 expressions we want to fill with bits from the <code class="docutils literal"><span class="pre">Lexing.position</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>value quote_position loc p =
+<div class="highlight-default"><div class="highlight"><pre><span></span>let quote_position loc p =
   let open Lexing in
   &lt;:expr&lt; let open Lexing in {
-    pos_fname = $str:p.pos_fname$ ;
-    pos_lnum = $int:string_of_int p.pos_lnum$ ;
-    pos_bol = $int:string_of_int p.pos_bol$ ;
-    pos_cnum = $int:string_of_int p.pos_cnum$ } &gt;&gt;
-;
+  pos_fname = $str:p.pos_fname$ ;
+  pos_lnum = $int:string_of_int p.pos_lnum$ ;
+  pos_bol = $int:string_of_int p.pos_bol$ ;
+  pos_cnum = $int:string_of_int p.pos_cnum$ } &gt;&gt;
 </pre></div>
 </div>
 <p>Next we write a function that pattern-matches on an expression
 (expected to be <code class="docutils literal"><span class="pre">[%here]</span></code>) and rewrites it using <code class="docutils literal"><span class="pre">quote_position</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">value</span> <span class="n">rewrite_expr</span> <span class="n">arg</span> <span class="o">=</span> <span class="n">fun</span> <span class="p">[</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">let</span> <span class="n">rewrite_expr</span> <span class="n">arg</span> <span class="o">=</span> <span class="n">function</span>
   <span class="o">&lt;</span><span class="p">:</span><span class="n">expr</span><span class="p">:</span><span class="o">&lt;</span> <span class="p">[</span><span class="o">%</span><span class="n">here</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="o">-&gt;</span>
     <span class="n">let</span> <span class="n">pos</span> <span class="o">=</span> <span class="n">start_position_of_loc</span> <span class="n">loc</span> <span class="ow">in</span>
     <span class="n">quote_position</span> <span class="n">loc</span> <span class="n">pos</span>
-<span class="o">|</span> <span class="n">_</span> <span class="o">-&gt;</span> <span class="k">assert</span> <span class="kc">False</span>
-<span class="p">]</span>
-<span class="p">;</span>
+<span class="o">|</span> <span class="n">_</span> <span class="o">-&gt;</span> <span class="k">assert</span> <span class="n">false</span>
 </pre></div>
 </div>
 <p>And finally, we add this function to the “extensible function” for
 expressions.  Notice the <code class="docutils literal"><span class="pre">fallback</span></code> argument below: if rewriting of
-subtrees of this AST node were needed after our rewrite, we could call
-that to make it happen.  The type <code class="docutils literal"><span class="pre">EF.t</span></code> is a dispatch table of
-“extension points”, one for each important type in the Camlp5 ML AST.
-All these extension-points start off empty, and we want to add our
-function to the extension-point for expressions.  Then we “install”
-this table in the <code class="docutils literal"><span class="pre">Pa_passthru</span></code> module, giving it a name.  We can
-specify that it comes before or after other rewriters, or specify a
-pass number (0..99), though this is almost never used.  Instead, by
-specifying which rewriters to run before or after, we give
-<code class="docutils literal"><span class="pre">Pa_passthru</span></code> the information to topologically sort all loaded
-rewriters before running them:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">value</span> <span class="n">install</span> <span class="p">()</span> <span class="o">=</span>
+subtrees of this AST node were needed after this <code class="docutils literal"><span class="pre">pa_here_original</span></code>
+rewrite, we could call that to make it happen.  The type <code class="docutils literal"><span class="pre">EF.t</span></code> is a
+dispatch table of “extension points”, one for each important type in
+the Camlp5 ML AST.  All these extension-points start off empty, and we
+want to add our function to the extension-point for expressions
+(notice the keyword “extfun”).  Then we “install” this table in the
+<code class="docutils literal"><span class="pre">Pa_passthru</span></code> module, giving it a name.  We can specify that it
+comes before or after other rewriters, or specify a pass number
+(0..99), though this is almost never used.  Instead, by specifying
+which rewriters to run before or after, we give <code class="docutils literal"><span class="pre">Pa_passthru</span></code> the
+information to topologically sort all loaded rewriters before running
+them:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">let</span> <span class="n">install</span> <span class="p">()</span> <span class="o">=</span>
 <span class="n">let</span> <span class="n">ef</span> <span class="o">=</span> <span class="n">EF</span><span class="o">.</span><span class="n">mk</span> <span class="p">()</span> <span class="ow">in</span>
 <span class="n">let</span> <span class="n">ef</span> <span class="o">=</span> <span class="n">EF</span><span class="o">.</span><span class="p">{</span> <span class="p">(</span><span class="n">ef</span><span class="p">)</span> <span class="k">with</span>
-          <span class="n">expr</span> <span class="o">=</span> <span class="n">extfun</span> <span class="n">ef</span><span class="o">.</span><span class="n">expr</span> <span class="k">with</span> <span class="p">[</span>
-  <span class="o">&lt;</span><span class="p">:</span><span class="n">expr</span><span class="p">:</span><span class="o">&lt;</span> <span class="p">[</span><span class="o">%</span><span class="n">here</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="k">as</span> <span class="n">z</span> <span class="o">-&gt;</span>
-  <span class="n">fun</span> <span class="n">arg</span> <span class="n">fallback</span> <span class="o">-&gt;</span>
-    <span class="n">Some</span> <span class="p">(</span><span class="n">rewrite_expr</span> <span class="n">arg</span> <span class="n">z</span><span class="p">)</span>
-<span class="p">]</span> <span class="p">}</span> <span class="ow">in</span>
-<span class="n">Pa_passthru</span><span class="o">.</span><span class="p">(</span><span class="n">install</span> <span class="p">{</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;pa_here&quot;</span><span class="p">;</span> <span class="n">ef</span> <span class="o">=</span>  <span class="n">ef</span> <span class="p">;</span> <span class="k">pass</span> <span class="o">=</span> <span class="kc">None</span> <span class="p">;</span> <span class="n">before</span> <span class="o">=</span> <span class="p">[]</span> <span class="p">;</span> <span class="n">after</span> <span class="o">=</span> <span class="p">[]</span> <span class="p">})</span>
-<span class="p">;</span>
-<span class="n">install</span><span class="p">();</span>
+            <span class="n">expr</span> <span class="o">=</span> <span class="n">extfun</span> <span class="n">ef</span><span class="o">.</span><span class="n">expr</span> <span class="k">with</span> <span class="p">[</span>
+    <span class="o">&lt;</span><span class="p">:</span><span class="n">expr</span><span class="p">:</span><span class="o">&lt;</span> <span class="p">[</span><span class="o">%</span><span class="n">here</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="k">as</span> <span class="n">z</span> <span class="o">-&gt;</span>
+    <span class="n">fun</span> <span class="n">arg</span> <span class="n">fallback</span> <span class="o">-&gt;</span>
+      <span class="n">Some</span> <span class="p">(</span><span class="n">rewrite_expr</span> <span class="n">arg</span> <span class="n">z</span><span class="p">)</span>
+  <span class="p">]</span> <span class="p">}</span> <span class="ow">in</span>
+  <span class="n">Pa_passthru</span><span class="o">.</span><span class="p">(</span><span class="n">install</span> <span class="p">{</span> <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;pa_here&quot;</span><span class="p">;</span> <span class="n">ef</span> <span class="o">=</span>  <span class="n">ef</span> <span class="p">;</span> <span class="k">pass</span> <span class="o">=</span> <span class="kc">None</span> <span class="p">;</span> <span class="n">before</span> <span class="o">=</span> <span class="p">[]</span> <span class="p">;</span> <span class="n">after</span> <span class="o">=</span> <span class="p">[]</span> <span class="p">})</span>
+<span class="p">;;</span>
+
+<span class="n">install</span><span class="p">();;</span>
 </pre></div>
 </div>
 <p>An example of a rewriter that specifies a “before” constraint would be
@@ -480,7 +480,9 @@ the results we desired.  For instance, suppose that we forgot the
 </pre></div>
 </div>
 <p>This tells us we didn’t actually invoke camlp5 (or any PPX rewriters).
-A different kind of information is given by adding <code class="docutils literal"><span class="pre">-verbose</span></code>:</p>
+Instead, we use “papr_official.exe” to convert text to binary AST, and
+then back to text.  A different kind of information is given by adding
+<code class="docutils literal"><span class="pre">-verbose</span></code>:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">ocamlfind</span> <span class="n">ocamlc</span> <span class="o">-</span><span class="n">verbose</span> <span class="o">-</span><span class="n">package</span> <span class="n">pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span> <span class="o">-</span><span class="n">c</span> <span class="n">simple_show</span><span class="o">.</span><span class="n">ml</span>
 <span class="n">Effective</span> <span class="nb">set</span> <span class="n">of</span> <span class="n">compiler</span> <span class="n">predicates</span><span class="p">:</span> <span class="n">pkg_result</span><span class="p">,</span><span class="n">pkg_rresult</span><span class="p">,</span><span class="n">pkg_seq</span><span class="p">,</span><span class="n">pkg_stdlib</span><span class="o">-</span><span class="n">shims</span><span class="p">,</span><span class="n">pkg_fmt</span><span class="p">,</span><span class="n">pkg_sexplib0</span><span class="p">,</span><span class="n">pkg_pa_ppx</span><span class="o">.</span><span class="n">runtime</span><span class="p">,</span><span class="n">pkg_pa_ppx</span><span class="o">.</span><span class="n">deriving_plugins</span><span class="o">.</span><span class="n">show</span><span class="p">,</span><span class="n">autolink</span><span class="p">,</span><span class="n">byte</span>
 </pre></div>

@@ -217,24 +217,25 @@ rewriters).
 An Example PPX Rewriter based on Pa_ppx
 =======================================
 
-NOTE WELL: All code in this section is written in "revised" syntax.
-Much of this will work in "official" syntax, but since Camlp5 itself
-is written in revised syntax, I kept on going that way.
+NOTE WELL: This code is taken from ``pa_ppx/pa_here_original``, an
+"original syntax" version of ``pa_ppx/pa_here`` . The function of
+these two PPX rewriters is identical: ``pa_here_original`` is written
+in original syntax to show that it's straightforward to do so (no
+revised syntax required (except in quotations)).
 
 In this section, we will describe the simplest rewriter
-(``pa_ppx.here``).  This rewriter replaces the extension point
+(``pa_ppx.here_original``).  This rewriter replaces the extension point
 ``[%here]`` with code that produces a ``Lexing.position`` of the
 position in the file where the extension-point was found.  So a line (in a file "test_here.ml")::
 
-  value here = [%here] ;
+  let here = [%here]
 
 is rewritten to::
 
-  value here =
+  let here =
     let open Lexing in
     {pos_fname = "test_here.ml"; pos_lnum = 4; pos_bol = 32;
      pos_cnum = 43}
-  ;
 
 We won't go into excruciating detail, because this depends on a number
 of ``camlp5`` and ``pa_ppx`` facilities that are described in more
@@ -244,60 +245,59 @@ documentation.
 1. Open necessary libraries (``Pa_ppx_base`` contains support
 infrastructure for all PPX rewriters)::
 
-  open Pa_ppx_base ;
-  open Pa_passthru ;
-  open Ppxutil ;
+  open Pa_ppx_base
+  open Pa_passthru
+  open Ppxutil
 
 2. Implement a function that rewrites the simple extension-point,
 using ``camlp5`` "quotations".  The function ``quote_position`` uses
 quotations for expressions that themselves have anti-quotations ("holes") for
 expressions we want to fill with bits from the ``Lexing.position``::
 
-  value quote_position loc p =
-    let open Lexing in
-    <:expr< let open Lexing in {
-      pos_fname = $str:p.pos_fname$ ;
-      pos_lnum = $int:string_of_int p.pos_lnum$ ;
-      pos_bol = $int:string_of_int p.pos_bol$ ;
-      pos_cnum = $int:string_of_int p.pos_cnum$ } >>
-  ;
+   let quote_position loc p =
+     let open Lexing in
+     <:expr< let open Lexing in {
+     pos_fname = $str:p.pos_fname$ ;
+     pos_lnum = $int:string_of_int p.pos_lnum$ ;
+     pos_bol = $int:string_of_int p.pos_bol$ ;
+     pos_cnum = $int:string_of_int p.pos_cnum$ } >>
 
 Next we write a function that pattern-matches on an expression
 (expected to be ``[%here]``) and rewrites it using ``quote_position``::
 
-  value rewrite_expr arg = fun [
-    <:expr:< [%here] >> ->
-      let pos = start_position_of_loc loc in
-      quote_position loc pos
-  | _ -> assert False
-  ]
-  ;
+   let rewrite_expr arg = function
+     <:expr:< [%here] >> ->
+       let pos = start_position_of_loc loc in
+       quote_position loc pos
+   | _ -> assert false
 
 And finally, we add this function to the "extensible function" for
 expressions.  Notice the ``fallback`` argument below: if rewriting of
-subtrees of this AST node were needed after our rewrite, we could call
-that to make it happen.  The type ``EF.t`` is a dispatch table of
-"extension points", one for each important type in the Camlp5 ML AST.
-All these extension-points start off empty, and we want to add our
-function to the extension-point for expressions.  Then we "install"
-this table in the ``Pa_passthru`` module, giving it a name.  We can
-specify that it comes before or after other rewriters, or specify a
-pass number (0..99), though this is almost never used.  Instead, by
-specifying which rewriters to run before or after, we give
-``Pa_passthru`` the information to topologically sort all loaded
-rewriters before running them::
+subtrees of this AST node were needed after this ``pa_here_original``
+rewrite, we could call that to make it happen.  The type ``EF.t`` is a
+dispatch table of "extension points", one for each important type in
+the Camlp5 ML AST.  All these extension-points start off empty, and we
+want to add our function to the extension-point for expressions
+(notice the keyword "extfun").  Then we "install" this table in the
+``Pa_passthru`` module, giving it a name.  We can specify that it
+comes before or after other rewriters, or specify a pass number
+(0..99), though this is almost never used.  Instead, by specifying
+which rewriters to run before or after, we give ``Pa_passthru`` the
+information to topologically sort all loaded rewriters before running
+them::
 
-  value install () = 
-  let ef = EF.mk () in 
-  let ef = EF.{ (ef) with
-            expr = extfun ef.expr with [
-    <:expr:< [%here] >> as z ->
-    fun arg fallback ->
-      Some (rewrite_expr arg z)
-  ] } in
-  Pa_passthru.(install { name = "pa_here"; ef =  ef ; pass = None ; before = [] ; after = [] })
-  ;
-  install();
+   let install () = 
+   let ef = EF.mk () in 
+   let ef = EF.{ (ef) with
+               expr = extfun ef.expr with [
+       <:expr:< [%here] >> as z ->
+       fun arg fallback ->
+         Some (rewrite_expr arg z)
+     ] } in
+     Pa_passthru.(install { name = "pa_here"; ef =  ef ; pass = None ; before = [] ; after = [] })
+   ;;
+
+   install();;
 
 An example of a rewriter that specifies a "before" constraint would be
 ``pa_ppx.import``, which should be run before ``pa_ppx.deriving``, so
@@ -335,7 +335,9 @@ We could start to debug the preprocessing process by using ``not-ocamlfind prepr
   let _ = print_string (([%show :a1]) (5, 6))
 
 This tells us we didn't actually invoke camlp5 (or any PPX rewriters).
-A different kind of information is given by adding ``-verbose``::
+Instead, we use "papr_official.exe" to convert text to binary AST, and
+then back to text.  A different kind of information is given by adding
+``-verbose``::
 
   ocamlfind ocamlc -verbose -package pa_ppx.deriving_plugins.show -c simple_show.ml
   Effective set of compiler predicates: pkg_result,pkg_rresult,pkg_seq,pkg_stdlib-shims,pkg_fmt,pkg_sexplib0,pkg_pa_ppx.runtime,pkg_pa_ppx.deriving_plugins.show,autolink,byte

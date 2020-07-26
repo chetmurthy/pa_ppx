@@ -36,7 +36,6 @@ PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.std
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.yojson
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)hashrecons
-PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here
 
 ALL_PACKAGES := $(PACKAGES),$(PAPACKAGES),$(PPXPACKAGES)
 
@@ -63,6 +62,7 @@ TESTS= \
 	test_deriving_make.byte \
 	test_deriving_make.ppx.byte \
 	test_here.byte \
+	test_here_original.byte \
 	test_here.ppx.byte \
 	test_import0.byte \
 	test_import_camlp5.byte \
@@ -88,6 +88,20 @@ test_%.byte: test_%.ml testutil.cmo testutil2.cmo
 	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),$(PAPACKAGES),camlp5.pr_o \
 	-syntax camlp5o $<.pappx.ml > $<.pappx.ppo
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PAPACKAGES) \
+	-linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $<.pappx.ml -o $@
+
+test_here_original.byte: test_here.ml testutil.cmo testutil2.cmo
+	cppo -D PAPPX $< > $<.pappx.ml
+	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),$(PAPACKAGES),$(PACKAGEPREFIX)here_original,camlp5.pr_o \
+	-syntax camlp5o $<.pappx.ml > $<_original.pappx.ppo
+	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PAPACKAGES),$(PACKAGEPREFIX)here_original \
+	-linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $<.pappx.ml -o $@
+
+test_here.byte: test_here.ml testutil.cmo testutil2.cmo
+	cppo -D PAPPX $< > $<.pappx.ml
+	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),$(PAPACKAGES),$(PACKAGEPREFIX)here,camlp5.pr_o \
+	-syntax camlp5o $<.pappx.ml > $<.pappx.ppo
+	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES),$(PAPACKAGES),$(PACKAGEPREFIX)here \
 	-linkpkg -syntax camlp5o testutil.cmo testutil2.cmo $<.pappx.ml -o $@
 
 test_extensible_variants.byte: test_extensible_variants.ml testutil.cmo testutil2.cmo
