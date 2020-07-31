@@ -1,5 +1,3 @@
-
-
 module Ploc =
   struct
     include Ploc;
@@ -30,15 +28,12 @@ module Ploc =
     [@@@"end"];
   end
 ;
-
 type loc = Ploc.t[@@"deriving_inline" show;];
-
 value rec pp_loc : Fmt.t loc =
   fun (ofmt : Format.formatter) arg → Ploc.pp ofmt arg[@@"ocaml.warning" "-39";] [@@"ocaml.warning" "-33";]
 and show_loc : loc → Stdlib.String.t =
   fun arg → Format.asprintf "%a" pp_loc arg[@@"ocaml.warning" "-39";] [@@"ocaml.warning" "-33";]
 ;
-
 [@@@"end"];
 type type_var =
   (Ploc.vala (option string) * option bool)[@@"deriving_inline" show;]
@@ -76,7 +71,6 @@ and show_type_var : type_var → Stdlib.String.t =
   fun arg → Format.asprintf "%a" pp_type_var arg[@@"ocaml.warning" "-39";] [@@"ocaml.warning" "-33";]
 ;
 [@@@"end"];
-
 type class_infos α =
   MLast.class_infos α ==
     { ciLoc : loc;
@@ -408,7 +402,6 @@ and attribute_body = (Ploc.vala (loc * string) * payload)
 and attribute = Ploc.vala attribute_body
 and attributes_no_anti = list attribute
 and attributes = Ploc.vala attributes_no_anti[@@"deriving_inline" show;];
-
 value rec pp_class_infos : ! α . Fmt.t α → Fmt.t (class_infos α) =
   fun (type a) (tp_0 : Fmt.t a) (ofmt : Format.formatter) arg →
     (fun ofmt
@@ -2563,5 +2556,4 @@ and pp_attributes : Fmt.t attributes =
 and show_attributes : attributes → Stdlib.String.t =
   fun arg → Format.asprintf "%a" pp_attributes arg[@@"ocaml.warning" "-39";] [@@"ocaml.warning" "-33";]
 ;
-
 [@@@"end"];

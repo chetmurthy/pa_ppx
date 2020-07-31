@@ -70,6 +70,7 @@ initialize:
 	$(MAKE) -C base initialize-pp-MLast initialize-pp-MLast-i initialize-pp-parsetree initialize-pp-parsetree-i
 
 GENERATED=base/pp_MLast.ml base/pp_MLast.mli base/pp_MLast.ml base/pp_MLast.mli \
+	base/pp_parsetree.ml base/pp_parsetree.mli base/pp_parsetree.ml base/pp_parsetree.mli \
 	runtime/exceptions.ml runtime/exceptions.mli \
 	runtime_fat/exceptions.ml runtime_fat/exceptions.mli
 OCAMLVERSION=$(shell ocamlc --version)

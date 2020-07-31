@@ -44,6 +44,7 @@ bootstrap-pp-MLast-i: pp_MLast.ORIG.mli
 	-syntax camlp5o -ppopt -D -ppopt BOOTSTRAP \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
+	-ppopt -sep -ppopt "\n" \
 	$< > $@.NEW
 	mv $@.NEW  pp_MLast.mli
 
@@ -62,6 +63,7 @@ bootstrap-pp-MLast: pp_MLast.ORIG.ml
 	-syntax camlp5o -ppopt -D -ppopt BOOTSTRAP \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
+	-ppopt -sep -ppopt "\n" \
 	$< > $@.NEW
 	mv $@.NEW  pp_MLast.ml
 
@@ -80,6 +82,7 @@ bootstrap-pp-parsetree-i: pp_parsetree.ORIG.mli
 	-syntax camlp5o -ppopt -D -ppopt BOOTSTRAP \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
+	-ppopt -sep -ppopt "\n" \
 	$< > $@.NEW
 	mv $@.NEW  pp_parsetree.mli
 
@@ -98,6 +101,7 @@ bootstrap-pp-parsetree: pp_parsetree.ORIG.ml
 	-syntax camlp5o -ppopt -D -ppopt BOOTSTRAP \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
+	-ppopt -sep -ppopt "\n" \
 	$< > $@.NEW
 	mv $@.NEW  pp_parsetree.ml
 
