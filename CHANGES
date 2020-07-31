@@ -1,0 +1,10 @@
+
+pa_ppx Version 0.02
+-------------------
+
+* [30 Jul 2020] (minor) update generated pretty-printers (add newlines between items).
+
+pa_ppx Version 0.01
+-------------------
+
+* [30 Jul 2020] first released version

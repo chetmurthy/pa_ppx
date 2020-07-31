@@ -71,6 +71,7 @@ bootstrap-exn-i: exceptions.ORIG.mli
 	-ppopt -D -ppopt FAT \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
+	-ppopt -sep -ppopt "\n" \
 	$< > $@.NEW
 	mv $@.NEW  exceptions.mli
 
@@ -94,6 +95,7 @@ bootstrap-exn: exceptions.ORIG.ml
 	-ppopt -D -ppopt FAT \
 	-ppopt -pa_import-package -ppopt $(PACKAGES) \
 	-ppopt -pa_import-I -ppopt . \
+	-ppopt -sep -ppopt "\n" \
 	$< > $@.NEW
 	mv $@.NEW  exceptions.ml
 
