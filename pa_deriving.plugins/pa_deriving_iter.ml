@@ -79,7 +79,7 @@ value fmt_expression arg ?{coercion} param_map ty0 =
   ] in
   PM.arg_expr loc p
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "iter" "nobuiltin" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when Some id = DC.allowed_attribute (DC.get arg) "iter" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec t

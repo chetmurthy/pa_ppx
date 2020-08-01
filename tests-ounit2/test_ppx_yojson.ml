@@ -52,8 +52,8 @@ type i4 = int64       [@@deriving show, yojson, sexp]
 type i5 = Int64.t     [@@deriving show, yojson]
 type i6 = nativeint   [@@deriving show, yojson, sexp]
 type i7 = Nativeint.t [@@deriving show, yojson]
-type i8 = int64       [@encoding `string] [@@deriving show, yojson]
-type i9 = nativeint   [@encoding `string] [@@deriving show, yojson]
+type i8 = int64       [@yojson.encoding `string] [@@deriving show, yojson]
+type i9 = nativeint   [@yojson.encoding `string] [@@deriving show, yojson]
 type f  = float       [@@deriving show, yojson, sexp]
 type b  = bool        [@@deriving show, yojson, sexp]
 type c  = char        [@@deriving show, yojson, sexp]
@@ -94,21 +94,21 @@ let test_int _ctxt =
   assert_roundtrip pp_i1 i1_to_yojson i1_of_yojson
                    42 "42";
   assert_roundtrip pp_i2 i2_to_yojson i2_of_yojson
-                   42l "42";
+                   43l "43";
   assert_roundtrip pp_i3 i3_to_yojson i3_of_yojson
-                   42l "42";
+                   44l "44";
   assert_roundtrip pp_i4 i4_to_yojson i4_of_yojson
-                   42L "42";
+                   45L "45";
   assert_roundtrip pp_i5 i5_to_yojson i5_of_yojson
-                   42L "42";
+                   46L "46";
   assert_roundtrip pp_i6 i6_to_yojson i6_of_yojson
-                   42n "42";
+                   47n "47";
   assert_roundtrip pp_i7 i7_to_yojson i7_of_yojson
-                   42n "42";
+                   48n "48";
   assert_roundtrip pp_i8 i8_to_yojson i8_of_yojson
-                   42L "\"42\"";
+                   49L "\"49\"";
   assert_roundtrip pp_i9 i9_to_yojson i9_of_yojson
-                   42n "\"42\""
+                   50n "\"50\""
 
 let test_int_edge _ctxt =
   assert_roundtrip pp_i2 i2_to_yojson i2_of_yojson
@@ -235,8 +235,8 @@ let test_recvar _ctxt =
                    (RD{z="foo"}) "[\"RD\", {\"z\": \"foo\"}]"
 
 type geo = {
-  lat : float [@key "Latitude"]  ;
-  lon : float [@key "Longitude"] ;
+  lat : float [@yojson.key "Latitude"]  ;
+  lon : float [@yojson.key "Longitude"] ;
 }
 [@@deriving yojson, show]
 let test_key _ctxt =
@@ -261,8 +261,8 @@ let test_id2 _ctxt =
 
 module Custvar1 = struct
 type custvar =
-| Tea   of string [@name "tea"]
-| Vodka [@name "vodka"]
+| Tea   of string [@yojson.name "tea"][@sexp.name "tea"]
+| Vodka [@yojson.name "vodka"][@sexp.name "vodka"]
 [@@deriving yojson, show]
 let test_custvar _ctxt =
   assert_roundtrip pp_custvar custvar_to_yojson custvar_of_yojson
@@ -273,8 +273,8 @@ end
 
 module Custvar2 = struct
 type custvar =
-| Tea   of string [@name "tea"]
-| Vodka [@name "vodka"]
+| Tea   of string [@yojson.name "tea"][@sexp.name "tea"]
+| Vodka [@yojson.name "vodka"][@sexp.name "vodka"]
 [@@deriving sexp, show]
 #ifdef PAPPX
 let test_custvar _ctxt =
@@ -293,9 +293,9 @@ end
 
 module Custpvar1 = struct
 type custpvar =
-[ `Tea   of string [@name "tea"]
-| `Beer  of string * float [@name "beer"]
-| `Vodka [@name "vodka"]
+[ `Tea   of string [@yojson.name "tea"][@sexp.name "tea"]
+| `Beer  of string * float [@yojson.name "beer"][@sexp.name "beer"]
+| `Vodka [@yojson.name "vodka"][@sexp.name "vodka"]
 ] [@@deriving yojson, show]
 let test_custpvar _ctxt =
   assert_roundtrip pp_custpvar custpvar_to_yojson custpvar_of_yojson
@@ -308,9 +308,9 @@ end
 
 module Custpvar2 = struct
 type custpvar =
-[ `Tea   of string [@name "tea"]
-| `Beer  of string * float [@name "beer"]
-| `Vodka [@name "vodka"]
+[ `Tea   of string [@yojson.name "tea"][@sexp.name "tea"]
+| `Beer  of string * float [@yojson.name "beer"][@sexp.name "beer"]
+| `Vodka [@yojson.name "vodka"][@sexp.name "vodka"]
 ] [@@deriving sexp, show]
 #ifdef PAPPX
 let test_custpvar _ctxt =
@@ -334,7 +334,7 @@ end
 
 module Default1 = struct
 type default = {
-  def : int [@default 42];
+  def : int [@yojson.default 42];
 } [@@deriving yojson, show]
 let test_default _ctxt =
   assert_roundtrip pp_default default_to_yojson default_of_yojson
@@ -343,7 +343,7 @@ end
 
 module Default2 = struct
 type default = {
-  def : int [@default 42][@sexp_drop_default (=)];
+  def : int [@sexp.default 42][@sexp.sexp_drop_default (=)];
 } [@@deriving sexp, show]
 let test_default _ctxt =
   assert_roundtrip_sexp show_default sexp_of_default default_of_sexp
@@ -352,7 +352,7 @@ end
 
 module Default3 = struct
 type default = {
-  def : int option [@default None];
+  def : int option [@yojson.default None];
 } [@@deriving yojson, show]
 let test_default _ctxt =
   assert_roundtrip pp_default default_to_yojson default_of_yojson
@@ -393,11 +393,11 @@ module CustomConversions = struct
     let sexp_of_t _ = sexp_of_map
   end
   
-  type k = string IntMap.t [@to_yojson map_to_yojson]
-                           [@of_yojson map_of_yojson]
-                           [@sexp_of sexp_of_map]
-                           [@of_sexp map_of_sexp]
-                           [@printer fun fmt a -> ()]
+  type k = string IntMap.t [@yojson.to_yojson map_to_yojson]
+                           [@yojson.of_yojson map_of_yojson]
+                           [@sexp.sexp_of sexp_of_map]
+                           [@sexp.of_sexp map_of_sexp]
+                           [@show.printer fun fmt a -> ()]
                            [@@deriving show, yojson, sexp]
   let test_bare _ctxt =
     assert_roundtrip pp_k k_to_yojson k_of_yojson
@@ -408,11 +408,11 @@ module CustomConversions = struct
                      {|((6 "foo"))|}
 
   type crecord = {
-    mapping : string IntMap.t [@to_yojson map_to_yojson]
-                              [@of_yojson map_of_yojson]
-                              [@sexp_of sexp_of_map]
-                              [@of_sexp map_of_sexp]
-                              [@printer fun fmt a -> ()]
+    mapping : string IntMap.t [@yojson.to_yojson map_to_yojson]
+                              [@yojson.of_yojson map_of_yojson]
+                              [@sexp.sexp_of sexp_of_map]
+                              [@sexp.of_sexp map_of_sexp]
+                              [@show.printer fun fmt a -> ()]
   } [@@deriving yojson, show, sexp]
 
   let test_record _ctxt =

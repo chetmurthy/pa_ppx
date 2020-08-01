@@ -83,10 +83,10 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< Sexplib0.Sexp_conv.sexp_of_hashtbl >>
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "nobuiltin" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when Some id = DC.allowed_attribute (DC.get arg) "sexp" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "sexp_of" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when Some id = DC.allowed_attribute (DC.get arg) "sexp" "sexp_of" ->
     e
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
@@ -128,7 +128,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   let branches = List.map (fun [
     (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
     let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let jscid = match extract_allowed_attribute_expr arg ("sexp", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let (recpat, body) = fmt_record loc arg (uv fields) in
@@ -138,7 +138,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 
   | (loc, cid, tyl, None, attrs) ->
     let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let jscid = match extract_allowed_attribute_expr arg ("sexp", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let tyl = uv tyl in
@@ -161,7 +161,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   let branches = List.map (fun [
     PvTag loc cid _ tyl attrs -> do {
     let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let jscid = match extract_allowed_attribute_expr arg ("sexp", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let tyl = uv tyl in
@@ -218,8 +218,8 @@ and fmt_record loc arg fields =
   let labels_vars_fmts_defaults_jskeys = List.map (fun (_, fname, _, ty, attrs) ->
         let ty = ctyp_wrap_attrs ty (uv attrs) in
         let attrs = snd(Ctyp.unwrap_attrs ty) in
-        let default = extract_allowed_attribute_expr arg "default" attrs in
-        let key = extract_allowed_attribute_expr arg "key" attrs in
+        let default = extract_allowed_attribute_expr arg ("sexp", "default") attrs in
+        let key = extract_allowed_attribute_expr arg ("sexp", "key") attrs in
         let jskey = match key with [
           Some <:expr< $str:k$ >> -> k
         | Some _ -> failwith "@key attribute without string payload"
@@ -415,10 +415,10 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< Sexplib0.Sexp_conv.hashtbl_of_sexp >>
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "nobuiltin" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when Some id = DC.allowed_attribute (DC.get arg) "sexp" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "sexp" "of_sexp" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when Some id = DC.allowed_attribute (DC.get arg) "sexp" "of_sexp" ->
     e
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
@@ -460,7 +460,7 @@ value of_expression arg ~{msg} param_map ty0 =
   let branches = List.map (fun [
     (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
     let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let jscid = match extract_allowed_attribute_expr arg ("sexp", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let (recpat, body) = fmt_record ~{cid=Some cid} loc arg (uv fields) in
@@ -470,7 +470,7 @@ value of_expression arg ~{msg} param_map ty0 =
 
   | (loc, cid, tyl, None, attrs) ->
     let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let jscid = match extract_allowed_attribute_expr arg ("sexp", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let tyl = uv tyl in
@@ -497,7 +497,7 @@ value of_expression arg ~{msg} param_map ty0 =
   let branches = List.map (fun [
     PvTag loc cid _ tyl attrs -> do {
     let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let jscid = match extract_allowed_attribute_expr arg ("sexp", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let tyl = uv tyl in
@@ -564,8 +564,8 @@ and fmt_record ~{cid} loc arg fields =
   let labels_vars_fmts_defaults_jskeys = List.map (fun (_, fname, _, ty, attrs) ->
         let ty = ctyp_wrap_attrs ty (uv attrs) in
         let attrs = snd(Ctyp.unwrap_attrs ty) in
-        let default = extract_allowed_attribute_expr arg "default" attrs in
-        let key = extract_allowed_attribute_expr arg "key" attrs in
+        let default = extract_allowed_attribute_expr arg ("sexp", "default") attrs in
+        let key = extract_allowed_attribute_expr arg ("sexp", "key") attrs in
         let jskey = match key with [
           Some <:expr< $str:k$ >> -> k
         | Some _ -> failwith "@key attribute without string payload"

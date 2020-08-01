@@ -84,13 +84,13 @@ value fmt_expression arg ?{coercion} param_map ty0 =
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< fun ofmt arg -> let open $runtime_module$.Fmt in (pf ofmt "%an" nativeint arg) >>
 | <:ctyp:< float >> -> <:expr< fun ofmt arg -> let open $runtime_module$.Fmt in (pf ofmt "%F" arg) >>
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "nobuiltin" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when Some id = DC.allowed_attribute (DC.get arg) "show" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "show" "opaque" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when Some id = DC.allowed_attribute (DC.get arg) "show" "opaque" ->
     <:expr< let open $runtime_module$.Fmt in (const string "<opaque>") >>
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "show" "printer" -> e
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "show" "polyprinter" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when Some id = DC.allowed_attribute (DC.get arg) "show" "printer" -> e
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when Some id = DC.allowed_attribute (DC.get arg) "show" "polyprinter" ->
   let (t0, argtys) = Ctyp.unapplist t in
   let argfmts = List.map fmtrec argtys in
   Expr.applist <:expr< $e$ >> argfmts
@@ -160,7 +160,7 @@ value fmt_expression arg ?{coercion} param_map ty0 =
   let branches = List.map (fun [
     (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
     let cid = uv cid in
-    let ppcid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let ppcid = match extract_allowed_attribute_expr arg ("show", "name") (uv attrs) with [
       None -> Ctxt.prefixed_name arg cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let prefix_txt = ppcid^" " in
@@ -171,7 +171,7 @@ value fmt_expression arg ?{coercion} param_map ty0 =
 
   | (loc, cid, tyl, None, attrs) ->
     let cid = uv cid in
-    let ppcid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let ppcid = match extract_allowed_attribute_expr arg ("show", "name") (uv attrs) with [
       None -> Ctxt.prefixed_name arg cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let tyl = uv tyl in
@@ -502,7 +502,7 @@ Pa_deriving.(Registry.add PI.{
 ; alternates = []
 ; options = ["with_path"; "optional"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ; ("with_path", <:expr< True >>) ]
-; alg_attributes = ["opaque"; "printer"; "polyprinter"; "nobuiltin"]
+; alg_attributes = ["opaque"; "printer"; "polyprinter"; "nobuiltin"; "name"]
 ; expr_extensions = ["show"]
 ; ctyp_extensions = ["show"]
 ; expr = expr_show

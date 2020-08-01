@@ -43,10 +43,10 @@ value fmt_expression arg ?{coercion} param_map ty0 =
   | <:ctyp:< string >> -> <:expr< fun a b -> Stdlib.compare a b >>
   | <:ctyp:< bytes >> -> <:expr< fun a b -> Stdlib.compare a b >>
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "ord" "nobuiltin" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when Some id = DC.allowed_attribute (DC.get arg) "ord" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
-  | <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "ord" "compare" -> e
+  | <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when Some id = DC.allowed_attribute (DC.get arg) "ord" "compare" -> e
 
   | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec t
 

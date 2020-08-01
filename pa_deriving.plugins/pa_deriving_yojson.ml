@@ -76,24 +76,29 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 | <:ctyp:< bool >> -> <:expr< $runtime_module$.Yojson.bool_to_yojson >>
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< $runtime_module$.Yojson.int32_to_yojson >>
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< $runtime_module$.Yojson.int64_to_yojson >>
-| <:ctyp:< int64 [@encoding `string ; ] >> | <:ctyp:< Int64.t [@encoding `string ; ] >> ->
+| <:ctyp:< int64 [@ $attrid:(_, id)$ `string ; ] >> |
+  <:ctyp:< Int64.t [@ $attrid:(_, id)$ `string ; ] >>
+  when Some id = DC.allowed_attribute (DC.get arg) "yojson" "encoding" ->
     <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (Int64.to_string x) >>
+
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
   <:expr< $runtime_module$.Yojson.string_to_yojson >>
 | <:ctyp:< bytes >> -> <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (Bytes.to_string x) >>
 | <:ctyp:< char >> -> <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (String.make 1 x) >>
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< $runtime_module$.Yojson.nativeint_to_yojson >>
-| <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> ->
+| <:ctyp:< nativeint [@ $attrid:(_, id)$ `string ; ] >> |
+  <:ctyp:< Nativeint.t [@ $attrid:(_, id)$ `string ; ] >>
+  when Some id = DC.allowed_attribute (DC.get arg) "yojson" "encoding" ->
     <:expr< fun x -> $runtime_module$.Yojson.string_to_yojson (Nativeint.to_string x) >>
 | <:ctyp:< float >> -> <:expr< $runtime_module$.Yojson.float_to_yojson >>
 
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Yojson.hashtbl_to_yojson >>
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when Some id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "to_yojson" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when Some id = DC.allowed_attribute (DC.get arg) "yojson" "to_yojson" ->
     e
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
@@ -133,7 +138,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   let branches = List.map (fun [
     (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
     let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let (recpat, body) = fmt_record loc arg (uv fields) in
@@ -143,7 +148,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 
   | (loc, cid, tyl, None, attrs) ->
     let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let tyl = uv tyl in
@@ -166,7 +171,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   let branches = List.map (fun [
     PvTag loc cid _ tyl attrs -> do {
     let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let tyl = uv tyl in
@@ -221,8 +226,8 @@ and fmt_record loc arg fields =
   let labels_vars_fmts_defaults_jskeys = List.map (fun (_, fname, _, ty, attrs) ->
         let ty = ctyp_wrap_attrs ty (uv attrs) in
         let attrs = snd(Ctyp.unwrap_attrs ty) in
-        let default = extract_allowed_attribute_expr arg "default" attrs in
-        let key = extract_allowed_attribute_expr arg "key" attrs in
+        let default = extract_allowed_attribute_expr arg ("yojson", "default") attrs in
+        let key = extract_allowed_attribute_expr arg ("yojson", "key") attrs in
         let jskey = match key with [
           Some <:expr< $str:k$ >> -> k
         | Some _ -> failwith "@key attribute without string payload"
@@ -422,8 +427,10 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< bool >> -> <:expr< $runtime_module$.Yojson.bool_of_yojson $str:msg$ >>
 | <:ctyp:< int32 >> | <:ctyp:< Int32.t >> -> <:expr< $runtime_module$.Yojson.int32_of_yojson $str:msg$ >>
 | <:ctyp:< int64 >> | <:ctyp:< Int64.t >> -> <:expr< $runtime_module$.Yojson.int64_of_yojson $str:msg$ >>
-| <:ctyp:< int64 [@encoding `string ; ] >> | <:ctyp:< Int64.t [@encoding `string ; ] >> ->
- <:expr< fun [
+| <:ctyp:< int64 [@ $attrid:(_, id)$ `string ; ] >> |
+  <:ctyp:< Int64.t [@ $attrid:(_, id)$ `string ; ] >>
+  when Some id = DC.allowed_attribute (DC.get arg) "yojson" "encoding" ->
+  <:expr< fun [
         `String x -> Result.Ok (Int64.of_string x)
       | _ -> Result.Error $str:msg$ ] >>
 | (<:ctyp:< string >> | <:ctyp:< Stdlib.String.t >> | <:ctyp:< String.t >>) ->
@@ -437,7 +444,9 @@ value of_expression arg ~{msg} param_map ty0 =
           else Result.Error $str:msg$
       | _ -> Result.Error $str:msg$ ] >>
 | <:ctyp:< nativeint >> | <:ctyp:< Nativeint.t >> -> <:expr< $runtime_module$.Yojson.nativeint_of_yojson $str:msg$ >>
-| <:ctyp:< nativeint [@encoding `string ; ] >> | <:ctyp:< Nativeint.t [@encoding `string ; ] >> -> <:expr< fun [
+| <:ctyp:< nativeint [@ $attrid:(_, id)$ `string ; ] >> |
+  <:ctyp:< Nativeint.t [@ $attrid:(_, id)$ `string ; ] >>
+  when Some id = DC.allowed_attribute (DC.get arg) "yojson" "encoding" -> <:expr< fun [
         `String x -> Result.Ok (Nativeint.of_string x)
       | _ -> Result.Error $str:msg$ ] >>
 | <:ctyp:< float >> -> <:expr< $runtime_module$.Yojson.float_of_yojson $str:msg$ >>
@@ -445,10 +454,10 @@ value of_expression arg ~{msg} param_map ty0 =
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Yojson.hashtbl_of_yojson >>
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when Some id = DC.allowed_attribute (DC.get arg) "yojson" "nobuiltin" ->
     fmtrec ~{attrmod=Some Nobuiltin} t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when id = DC.allowed_attribute (DC.get arg) "yojson" "of_yojson" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$ ;] >> when Some id = DC.allowed_attribute (DC.get arg) "yojson" "of_yojson" ->
     e
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
@@ -488,7 +497,7 @@ value of_expression arg ~{msg} param_map ty0 =
   let branches = List.map (fun [
     (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
     let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let (recpat, body) = fmt_record ~{cid=Some cid} loc arg (uv fields) in
@@ -498,7 +507,7 @@ value of_expression arg ~{msg} param_map ty0 =
 
   | (loc, cid, tyl, None, attrs) ->
     let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let tyl = uv tyl in
@@ -529,7 +538,7 @@ value of_expression arg ~{msg} param_map ty0 =
   let branches = List.map (fun [
     PvTag loc cid _ tyl attrs -> do {
     let cid = uv cid in
-    let jscid = match extract_allowed_attribute_expr arg "name" (uv attrs) with [
+    let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let tyl = uv tyl in
@@ -601,8 +610,8 @@ and fmt_record ~{cid} loc arg fields =
   let labels_vars_fmts_defaults_jskeys = List.map (fun (_, fname, _, ty, attrs) ->
         let ty = ctyp_wrap_attrs ty (uv attrs) in
         let attrs = snd(Ctyp.unwrap_attrs ty) in
-        let default = extract_allowed_attribute_expr arg "default" attrs in
-        let key = extract_allowed_attribute_expr arg "key" attrs in
+        let default = extract_allowed_attribute_expr arg ("yojson", "default") attrs in
+        let key = extract_allowed_attribute_expr arg ("yojson", "key") attrs in
         let jskey = match key with [
           Some <:expr< $str:k$ >> -> k
         | Some _ -> failwith "@key attribute without string payload"

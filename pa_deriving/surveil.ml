@@ -66,7 +66,7 @@ type t =
   ; current_plugins : ref (list string)
   ; current_attributes : ref (list string)
 
-  ; allowed_form : ref (option form_t)
+  ; allowed_form : ref (option (Ploc.t * form_t))
   }
 ;
 value mk () = { 
@@ -119,22 +119,25 @@ value end_decl dc = do {
 }
 ;
 
-value set_form dc f =
-  if dc.allowed_form.val = None then
-    dc.allowed_form.val := Some f
-  else if dc.allowed_form.val = Some f then ()
-  else failwith "DC.set_form: form of attributes/extensions already set; trying to set it to different value"
+value set_form loc dc f =
+  match dc.allowed_form.val with [
+    None ->
+      dc.allowed_form.val := Some (loc, f)
+  | Some (loc', f') when f = f' -> ()
+  | Some (loc', f') ->
+      Ploc.raise loc (Failure (Printf.sprintf "DC.set_form: form of attributes/extensions already set; trying to set it to different value: previously set at %s" (Ploc.string_of_location loc')))
+  ]
 ;
 
 value get_form dc =
-  match dc.allowed_form.val with [ None -> Short | Some f -> f ] ;
+  match dc.allowed_form.val with [ None -> Short | Some (_, f) -> f ] ;
 
 value (dump : Fmt.t t) ofmt dc =
   let ssl = Fmt.(list ~{sep=semi} string) in
   let ppform ppf = fun [
-    Short -> Fmt.(const string "Short" ppf ())
-  | Medium -> Fmt.(const string "Medium" ppf ())
-  | Long -> Fmt.(const string "Lon" ppf ()) ] in
+    (_, Short) -> Fmt.(const string "Short" ppf ())
+  | (_, Medium) -> Fmt.(const string "Medium" ppf ())
+  | (_, Long) -> Fmt.(const string "Lon" ppf ()) ] in
   Fmt.(pf ofmt "<dc< {@[ @[all_plugins = [ %a ];@]@, @[all_attributes = [ %a ];@]@, @[current_plugins = [ %a ]@] @[current_attributes = [ %a ];@]@, @[allowed_form = %a@] } >>@.%!"
          ssl dc.all_plugins.val
         ssl dc.all_attributes.val
@@ -145,17 +148,19 @@ value (dump : Fmt.t t) ofmt dc =
 ;
 
 value allowed_attribute dc piname attrname = do {
-  assert (List.mem attrname  Registry.((get piname).alg_attributes)) ;
-  match dc.allowed_form.val with [
-    (None | Some Short) -> attrname
-  | Some Medium -> Printf.sprintf "%s.%s" piname attrname
-  | Some Long -> Printf.sprintf "deriving.%s.%s" piname attrname
-  ]
+  if not (List.mem attrname  Registry.((get piname).alg_attributes)) then
+    None
+  else
+    match dc.allowed_form.val with [
+      (None | Some (_, Short)) -> Some attrname
+    | Some (_, Medium) -> Some (Printf.sprintf "%s.%s" piname attrname)
+    | Some (_, Long) -> Some (Printf.sprintf "deriving.%s.%s" piname attrname)
+    ]
 }
 ;
 value is_allowed_attribute dc piname attrname attr =
   let wantid = allowed_attribute dc piname attrname in
-  wantid = attr_id attr
+  wantid = Some (attr_id attr)
 ;
 end ;
 
@@ -238,15 +243,15 @@ value sig_item arg fallback = fun [
     | (False, False, True) -> True
     | (False, False, False) -> True
     | _ -> False
-    ]) then failwith "mixed short/medium/long-form attributes"
+    ]) then Ploc.raise loc (Failure "mixed short/medium/long-form attributes")
     else () ;
     if short_form_attributes <> [] && reg_short_form_duplicated then
-      failwith "short-form attributes used, but some apply to more than one plugin"
+      Ploc.raise loc (Failure "short-form attributes used, but some apply to more than one plugin")
     else () ;
     
-    if [] <> long_form_attributes then DC.(set_form dc Long)
-    else if [] <> medium_form_attributes then DC.(set_form dc Medium)
-    else if [] <> short_form_attributes then DC.(set_form dc Short)
+    if [] <> long_form_attributes then DC.(set_form loc dc Long)
+    else if [] <> medium_form_attributes then DC.(set_form loc dc Medium)
+    else if [] <> short_form_attributes then DC.(set_form loc dc Short)
     else () ;
     rv
   }
@@ -293,15 +298,15 @@ value str_item arg fallback = fun [
     | (False, False, True) -> True
     | (False, False, False) -> True
     | _ -> False
-    ]) then failwith "mixed short/medium/long-form attributes"
+    ]) then Ploc.raise loc (Failure "mixed short/medium/long-form attributes")
     else () ;
     if duplicated used_short_form_attributes then
-      failwith "short-form attributes used, but some apply to more than one plugin"
+      Ploc.raise loc (Failure "short-form attributes used, but some apply to more than one plugin")
     else () ;
     
-    if [] <> used_long_form_attributes then DC.(set_form dc Long)
-    else if [] <> used_medium_form_attributes then DC.(set_form dc Medium)
-    else if [] <> used_short_form_attributes then DC.(set_form dc Short)
+    if [] <> used_long_form_attributes then DC.(set_form loc dc Long)
+    else if [] <> used_medium_form_attributes then DC.(set_form loc dc Medium)
+    else if [] <> used_short_form_attributes then DC.(set_form loc dc Short)
     else () ;
     rv
   }

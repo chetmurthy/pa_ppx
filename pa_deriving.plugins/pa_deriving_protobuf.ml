@@ -627,7 +627,7 @@ value to_expression arg ?{coercion} ~{field_name} param_map ty0 =
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Yojson.hashtbl_to_yojson >>
 *)
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "encoding" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$; ] >> when Some id = DC.allowed_attribute (DC.get arg) "protobuf" "encoding" ->
     let encoding = match e with [
       <:expr< `varint >> -> Varint
     | <:expr< `zigzag >> -> Zigzag
@@ -636,20 +636,20 @@ value to_expression arg ?{coercion} ~{field_name} param_map ty0 =
     ] in
     fmtrec ~{attrmod={ (attrmod) with encoding = Some encoding } } t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $int:key$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "key" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $int:key$; ] >> when Some id = DC.allowed_attribute (DC.get arg) "protobuf" "key" ->
     let key = int_of_string key in
     fmtrec ~{attrmod={ (attrmod) with key = Some key } } t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:dflt$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "default" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:dflt$; ] >> when Some id = DC.allowed_attribute (DC.get arg) "protobuf" "default" ->
     fmtrec ~{attrmod={ (attrmod) with default = Some dflt } } t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "bare" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when Some id = DC.allowed_attribute (DC.get arg) "protobuf" "bare" ->
     fmtrec ~{attrmod={ (attrmod) with bare = True } } t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $str:fld$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "fieldname" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $str:fld$; ] >> when Some id = DC.allowed_attribute (DC.get arg) "protobuf" "fieldname" ->
     fmtrec ~{attrmod={ (attrmod) with field_name = fld } } t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "packed" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when Some id = DC.allowed_attribute (DC.get arg) "protobuf" "packed" ->
     fmtrec ~{attrmod={ (attrmod) with packed = True } } t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
@@ -1302,7 +1302,7 @@ value of_expression arg ~{attrmod} param_map ty0 =
 | <:ctyp:< Hashtbl.t >> ->
   <:expr< $runtime_module$.Protobuf.hashtbl_of_protobuf >>
 *)
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "encoding" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:e$; ] >> when Some id = DC.allowed_attribute (DC.get arg) "protobuf" "encoding" ->
     let encoding = match e with [
       <:expr< `varint >> -> Varint
     | <:expr< `zigzag >> -> Zigzag
@@ -1311,20 +1311,20 @@ value of_expression arg ~{attrmod} param_map ty0 =
     ] in
     fmtrec ~{attrmod= { (attrmod) with encoding = Some encoding } } t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $int:key$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "key" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $int:key$; ] >> when Some id = DC.allowed_attribute (DC.get arg) "protobuf" "key" ->
     let key = int_of_string key in
     fmtrec ~{attrmod={ (attrmod) with key = Some key } } t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:dflt$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "default" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $exp:dflt$; ] >> when Some id = DC.allowed_attribute (DC.get arg) "protobuf" "default" ->
     fmtrec ~{attrmod={ (attrmod) with default = Some dflt } } t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "bare" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when Some id = DC.allowed_attribute (DC.get arg) "protobuf" "bare" ->
     fmtrec ~{attrmod={ (attrmod) with bare = True } } t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ $str:fld$; ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "fieldname" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ $str:fld$; ] >> when Some id = DC.allowed_attribute (DC.get arg) "protobuf" "fieldname" ->
     fmtrec ~{attrmod={ (attrmod) with field_name = fld } } t
 
-| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when id = DC.allowed_attribute (DC.get arg) "protobuf" "packed" ->
+| <:ctyp:< $t$ [@ $attrid:(_, id)$ ] >> when Some id = DC.allowed_attribute (DC.get arg) "protobuf" "packed" ->
     fmtrec ~{attrmod={ (attrmod) with packed = True } } t
 
 | <:ctyp:< $t$ [@ $attribute:_$ ] >> -> fmtrec ~{attrmod=attrmod} t
