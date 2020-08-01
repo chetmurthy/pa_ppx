@@ -1,6 +1,6 @@
-
-
-type t = exn == ..[@@"deriving_inline" show;]; [@@@"ocaml.text" "/*";]; module M_pp =
+type t = exn == ..[@@"deriving_inline" show;];
+[@@@"ocaml.text" "/*";];
+module M_pp =
   struct
     type nonrec pp = { f : mutable Fmt.t t };
     value f =
@@ -10,10 +10,11 @@ type t = exn == ..[@@"deriving_inline" show;]; [@@@"ocaml.text" "/*";]; module M
            "t")}
     ;
   end
-; [@@@"ocaml.text" "/*";]; value pp x = M_pp.f.M_pp.f x; value show arg = Format.asprintf "%a" M_pp.f.M_pp.f arg;
-
+;
+[@@@"ocaml.text" "/*";];
+value pp x = M_pp.f.M_pp.f x;
+value show arg = Format.asprintf "%a" M_pp.f.M_pp.f arg;
 [@@@"end"];
-
 type t +=
   [ Help = Arg.Help[@"name" "Arg.Help";]
   | Bad = Arg.Bad[@"name" "Arg.Bad";]
@@ -43,96 +44,93 @@ type t +=
   | Error = Stream.Error[@"name" "Stream.Error";]
   | Break = Sys.Break[@"name" "Sys.Break";] ][@@"deriving_inline" show;]
 ;
-
 let open M_pp in
 let fallback = f.f in
 f.f :=
-  fun ofmt →
+  fun ofmt ->
     fun
-    [ Help v0 →
+    [ Help v0 ->
         let open Runtime.Fmt in
         pf ofmt "(@[<2>Arg.Help@ %a)@]"
-          (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%S" arg) v0
-    | Bad v0 →
+          (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%S" arg) v0
+    | Bad v0 ->
         let open Runtime.Fmt in
         pf ofmt "(@[<2>Arg.Bad@ %a)@]"
-          (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%S" arg) v0
-    | Finally_raised v0 →
+          (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%S" arg) v0
+    | Finally_raised v0 ->
         let open Runtime.Fmt in
         pf ofmt "(@[<2>Fun.Finally_raised@ %a)@]" pp v0
-    | Undefined → let open Runtime.Fmt in pf ofmt "@[<2>Lazy.Undefined@]"
-    | Parse_error →
+    | Undefined -> let open Runtime.Fmt in pf ofmt "@[<2>Lazy.Undefined@]"
+    | Parse_error ->
         let open Runtime.Fmt in pf ofmt "@[<2>Parsing.Parse_error@]"
-    | QueueEmpty → let open Runtime.Fmt in pf ofmt "@[<2>Queue.Empty@]"
-    | Scan_failure v0 →
+    | QueueEmpty -> let open Runtime.Fmt in pf ofmt "@[<2>Queue.Empty@]"
+    | Scan_failure v0 ->
         let open Runtime.Fmt in
         pf ofmt "(@[<2>Scanf.Scan_failure@ %a)@]"
-          (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%S" arg) v0
-    | StackEmpty → let open Runtime.Fmt in pf ofmt "@[<2>Stack.Empty@]"
-    | Exit → let open Runtime.Fmt in pf ofmt "@[<2>Stdlib.Exit@]"
-    | Match_failure v0 →
+          (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%S" arg) v0
+    | StackEmpty -> let open Runtime.Fmt in pf ofmt "@[<2>Stack.Empty@]"
+    | Exit -> let open Runtime.Fmt in pf ofmt "@[<2>Stdlib.Exit@]"
+    | Match_failure v0 ->
         let open Runtime.Fmt in
         pf ofmt "(@[<2>Stdlib.Match_failure@ %a)@]"
-          (fun (ofmt : Format.formatter) (v0, v1, v2) →
+          (fun (ofmt : Format.formatter) (v0, v1, v2) ->
              let open Runtime.Fmt in
              pf ofmt "(@[%a,@ %a,@ %a@])"
-               (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%S" arg) v0
-               (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%d" arg) v1
-               (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%d" arg) v2)
+               (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%S" arg) v0
+               (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%d" arg) v1
+               (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%d" arg) v2)
           v0
-    | Assert_failure v0 →
+    | Assert_failure v0 ->
         let open Runtime.Fmt in
         pf ofmt "(@[<2>Stdlib.Assert_failure@ %a)@]"
-          (fun (ofmt : Format.formatter) (v0, v1, v2) →
+          (fun (ofmt : Format.formatter) (v0, v1, v2) ->
              let open Runtime.Fmt in
              pf ofmt "(@[%a,@ %a,@ %a@])"
-               (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%S" arg) v0
-               (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%d" arg) v1
-               (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%d" arg) v2)
+               (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%S" arg) v0
+               (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%d" arg) v1
+               (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%d" arg) v2)
           v0
-    | Invalid_argument v0 →
+    | Invalid_argument v0 ->
         let open Runtime.Fmt in
         pf ofmt "(@[<2>Stdlib.Invalid_argument@ %a)@]"
-          (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%S" arg) v0
-    | Failure v0 →
+          (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%S" arg) v0
+    | Failure v0 ->
         let open Runtime.Fmt in
         pf ofmt "(@[<2>Stdlib.Failure@ %a)@]"
-          (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%S" arg) v0
-    | Not_found → let open Runtime.Fmt in pf ofmt "@[<2>Stdlib.Not_found@]"
-    | Out_of_memory →
+          (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%S" arg) v0
+    | Not_found -> let open Runtime.Fmt in pf ofmt "@[<2>Stdlib.Not_found@]"
+    | Out_of_memory ->
         let open Runtime.Fmt in pf ofmt "@[<2>Stdlib.Out_of_memory@]"
-    | Stack_overflow →
+    | Stack_overflow ->
         let open Runtime.Fmt in pf ofmt "@[<2>Stdlib.Stack_overflow@]"
-    | Sys_error v0 →
+    | Sys_error v0 ->
         let open Runtime.Fmt in
         pf ofmt "(@[<2>Stdlib.Sys_error@ %a)@]"
-          (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%S" arg) v0
-    | End_of_file →
+          (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%S" arg) v0
+    | End_of_file ->
         let open Runtime.Fmt in pf ofmt "@[<2>Stdlib.End_of_file@]"
-    | Division_by_zero →
+    | Division_by_zero ->
         let open Runtime.Fmt in pf ofmt "@[<2>Stdlib.Division_by_zero@]"
-    | Sys_blocked_io →
+    | Sys_blocked_io ->
         let open Runtime.Fmt in pf ofmt "@[<2>Stdlib.Sys_blocked_io@]"
-    | Undefined_recursive_module v0 →
+    | Undefined_recursive_module v0 ->
         let open Runtime.Fmt in
         pf ofmt "(@[<2>Stdlib.Undefined_recursive_module@ %a)@]"
-          (fun (ofmt : Format.formatter) (v0, v1, v2) →
+          (fun (ofmt : Format.formatter) (v0, v1, v2) ->
              let open Runtime.Fmt in
              pf ofmt "(@[%a,@ %a,@ %a@])"
-               (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%S" arg) v0
-               (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%d" arg) v1
-               (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%d" arg) v2)
+               (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%S" arg) v0
+               (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%d" arg) v1
+               (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%d" arg) v2)
           v0
-    | StreamFailure → let open Runtime.Fmt in pf ofmt "@[<2>Stream.Failure@]"
-    | Error v0 →
+    | StreamFailure -> let open Runtime.Fmt in pf ofmt "@[<2>Stream.Failure@]"
+    | Error v0 ->
         let open Runtime.Fmt in
         pf ofmt "(@[<2>Stream.Error@ %a)@]"
-          (fun ofmt arg → let open Runtime.Fmt in pf ofmt "%S" arg) v0
-    | Break → let open Runtime.Fmt in pf ofmt "@[<2>Sys.Break@]"
-    | z → fallback ofmt z ];
-
+          (fun ofmt arg -> let open Runtime.Fmt in pf ofmt "%S" arg) v0
+    | Break -> let open Runtime.Fmt in pf ofmt "@[<2>Sys.Break@]"
+    | z -> fallback ofmt z ];
 [@@@"end"];
-
 value print_exn exn = Some (show exn);
 Printexc.register_printer print_exn;
 
