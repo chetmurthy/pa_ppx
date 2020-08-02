@@ -2,6 +2,15 @@
 pa_ppx Version 0.02
 -------------------
 
+* [01 Aug 2020] fixed bugs in handling of attributes of type-derivers.
+  Now, it should be the case that if two type-derivers declare that
+  they use the same attribute-names (e.g. "name", "nobuiltin") and in
+  any compilation unit (e.g. file) they both use such an attribute
+  (even if not in the same type-declaration), then attribute-names
+  MUST be qualified with the deriver-name (e.g. "yojson.name",
+  "sexp.name").  This guarantees that there can be no confusion about
+  which attributes refer to which derivers.
+
 * [30 Jul 2020] (minor) update generated pretty-printers (add newlines between items).
 
 pa_ppx Version 0.01
