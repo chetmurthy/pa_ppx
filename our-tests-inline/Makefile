@@ -47,6 +47,7 @@ PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)deriving_plugins.sexp
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)here
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)assert
 PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)dock.link
+PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)testutils
 
 PAINLINEPACKAGES:=$(PAPACKAGES)
 PAINLINEPACKAGES:=$(PAINLINEPACKAGES),$(PACKAGEPREFIX)inline_test
@@ -73,11 +74,11 @@ bigass_doc_comments_pa_dock_original.ml: bigass_doc_comments_original.ML
 
 %_original.pa.byte: %_original.ml dock_test_utils.ml
 	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),camlp5.pa_o.link,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) not-ocamlfind/papr_official.exe -binary-input -impl > $<.pappx.ppo
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),camlp5.pa_o.link,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -I ../tests-ounit2 -linkpkg ../tests-ounit2/papr_util.cmo dock_test_utils.ml $< ppx_inline_test_epilogue.ml -o $@
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),camlp5.pa_o.link,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -I ../tests-ounit2 -linkpkg dock_test_utils.ml $< ppx_inline_test_epilogue.ml -o $@
 
 %_revised.pa.byte: %_revised.ml dock_test_utils.ml
 	$(NOT_OCAMLFIND) preprocess -package $(PACKAGES),camlp5.pa_r.link,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) $< | $(OCAMLFIND) not-ocamlfind/papr_official.exe -binary-input -impl > $<.pappx.ppo
-	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),camlp5.pa_r.link,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -I ../tests-ounit2 -linkpkg ../tests-ounit2/papr_util.cmo dock_test_utils.ml $< ppx_inline_test_epilogue.ml -o $@
+	$(OCAMLFIND) ocamlc $(DEBUG) -custom -thread $(WARNERR) -package $(PACKAGES),camlp5.pa_r.link,$(PAINLINEPACKAGES) -syntax camlp5o $(PAINLINEOPT) -I ../tests-ounit2 -linkpkg dock_test_utils.ml $< ppx_inline_test_epilogue.ml -o $@
 
 %.TEST: %.pa.byte
 	$(TESTRUNNER) $^ foo $(VERBOSE)

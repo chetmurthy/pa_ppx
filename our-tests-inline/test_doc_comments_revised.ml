@@ -1,4 +1,5 @@
 
+open Pa_ppx_testutils
 open Testutil
 open Dock_test_utils
 

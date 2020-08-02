@@ -1,4 +1,5 @@
 
+open Pa_ppx_testutils
 open Papr_util
 
 module NormLocations = struct

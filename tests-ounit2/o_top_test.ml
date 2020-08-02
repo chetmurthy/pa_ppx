@@ -4,6 +4,7 @@
 
 open OUnit2 ;
 open OUnitTest ;
+open Pa_ppx_testutils ;
 open Testutil ;
 open Testutil2 ;
 open Papr_util ;

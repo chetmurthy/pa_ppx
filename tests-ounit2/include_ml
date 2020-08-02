@@ -30,12 +30,13 @@ Pcaml.inter_phrases := Some ";\n";;
 #directory "../../camlp5/main";;
 Exparser.optim := false ;;
 
-#load "testutil.cmo";;
-#load "testutil2.cmo";;
+#require "pa_ppx_testutils";;
 
 open OUnit2 ;;
+open Pa_ppx_testutils ;;
 open Testutil ;;
 open Testutil2 ;;
+open Papr_util ;;
 
 let pp_plexing_lexbuf b = Fmt.(pf stdout "<<%s>>" (Plexing.Lexbuf.get b)) ;;
 #install_printer pp_plexing_lexbuf ;;

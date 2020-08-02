@@ -9,6 +9,7 @@ our $version = "0.01" ;
 
 our %pkgmap = (
   'pa_ppx_utils' => 'pa_ppx.utils',
+  'pa_ppx_testutils' => 'pa_ppx.testutils',
   'pa_ppx_runtime' => 'pa_ppx.runtime',
   'pa_ppx_runtime_fat' => 'pa_ppx.runtime_fat',
   'pa_ppx_deriving' => 'pa_ppx.deriving',
@@ -28,6 +29,7 @@ our %pkgmap = (
 
 {
   my $utilsmeta = indent(2, fixdeps(capturex("./util-lib/META.pl"))) ;
+  my $testutilsmeta = indent(2, fixdeps(capturex("./testutils/META.pl"))) ;
   my $rtmeta = indent(2, fixdeps(capturex("./runtime/META.pl"))) ;
   my $rtfmeta = indent(2, fixdeps(capturex("./runtime_fat/META.pl"))) ;
   my $basemeta = indent(2, fixdeps(capturex("./base/META.pl"))) ;
@@ -49,6 +51,10 @@ description = "pa_ppx: camlp5-based PPX rewriters"
 
 package "utils" (
 $utilsmeta
+)
+
+package "testutils" (
+$testutilsmeta
 )
 
 package "runtime" (
