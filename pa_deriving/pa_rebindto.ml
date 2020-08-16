@@ -31,14 +31,14 @@ value expr_to_longident eli =
 value is_rebind_to_attribute (attr : attribute) = attr_id attr = "rebind_to" ;
 
 value rebind_extension_constructor arg = fun [
-   EcTuple loc (_, ci, _, <:vala< None >>, attrs) as z
+   <:extension_constructor:< $uid:ci$ of $list:_$ $_algattrs:attrs$ >>
     when List.exists is_rebind_to_attribute (uv attrs) ->
     let (rebind_attrs, others) = filter_split is_rebind_to_attribute (uv attrs) in
     let eli = match List.map uv rebind_attrs  with [
       [ <:attribute_body:< rebind_to $exp:eli$ ; >> ] -> eli
     | _ -> Ploc.raise loc (Failure "rebind_extension_constructor: bad rebind_to attribute")
     ] in
-    <:extension_constructor< $_uid:ci$ = $longid:expr_to_longident eli$ $algattrs:others$ >>
+    <:extension_constructor< $uid:ci$ = $longid:expr_to_longident eli$ $algattrs:others$ >>
  ]
 ;
 
