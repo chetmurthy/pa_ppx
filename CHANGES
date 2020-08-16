@@ -2,6 +2,10 @@
 pa_ppx Version 0.02
 -------------------
 
+* [16 Aug 2020] update build process to save pp_MLast.ml[i] generated
+  files in dirs named by camlp5 version.  update to sync with camlp5
+  8.00~alpha02.
+
 * [01 Aug 2020] fixed bugs in handling of attributes of type-derivers.
   Now, it should be the case that if two type-derivers declare that
   they use the same attribute-names (e.g. "name", "nobuiltin") and in
