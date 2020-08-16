@@ -290,7 +290,7 @@ and generic_constructor arg x =
   ]
 and generic_constructor0 arg = fun (loc, x1, x2, x3, x4) ->
     (loc, x1, vala_map (List.map (ctyp arg)) x2,
-     option_map (ctyp arg) x3, attributes arg x4)
+     vala_map (option_map (ctyp arg)) x3, attributes arg x4)
 and poly_variant arg =
   fun
   [ PvTag loc x1 x2 x3 x4 →
@@ -617,6 +617,8 @@ and longid0 arg =
         LiApp loc (self x1) (self x2)
     | LiUid loc x1 →
         LiUid loc x1
+    | LiXtr loc x1 x2 →
+        LiXtr loc x1 (option_map (vala_map self) x2)
     ] in
   self0
 and module_expr arg x =
@@ -754,8 +756,8 @@ and extension_constructor arg x =
   | exception Extfun.Failure -> extension_constructor0 arg x
   ]
 and extension_constructor0 arg = fun [
-    EcTuple x1 -> EcTuple (generic_constructor arg x1)
-  | EcRebind x1 x2 x3 -> EcRebind x1 x2 (attributes arg x3)
+    EcTuple loc x1 -> EcTuple loc (generic_constructor arg x1)
+  | EcRebind loc x1 x2 x3 -> EcRebind loc x1 x2 (attributes arg x3)
 ]
 and class_type arg x =
   match Extfun.apply arg.Ctxt.ef.EF.class_type x arg class_type0 with [
@@ -887,7 +889,7 @@ and class_str_item0 arg =
     ] in
   self0
 and longid_lident arg (x1, x2) =
-    (option_map (longid arg) x1, x2)
+    (option_map (vala_map (longid arg)) x1, x2)
 and attribute arg x = vala_map (attribute_body arg) x
 and attribute_body arg x =
   match Extfun.apply arg.Ctxt.ef.EF.attribute_body x arg attribute_body0 with [

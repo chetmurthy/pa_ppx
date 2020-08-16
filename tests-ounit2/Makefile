@@ -82,7 +82,7 @@ all: $(CMO) $(TESTS)
 test: $(TESTS:.byte=)
 
 % : %.byte
-	./$<
+	mkdir -p _build && ./$<
 
 test_%.byte: test_%.ml
 	cppo -D PAPPX $< > $<.pappx.ml
@@ -164,7 +164,7 @@ test_ppx_import.byte: test_ppx_import.ml stuff.cmo test_self_import.cmo
 	-linkpkg -syntax camlp5o stuff.cmo test_self_import.cmo $< -o $@
 
 o_top_test:: o_top_test.byte
-	./o_top_test.byte
+	mkdir -p _build && ./o_top_test.byte
 
 o_top_test.byte: o_top_test.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) -package camlp5,ounit2,fmt,compiler-libs.toplevel,camlp5.pa_op.link,camlp5.pr_official.link,camlp5.toploop.link,pa_ppx_base.link,pa_ppx_here.link,$(PACKAGEPREFIX)testutils -syntax camlp5r -linkpkg -impl o_top_test.ml -o o_top_test.byte

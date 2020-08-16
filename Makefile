@@ -69,18 +69,24 @@ initialize:
 	$(MAKE) -C runtime_fat initialize-exn initialize-exn-i
 	$(MAKE) -C base initialize-pp-MLast initialize-pp-MLast-i initialize-pp-parsetree initialize-pp-parsetree-i
 
-GENERATED=base/pp_MLast.ml base/pp_MLast.mli base/pp_MLast.ml base/pp_MLast.mli \
-	base/pp_parsetree.ml base/pp_parsetree.mli base/pp_parsetree.ml base/pp_parsetree.mli \
+ocamlGENERATED=base/pp_parsetree.ml base/pp_parsetree.mli \
 	runtime/exceptions.ml runtime/exceptions.mli \
 	runtime_fat/exceptions.ml runtime_fat/exceptions.mli
-OCAMLVERSION=$(shell ocamlc --version)
+
+camlp5GENERATED=base/pp_MLast.ml base/pp_MLast.mli
+
+ocamlVERSION=$(shell ocamlc --version)
+camlp5VERSION=$(shell camlp5 -version)
 
 save-generated:
-	mkdir -p generated_src/$(OCAMLVERSION)
-	tar -cf - $(GENERATED) | tar -C generated_src/$(OCAMLVERSION) -xvBf -
+	mkdir -p generated_src/$(ocamlVERSION)
+	tar -cf - $(ocamlGENERATED) | tar -C generated_src/$(ocamlVERSION) -xvBf -
+	mkdir -p generated_src/$(camlp5VERSION)
+	tar -cf - $(camlp5GENERATED) | tar -C generated_src/$(camlp5VERSION) -xvBf -
 
-get-generated: generated_src/$(OCAMLVERSION)
-	tar -C generated_src/$(OCAMLVERSION) -cf - . | tar -xvBf -
+get-generated: generated_src/$(ocamlVERSION) generated_src/$(camlp5VERSION)
+	tar -C generated_src/$(ocamlVERSION) -cf - . | tar -xvBf -
+	tar -C generated_src/$(camlp5VERSION) -cf - . | tar -xvBf -
 
 camlp5r.pa_ppx:
 	tools/LAUNCH $(MKCAMLP5) -verbose -package camlp5.pa_r,camlp5.pr_r,$(PACKAGES) -o $@

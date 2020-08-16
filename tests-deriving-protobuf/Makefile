@@ -55,7 +55,7 @@ all: $(CMO) $(TESTS)
 test: $(TESTS:.byte=)
 
 % : %.byte
-	./$<
+	mkdir -p _build && ./$<
 
 test_%.byte: test_%.ml
 	rm -f test_syntax_pappx.ml

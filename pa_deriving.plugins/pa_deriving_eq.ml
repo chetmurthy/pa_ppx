@@ -125,14 +125,14 @@ value fmt_expression arg ?{coercion} param_map ty0 =
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, None, _) ->
+    (loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, _) ->
     let cid = uv cid in
     let (rec1pat, rec2pat, body) = fmt_record loc arg (uv fields) in
 
     let conspat = <:patt< ($uid:cid$ $rec1pat$, $uid:cid$ $rec2pat$) >> in
     (conspat, <:vala< None >>, body)
 
-  | (loc, cid, tyl, None, attrs) ->
+  | (loc, cid, tyl, <:vala< None >>, attrs) ->
     let cid = uv cid in
     let tyl = uv tyl in
     let vars_fmts = List.mapi (fun i ty ->
@@ -153,7 +153,7 @@ value fmt_expression arg ?{coercion} param_map ty0 =
 
     (conspat, <:vala< None >>, cmpexp)
 
-  | (_, _, _, Some _, _) -> assert False
+  | (_, _, _, <:vala< Some _ >>, _) -> assert False
   ]) l in
   let branches = branches @ [ (<:patt< _ >>, <:vala< None >>, <:expr< False >>) ] in
   <:expr< fun a b -> match (a,b) with [ $list:branches$ ] [@ocaml.warning "-4";][@ocaml.warning "-11";] >>
@@ -185,7 +185,7 @@ value fmt_expression arg ?{coercion} param_map ty0 =
   | PvInh _ ty ->
     let lili = match ty with [
       <:ctyp< $_lid:lid$ >> -> (None, lid)
-    | <:ctyp< $longid:li$ . $_lid:lid$ >> -> (Some li, lid)
+    | <:ctyp< $longid:li$ . $_lid:lid$ >> -> (Some <:vala< li >>, lid)
     ] in
     let conspat = <:patt< (( # $lilongid:lili$ as a ), ( # $lilongid:lili$ as b )) >> in
     let fmtf = fmtrec ty in
@@ -333,13 +333,13 @@ value rec extend_str_items arg si = match si with [
     let modname = Printf.sprintf "M_%s" (eq_fname arg (uv (snd t))) in
     let modname = match fst t with [
       None -> <:longident< $uid:modname$ >>
-    | Some li -> <:longident< $longid:li$ . $uid:modname$ >>
+    | Some <:vala< li >> -> <:longident< $longid:li$ . $uid:modname$ >>
     ] in
     let modname = module_expr_of_longident modname in
     let param_map = PM.make "eq" loc params in
     let ec2gc = fun [
-      EcTuple gc -> [gc]
-    | EcRebind _ _ _ -> []
+      EcTuple _ gc -> [gc]
+    | EcRebind _ _ _ _ -> []
     ] in
     let gcl = List.concat (List.map ec2gc ecs) in
     let ty = <:ctyp< [ $list:gcl$ ] >> in

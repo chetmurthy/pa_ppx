@@ -340,7 +340,7 @@ let ef = EF.{ (ef) with
   | <:ctyp:< [ $list:l$ ] >> ->
       fun arg _ -> do {
         List.iter (fun [
-          (loc, cid, tyl, None, attrs) ->
+          (loc, cid, tyl, <:vala< None >>, attrs) ->
           List.iter (fun a -> add_current_attribute arg (attr_id a)) (uv attrs)
         | _ -> ()
         ]) l ;

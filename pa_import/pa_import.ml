@@ -208,7 +208,7 @@ value substitute_ctyp renmap t =
     <:ctyp< { $list:List.map sub_label_decl ldl$ } >>
   | <:ctyp:< [ $list:l$ ] >> ->
     let l = List.map (fun (loc, cid, tyl, tyo, attrs) ->
-        (loc, cid, Pcaml.vala_map (List.map subrec) tyl, option_map subrec tyo, attrs)
+        (loc, cid, Pcaml.vala_map (List.map subrec) tyl, vala_map (option_map subrec) tyo, attrs)
       ) l in
       <:ctyp< [ $list:l$ ] >>
   | <:ctyp:< $_$ $_$ >> as z ->

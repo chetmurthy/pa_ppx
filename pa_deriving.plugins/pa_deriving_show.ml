@@ -158,7 +158,7 @@ value fmt_expression arg ?{coercion} param_map ty0 =
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
+    (loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, attrs) ->
     let cid = uv cid in
     let ppcid = match extract_allowed_attribute_expr arg ("show", "name") (uv attrs) with [
       None -> Ctxt.prefixed_name arg cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
@@ -169,7 +169,7 @@ value fmt_expression arg ?{coercion} param_map ty0 =
     let conspat = <:patt< $uid:cid$ $recpat$ >> in
     (conspat, <:vala< None >>, body)
 
-  | (loc, cid, tyl, None, attrs) ->
+  | (loc, cid, tyl, <:vala< None >>, attrs) ->
     let cid = uv cid in
     let ppcid = match extract_allowed_attribute_expr arg ("show", "name") (uv attrs) with [
       None -> Ctxt.prefixed_name arg cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
@@ -204,7 +204,7 @@ value fmt_expression arg ?{coercion} param_map ty0 =
         <:expr< pf ofmt $str:fmtstring$ >> fmts vars in
     (conspat, <:vala< None >>, <:expr< let open $runtime_module$.Fmt in ($e$) >>)
     ]
-  | (_, _, _, Some _, _) -> assert False
+  | (_, _, _, <:vala< Some _ >>, _) -> assert False
   ]) l in
   <:expr< fun ofmt -> fun [ $list:branches$ ] >>
 
@@ -235,7 +235,7 @@ value fmt_expression arg ?{coercion} param_map ty0 =
   | PvInh _ ty ->
     let lili = match fst (Ctyp.unapplist ty) with [
       <:ctyp< $_lid:lid$ >> -> (None, lid)
-    | <:ctyp< $longid:li$ . $_lid:lid$ >> -> (Some li, lid)
+    | <:ctyp< $longid:li$ . $_lid:lid$ >> -> (Some <:vala< li >>, lid)
     | [%unmatched_vala] -> failwith "fmt_expression-PvInh"
      ] in
     let conspat = <:patt< ( # $lilongid:lili$ as z ) >> in
@@ -402,13 +402,13 @@ value rec extend_str_items arg si = match si with [
     let modname = Printf.sprintf "M_%s" (pp_fname arg (uv (snd t))) in
     let modname = match fst t with [
       None -> <:longident< $uid:modname$ >>
-    | Some li -> <:longident< $longid:li$ . $uid:modname$ >>
+    | Some <:vala< li >> -> <:longident< $longid:li$ . $uid:modname$ >>
     ] in
     let modname = module_expr_of_longident modname in
     let param_map = PM.make "show" loc params in
     let ec2gc = fun [
-      EcTuple gc -> [gc]
-    | EcRebind _ _ _ -> []
+      EcTuple _ gc -> [gc]
+    | EcRebind _ _ _ _ -> []
     ] in
     let gcl = List.concat (List.map ec2gc ecs) in
     let ty = <:ctyp< [ $list:gcl$ ] >> in

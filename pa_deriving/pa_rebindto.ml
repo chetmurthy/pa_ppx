@@ -31,7 +31,7 @@ value expr_to_longident eli =
 value is_rebind_to_attribute (attr : attribute) = attr_id attr = "rebind_to" ;
 
 value rebind_extension_constructor arg = fun [
-   EcTuple (loc, ci, _, None, attrs) as z
+   EcTuple loc (_, ci, _, <:vala< None >>, attrs) as z
     when List.exists is_rebind_to_attribute (uv attrs) ->
     let (rebind_attrs, others) = filter_split is_rebind_to_attribute (uv attrs) in
     let eli = match List.map uv rebind_attrs  with [

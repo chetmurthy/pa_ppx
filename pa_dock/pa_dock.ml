@@ -353,8 +353,8 @@ value sig_item_wrap_itemattr a si = match si with [
 | <:sig_item:< module type $_:i$ $itemattrs:attrs$ >> ->
   <:sig_item< module type $_:i$ $itemattrs:attrs@[ a ]$ >>
 
-| <:sig_item:< module alias $_:i$ = $_longid:li$ $itemattrs:attrs$ >> ->
-  <:sig_item< module alias $_:i$ = $_longid:li$ $itemattrs:attrs@[ a ]$ >>
+| <:sig_item:< module alias $_uid:i$ = $_longid:li$ $itemattrs:attrs$ >> ->
+  <:sig_item< module alias $_uid:i$ = $_longid:li$ $itemattrs:attrs@[ a ]$ >>
 
 | <:sig_item:< open $longid:i$ $itemattrs:attrs$ >> ->
   <:sig_item< open $longid:i$ $itemattrs:attrs@[ a ]$ >>
@@ -472,24 +472,18 @@ value rewrite_type_decls arg maxpos tdl =
   in tdl
 ;
 
-value loc_of_extension_constructor = fun [
-  EcTuple (loc, _, _, _, _) -> loc
-| EcRebind _ li _ -> loc_of_longid (uv li)
-]
-;
-
 value rewrite_extension_constructor arg ec maxpos = match ec with [
-  EcTuple gc ->
+  EcTuple loc gc ->
   let (gc, maxpos) = rewrite_gc arg gc maxpos in
-  (EcTuple gc, maxpos)
-| EcRebind a b attrs ->
+  (EcTuple loc gc, maxpos)
+| EcRebind _ a b attrs ->
   let loc = loc_of_extension_constructor ec in
   let startpos = Ploc.last_pos loc in
   let l = comments_between (get arg) startpos maxpos in
   let l = Std.filter is_doc_comment l in
   let newattrs = List.map attr_doc_comment l in
   let attrs = <:vala< (uv attrs) @ newattrs >> in
-  (EcRebind a b attrs, Ploc.first_pos loc)
+  (EcRebind loc a b attrs, Ploc.first_pos loc)
 ]
 ;
 
@@ -707,18 +701,19 @@ value variant_type_decl_last_branch_has_doc_comments td =
 ;
 
 value extension_constructor_has_doc_comments = fun [
-  EcTuple (_, _, _, _, attrs) ->
+  EcTuple _ (_, _, _, _, attrs) ->
   List.exists is_doc_attribute (uv attrs)
-| EcRebind _ _ attrs ->
+| EcRebind _ _ _ attrs ->
   List.exists is_doc_attribute (uv attrs)
 ]
 ;
 
 value extension_constructor_add_doc_comment ec s = match ec with [
-  EcTuple (a, b, c, d, attrs) -> EcTuple (a, b, c, d, <:vala< (uv attrs) @ [ attr_doc_comment s ] >>)
+  EcTuple loc (a, b, c, d, attrs) ->
+  EcTuple loc (a, b, c, d, <:vala< (uv attrs) @ [ attr_doc_comment s ] >>)
   
-| EcRebind a b attrs ->
-  EcRebind a b <:vala< (uv attrs) @ [ attr_doc_comment s ] >>
+| EcRebind loc a b attrs ->
+  EcRebind loc a b <:vala< (uv attrs) @ [ attr_doc_comment s ] >>
 ]
 ;
 

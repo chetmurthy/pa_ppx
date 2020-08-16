@@ -134,14 +134,14 @@ value fmt_expression arg ?{coercion} param_map ty0 =
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, None, _) ->
+    (loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, _) ->
     let cid = uv cid in
     let (rec1pat, rec2pat, body) = fmt_record loc arg (uv fields) in
 
     let conspat = <:patt< ($uid:cid$ $rec1pat$, $uid:cid$ $rec2pat$) >> in
     (conspat, <:vala< None >>, body)
 
-  | (loc, cid, tyl, None, attrs) ->
+  | (loc, cid, tyl, <:vala< None >>, attrs) ->
     let cid = uv cid in
     let tyl = uv tyl in
     let var_patt_expr_fmts = List.mapi (fun i ty ->
@@ -164,7 +164,7 @@ value fmt_expression arg ?{coercion} param_map ty0 =
 
     (conspat, <:vala< None >>, body)
 
-  | (_, _, _, Some _, _) -> assert False
+  | (_, _, _, <:vala< Some _ >>, _) -> assert False
   ]) l in
   let tag2int_exp =
     let branches = List.mapi (fun i (_, cid, tyl, _, _) ->
@@ -211,7 +211,7 @@ value fmt_expression arg ?{coercion} param_map ty0 =
   | PvInh _ ty ->
     let lili = match ty with [
       <:ctyp< $_lid:lid$ >> -> (None, lid)
-    | <:ctyp< $longid:li$ . $_lid:lid$ >> -> (Some li, lid)
+    | <:ctyp< $longid:li$ . $_lid:lid$ >> -> (Some <:vala< li >>, lid)
     ] in
     let conspat = <:patt< (( # $lilongid:lili$ as a ), ( # $lilongid:lili$ as b )) >> in
     let fmtf = fmtrec ty in
@@ -228,7 +228,7 @@ value fmt_expression arg ?{coercion} param_map ty0 =
       | PvInh _ ty ->
         let lili = match ty with [
           <:ctyp< $_lid:lid$ >> -> (None, lid)
-        | <:ctyp< $longid:li$ . $_lid:lid$ >> -> (Some li, lid)
+        | <:ctyp< $longid:li$ . $_lid:lid$ >> -> (Some <:vala< li >>, lid)
         ] in
         (<:patt< ( # $lilongid:lili$ ) >>, <:vala< None >>,
          <:expr< $int:(string_of_int i)$ >>)

@@ -136,7 +136,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
+    (loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, attrs) ->
     let cid = uv cid in
     let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
@@ -146,7 +146,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
     let conspat = <:patt< $uid:cid$ $recpat$ >> in
     (conspat, <:vala< None >>, <:expr< `List [ (`String $str:jscid$) ;  $body$ ] >>)
 
-  | (loc, cid, tyl, None, attrs) ->
+  | (loc, cid, tyl, <:vala< None >>, attrs) ->
     let cid = uv cid in
     let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
@@ -163,7 +163,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 
     (conspat, <:vala< None >>, <:expr< `List [ (`String $str:jscid$) :: $liste$ ] >>)
 
-  | (_, _, _, Some _, _) -> assert False
+  | (_, _, _, <:vala< Some _ >>, _) -> assert False
   ]) l in
   <:expr< fun [ $list:branches$ ] >>
 
@@ -198,7 +198,7 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
   | PvInh _ ty ->
     let lili = match fst (Ctyp.unapplist ty) with [
       <:ctyp< $_lid:lid$ >> -> (None, lid)
-    | <:ctyp< $longid:li$ . $_lid:lid$ >> -> (Some li, lid)
+    | <:ctyp< $longid:li$ . $_lid:lid$ >> -> (Some <:vala< li >>, lid)
     | [%unmatched_vala] -> failwith "fmt_expression-PvInh"
      ] in
     let conspat = <:patt< ( # $lilongid:lili$ as z ) >> in
@@ -362,13 +362,13 @@ value rec extend_str_items arg si = match si with [
     let modname = Printf.sprintf "M_%s" (to_yojson_fname arg (uv (snd t))) in
     let modname = match fst t with [
       None -> <:longident< $uid:modname$ >>
-    | Some li -> <:longident< $longid:li$ . $uid:modname$ >>
+    | Some <:vala< li >> -> <:longident< $longid:li$ . $uid:modname$ >>
     ] in
     let modname = module_expr_of_longident modname in
     let param_map = PM.make "yojson" loc params in
     let ec2gc = fun [
-      EcTuple gc -> [gc]
-    | EcRebind _ _ _ -> []
+      EcTuple _ gc -> [gc]
+    | EcRebind _ _ _ _ -> []
     ] in
     let gcl = List.concat (List.map ec2gc ecs) in
     let ty = <:ctyp< [ $list:gcl$ ] >> in
@@ -495,7 +495,7 @@ value of_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, None, attrs) ->
+    (loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, attrs) ->
     let cid = uv cid in
     let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
@@ -505,7 +505,7 @@ value of_expression arg ~{msg} param_map ty0 =
     let conspat = <:patt< `List [ `String $str:jscid$ ; $recpat$ ] >> in
     (conspat, <:vala< None >>, body)
 
-  | (loc, cid, tyl, None, attrs) ->
+  | (loc, cid, tyl, <:vala< None >>, attrs) ->
     let cid = uv cid in
     let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
@@ -527,7 +527,7 @@ value of_expression arg ~{msg} param_map ty0 =
 
     (conspat, <:vala< None >>, rhs)
 
-  | (_, _, _, Some _, _) -> assert False
+  | (_, _, _, <:vala< Some _ >>, _) -> assert False
   ]) l in
   let catch_branch = (<:patt< _ >>, <:vala< None >>, <:expr< Result.Error $str:msg$ >>) in
   let branches = branches @ [catch_branch] in
@@ -793,13 +793,13 @@ value rec extend_str_items arg si = match si with [
     let modname = Printf.sprintf "M_%s" (of_yojson_fname arg (uv (snd t))) in
     let modname = match fst t with [
       None -> <:longident< $uid:modname$ >>
-    | Some li -> <:longident< $longid:li$ . $uid:modname$ >>
+    | Some <:vala< li >> -> <:longident< $longid:li$ . $uid:modname$ >>
     ] in
     let modname = module_expr_of_longident modname in
     let param_map = PM.make "yojson" loc params in
     let ec2gc = fun [
-      EcTuple gc -> [gc]
-    | EcRebind _ _ _ -> []
+      EcTuple _ gc -> [gc]
+    | EcRebind _ _ _ _ -> []
     ] in
     let gcl = List.concat (List.map ec2gc ecs) in
     let ty = <:ctyp< [ $list:gcl$ ] >> in
