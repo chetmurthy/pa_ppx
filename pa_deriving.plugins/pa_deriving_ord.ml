@@ -134,16 +134,13 @@ value fmt_expression arg ?{coercion} param_map ty0 =
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, _) ->
-    let cid = uv cid in
-    let (rec1pat, rec2pat, body) = fmt_record loc arg (uv fields) in
+    <:constructor:< $uid:cid$ of { $list:fields$ } $algattrs:_$ >> ->
+    let (rec1pat, rec2pat, body) = fmt_record loc arg fields in
 
     let conspat = <:patt< ($uid:cid$ $rec1pat$, $uid:cid$ $rec2pat$) >> in
     (conspat, <:vala< None >>, body)
 
-  | (loc, cid, tyl, <:vala< None >>, attrs) ->
-    let cid = uv cid in
-    let tyl = uv tyl in
+  | <:constructor:< $uid:cid$ of $list:tyl$ $algattrs:_$ >> ->
     let var_patt_expr_fmts = List.mapi (fun i ty ->
         let mk1 s = (s, <:patt< $lid:s$ >>, <:expr< $lid:s$ >>) in
         (mk1 (Printf.sprintf "a_%d" i), mk1 (Printf.sprintf "b_%d" i), fmtrec ty)) tyl in

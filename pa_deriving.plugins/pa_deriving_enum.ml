@@ -51,29 +51,22 @@ value extract_value (attrs : MLast.attributes_no_anti) =
 module PM = ParamMap(struct value arg_ctyp_f loc ty = assert False ; end) ;
 
 value to_expression arg = fun [
-(*
-    <:ctyp:< $lid:lid$ >> ->
-      let fname = to_fname arg lid in
-      <:expr< $lid:fname$ >>
-  | <:ctyp:< $longid:li$ . $lid:lid$ >> ->
-      let fname = to_fname arg lid in
-      Expr.prepend_longident li <:expr< $lid:fname$ >>
-
-  |*) <:ctyp:< [ $list:l$ ] >> ->
-  let (_, map,revacc) = List.fold_left (fun (idx, map, revacc) (loc, cid, _, _, attrs) ->
-    let idx = match extract_value (uv attrs) with [
+  <:ctyp:< [ $list:l$ ] >> ->
+  let (_, map,revacc) = List.fold_left (fun (idx, map, revacc) -> fun [
+    <:constructor:< $uid:cid$ of $list:_$ $algattrs:attrs$ >> ->
+    let idx = match extract_value attrs with [
       None -> idx
     | Some n -> n
     ] in
-    let cid = uv cid in
-
     let conspat = <:patt< $uid:cid$ >> in
     let consexpr = <:expr< $uid:cid$ >> in
     
     let body = <:expr< $int:(string_of_int idx)$ >> in
 
     (idx+1, [(consexpr,idx) :: map],
-     [(conspat, <:vala< None >>, body) :: revacc])) (0,[], []) l in
+     [(conspat, <:vala< None >>, body) :: revacc])
+  | gc -> Ploc.raise (loc_of_constructor gc) (Failure "pa_deriving_plugins.enum: unsupported constructor")
+          ]) (0,[], []) l in
   let branches = List.rev revacc in
   (map, <:expr< fun [ $list:branches$ ] >>)
 
@@ -93,7 +86,7 @@ value to_expression arg = fun [
      [(conspat, <:vala< None >>, body) :: revacc])
 
 
-  | PvInh _ ty -> failwith "deriving.enum only works on variants sans inheritance"
+  | PvInh loc ty -> Ploc.raise loc (Failure "deriving.enum only works on variants sans inheritance")
   ]) (0, [], []) l in
   let branches = List.rev revacc in
   (map, <:expr< fun [ $list:branches$ ] >>)
@@ -186,7 +179,7 @@ value str_item_gen_enum name arg = fun [
 value sig_item_gen_enum0 arg td =
   let params = uv td.tdPrm in
   if params <> [] then
-    failwith "cannot derive enum-functions for type decl with type-vars"
+    Ploc.raise (loc_of_type_decl td) (Failure "cannot derive enum-functions for type decl with type-vars")
   else
     sig_item_funs arg td
 ;

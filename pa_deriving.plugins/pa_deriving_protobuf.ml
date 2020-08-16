@@ -104,15 +104,15 @@ type preprocessed_t 'a = {
 *)
 value preprocess loc arg attrmod l =
   let (rev_branch_slotnums, nextslot) = List.fold_left (fun (acc, slotnum) -> fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, attrs) -> assert False
+    <:constructor:< $uid:_$ of { $list:_$ } $algattrs:_$ >> -> assert False
 
-  | (loc, cid, <:vala< [] >>, <:vala< None >>, attrs) as b ->
+  | <:constructor:< $uid:_$ $_algattrs:attrs$ >> as b ->
     let key = attrs_to_key loc arg attrs in
     ([ {it=b;  oldkey=key; newkey=key+1; arity=None; slotnum=None} :: acc], slotnum)
 
-  | (loc, cid, tyl, <:vala< None >>, attrs) as b ->
+  | <:constructor:< $uid:_$ of $list:tyl$ $_algattrs:attrs$ >> as b ->
     let key = attrs_to_key loc arg attrs in
-    let arity = match uv tyl with [
+    let arity = match tyl with [
       [ <:ctyp< option $_$ >> ] -> Some `Optional
     | [ <:ctyp< list $_$ >> ] -> Some `List
     | [ <:ctyp< array $_$ >> ] -> Some `Array
@@ -141,17 +141,17 @@ value preprocess loc arg attrmod l =
 *)
 value to_tupletype loc arg branch_key_slotnums =
   let totuple_branch2tuplety = fun [
-    {it=(loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, attrs)} -> assert False
+    {it= <:constructor< $uid:_$ of { $list:_$ } $_algattrs:_$ >>} -> assert False
 
-  | {it=(loc, cid, <:vala< [] >>, <:vala< None >>, attrs)} ->
+  | {it= <:constructor< $uid:_$ $_algattrs:_$ >>} ->
     []
 
-  | {it=(loc, cid, tyl, <:vala< None >>, attrs); newkey=newkey; arity = None} ->
-    let branchtuplety = tuplectyp loc (uv tyl) in
+  | {it= <:constructor:< $uid:_$ of $list:tyl$ $_algattrs:_$ >>; newkey=newkey; arity = None} ->
+    let branchtuplety = tuplectyp loc tyl in
     [<:ctyp< option $branchtuplety$ [@key $int:string_of_int newkey$; ] >>]
 
-  | {it=(loc, cid, tyl, <:vala< None >>, attrs); newkey=newkey; arity = Some _} ->
-    let branchtuplety = tuplectyp loc (uv tyl) in
+  | {it= <:constructor:< $uid:_$ of $list:tyl$ $_algattrs:_$ >>; newkey=newkey; arity = Some _} ->
+    let branchtuplety = tuplectyp loc tyl in
     [<:ctyp< $branchtuplety$ [@key $int:string_of_int newkey$; ] >>]
 
   ] in
@@ -209,12 +209,12 @@ value totuple loc arg argvar (branch_key_slotnums, nslots) =
   let all_empty_expr = all_empty_expr loc branch_key_slotnums in
 
   let totuple_branch2tuple_expr argvars = fun [
-    {it=(loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, attrs)} -> assert False
+    {it= <:constructor< $uid:_$ of { $list:_$ } $algattrs:_$ >>} -> assert False
 
-  | {it=(loc, cid, <:vala< [] >>, <:vala< None >>, attrs); oldkey=oldkey; slotnum=None} ->
+  | {it= <:constructor< $uid:_$ $algattrs:_$ >>; oldkey=oldkey; slotnum=None} ->
     tupleexpr loc [ <:expr< $int:string_of_int oldkey$ >> :: all_empty_expr ]
 
-  | {it=(loc, cid, tyl, <:vala< None >>, attrs); oldkey=oldkey; slotnum=Some slotnum; arity=arity} ->
+  | {it= <:constructor:< $uid:_$ of $list:tyl$ $algattrs:_$ >>; oldkey=oldkey; slotnum=Some slotnum; arity=arity} ->
     (* (Some i, None ... None ..., Some <tuple-of-argvars>, None ...) *)
     let argtuple_expr =  tupleexpr loc (List.map (fun v -> <:expr< $lid:v$ >>) argvars) in
     let arg_expr = match arity with [
@@ -226,14 +226,14 @@ value totuple loc arg argvar (branch_key_slotnums, nslots) =
   ] in
 
   let totuple_branch2branch_patt = fun [
-    {it=(loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, attrs)} -> assert False
+    {it= <:constructor< $uid:_$ of { $list:_$ } $algattrs:_$ >>} -> assert False
 
-  | {it=(loc, cid, <:vala< [] >>, <:vala< None >>, attrs); oldkey=oldkey; slotnum=None} ->
-    (<:patt< $uid:uv cid$ >>, [])
+  | {it= <:constructor< $uid:cid$ $algattrs:_$ >>; oldkey=oldkey; slotnum=None} ->
+    (<:patt< $uid:cid$ >>, [])
 
-  | {it=(loc, cid, tyl, <:vala< None >>, attrs); oldkey=oldkey; slotnum=Some slotnum} ->
-    let argvars = List.mapi (fun i _ -> Printf.sprintf "v_%d" i) (uv tyl) in
-    (Patt.applist <:patt< $uid:uv cid$ >> (List.map (fun v -> <:patt< $lid:v$ >>) argvars),
+  | {it= <:constructor:< $uid:cid$ of $list:tyl$ $algattrs:_$ >>; oldkey=oldkey; slotnum=Some slotnum} ->
+    let argvars = List.mapi (fun i _ -> Printf.sprintf "v_%d" i) tyl in
+    (Patt.applist <:patt< $uid:cid$ >> (List.map (fun v -> <:patt< $lid:v$ >>) argvars),
      argvars)
 
   ] in
@@ -250,12 +250,12 @@ value oftuple loc arg ~{field_name} (branch_key_slotnums, nslots) =
   let all_empty_patt = all_empty_patt loc branch_key_slotnums in
 
   let oftuple_branch2tuple_patt argvars = fun [
-    {it=(loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, attrs)} -> assert False
+    {it= <:constructor< $uid:_$ of { $list:_$ } $algattrs:_$ >>} -> assert False
 
-  | {it=(loc, cid, <:vala< [] >>, <:vala< None >>, attrs); oldkey=oldkey; slotnum=None} ->
+  | {it= <:constructor< $uid:cid$ $algattrs:_$ >>; oldkey=oldkey; slotnum=None} ->
     tuplepatt loc [ <:patt< $int:string_of_int oldkey$ >> :: all_empty_patt ]
 
-  | {it=(loc, cid, tyl, <:vala< None >>, attrs); oldkey=oldkey; slotnum=Some slotnum; arity=arity} ->
+  | {it= <:constructor:< $uid:_$ of $list:tyl$ $algattrs:_$ >>; oldkey=oldkey; slotnum=Some slotnum; arity=arity} ->
     (* (Some i, None ... None ..., Some <tuple-of-argvars>, None ...) *)
     let argtuple_patt =  tuplepatt loc (List.map (fun v -> <:patt< $lid:v$ >>) argvars) in
     let arg_patt = match arity with [
@@ -267,14 +267,14 @@ value oftuple loc arg ~{field_name} (branch_key_slotnums, nslots) =
   ] in
 
   let oftuple_branch2branch_expr = fun [
-    {it=(loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, attrs)} -> assert False
+    {it= <:constructor< $uid:_$ of { $list:_$ } $algattrs:_$ >>} -> assert False
 
-  | {it=(loc, cid, <:vala< [] >>, <:vala< None >>, attrs); oldkey=oldkey; slotnum=None} ->
-    (<:expr< $uid:uv cid$ >>, [])
+  | {it= <:constructor< $uid:cid$ $algattrs:_$ >>; oldkey=oldkey; slotnum=None} ->
+    (<:expr< $uid:cid$ >>, [])
 
-  | {it=(loc, cid, tyl, <:vala< None >>, attrs); oldkey=oldkey; slotnum=Some slotnum} ->
-    let argvars = List.mapi (fun i _ -> Printf.sprintf "v_%d" i) (uv tyl) in
-    (Expr.applist <:expr< $uid:uv cid$ >> (List.map (fun v -> <:expr< $lid:v$ >>) argvars),
+  | {it= <:constructor:< $uid:cid$ of $list:tyl$ $algattrs:_$ >>; oldkey=oldkey; slotnum=Some slotnum} ->
+    let argvars = List.mapi (fun i _ -> Printf.sprintf "v_%d" i) tyl in
+    (Expr.applist <:expr< $uid:cid$ >> (List.map (fun v -> <:expr< $lid:v$ >>) argvars),
      argvars)
 
   ] in
@@ -503,9 +503,10 @@ value bare_to_expression arg ~{field_name} ty0 =
   let msg = format_msg arg field_name in
   match ty0 with [
     <:ctyp:< [ $list:l$ ] >> ->
-    let branches = List.map (fun [ (_, cid, <:vala< [] >>, _, attrs) ->
+    let branches = List.map (fun [
+      <:constructor:< $uid:cid$ $_algattrs:attrs$ >> ->
       let key = attrs_to_key loc arg attrs in
-      (<:patt< $_uid:cid$ >>, <:vala< None >>, <:expr< $int64:string_of_int key$ >>)
+      (<:patt< $uid:cid$ >>, <:vala< None >>, <:expr< $int64:string_of_int key$ >>)
     | _ -> Ploc.raise (loc_of_ctyp ty0) (Failure "protobuf.bare: only applicable to ENUM [p]variants")
     ]) l in
     <:expr<fun [ $list:branches$ ] >>

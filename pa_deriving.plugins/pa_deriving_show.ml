@@ -158,23 +158,20 @@ value fmt_expression arg ?{coercion} param_map ty0 =
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, attrs) ->
-    let cid = uv cid in
+    <:constructor:< $uid:cid$ of { $list:fields$ } $_algattrs:attrs$ >> ->
     let ppcid = match extract_allowed_attribute_expr arg ("show", "name") (uv attrs) with [
       None -> Ctxt.prefixed_name arg cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
     let prefix_txt = ppcid^" " in
-    let (recpat, body) = fmt_record ~{without_path=True} ~{prefix_txt=prefix_txt} ~{bracket_space=""} loc arg (uv fields) in
+    let (recpat, body) = fmt_record ~{without_path=True} ~{prefix_txt=prefix_txt} ~{bracket_space=""} loc arg fields in
 
     let conspat = <:patt< $uid:cid$ $recpat$ >> in
     (conspat, <:vala< None >>, body)
 
-  | (loc, cid, tyl, <:vala< None >>, attrs) ->
-    let cid = uv cid in
+  | <:constructor:< $uid:cid$ of $list:tyl$ $_algattrs:attrs$ >> ->
     let ppcid = match extract_allowed_attribute_expr arg ("show", "name") (uv attrs) with [
       None -> Ctxt.prefixed_name arg cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
-    let tyl = uv tyl in
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
     let conspat = List.fold_left (fun p vp -> <:patt< $p$ $vp$ >>)

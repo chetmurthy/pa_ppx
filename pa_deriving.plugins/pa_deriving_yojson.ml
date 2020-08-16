@@ -136,22 +136,19 @@ value to_expression arg ?{coercion} ~{msg} param_map ty0 =
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, attrs) ->
-    let cid = uv cid in
+    <:constructor:< $uid:cid$ of { $list:fields$ } $_algattrs:attrs$ >> ->
     let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
-    let (recpat, body) = fmt_record loc arg (uv fields) in
+    let (recpat, body) = fmt_record loc arg fields in
 
     let conspat = <:patt< $uid:cid$ $recpat$ >> in
     (conspat, <:vala< None >>, <:expr< `List [ (`String $str:jscid$) ;  $body$ ] >>)
 
-  | (loc, cid, tyl, <:vala< None >>, attrs) ->
-    let cid = uv cid in
+  | <:constructor:< $uid:cid$ of $list:tyl$ $_algattrs:attrs$ >> ->
     let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
-    let tyl = uv tyl in
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
     let varpats = List.map (fun v -> <:patt< $lid:v$ >>) vars in
     let conspat = List.fold_left (fun p vp -> <:patt< $p$ $vp$ >>)
@@ -495,22 +492,19 @@ value of_expression arg ~{msg} param_map ty0 =
 
 | <:ctyp:< [ $list:l$ ] >> ->
   let branches = List.map (fun [
-    (loc, cid, <:vala< [TyRec _ fields] >>, <:vala< None >>, attrs) ->
-    let cid = uv cid in
+    <:constructor:< $uid:cid$ of { $list:fields$ } $_algattrs:attrs$ >> ->
     let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
-    let (recpat, body) = fmt_record ~{cid=Some cid} loc arg (uv fields) in
+    let (recpat, body) = fmt_record ~{cid=Some cid} loc arg fields in
 
     let conspat = <:patt< `List [ `String $str:jscid$ ; $recpat$ ] >> in
     (conspat, <:vala< None >>, body)
 
-  | (loc, cid, tyl, <:vala< None >>, attrs) ->
-    let cid = uv cid in
+  | <:constructor:< $uid:cid$ of $list:tyl$ $_algattrs:attrs$ >> ->
     let jscid = match extract_allowed_attribute_expr arg ("yojson", "name") (uv attrs) with [
       None -> cid | Some <:expr< $str:s$ >> -> s | _ -> failwith "@name with non-string argument"
     ] in
-    let tyl = uv tyl in
     let vars = List.mapi (fun n _ -> Printf.sprintf "v%d" n) tyl in
     let varexps = List.map (fun v -> <:expr< $lid:v$ >>) vars in
     let fmts = List.map fmtrec tyl in
