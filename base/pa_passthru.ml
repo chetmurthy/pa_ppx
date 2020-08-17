@@ -560,8 +560,6 @@ and sig_item0 arg =
              x2)
     | SgMty loc x1 x2 x3 →
         SgMty loc x1 (module_type arg x2) (attributes arg x3)
-    | SgMtyAbs loc x1 x2 →
-        SgMtyAbs loc x1  (attributes arg x2)
     | SgMtyAlias loc x1 x2 x3 →
         SgMtyAlias loc x1 (vala_map (longid arg) x2) (attributes arg x3)
     | SgModSubst loc x1 x2 x3 →
@@ -700,8 +698,6 @@ and str_item0 arg =
              x2)
     | StMty loc x1 x2 x3 →
         StMty loc x1 (module_type arg x2) (attributes arg x3)
-    | StMtyAbs loc x1 x2 →
-        StMtyAbs loc x1 (attributes arg x2)
     | StOpn loc x1 x2 x3 →
         StOpn loc x1 (module_expr arg x2) (attributes arg x3)
     | StTyp loc x1 x2 →

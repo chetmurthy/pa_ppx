@@ -377,8 +377,6 @@ and sig_item0 arg =
              x2)[@hashrecons z;]
     | SgMty loc x1 x2 x3[@hashrecons z;] →
         SgMty loc x1 (module_type arg x2) (attributes arg x3)[@hashrecons z;]
-    | SgMtyAbs loc x1 x2[@hashrecons z;] →
-        SgMtyAbs loc x1  (attributes arg x2)[@hashrecons z;]
     | SgMtyAlias loc x1 x2 x3[@hashrecons z;] →
         SgMtyAlias loc x1 (vala_map (longid arg) x2) (attributes arg x3)[@hashrecons z;]
     | SgModSubst loc x1 x2 x3[@hashrecons z;] →
@@ -509,8 +507,6 @@ and str_item0 arg =
              x2)[@hashrecons z;]
     | StMty loc x1 x2 x3[@hashrecons z;] →
         StMty loc x1 (module_type arg x2) (attributes arg x3)[@hashrecons z;]
-    | StMtyAbs loc x1 x2[@hashrecons z;] →
-        StMtyAbs loc x1 (attributes arg x2)[@hashrecons z;]
     | StOpn loc x1 x2 x3[@hashrecons z;] →
         StOpn loc x1 (module_expr arg x2) (attributes arg x3)[@hashrecons z;]
     | StTyp loc x1 x2[@hashrecons z;] →

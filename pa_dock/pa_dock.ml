@@ -265,8 +265,6 @@ value str_item_wrap_itemattr a si = match si with [
 | <:str_item:< module type $_:i$ = $mt$ $itemattrs:attrs$ >> ->
   <:str_item< module type $_:i$ = $mt$ $itemattrs:attrs@[ a ]$ >>
 
-| <:str_item:< module type $_:i$ $itemattrs:attrs$ >> ->
-  <:str_item< module type $_:i$ $itemattrs:attrs@[ a ]$ >>
 | <:str_item:< open $_!:ovf$ $me$ $itemattrs:attrs$ >> ->
   <:str_item< open $_!:ovf$ $me$ $itemattrs:attrs@[ a ]$ >>
 
@@ -349,9 +347,6 @@ value sig_item_wrap_itemattr a si = match si with [
 
 | <:sig_item:< module type $_:i$ = $mt$ $itemattrs:attrs$ >> ->
   <:sig_item< module type $_:i$ = $mt$ $itemattrs:attrs@[ a ]$ >>
-
-| <:sig_item:< module type $_:i$ $itemattrs:attrs$ >> ->
-  <:sig_item< module type $_:i$ $itemattrs:attrs@[ a ]$ >>
 
 | <:sig_item:< module alias $_uid:i$ = $_longid:li$ $itemattrs:attrs$ >> ->
   <:sig_item< module alias $_uid:i$ = $_longid:li$ $itemattrs:attrs@[ a ]$ >>

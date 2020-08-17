@@ -1,7 +1,5 @@
 stuff.cmo :
 stuff.cmx :
-test_comment_lexer.ml.pappx.cmo :
-test_comment_lexer.ml.pappx.cmx :
 test_deriving_enum.ml.pappx.cmo :
 test_deriving_enum.ml.pappx.cmx :
 test_deriving_enum.ml.ppx.cmo :
@@ -54,9 +52,3 @@ test_ppx_yojson.ppx.cmo :
 test_ppx_yojson.ppx.cmx :
 test_utils.ml.pappx.cmo :
 test_utils.ml.pappx.cmx :
-testutil2.cmo : \
-    testutil.cmo
-testutil2.cmx : \
-    testutil.cmx
-testutil.cmo :
-testutil.cmx :

@@ -194,7 +194,6 @@ and sig_item =
                (Ploc.vala (option (Ploc.vala string)) * module_type *
                 attributes))
     | SgMty of loc and Ploc.vala string and module_type and attributes
-    | SgMtyAbs of loc and Ploc.vala string and attributes
     | SgMtyAlias of
         loc and Ploc.vala string and Ploc.vala longid and attributes
     | SgModSubst of loc and Ploc.vala string and longid and attributes
@@ -250,7 +249,6 @@ and str_item =
                (Ploc.vala (option (Ploc.vala string)) * module_expr *
                 attributes))
     | StMty of loc and Ploc.vala string and module_type and attributes
-    | StMtyAbs of loc and Ploc.vala string and attributes
     | StOpn of loc and Ploc.vala bool and module_expr and attributes
     | StTyp of loc and Ploc.vala bool and Ploc.vala (list type_decl)
     | StTypExten of loc and type_extension

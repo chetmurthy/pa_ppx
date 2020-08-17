@@ -1,0 +1,6 @@
+testutil2.cmo : \
+    testutil.cmo
+testutil2.cmx : \
+    testutil.cmx
+testutil.cmo :
+testutil.cmx :

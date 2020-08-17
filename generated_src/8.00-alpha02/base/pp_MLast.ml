@@ -243,7 +243,6 @@ and sig_item =
                (Ploc.vala (option (Ploc.vala string)) * module_type *
                 attributes))
     | SgMty of loc and Ploc.vala string and module_type and attributes
-    | SgMtyAbs of loc and Ploc.vala string and attributes
     | SgMtyAlias of
         loc and Ploc.vala string and Ploc.vala longid and attributes
     | SgModSubst of loc and Ploc.vala string and longid and attributes
@@ -299,7 +298,6 @@ and str_item =
                (Ploc.vala (option (Ploc.vala string)) * module_expr *
                 attributes))
     | StMty of loc and Ploc.vala string and module_type and attributes
-    | StMtyAbs of loc and Ploc.vala string and attributes
     | StOpn of loc and Ploc.vala bool and module_expr and attributes
     | StTyp of loc and Ploc.vala bool and Ploc.vala (list type_decl)
     | StTypExten of loc and type_extension
@@ -1615,13 +1613,6 @@ and pp_sig_item : Fmt.t sig_item =
                 (fun ofmt arg →
                    let open Pa_ppx_runtime.Runtime.Fmt in pf ofmt "%S" arg))
              v1 pp_module_type v2 pp_attributes v3
-       | SgMtyAbs v0 v1 v2 →
-           let open Pa_ppx_runtime.Runtime.Fmt in
-           pf ofmt "(@[<2>MLast.SgMtyAbs@ (@,%a,@ %a,@ %a@,))@]" pp_loc v0
-             (Ploc.pp_vala
-                (fun ofmt arg →
-                   let open Pa_ppx_runtime.Runtime.Fmt in pf ofmt "%S" arg))
-             v1 pp_attributes v2
        | SgMtyAlias v0 v1 v2 v3 →
            let open Pa_ppx_runtime.Runtime.Fmt in
            pf ofmt "(@[<2>MLast.SgMtyAlias@ (@,%a,@ %a,@ %a,@ %a@,))@]" pp_loc
@@ -1969,13 +1960,6 @@ and pp_str_item : Fmt.t str_item =
                 (fun ofmt arg →
                    let open Pa_ppx_runtime.Runtime.Fmt in pf ofmt "%S" arg))
              v1 pp_module_type v2 pp_attributes v3
-       | StMtyAbs v0 v1 v2 →
-           let open Pa_ppx_runtime.Runtime.Fmt in
-           pf ofmt "(@[<2>MLast.StMtyAbs@ (@,%a,@ %a,@ %a@,))@]" pp_loc v0
-             (Ploc.pp_vala
-                (fun ofmt arg →
-                   let open Pa_ppx_runtime.Runtime.Fmt in pf ofmt "%S" arg))
-             v1 pp_attributes v2
        | StOpn v0 v1 v2 v3 →
            let open Pa_ppx_runtime.Runtime.Fmt in
            pf ofmt "(@[<2>MLast.StOpn@ (@,%a,@ %a,@ %a,@ %a@,))@]" pp_loc v0
