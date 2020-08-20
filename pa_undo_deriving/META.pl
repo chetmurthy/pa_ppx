@@ -1,14 +1,15 @@
 #!/usr/bin/env perl
 
 use strict ;
+BEGIN { push (@INC, "..") }
+use Version ;
 
-our $version = "0.01" ;
 our $destdir = shift @ARGV ;
 
 print <<"EOF";
 # Specifications for the "pa_ppx_undo_deriving" preprocessor:
 requires = "pa_ppx_base,fmt,bos,compiler-libs.common"
-version = "$version"
+version = "$Version::version"
 description = "pa_ppx_undo_deriving base support"
 
 # For linking

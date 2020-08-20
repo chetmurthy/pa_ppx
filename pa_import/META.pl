@@ -1,14 +1,15 @@
 #!/usr/bin/env perl
 
 use strict ;
+BEGIN { push (@INC, "..") }
+use Version ;
 
-our $version = "0.01" ;
 our $destdir = shift @ARGV ;
 
 print <<"EOF";
 # Specifications for the "pa_ppx_import" preprocessor:
 requires = "camlp5.pa_o,pa_ppx_base,fmt,bos,compiler-libs.common,findlib.internal"
-version = "$version"
+version = "$Version::version"
 description = "pa_ppx_import base support"
 
 # For linking

@@ -1,14 +1,15 @@
 #!/usr/bin/env perl
 
 use strict ;
+BEGIN { push (@INC, "..") }
+use Version ;
 
-our $version = "0.01" ;
 our $destdir = shift @ARGV ;
 
 print <<"EOF";
 # Specifications for the "pa_ppx" preprocessor:
 requires = "rresult,fmt,sexplib0"
-version = "$version"
+version = "$Version::version"
 description = "pa_ppx runtime support"
 
 # For linking

@@ -5,7 +5,8 @@ use IPC::System::Simple qw(systemx runx capturex $EXITVAL);
 use String::ShellQuote ;
 use File::Basename;
 
-our $version = "0.01" ;
+BEGIN { push (@INC, ".") }
+use Version ;
 
 our %pkgmap = (
   'pa_ppx_utils' => 'pa_ppx.utils',
@@ -46,7 +47,7 @@ our %pkgmap = (
   my $expmeta = indent(2, fixdeps(capturex("./pa_expect_test/META.pl"))) ;
 
   print <<"EOF";
-version = "0.01"
+version = "$Version::version"
 description = "pa_ppx: camlp5-based PPX rewriters"
 
 package "utils" (
