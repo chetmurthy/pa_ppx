@@ -13,7 +13,7 @@ OCAMLCFLAGS=$(DEBUG) $(WARNERR) $(INCLUDES)
 PACKAGES=unix,compiler-libs.common,camlp5.quotations,camlp5.extfun
 SYNTAX = camlp5r
 
-export PERL5LIB=$(TOP):$(PERL5LIB)
+export PERL5LIB := $(TOP):$(PERL5LIB)
 
 top: all
 
