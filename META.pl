@@ -5,10 +5,7 @@ use IPC::System::Simple qw(systemx runx capturex $EXITVAL);
 use String::ShellQuote ;
 use File::Basename;
 
-BEGIN { push (@INC, `pwd`); }
 use Version ;
-
-$ENV{'PERL5LIB'} = `pwd`.":".$ENV{'PERL5LIB'} ;
 
 our %pkgmap = (
   'pa_ppx_utils' => 'pa_ppx.utils',
