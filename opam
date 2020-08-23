@@ -36,28 +36,45 @@ doc: "https://github.com/chetmurthy/pa_ppx/doc"
 
 depends: [
   "ocaml"       { >= "4.10.0" & < "4.12.0" }
-  "camlp5"      { = "8.00~alpha02" }
+  "camlp5"      { >= "8.00~alpha03" }
   "not-ocamlfind" { >= "0.01" }
   "pcre" { >= "7.4.3" }
   "yojson" { >= "1.7.0" }
+  "ounit2" { >= "2.2.3" }
   "bos" { >= "0.2.0" }
   "ppx_deriving_protobuf" { >= "2.7" }
   "uint" { >= "2.0.1" }
-  "ounit2" { >= "2.2.3" }
-  "ppx_import" { >= "1.7.1" }
-  "ppx_deriving_yojson" { >= "3.5.2" }
-  "ppx_here" { >= "v0.13.0" }
-  "ppx_sexp_conv" { >= "v0.13.0" }
-  "expect_test_helpers" { >= "v0.13.0" }
+  "ppx_import" { with-test & >= "1.7.1" }
+  "ppx_deriving_yojson" { with-test & >= "3.5.2" }
+  "ppx_here" { with-test & >= "v0.13.0" }
+  "ppx_sexp_conv" { with-test & >= "v0.13.0" }
+  "expect_test_helpers" { with-test & >= "v0.13.0" }
 ]
 depexts: [
   [
     "libstring-shellquote-perl"
     "libipc-system-simple-perl"
   ] {os-family = "debian"}
+  [
+    "perl-string-shellquote"
+    "perl-ipc-system-simple"
+  ] {os-distribution = "alpine"}
+  [
+    "perl-String-ShellQuote"
+    "perl-IPC-System-Simple"
+  ] {os-distribution = "centos"}
+  [
+    "perl-String-ShellQuote"
+    "perl-IPC-System-Simple"
+  ] {os-family = "suse"}
+  [
+    "perl-String-ShellQuote"
+    "perl-IPC-System-Simple"
+  ] {os-family = "fedora"}
 ]
 
 build: [
-  [make "all"]
+  [make "sys"]
+  [make "test"] {with-test}
 ]
 install: [make "install"]

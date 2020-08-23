@@ -1,4 +1,11 @@
 
+pa_ppx Version 0.03
+-------------------
+
+* [22 Aug 2020] cleanup opam file, bump version for compat with camlp5 8.00~alpha03.
+
+  Change versioning process.
+
 pa_ppx Version 0.02
 -------------------
 
