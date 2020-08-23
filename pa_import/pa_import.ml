@@ -17,6 +17,7 @@ open Ppxutil ;
 
 value debug = Pa_passthru.debug ;
 
+value mli_only = ref False ;
 value predicates = ref [] ;
 value lookup_path = ref [] ;
 
@@ -153,11 +154,19 @@ value find_module_type modpath sil =
   }
 ;
 
+value logged_parse f fname =
+  let rv = f fname in do {
+    Fmt.(pf stderr "[parse %s]\n%!" fname) ;
+    rv
+  }
+;
 value lookup_interf fmod =
   try
-    reparse_cmi (lookup_file "cmi" fmod)
+    if not mli_only.val then
+      logged_parse reparse_cmi (lookup_file "cmi" fmod)
+    else failwith "caught"
   with Failure _ ->
-    parse_mli (lookup_file "mli" fmod)
+    logged_parse parse_mli (lookup_file "mli" fmod)
 ;
 
 value lookup_typedecl (fmod, modpath, lid) = do {
@@ -483,6 +492,9 @@ Pcaml.add_option "-pa_import-predicates" (Arg.String add_predicates)
 
 Pcaml.add_option "-pa_import-I" (Arg.String add_include)
   "<string> include-directory to search for CMI files.";
+
+Pcaml.add_option "-pa_import-mli-only" (Arg.Set mli_only)
+  "<string> use only MLI (not CMI) files.";
 
 (* calls lazy_init() so we're sure of being inited *)
 add_include (Findlib.ocaml_stdlib());

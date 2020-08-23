@@ -1046,3 +1046,6 @@ Pcaml.parse_top_phrase.val := (fun arg -> passthru loc_of_top_phrase top_phrase 
 value loc_of_use_file (l, _) = loc_of_str_item (List.hd l) ;
 value before_use_file = Pcaml.parse_use_file.val ;
 Pcaml.parse_use_file.val := (fun arg -> passthru loc_of_use_file use_file (List.rev eflist.val) before_use_file arg);
+
+Pcaml.add_option "-pa_passthru-debug" (Arg.Set debug)
+  "<string> enable debug logging in pa_ppx.";

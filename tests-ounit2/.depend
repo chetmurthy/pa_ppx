@@ -1,5 +1,7 @@
 stuff.cmo :
 stuff.cmx :
+test_comment_lexer.ml.pappx.cmo :
+test_comment_lexer.ml.pappx.cmx :
 test_deriving_enum.ml.pappx.cmo :
 test_deriving_enum.ml.pappx.cmx :
 test_deriving_enum.ml.ppx.cmo :
