@@ -18,6 +18,7 @@ open Ppxutil ;
 value debug = Pa_passthru.debug ;
 
 value mli_only = ref False ;
+value redeclare = ref False ;
 value predicates = ref [] ;
 value lookup_path = ref [] ;
 
@@ -347,7 +348,7 @@ value import_type arg (newtname,new_formals) t =
       else [ (<:ctyp< $lid:oldtname$ >>, <:ctyp< $lid:newtname$ >>) :: renmap ] in
     let ct = if renmap = [] then td.tdDef
     else Ctyp.wrap_attrs (substitute_ctyp renmap td.tdDef) unp.attrs in
-    if is_generative_type ct then
+    if is_generative_type ct && not redeclare.val then
       <:ctyp< $unp.bare_t$ == $ct$ >>
     else ct
 ;
@@ -373,7 +374,7 @@ value import_typedecl_group arg t item_attrs =
         Ctyp.applist baset args in
       let ct = if renmap = [] then td.tdDef
         else Ctyp.wrap_attrs (substitute_ctyp renmap td.tdDef) unp.attrs in
-      let ct = if is_generative_type ct then
+      let ct = if is_generative_type ct && not redeclare.val then
           <:ctyp< $imported_tycon$ == $ct$ >>
         else ct in
       { (td) with tdDef = ct }
@@ -495,6 +496,9 @@ Pcaml.add_option "-pa_import-I" (Arg.String add_include)
 
 Pcaml.add_option "-pa_import-mli-only" (Arg.Set mli_only)
   "<string> use only MLI (not CMI) files.";
+
+Pcaml.add_option "-pa_import-redeclare" (Arg.Set redeclare)
+  "<string> redeclare types (do not re-export) -- useful for using types from other Ocaml versions.";
 
 (* calls lazy_init() so we're sure of being inited *)
 add_include (Findlib.ocaml_stdlib());
