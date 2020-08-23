@@ -15,9 +15,7 @@ MKCAMLP5=$(LAUNCH) mkcamlp5
 PACKAGES := $(PACKAGES),pa_ppx_base,fmt,bos
 
 TARGET=pa_omp.cma
-ML=gen/ast_4_02.ml gen/ast_4_03.ml gen/ast_4_04.ml \
-	gen/ast_4_05.ml gen/ast_4_06.ml gen/ast_4_07.ml \
-	gen/ast_4_08.ml gen/ast_4_09.ml gen/ast_4_10.ml gen/ast_4_11.ml 
+ML=all_ast.ml
 CMO := $(ML:.ml=.cmo)
 CMI := $(ML:.ml=.cmi)
 CMX := $(ML:.ml=.cmx)
@@ -30,6 +28,9 @@ doc: $(CMT) $(CMTI)
 
 META: META.pl
 	./META.pl > META
+
+all_ast.ml: all_ast.ORIG.ml $(wildcard gen/ast_*.ml) 
+	cppo all_ast.ORIG.ml > all_ast.ml.NEW && mv all_ast.ml.NEW all_ast.ml
 
 install::
 	./META.pl $(DESTDIR)/lib > META

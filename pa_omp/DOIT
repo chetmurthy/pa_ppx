@@ -5,7 +5,7 @@ MINOR=$2
 VERS="${MAJOR}.${MINOR}.0"
 FILEVERS="${MAJOR}_${MINOR}"
 
-cppo -D "MAJOR_VERSION ${MAJOR}" -D "MINOR_VERSION ${MINOR}" foo.ml > gen/foo-${FILEVERS}.ml
+cppo -D PREFIX -D "MAJOR_VERSION ${MAJOR}" -D "MINOR_VERSION ${MINOR}" ast.ORIG.ml > gen/ast.ORIG-${FILEVERS}.ml
 ../tools/LAUNCH not-ocamlfind preprocess  -package unix,compiler-libs.common,camlp5.quotations,camlp5.extfun,rresult,fmt,pa_ppx_utils,pa_ppx_runtime,compiler-libs.common,camlp5.macro,camlp5.pr_r,pa_ppx_import,pa_ppx_deriving_plugins.std \
 -syntax camlp5o -ppopt -D -ppopt BOOTSTRAP \
 -ppopt -pa_import-I -ppopt . \
@@ -17,5 +17,5 @@ cppo -D "MAJOR_VERSION ${MAJOR}" -D "MINOR_VERSION ${MINOR}" foo.ml > gen/foo-${
 -ppopt -sep -ppopt "\n" \
 -ppopt -pa_import-mli-only \
 -ppopt -pa_import-redeclare \
-gen/foo-${FILEVERS}.ml > gen/ast_${FILEVERS}.ml
+gen/ast.ORIG-${FILEVERS}.ml > gen/ast_${FILEVERS}.ml
 
