@@ -49,6 +49,7 @@ package "show" (
 
 package "eq" (
   requires(toploop) = "camlp5,pa_ppx_deriving"
+  archive(toploop) = "pa_deriving_eq.cmo"
 
     requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
     archive(syntax,preprocessor,-native) = "pa_deriving_eq.cmo"
@@ -63,6 +64,7 @@ package "eq" (
 
 package "ord" (
   requires(toploop) = "camlp5,pa_ppx_deriving"
+  archive(toploop) = "pa_deriving_ord.cmo"
 
     requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
     archive(syntax,preprocessor,-native) = "pa_deriving_ord.cmo"
@@ -77,6 +79,7 @@ package "ord" (
 
 package "enum" (
   requires(toploop) = "camlp5,pa_ppx_deriving"
+  archive(toploop) = "pa_deriving_enum.cmo"
 
     requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
     archive(syntax,preprocessor,-native) = "pa_deriving_enum.cmo"
@@ -91,6 +94,7 @@ package "enum" (
 
 package "iter" (
   requires(toploop) = "camlp5,pa_ppx_deriving"
+  archive(toploop) = "pa_deriving_iter.cmo"
 
     requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
     archive(syntax,preprocessor,-native) = "pa_deriving_iter.cmo"
@@ -105,6 +109,7 @@ package "iter" (
 
 package "map" (
   requires(toploop) = "camlp5,pa_ppx_deriving"
+  archive(toploop) = "pa_deriving_map.cmo"
 
     requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
     archive(syntax,preprocessor,-native) = "pa_deriving_map.cmo"
@@ -117,8 +122,25 @@ package "map" (
   requires = "pa_ppx_runtime"
 )
 
+package "rewrite" (
+  requires(toploop) = "camlp5,pa_ppx_deriving"
+  archive(toploop) = "pa_deriving_rewrite.cmo"
+
+    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
+    archive(syntax,preprocessor,-native) = "pa_deriving_rewrite.cmo"
+    archive(syntax,preprocessor,native) = "pa_deriving_rewrite.cmx"
+
+  package "link" (
+  requires(byte) = "camlp5,pa_ppx_deriving.link"
+  archive(byte) = "pa_deriving_rewrite.cmo"
+  )
+  requires = "pa_ppx_runtime"
+)
+
+
 package "fold" (
   requires(toploop) = "camlp5,pa_ppx_deriving"
+  archive(toploop) = "pa_deriving_fold.cmo"
 
     requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
     archive(syntax,preprocessor,-native) = "pa_deriving_fold.cmo"
@@ -133,6 +155,7 @@ package "fold" (
 
 package "make" (
   requires(toploop) = "camlp5,pa_ppx_deriving"
+  archive(toploop) = "pa_deriving_make.cmo"
 
     requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
     archive(syntax,preprocessor,-native) = "pa_deriving_make.cmo"

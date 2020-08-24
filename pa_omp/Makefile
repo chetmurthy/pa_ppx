@@ -12,7 +12,9 @@ LAUNCH=$(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),pa_ppx_base,fmt,bos
+PACKAGES := $(PACKAGES),pa_ppx_base,fmt,bos,pa_ppx_import,pa_ppx_deriving_plugins.rewrite
+SYNTAX = camlp5o
+OCAMLCFLAGS += -ppopt -pa_import-I -ppopt .
 
 TARGET=pa_omp.cma
 ML=all_ast.ml
@@ -42,7 +44,7 @@ local-install::
 	$(MAKE) DESTDIR=$(WD)/$(TOP)/local-install/ install
 
 clean::
-	rm -rf META gen/*.cm* gen/*.o
+	rm -rf META gen/*.cm* gen/*.o all_ast.ml
 
 $(TARGET): $(CMO)
 	$(OCAMLFIND) ocamlc $(DEBUG) $(CMO) -a -o $(TARGET)
@@ -57,7 +59,7 @@ EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
 $(CMO) $(CMI) $(CMX): $(EXTERNAL)
 
 depend::
-	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli > .depend.NEW \
+	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5o *.ml *.mli > .depend.NEW \
 		&& mv .depend.NEW .depend
 
 -include .depend
