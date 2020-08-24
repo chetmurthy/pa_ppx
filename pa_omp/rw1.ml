@@ -27,7 +27,7 @@ and longident_t = [%import: All_ast.Ast_4_02.Longident.t
 ]
 
 [@@deriving rewrite
-    { dispatch_type = [%typ: dispatch_table_t]
+    { dispatch_type = dispatch_table_t
     ; dispatchers = {
         rewrite_Lexing_position = {
           srctype = [%typ: lexing_position]
@@ -40,6 +40,7 @@ and longident_t = [%import: All_ast.Ast_4_02.Longident.t
       ; rewrite_Location_loc = {
           srctype = [%typ: 'a location_loc]
         ; dsttype = [%typ: 'b DST.Location.loc]
+        ; subs = [ ([%typ: 'a], [%typ: 'b]) ]
         }
       ; rewrite_Longident_t = {
           srctype = [%typ: longident_t]
@@ -48,7 +49,7 @@ and longident_t = [%import: All_ast.Ast_4_02.Longident.t
       }
     }
 ]
-
+(*
 type ('a, 'b) rewriter_t = dispatch_table_t -> 'a -> 'b
 
 and dispatch_table_t = {
@@ -57,7 +58,7 @@ and dispatch_table_t = {
 ; rewrite_Location_loc : 'a 'b . ('a, 'b) rewriter_t -> ('a location_loc, 'b DST.Location.loc) rewriter_t
 ; rewrite_Longident_t : (longident_t, DST.Longident.t) rewriter_t
 }
-
+*)
 let rewrite_Lexing_position (dt : dispatch_table_t) (p : lexing_position) : DST.Lexing.position =
   DST.Lexing.{
     pos_fname = p.pos_fname;
@@ -72,10 +73,8 @@ let rewrite_Location_t  (dt : dispatch_table_t) (p : location_t) : DST.Location.
     loc_ghost = p.loc_ghost
   }
 
-let rewrite_Location_loc
-  (sub1 : ('a, 'b) rewriter_t) (dt : dispatch_table_t) 
-    (p : 'a location_loc)
-  : 'b DST.Location.loc =
+let rewrite_Location_loc : 'a 'b . ('a, 'b) rewriter_t -> ('a location_loc, 'b DST.Location.loc) rewriter_t =
+  fun sub1 dt p ->
     DST.Location.{
       txt = sub1 dt p.txt ;
       loc = dt.rewrite_Location_t dt p.loc

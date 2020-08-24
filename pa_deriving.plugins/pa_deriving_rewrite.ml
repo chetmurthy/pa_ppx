@@ -15,6 +15,7 @@ open Pa_passthru ;
 open Ppxutil ;
 open Surveil ;
 open Pa_deriving_base ;
+open Pa_ppx_utils ;
 
 value rewrite_fname arg tyname =
   if tyname = "t" then "rewrite"
@@ -239,6 +240,91 @@ value str_item_funs arg td =
       (<:patt< ( $lid:fname$ : $fty$ ) >>, body, <:vala< [attrwarn39] >>)) l
 ;
 
+module Dispatch1 = struct
+type tyarg_t = { srctype : ctyp ; dsttype : ctyp ; subs : list (ctyp * ctyp) } ;
+type t = (string * tyarg_t) ;
+
+value tyvars t =
+  let rec trec acc = fun [
+    <:ctyp< $t1$ $t2$ >> -> trec (trec acc t1) t2
+  | <:ctyp< ' $id$ >> -> [ id :: acc ]
+  | _ -> acc
+  ] in
+  Std.uniquize(trec [] t)
+;
+
+value to_type (_, t) =
+  let loc = loc_of_ctyp t.srctype in
+  let vars = Std.uniquize((tyvars t.srctype)@(tyvars t.dsttype)@
+                          List.concat (List.map (fun (a,b) -> (tyvars a)@(tyvars b)) t.subs)) in
+  let rhs = <:ctyp< rewriter_t $t.srctype$ $t.dsttype$ >> in
+  let rhs = List.fold_right (fun (a,b) rhs -> <:ctyp< (rewriter_t $a$ $b$) -> $rhs$ >>) t.subs rhs in
+  if vars = [] then rhs else
+  <:ctyp< ! $list:vars$ . $rhs$ >>
+;
+
+value convert_subs loc e =
+  let rec crec acc = fun [
+    <:expr< [] >> -> List.rev acc
+  | <:expr< [ ( [%typ: $type:t1$], [%typ: $type:t2$] ) :: $tl$ ] >> ->
+    crec [ (t1, t2) :: acc ] tl
+  ] in
+  crec [] e
+;
+value convert_tyarg loc tyargs =
+  let alist = List.map (fun [
+      (<:patt< $lid:id$ >>, e) -> (id, e)
+    | _ -> Ploc.raise loc (Failure "bad tyarg label -- must be lident")
+    ]) tyargs in
+  let srctype = match List.assoc "srctype" alist with [
+    <:expr< [%typ: $type:t$] >> -> t
+  | _ -> Ploc.raise loc (Failure "bad tyarg rhs -- must be [%typ: type]")
+  | exception Not_found -> Ploc.raise loc (Failure "missing srctype tyarg")
+  ] in
+  let dsttype = match List.assoc "dsttype" alist with [
+    <:expr< [%typ: $type:t$] >> -> t
+  | _ -> Ploc.raise loc (Failure "bad tyarg rhs -- must be [%typ: type]")
+  | exception Not_found -> Ploc.raise loc (Failure "missing dsttype tyarg")
+  ] in
+  let subs = match List. assoc "subs" alist with [
+    <:expr:< [ $_$ :: $_$ ] >> as z -> convert_subs loc z
+  | _ -> Ploc.raise loc (Failure "bad tyarg rhs -- must be a list")
+  | exception Not_found -> []
+  ] in
+  { srctype = srctype ; dsttype = dsttype ; subs = subs }
+;
+value convert loc (fname, tyargs) =
+  (fname, convert_tyarg loc tyargs)
+;
+end
+;
+
+value dispatch_table_type_decls loc (dispatch_type_name, dispatchers) =
+  let ltl = List.map (fun (dispatcher_name, t) ->
+    let ty = Dispatch1.to_type (dispatcher_name, t) in
+    (loc_of_ctyp ty, dispatcher_name, False, ty, <:vala< [] >>)
+  ) dispatchers in
+  let dispatch_table_type = <:ctyp< { $list:ltl$ } >> in
+  [ <:type_decl< $lid:dispatch_type_name$ = $dispatch_table_type$ >> ;
+    <:type_decl< rewriter_t 'a 'b = $lid:dispatch_type_name$ -> 'a -> 'b >> ]
+;
+value process_options loc ctxt =
+  let open Ctxt in
+  let dispatch_type_name = match option ctxt "dispatch_type" with [
+      <:expr< $lid:id$ >> -> id
+    | _ -> Ploc.raise loc (Failure "pa_deriving.rewrite: must specify option dispatch_type")
+  ] in
+  let dispatchers = match option ctxt "dispatchers" with [
+    <:expr:< { $list:lel$ } >> ->
+      List.map (fun [
+          (<:patt< $lid:fname$ >>, <:expr:< { $list:tyargs$ } >>) ->
+          (Dispatch1.convert loc (fname, tyargs))
+        | _ -> Ploc.raise loc (Failure "pa_deriving.rewrite: malformed dispatcher args")
+      ]) lel
+  ]
+  in (dispatch_type_name, dispatchers)
+;
+
 value sig_items arg td =
   let loc = loc_of_type_decl td in
   let l = sig_item_top_funs arg td in
@@ -252,9 +338,11 @@ value str_item_gen_rewrite0 arg td =
 
 value str_item_gen_rewrite name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->
-    let loc = loc_of_type_decl (List.hd tdl) in
-  let l = List.concat (List.map (str_item_gen_rewrite0 arg) tdl) in
-  <:str_item< value rec $list:l$ >>
+    let opts = process_options loc arg in
+    let dispatch_type_decls = dispatch_table_type_decls loc opts in
+    let l = List.concat (List.map (str_item_gen_rewrite0 arg) tdl) in
+    let si = <:str_item< value rec $list:l$ >> in
+    <:str_item< declare type $list:dispatch_type_decls$ ; $si$ ; end >>
 | _ -> assert False ]
 ;
 
