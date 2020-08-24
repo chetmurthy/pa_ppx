@@ -88,11 +88,12 @@ bigass_doc_comments_pa_dock_original.ml: bigass_doc_comments_original.ML
 clean::
 	rm -f *.corrected *.ppo *_doc_comments_official.ml *_doc_comments_pa_dock.ml
 
-EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES),$(PAINLINEPACKAGES))
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte -format '%m' $(PACKAGES),$(PAINLINEPACKAGES))
 $(TEST_EXECUTABLES): $(EXTERNAL)
 
 depend::
-	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o test_*.ml > .depend.NEW
+	echo "$(TEST_EXECUTABLES): $(EXTERNAL)" > .depend.NEW
+	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o test_*.ml >> .depend.NEW
 	mv .depend.NEW .depend
 
 -include .depend

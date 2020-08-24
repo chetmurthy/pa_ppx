@@ -82,11 +82,12 @@ test_inline_test: test_inline_test.byte
 clean::
 	rm -f *.corrected
 
-EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES),$(PAINLINEPACKAGES))
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte -format '%m' $(PACKAGES),$(PAINLINEPACKAGES))
 $(TESTS): $(EXTERNAL)
 
 depend::
-	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o test_*.ml > .depend.NEW
+	echo "$(TESTS): $(EXTERNAL)" > .depend.NEW
+	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o test_*.ml >> .depend.NEW
 	mv .depend.NEW .depend
 
 -include .depend

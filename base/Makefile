@@ -141,14 +141,15 @@ $(TARGET:.cma=.cmxa): pa_ppx_base.cmx
 $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
-EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte -format '%m' $(PACKAGES))
 $(CMO) $(CMI) $(CMX): $(EXTERNAL)
 
 depend::
+	echo "$(CMO) $(CMI) $(CMX): $(EXTERNAL)" > .depend.NEW
 	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r \
 	pa_passthru.ml pa_normalize.ml ppxutil.ml \
 	pp_MLast.ml \
-	pp_parsetree.ml $(MLI) > .depend.NEW
+	pp_parsetree.ml $(MLI) >> .depend.NEW
 	mv .depend.NEW .depend
 
 -include .depend

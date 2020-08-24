@@ -91,14 +91,15 @@ ppx_sexp_test.pa.byte: ppx_sexp_test.ml
 
 .SUFFIXES: .TEST
 
-EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES),$(PAINLINEPACKAGES))
-$(TEST_EXECUTABLES): $(EXTERNAL)
-
 clean::
 	rm -f *.corrected *.ppo
 
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte -format '%m' $(PACKAGES),$(PAINLINEPACKAGES))
+$(TEST_EXECUTABLES): $(EXTERNAL)
+
 depend::
-	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o test_*.ml > .depend.NEW
+	echo "$(TEST_EXECUTABLES): $(EXTERNAL)" > .depend.NEW
+	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o test_*.ml >> .depend.NEW
 	mv .depend.NEW .depend
 
 -include .depend
