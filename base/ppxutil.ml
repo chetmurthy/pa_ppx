@@ -155,6 +155,29 @@ value unapplist e =
   | t -> (t,acc)
   ] in unrec [] e
 ;
+
+value rec beta_subst rho = fun [
+  <:ctyp< ' $id$ >> when List.mem_assoc id rho -> List.assoc id rho
+| <:ctyp:< $t1$ $t2$ >> -> <:ctyp< $beta_subst rho t1$ $beta_subst rho t2$ >>
+| <:ctyp:< ( $list:l$ ) >> -> <:ctyp< ( $list:List.map (beta_subst rho) l$ ) >>
+| <:ctyp:< [ $list:l$ ] >> ->
+  let l = List.map (fun [
+      <:constructor:< $uid:s$ of $list:lt$ $rto:ot$ $_algattrs:x$ >> ->
+      <:constructor< $uid:s$ of $list:List.map (beta_subst rho) lt$
+                     $rto:option_map (beta_subst rho) ot$ $_algattrs:x$ >>
+    ]) l in
+  <:ctyp< [ $list:l$ ] >>
+| <:ctyp:< { $list:l$ } >> ->
+  let l = List.map (fun (a,b,c,ty,e) -> (a,b,c, beta_subst rho ty,e)) l in
+  <:ctyp< { $list:l$ } >>
+| ( <:ctyp< $longid:_$ . $lid:_$ >>
+  | <:ctyp< $lid:_$ >>
+  ) as z -> z
+| z -> Ploc.raise (loc_of_ctyp z) (Failure Fmt.(str "Ctyp.beta_subst: unhandled type: %a\n%!" Pp_MLast.pp_ctyp z))
+]
+;
+
+
 end ;
 
 module Longid = struct

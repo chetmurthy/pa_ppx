@@ -299,16 +299,21 @@ value convert loc (fname, tyargs) =
 end
 ;
 
-value dispatch_table_type_decls loc (dispatch_type_name, dispatchers) =
+module Rewrite = struct
+
+type t = { dispatch_type_name : string ; dispatchers : list Dispatch1.t } ;
+
+value dispatch_table_type_decls loc t =
   let ltl = List.map (fun (dispatcher_name, t) ->
     let ty = Dispatch1.to_type (dispatcher_name, t) in
     (loc_of_ctyp ty, dispatcher_name, False, ty, <:vala< [] >>)
-  ) dispatchers in
+  ) t.dispatchers in
   let dispatch_table_type = <:ctyp< { $list:ltl$ } >> in
-  [ <:type_decl< $lid:dispatch_type_name$ = $dispatch_table_type$ >> ;
-    <:type_decl< rewriter_t 'a 'b = $lid:dispatch_type_name$ -> 'a -> 'b >> ]
+  [ <:type_decl< $lid:t.dispatch_type_name$ = $dispatch_table_type$ >> ;
+    <:type_decl< rewriter_t 'a 'b = $lid:t.dispatch_type_name$ -> 'a -> 'b >> ]
 ;
-value process_options loc ctxt =
+
+value build_context loc ctxt tdl =
   let open Ctxt in
   let dispatch_type_name = match option ctxt "dispatch_type" with [
       <:expr< $lid:id$ >> -> id
@@ -322,8 +327,9 @@ value process_options loc ctxt =
         | _ -> Ploc.raise loc (Failure "pa_deriving.rewrite: malformed dispatcher args")
       ]) lel
   ]
-  in (dispatch_type_name, dispatchers)
+  in { dispatch_type_name = dispatch_type_name; dispatchers = dispatchers }
 ;
+end ;
 
 value sig_items arg td =
   let loc = loc_of_type_decl td in
@@ -338,8 +344,8 @@ value str_item_gen_rewrite0 arg td =
 
 value str_item_gen_rewrite name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->
-    let opts = process_options loc arg in
-    let dispatch_type_decls = dispatch_table_type_decls loc opts in
+    let rc = Rewrite.build_context loc arg tdl in
+    let dispatch_type_decls = Rewrite.dispatch_table_type_decls loc rc in
     let l = List.concat (List.map (str_item_gen_rewrite0 arg) tdl) in
     let si = <:str_item< value rec $list:l$ >> in
     <:str_item< declare type $list:dispatch_type_decls$ ; $si$ ; end >>

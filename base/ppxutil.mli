@@ -31,6 +31,7 @@ module Ctyp :
     value unwrap_attrs : MLast.ctyp → (MLast.ctyp * list MLast.attribute);
     value applist : MLast.ctyp → list MLast.ctyp → MLast.ctyp;
     value unapplist : MLast.ctyp → (MLast.ctyp * list MLast.ctyp);
+    value beta_subst : list (string * MLast.ctyp) -> MLast.ctyp -> MLast.ctyp;
   end
 ;
 module Longid : sig value to_string_list : MLast.longid → list string; end;
