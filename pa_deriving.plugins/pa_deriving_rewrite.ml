@@ -301,7 +301,12 @@ end
 
 module Rewrite = struct
 
-type t = { dispatch_type_name : string ; dispatchers : list Dispatch1.t } ;
+type type_def_t = { type_name : string ; params : list string ; rhs : MLast.ctyp } ;
+type t = {
+  dispatch_type_name : string
+; dispatchers : list Dispatch1.t
+; type_defs : list (string * type_def_t)
+} ;
 
 value dispatch_table_type_decls loc t =
   let ltl = List.map (fun (dispatcher_name, t) ->
@@ -326,8 +331,21 @@ value build_context loc ctxt tdl =
           (Dispatch1.convert loc (fname, tyargs))
         | _ -> Ploc.raise loc (Failure "pa_deriving.rewrite: malformed dispatcher args")
       ]) lel
-  ]
-  in { dispatch_type_name = dispatch_type_name; dispatchers = dispatchers }
+  ] in
+  let type_defs = List.map (fun [
+    <:type_decl:< $lid:tname$ $list:tpl$ = $rhs$ $itemattrs:_$ >> ->
+    let tpl = List.map (fun [
+        (<:vala< Some n >>, _) -> n
+      | _ -> Ploc.raise loc (Failure "pa_deriving.rewrite: unnamed polymorphic variables not allowed in type-decls")
+      ]) tpl in
+    (tname, { type_name = tname ; params = tpl ; rhs = rhs })
+  | td -> Ploc.raise loc (Failure Fmt.(str "pa_deriving.rewrite: unhandled type-decl: %a" Pp_MLast.pp_type_decl td))
+  ]) tdl
+  in {
+    dispatch_type_name = dispatch_type_name;
+    dispatchers = dispatchers ;
+    type_defs = type_defs
+  }
 ;
 end ;
 
