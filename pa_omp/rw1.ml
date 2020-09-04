@@ -59,6 +59,8 @@ and dispatch_table_t = {
 ; rewrite_Longident_t : (longident_t, DST.Longident.t) rewriter_t
 }
 *)
+
+module ByHand = struct
 let rewrite_Lexing_position (dt : dispatch_table_t) (p : lexing_position) : DST.Lexing.position =
   DST.Lexing.{
     pos_fname = p.pos_fname;
@@ -92,3 +94,4 @@ let dt = {
 ; rewrite_Location_loc
 ; rewrite_Longident_t
 }
+end
