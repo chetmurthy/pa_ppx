@@ -2,18 +2,13 @@
 module SRC = All_ast.Ast_4_02
 module DST = All_ast.Ast_4_03
 
-let lexing_position_402_403 (p : SRC.Lexing.position) =
-  DST.Lexing.{
-    pos_fname = p.pos_fname;
-    pos_lnum = p.pos_lnum;
-    pos_bol = p.pos_bol;
-    pos_cnum = p.pos_cnum }
-
-let rec longident_t_402_403 ( p : SRC.Longident.t ) =
-  match p with
-    SRC.Longident.Lident s -> DST.Longident.Lident s
-  | SRC.Longident.Ldot (p, s) -> DST.Longident.Ldot(longident_t_402_403 p, s)
-  | SRC.Longident.Lapply (p1, p2) -> DST.Longident.Lapply(longident_t_402_403 p1, longident_t_402_403 p2)
+let rewrite_402_label_403_arg_label : 'a -> SRC.Asttypes.label -> DST.Asttypes.arg_label =
+  fun __dst__ x ->
+    if x <> "" then
+      if x.[0] = '?' then DST.Asttypes.Optional (String.sub x 1 (String.length x - 1))
+      else DST.Asttypes.Labelled x
+    else
+      DST.Asttypes.Nolabel
 
 type lexing_position = [%import: All_ast.Ast_4_02.Lexing.position]
 and location_t = [%import: All_ast.Ast_4_02.Location.t
@@ -25,6 +20,18 @@ and 'a location_loc = [%import: 'a All_ast.Ast_4_02.Location.loc
 and longident_t = [%import: All_ast.Ast_4_02.Longident.t
   [@with t := longident_t]
 ]
+
+and label = [%import: All_ast.Ast_4_02.Asttypes.label
+]
+
+and closed_flag =  [%import: All_ast.Ast_4_02.Asttypes.closed_flag]
+and rec_flag =  [%import: All_ast.Ast_4_02.Asttypes.rec_flag]
+and direction_flag =  [%import: All_ast.Ast_4_02.Asttypes.direction_flag]
+and private_flag =  [%import: All_ast.Ast_4_02.Asttypes.private_flag]
+and mutable_flag =  [%import: All_ast.Ast_4_02.Asttypes.mutable_flag]
+and virtual_flag =  [%import: All_ast.Ast_4_02.Asttypes.virtual_flag]
+and override_flag =  [%import: All_ast.Ast_4_02.Asttypes.override_flag]
+and variance =  [%import: All_ast.Ast_4_02.Asttypes.variance]
 
 [@@deriving rewrite
     { dispatch_type = dispatch_table_t
@@ -47,53 +54,39 @@ and longident_t = [%import: All_ast.Ast_4_02.Longident.t
           srctype = [%typ: longident_t]
         ; dsttype = [%typ: DST.Longident.t]
         }
+      ; rewrite_label = {
+          srctype = [%typ: label]
+        ; dsttype = [%typ: DST.Asttypes.arg_label]
+        ; code = rewrite_402_label_403_arg_label
+        }
+      ; rewrite_closed_flag = {
+          srctype = [%typ: closed_flag]
+        ; dsttype = [%typ: DST.Asttypes.closed_flag]
+        }
+      ; rewrite_direction_flag = {
+          srctype = [%typ: direction_flag]
+        ; dsttype = [%typ: DST.Asttypes.direction_flag]
+        }
+      ; rewrite_private_flag = {
+          srctype = [%typ: private_flag]
+        ; dsttype = [%typ: DST.Asttypes.private_flag]
+        }
+      ; rewrite_mutable_flag = {
+          srctype = [%typ: mutable_flag]
+        ; dsttype = [%typ: DST.Asttypes.mutable_flag]
+        }
+      ; rewrite_virtual_flag = {
+          srctype = [%typ: virtual_flag]
+        ; dsttype = [%typ: DST.Asttypes.virtual_flag]
+        }
+      ; rewrite_override_flag = {
+          srctype = [%typ: override_flag]
+        ; dsttype = [%typ: DST.Asttypes.override_flag]
+        }
+      ; rewrite_variance = {
+          srctype = [%typ: variance]
+        ; dsttype = [%typ: DST.Asttypes.variance]
+        }
       }
     }
 ]
-
-(*
-type ('a, 'b) rewriter_t = dispatch_table_t -> 'a -> 'b
-
-and dispatch_table_t = {
-  rewrite_Lexing_position : (lexing_position, DST.Lexing.position) rewriter_t
-; rewrite_Location_t : (location_t, DST.Location.t) rewriter_t
-; rewrite_Location_loc : 'a 'b . ('a, 'b) rewriter_t -> ('a location_loc, 'b DST.Location.loc) rewriter_t
-; rewrite_Longident_t : (longident_t, DST.Longident.t) rewriter_t
-}
-
-module ByHand = struct
-let rewrite_Lexing_position (dt : dispatch_table_t) (p : lexing_position) : DST.Lexing.position =
-  DST.Lexing.{
-    pos_fname = p.pos_fname;
-    pos_lnum = p.pos_lnum;
-    pos_bol = p.pos_bol;
-    pos_cnum = p.pos_cnum }
-
-let rewrite_Location_t  (dt : dispatch_table_t) (p : location_t) : DST.Location.t =
-  DST.Location.{
-    loc_start = dt.rewrite_Lexing_position dt p.loc_start;
-    loc_end = dt.rewrite_Lexing_position dt p.loc_end;
-    loc_ghost = p.loc_ghost
-  }
-
-let rewrite_Location_loc : 'a 'b . ('a, 'b) rewriter_t -> ('a location_loc, 'b DST.Location.loc) rewriter_t =
-  fun sub1 dt p ->
-    DST.Location.{
-      txt = sub1 dt p.txt ;
-      loc = dt.rewrite_Location_t dt p.loc
-    }
-
-let rewrite_Longident_t (dt : dispatch_table_t) (p : longident_t) : DST.Longident.t =
-  match p with
-    Lident s -> DST.Longident.Lident s
-  | Ldot (p, s) -> DST.Longident.Ldot(dt.rewrite_Longident_t dt p, s)
-  | Lapply (p1, p2) -> DST.Longident.Lapply(dt.rewrite_Longident_t dt p1, dt.rewrite_Longident_t dt p2)
-
-let dt = {
-  rewrite_Lexing_position
-; rewrite_Location_t
-; rewrite_Location_loc
-; rewrite_Longident_t
-}
-end
-*)
