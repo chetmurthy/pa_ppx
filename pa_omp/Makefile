@@ -14,10 +14,10 @@ NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
 PACKAGES := $(PACKAGES),pa_ppx_base,fmt,bos,pa_ppx_import,pa_ppx_deriving_plugins.rewrite
 SYNTAX = camlp5o
-OCAMLCFLAGS += -ppopt -pa_import-I -ppopt .
+OCAMLCFLAGS += -ppopt -pa_import-I -ppopt . -ppopt -pa_passthru-debug 
 
 TARGET=pa_omp.cma
-ML=all_ast.ml
+ML=all_ast.ml rw1.cmo
 CMO := $(ML:.ml=.cmo)
 CMI := $(ML:.ml=.cmi)
 CMX := $(ML:.ml=.cmx)
@@ -33,6 +33,9 @@ META: META.pl
 
 all_ast.ml: all_ast.ORIG.ml $(wildcard gen/ast_*.ml) 
 	cppo all_ast.ORIG.ml > all_ast.ml.NEW && mv all_ast.ml.NEW all_ast.ml
+
+rw1.ppo: rw1.ml all_ast.ml
+	$(NOT_OCAMLFIND) preprocess $(OCAMLCFLAGS) -package $(PACKAGES),camlp5.pr_o -syntax $(SYNTAX) $<
 
 install::
 	./META.pl $(DESTDIR)/lib > META

@@ -28,6 +28,7 @@ and longident_t = [%import: All_ast.Ast_4_02.Longident.t
 
 [@@deriving rewrite
     { dispatch_type = dispatch_table_t
+    ; dispatch_table_value = dt
     ; dispatchers = {
         rewrite_Lexing_position = {
           srctype = [%typ: lexing_position]
@@ -49,6 +50,7 @@ and longident_t = [%import: All_ast.Ast_4_02.Longident.t
       }
     }
 ]
+
 (*
 type ('a, 'b) rewriter_t = dispatch_table_t -> 'a -> 'b
 
@@ -58,7 +60,6 @@ and dispatch_table_t = {
 ; rewrite_Location_loc : 'a 'b . ('a, 'b) rewriter_t -> ('a location_loc, 'b DST.Location.loc) rewriter_t
 ; rewrite_Longident_t : (longident_t, DST.Longident.t) rewriter_t
 }
-*)
 
 module ByHand = struct
 let rewrite_Lexing_position (dt : dispatch_table_t) (p : lexing_position) : DST.Lexing.position =
@@ -95,3 +96,4 @@ let dt = {
 ; rewrite_Longident_t
 }
 end
+*)

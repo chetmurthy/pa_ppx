@@ -125,7 +125,10 @@ value add t = do {
   t.ctyp_extensions |> List.iter (fun e ->
       Std.push ctyp_extension2plugin (Printf.sprintf "derive.%s" t.name, t.name)) ;
 
-  List.iter (fun aname -> Std.push algattr2plugin (aname, t.name)) t.alg_attributes
+  List.iter (fun aname -> Std.push algattr2plugin (aname, t.name)) t.alg_attributes ;
+  if debug.val then
+    Printf.(fprintf stderr "[Registry.add %s]\n%!" t.name)
+  else ()
 }
 ;
 

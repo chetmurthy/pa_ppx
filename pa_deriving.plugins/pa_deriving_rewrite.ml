@@ -245,7 +245,9 @@ type tyarg_t = {
   name: string
 ; srctype : ctyp
 ; dsttype : ctyp
+; type_vars : list string
 ; subs : list (ctyp * ctyp)
+; subs_types : list ctyp
 } ;
 type t = (string * tyarg_t) ;
 
@@ -260,12 +262,10 @@ value tyvars t =
 
 value to_type (_, t) =
   let loc = loc_of_ctyp t.srctype in
-  let vars = Std.uniquize((tyvars t.srctype)@(tyvars t.dsttype)@
-                          List.concat (List.map (fun (a,b) -> (tyvars a)@(tyvars b)) t.subs)) in
   let rhs = <:ctyp< rewriter_t $t.srctype$ $t.dsttype$ >> in
-  let rhs = List.fold_right (fun (a,b) rhs -> <:ctyp< (rewriter_t $a$ $b$) -> $rhs$ >>) t.subs rhs in
-  if vars = [] then rhs else
-  <:ctyp< ! $list:vars$ . $rhs$ >>
+  let rhs = List.fold_right (fun subty rhs -> <:ctyp< $subty$ -> $rhs$ >>) t.subs_types rhs in
+  if t.type_vars = [] then rhs else
+  <:ctyp< ! $list:t.type_vars$ . $rhs$ >>
 ;
 
 value convert_subs loc e =
@@ -296,8 +296,18 @@ value convert_tyarg loc name tyargs =
   | _ -> Ploc.raise loc (Failure "bad tyarg rhs -- must be a list")
   | exception Not_found -> []
   ] in
-  { name = name ; srctype = srctype ; dsttype = dsttype ; subs = subs }
+  let type_vars = Std.uniquize((tyvars srctype)@(tyvars dsttype)@
+                          List.concat (List.map (fun (a,b) -> (tyvars a)@(tyvars b)) subs)) in
+  let subs_types = List.map (fun (a,b) -> <:ctyp< (rewriter_t $a$ $b$) >>) subs in
+  { name = name
+  ; srctype = srctype
+  ; dsttype = dsttype
+  ; subs = subs
+  ; type_vars = type_vars
+  ; subs_types = subs_types
+  }
 ;
+
 value convert loc (fname, tyargs) =
   (fname, convert_tyarg loc fname tyargs)
 ;
@@ -325,6 +335,7 @@ module Rewrite = struct
 
 type t = {
   dispatch_type_name : string
+; dispatch_table_value : string
 ; dispatchers : list Dispatch1.t
 ; type_decls : list (string * MLast.type_decl)
 } ;
@@ -339,11 +350,23 @@ value dispatch_table_type_decls loc t =
     <:type_decl< rewriter_t 'a 'b = $lid:t.dispatch_type_name$ -> 'a -> 'b >> ]
 ;
 
+value dispatch_table_expr loc t =
+  let lel = List.map (fun (dispatcher_name, t) ->
+      let ty = Dispatch1.to_type (dispatcher_name, t) in
+      (<:patt< $lid:dispatcher_name$ >>, <:expr< $lid:dispatcher_name$ >>)
+    ) t.dispatchers in
+  <:expr< { $list:lel$ } >>
+;
+
 value build_context loc ctxt tdl =
   let open Ctxt in
   let dispatch_type_name = match option ctxt "dispatch_type" with [
       <:expr< $lid:id$ >> -> id
     | _ -> Ploc.raise loc (Failure "pa_deriving.rewrite: must specify option dispatch_type")
+  ] in
+  let dispatch_table_value = match option ctxt "dispatch_table_value" with [
+      <:expr< $lid:id$ >> -> id
+    | _ -> Ploc.raise loc (Failure "pa_deriving.rewrite: must specify option dispatch_table_value name")
   ] in
   let dispatchers = match option ctxt "dispatchers" with [
     <:expr:< { $list:lel$ } >> ->
@@ -358,6 +381,7 @@ value build_context loc ctxt tdl =
     ) tdl in
   {
     dispatch_type_name = dispatch_type_name;
+    dispatch_table_value = dispatch_table_value;
     dispatchers = dispatchers ;
     type_decls = type_decls
   }
@@ -445,7 +469,7 @@ value rec match_or_head_reduce ~{except} t ty =
     let ty' = head_reduce1 t ty in
     if Reloc.eq_ctyp ty ty' then
       match ty with [
-        (<:ctyp< [ $list:_$ ] >> | <:ctyp< { $list:_$ } >>) -> Right (dname, ty)
+        (<:ctyp< [ $list:_$ ] >> | <:ctyp< { $list:_$ } >> | <:ctyp< ' $_$ >>) -> Right (dname, ty)
 
       | _ -> Ploc.raise (loc_of_ctyp ty) (Failure Printf.(sprintf "rewrite rule %s: cannot rewrite srctype" dname))
       ]
@@ -456,13 +480,30 @@ value rec match_or_head_reduce ~{except} t ty =
   ]
 ;
 
-value generate_leaf_dispatcher_expression t d = fun [
+value canon_ctyp ty = Reloc.ctyp (fun _ -> Ploc.dummy) 0 ty ;
+value builtin_copy_types =
+  let loc = Ploc.dummy in
+  List.map canon_ctyp [
+    <:ctyp< string >>
+  ; <:ctyp< int >>
+  ; <:ctyp< bool >>
+  ]
+;
+value id_expr =
+  let loc = Ploc.dummy in
+  <:expr< (fun x -> x) >>
+;
+
+value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
   <:ctyp:< [ $list:branches$ ] >> ->
   let l = List.map (fun [
       <:constructor< $uid:uid$ of $list:tyl$ >> ->
-      let argvars = List.mapi (fun i _ -> Printf.sprintf "v_%d" i) tyl in
-      let patt = List.fold_left (fun p v -> <:patt< $p$ $lid:v$ >>) <:patt< $uid:uid$ >> argvars in
-      let expr = List.fold_left (fun e v -> <:expr< $e$ $lid:v$ >>) <:expr< $uid:uid$ >> argvars in
+      let argvars = List.mapi (fun i ty -> (Printf.sprintf "v_%d" i,ty)) tyl in
+      let patt = List.fold_left (fun p (v,_) -> <:patt< $p$ $lid:v$ >>) <:patt< $uid:uid$ >> argvars in
+      let expr = List.fold_left (fun e (v,ty) ->
+          let sub_rw = generate_dispatcher_expression ~{except=None} t subs_rho ty in
+          <:expr< $e$ ($fst sub_rw$ $lid:v$) >>
+        ) <:expr< $uid:uid$ >> argvars in
       (patt, <:vala< None >>, Dispatch1.expr_wrap_dsttype_module d expr)
     ]) branches in
   <:expr< fun [ $list:l$ ] >>
@@ -473,42 +514,54 @@ value generate_leaf_dispatcher_expression t d = fun [
         ) ltl in
       <:patt< { $list:lpl$ } >> in
     let expr =
-      let lel = List.mapi (fun i (_, lid, _, _, _) ->
-          (Dispatch1.patt_wrap_dsttype_module d <:patt< $lid:lid$ >>, <:expr< $lid:lid$ >>)
+      let lel = List.mapi (fun i (_, lid, _, ty, _) ->
+          let sub_rw = generate_dispatcher_expression ~{except=None} t subs_rho ty in
+          (Dispatch1.patt_wrap_dsttype_module d <:patt< $lid:lid$ >>, <:expr< $fst sub_rw$ $lid:lid$ >>)
         ) ltl in
       <:expr< { $list:lel$ } >> in
     <:expr< fun [ $patt$ -> $expr$ ] >>
 ]
-;
 
-value rec generate_dispatcher_expression ~{except} t ty = 
+and generate_dispatcher_expression ~{except} t subs_rho ty = 
+  let ct = canon_ctyp ty in
+  if List.mem_assoc ct subs_rho then
+    let (f_sub, f_result_ty) = List.assoc ct subs_rho in
+    let loc = loc_of_ctyp ty in
+    (<:expr< $lid:f_sub$ __dt__ >>, f_result_ty)
+  else if List.mem (canon_ctyp ty) builtin_copy_types then
+    (id_expr, ty) else
   match match_or_head_reduce ~{except=except} t ty with [
     Left (rwd, lrho) ->
     (** [rwd] is the rewrite dispatcher that matched,
         and [lrho] is the substitution generated by the match. *)
     let (revsubs, rrho) = List.fold_left (fun (revsubs, rrho) (lhsty, rhsty) ->
         let conc_lhsty = Ctyp.subst lrho lhsty in
-        let (e, conc_rhsty) = generate_dispatcher_expression ~{except=None} t conc_lhsty in
+        let (e, conc_rhsty) = generate_dispatcher_expression ~{except=None} t subs_rho conc_lhsty in
         let add_rrho = match pmatch rhsty conc_rhsty with [
           None -> Ploc.raise (loc_of_ctyp ty) (Failure "generate_dispatcher_expression: subterm dispatch returned non-matching type")
         | Some rho -> rho
         ] in
-        ([ e :: revsubs ], Ctyp.append_rho rrho add_rrho)
+        ([ e :: revsubs ], Env.append (loc_of_ctyp ty) rrho add_rrho)
       ) ([], []) rwd.Dispatch1.subs in
     let dname = rwd.Dispatch1.name in
     let loc = loc_of_ctyp ty in
-    let e = Expr.applist <:expr< $lid:dname$ >> (List.rev revsubs) in
+    let e = Expr.applist <:expr< __dt__ . $lid:dname$ __dt__ >> (List.rev revsubs) in
     (e, Ctyp.subst rrho rwd.Dispatch1.dsttype)
 
   | Right (dname, headredty) ->
     let d = List.assoc dname t.dispatchers in
-    (generate_leaf_dispatcher_expression t d headredty, d.Dispatch1.dsttype)
+    (generate_leaf_dispatcher_expression t d subs_rho headredty, d.Dispatch1.dsttype)
   ]
 ;
 
-value generate_dispatcher t (dname,d) = 
+value toplevel_generate_dispatcher t (dname,d) = 
   let srctype = d.Dispatch1.srctype in
-  generate_dispatcher_expression ~{except=Some dname} t srctype
+  let loc = loc_of_ctyp srctype in
+  let subs_rho = List.mapi (fun i (lhsty, rhsty) -> (canon_ctyp lhsty, (Printf.sprintf "__subrw_%d" i, rhsty))) d.Dispatch1.subs in
+  let subs_binders = List.map2 (fun (_,(v, _)) ty -> <:patt< ( $lid:v$ : $ty$ ) >>) subs_rho d.Dispatch1.subs_types in
+  let (e, t) = generate_dispatcher_expression ~{except=Some dname} t subs_rho srctype in
+  let loc = loc_of_expr e in
+  List.fold_right (fun p rhs -> <:expr< fun $p$ -> $rhs$ >>) subs_binders <:expr< (fun __dt__ -> $e$) >>
 ;
 end ;
 
@@ -527,18 +580,14 @@ value str_item_gen_rewrite name arg = fun [
   <:str_item:< type $_flag:_$ $list:tdl$ >> ->
     let rc = Rewrite.build_context loc arg tdl in
     let dispatch_type_decls = Rewrite.dispatch_table_type_decls loc rc in
+    let dispatch_table_value = Rewrite.dispatch_table_expr loc rc in
     let rewrite_dispatcher_decls = List.map (fun (dname,d) ->
-        let (e,ty) = Rewrite.generate_dispatcher rc (dname, d) in
-        let loc = loc_of_expr e in
-        let e = <:expr< ( $e$ : $ty$ ) >> in
+        let e = Rewrite.toplevel_generate_dispatcher rc (dname, d) in
         (<:patt< $lid:dname$ >>, e, <:vala< [] >>)
       ) rc.Rewrite.dispatchers in
-    let si = <:str_item< value rec $list:rewrite_dispatcher_decls$ >> in
-(*
-    let l = List.concat (List.map (str_item_gen_rewrite0 arg) tdl) in
-    let si = <:str_item< value rec $list:l$ >> in
-*)  
-  <:str_item< declare type $list:dispatch_type_decls$ ; si ; end >>
+    let si0 = <:str_item< value rec $list:rewrite_dispatcher_decls$ >> in
+    let si1 = <:str_item< value $lid:rc.Rewrite.dispatch_table_value$ = $dispatch_table_value$ >> in
+  <:str_item< declare type $list:dispatch_type_decls$ ; $si0$ ; $si1$ ; end >>
 | _ -> assert False ]
 ;
 
@@ -553,7 +602,7 @@ value sig_item_gen_rewrite name arg = fun [
 Pa_deriving.(Registry.add PI.{
   name = "rewrite"
 ; alternates = []
-; options = ["optional"; "dispatchers"; "dispatch_type"]
+; options = ["optional"; "dispatchers"; "dispatch_type"; "dispatch_table_value"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
 ; alg_attributes = ["nobuiltin"]
 ; expr_extensions = []
