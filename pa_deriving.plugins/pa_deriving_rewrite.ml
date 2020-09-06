@@ -298,12 +298,12 @@ value convert_tyarg loc name tyargs =
     ]) tyargs in
   let srctype = match List.assoc "srctype" alist with [
     <:expr< [%typ: $type:t$] >> -> t
-  | _ -> Ploc.raise loc (Failure "bad tyarg rhs -- must be [%typ: type]")
+  | _ -> Ploc.raise loc (Failure "bad srctype tyarg rhs -- must be [%typ: type]")
   | exception Not_found -> Ploc.raise loc (Failure "missing srctype tyarg")
   ] in
   let dsttype = match List.assoc "dsttype" alist with [
     <:expr< [%typ: $type:t$] >> -> t
-  | _ -> Ploc.raise loc (Failure "bad tyarg rhs -- must be [%typ: type]")
+  | _ -> Ploc.raise loc (Failure "bad dsttype tyarg rhs -- must be [%typ: type]")
   | exception Not_found -> Ploc.raise loc (Failure "missing dsttype tyarg")
   ] in
   let code = match List.assoc "code" alist with [
@@ -494,10 +494,13 @@ value pmatch pat ty =
       [ (id, ty) :: acc ]
   | _ -> failwith "caught"
   ]
-  in match pmrec [] (pat, ty) with [
-    rho -> Some rho
-  | exception Failure _ -> None
-  ]
+  in
+  if Reloc.eq_ctyp pat ty then Some []
+  else
+    match pmrec [] (pat, ty) with [
+      rho -> Some rho
+    | exception Failure _ -> None
+    ]
 ;
 
 value match_rewrite_rule ~{except} t ctyp =
@@ -552,6 +555,7 @@ value builtin_copy_types =
   ; <:ctyp< int32 >>
   ; <:ctyp< int64 >>
   ; <:ctyp< nativeint >>
+  ; <:ctyp< float >>
   ; <:ctyp< bool >>
   ; <:ctyp< char >>
   ]

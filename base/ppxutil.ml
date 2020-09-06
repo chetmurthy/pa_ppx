@@ -188,6 +188,7 @@ value rec subst rho = fun [
 | ( <:ctyp< $longid:_$ . $lid:_$ >>
   | <:ctyp< $lid:_$ >>
   ) as z -> z
+| <:ctyp:< $t1$ -> $t2$ >> -> <:ctyp< $subst rho t1$ -> $subst rho t2$ >>
 | z -> Ploc.raise (loc_of_ctyp z) (Failure Fmt.(str "Ctyp.subst: unhandled type: %a\n%!" Pp_MLast.pp_ctyp z))
 ]
 ;

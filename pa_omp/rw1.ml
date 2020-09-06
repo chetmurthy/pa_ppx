@@ -1,297 +1,301 @@
 
-module SRC = All_ast.Ast_4_03
-module DST = All_ast.Ast_4_02
-
-exception Migration_error of string * SRC.Location.t option
-
-let migration_error location feature =
-  raise (Migration_error (feature, location))
+module SRC = All_ast.Ast_4_02
+module DST = All_ast.Ast_4_03
 
 let _rewrite_list subrw0 __dst__ __inh__ l =
   List.map (subrw0 __dst__ __inh__) l
 
-let rewrite_403_arg_label_402_label :
-  'a -> 'b -> SRC.Asttypes.arg_label -> DST.Asttypes.label
-  =
-  fun __dst__ __inh__ -> function
-  | SRC.Asttypes.Nolabel  -> ""
-  | SRC.Asttypes.Labelled x0 -> x0
-  | SRC.Asttypes.Optional x0 -> "?" ^ x0
+let rewrite_402_label_403_arg_label : 'a -> 'b -> SRC.Asttypes.label -> DST.Asttypes.arg_label =
+  fun __dst__ __inh__ x ->
+    if x <> "" then
+      if x.[0] = '?' then DST.Asttypes.Optional (String.sub x 1 (String.length x - 1))
+      else DST.Asttypes.Labelled x
+    else
+      DST.Asttypes.Nolabel
 
-let rewrite_403_constant_402_constant :
-  'a -> SRC.Location.t option -> SRC.Parsetree.constant -> DST.Asttypes.constant =
+let rewrite_402_constant_403_constant :
+  'a -> 'b -> SRC.Asttypes.constant -> DST.Parsetree.constant =
   fun __dst__ __inh__ -> function
-  | SRC.Parsetree.Pconst_integer (x0,x1) ->
-     begin match x1 with
-     | None -> DST.Asttypes.Const_int (int_of_string x0)
-     | Some 'l' ->
-         DST.Asttypes.Const_int32 (Int32.of_string x0)
-     | Some 'L' ->
-         DST.Asttypes.Const_int64 (Int64.of_string x0)
-     | Some 'n' ->
-         DST.Asttypes.Const_nativeint (Nativeint.of_string x0)
-     | Some _ -> migration_error __inh__ "Pconst_integer"
-     end
-  | SRC.Parsetree.Pconst_char x0 ->
-      DST.Asttypes.Const_char x0
-  | SRC.Parsetree.Pconst_string (x0,x1) ->
-      DST.Asttypes.Const_string (x0,x1)
-  | SRC.Parsetree.Pconst_float (x0,x1) ->
-      begin match x1 with
-      | None -> DST.Asttypes.Const_float x0
-      | Some _ -> migration_error __inh__ "Pconst_float"
-      end
+  | SRC.Asttypes.Const_int x0 ->
+      DST.Parsetree.Pconst_integer (string_of_int x0, None)
+  | SRC.Asttypes.Const_char x0 ->
+      DST.Parsetree.Pconst_char x0
+  | SRC.Asttypes.Const_string (x0,x1) ->
+      DST.Parsetree.Pconst_string
+        (x0, x1)
+  | SRC.Asttypes.Const_float x0 ->
+      DST.Parsetree.Pconst_float (x0, None)
+  | SRC.Asttypes.Const_int32 x0 ->
+      DST.Parsetree.Pconst_integer (Int32.to_string x0, Some 'l')
+  | SRC.Asttypes.Const_int64 x0 ->
+      DST.Parsetree.Pconst_integer (Int64.to_string x0, Some 'L')
+  | SRC.Asttypes.Const_nativeint x0 ->
+      DST.Parsetree.Pconst_integer (Nativeint.to_string x0, Some 'n')
 
-type lexing_position = [%import: All_ast.Ast_4_03.Lexing.position]
-and location_t = [%import: All_ast.Ast_4_03.Location.t
+type lexing_position = [%import: All_ast.Ast_4_02.Lexing.position]
+and location_t = [%import: All_ast.Ast_4_02.Location.t
     [@with Lexing.position := lexing_position]
 ]
-and 'a location_loc = [%import: 'a All_ast.Ast_4_03.Location.loc
+and 'a location_loc = [%import: 'a All_ast.Ast_4_02.Location.loc
     [@with t := location_t]
 ]
-and longident_t = [%import: All_ast.Ast_4_03.Longident.t
+and longident_t = [%import: All_ast.Ast_4_02.Longident.t
     [@with t := longident_t]
 ]
 
-and label = [%import: All_ast.Ast_4_03.Asttypes.label]
-and arg_label = [%import: All_ast.Ast_4_03.Asttypes.arg_label]
+and label = [%import: All_ast.Ast_4_02.Asttypes.label
+]
 
-and closed_flag =  [%import: All_ast.Ast_4_03.Asttypes.closed_flag]
-and rec_flag =  [%import: All_ast.Ast_4_03.Asttypes.rec_flag]
-and direction_flag =  [%import: All_ast.Ast_4_03.Asttypes.direction_flag]
-and private_flag =  [%import: All_ast.Ast_4_03.Asttypes.private_flag]
-and mutable_flag =  [%import: All_ast.Ast_4_03.Asttypes.mutable_flag]
-and virtual_flag =  [%import: All_ast.Ast_4_03.Asttypes.virtual_flag]
-and override_flag =  [%import: All_ast.Ast_4_03.Asttypes.override_flag]
-and variance =  [%import: All_ast.Ast_4_03.Asttypes.variance]
-and constant =  [%import: All_ast.Ast_4_03.Parsetree.constant]
-and location_stack = [%import: All_ast.Ast_4_03.Parsetree.location_stack
+and closed_flag =  [%import: All_ast.Ast_4_02.Asttypes.closed_flag]
+and rec_flag =  [%import: All_ast.Ast_4_02.Asttypes.rec_flag]
+and direction_flag =  [%import: All_ast.Ast_4_02.Asttypes.direction_flag]
+and private_flag =  [%import: All_ast.Ast_4_02.Asttypes.private_flag]
+and mutable_flag =  [%import: All_ast.Ast_4_02.Asttypes.mutable_flag]
+and virtual_flag =  [%import: All_ast.Ast_4_02.Asttypes.virtual_flag]
+and override_flag =  [%import: All_ast.Ast_4_02.Asttypes.override_flag]
+and variance =  [%import: All_ast.Ast_4_02.Asttypes.variance]
+and constant =  [%import: All_ast.Ast_4_02.Asttypes.constant]
+and location_stack = [%import: All_ast.Ast_4_02.Parsetree.location_stack
     [@with Location.t := location_t]
 ]
-and attribute = [%import: All_ast.Ast_4_03.Parsetree.attribute
+and attribute = [%import: All_ast.Ast_4_02.Parsetree.attribute
     [@with Asttypes.loc := location_loc]
 ]
-and extension = [%import: All_ast.Ast_4_03.Parsetree.extension
+and extension = [%import: All_ast.Ast_4_02.Parsetree.extension
     [@with Asttypes.loc := location_loc]
 ]
-and attributes = [%import: All_ast.Ast_4_03.Parsetree.attributes]
-and payload = [%import: All_ast.Ast_4_03.Parsetree.payload]
-and core_type = [%import: All_ast.Ast_4_03.Parsetree.core_type
+and attributes = [%import: All_ast.Ast_4_02.Parsetree.attributes]
+and payload = [%import: All_ast.Ast_4_02.Parsetree.payload]
+and core_type = [%import: All_ast.Ast_4_02.Parsetree.core_type
     [@with Location.t := location_t]
 ]
-and core_type_desc = [%import: All_ast.Ast_4_03.Parsetree.core_type_desc
+and core_type_desc = [%import: All_ast.Ast_4_02.Parsetree.core_type_desc
     [@with Longident.t := longident_t
          ; Asttypes.loc := location_loc
          ; Asttypes.closed_flag := closed_flag
-         ; Asttypes.arg_label := arg_label
          ; Asttypes.label := label
     ]
 ]
-and package_type = [%import: All_ast.Ast_4_03.Parsetree.package_type
+and package_type = [%import: All_ast.Ast_4_02.Parsetree.package_type
     [@with Longident.t := longident_t
           ; Asttypes.loc := location_loc
     ]
 ]
-and row_field = [%import: All_ast.Ast_4_03.Parsetree.row_field
+and row_field = [%import: All_ast.Ast_4_02.Parsetree.row_field
     [@with
       Asttypes.label := label
     ]
 ]
-and pattern = [%import: All_ast.Ast_4_03.Parsetree.pattern
+and pattern = [%import: All_ast.Ast_4_02.Parsetree.pattern
     [@with Location.t := location_t]
 ]
-and pattern_desc = [%import: All_ast.Ast_4_03.Parsetree.pattern_desc
+and pattern_desc = [%import: All_ast.Ast_4_02.Parsetree.pattern_desc
     [@with Longident.t := longident_t ;
       Asttypes.loc := location_loc ;
+      Asttypes.constant := constant ;
       Asttypes.label := label ;
       Asttypes.closed_flag := closed_flag
     ]
 ]
-and expression = [%import: All_ast.Ast_4_03.Parsetree.expression
+and expression = [%import: All_ast.Ast_4_02.Parsetree.expression
     [@with Location.t := location_t]
 ]
-and expression_desc = [%import: All_ast.Ast_4_03.Parsetree.expression_desc
+and expression_desc = [%import: All_ast.Ast_4_02.Parsetree.expression_desc
     [@with Longident.t := longident_t ;
       Asttypes.loc := location_loc ;
       Asttypes.label := label ;
-      Asttypes.arg_label := arg_label ;
       Asttypes.rec_flag := rec_flag ;
       Asttypes.override_flag := override_flag ;
       Asttypes.direction_flag := direction_flag ;
+      Asttypes.constant := constant
     ]
 ]
-and case = [%import: All_ast.Ast_4_03.Parsetree.case]
-and value_description = [%import: All_ast.Ast_4_03.Parsetree.value_description
+and case = [%import: All_ast.Ast_4_02.Parsetree.case]
+and value_description = [%import: All_ast.Ast_4_02.Parsetree.value_description
     [@with Location.t := location_t ;
            Asttypes.loc := location_loc
     ]
 ]
-and type_declaration = [%import: All_ast.Ast_4_03.Parsetree.type_declaration
+and type_declaration = [%import: All_ast.Ast_4_02.Parsetree.type_declaration
     [@with Location.t := location_t
           ; Asttypes.loc := location_loc
           ; Asttypes.variance := variance
           ; Asttypes.private_flag := private_flag
     ]
 ]
-and type_kind = [%import: All_ast.Ast_4_03.Parsetree.type_kind]
-and label_declaration = [%import: All_ast.Ast_4_03.Parsetree.label_declaration
+and type_kind = [%import: All_ast.Ast_4_02.Parsetree.type_kind]
+and label_declaration = [%import: All_ast.Ast_4_02.Parsetree.label_declaration
     [@with Location.t := location_t
          ; Asttypes.loc := location_loc
          ; Asttypes.mutable_flag := mutable_flag
     ]
 ]
-and constructor_declaration = [%import: All_ast.Ast_4_03.Parsetree.constructor_declaration
+and constructor_declaration = [%import: All_ast.Ast_4_02.Parsetree.constructor_declaration
     [@with Location.t := location_t ;
            Asttypes.loc := location_loc
     ]
 ]
-and constructor_arguments = [%import: All_ast.Ast_4_03.Parsetree.constructor_arguments]
-and type_extension = [%import: All_ast.Ast_4_03.Parsetree.type_extension
+and type_extension = [%import: All_ast.Ast_4_02.Parsetree.type_extension
     [@with Longident.t := longident_t
          ; Asttypes.loc := location_loc
          ; Asttypes.variance := variance
          ; Asttypes.private_flag := private_flag
     ]
 ]
-and extension_constructor = [%import: All_ast.Ast_4_03.Parsetree.extension_constructor
+and extension_constructor = [%import: All_ast.Ast_4_02.Parsetree.extension_constructor
     [@with Location.t := location_t ;
            Asttypes.loc := location_loc
     ]
 ]
-and extension_constructor_kind = [%import: All_ast.Ast_4_03.Parsetree.extension_constructor_kind
+and extension_constructor_kind = [%import: All_ast.Ast_4_02.Parsetree.extension_constructor_kind
     [@with Longident.t := longident_t ;
            Asttypes.loc := location_loc
     ]
 ]
-and class_type = [%import: All_ast.Ast_4_03.Parsetree.class_type
+and class_type = [%import: All_ast.Ast_4_02.Parsetree.class_type
     [@with Location.t := location_t]
 ]
-and class_type_desc = [%import: All_ast.Ast_4_03.Parsetree.class_type_desc
+and class_type_desc = [%import: All_ast.Ast_4_02.Parsetree.class_type_desc
     [@with Longident.t := longident_t
          ; Asttypes.loc := location_loc
          ; Asttypes.label := label
-         ; Asttypes.arg_label := arg_label
     ]
 ]
-and class_signature = [%import: All_ast.Ast_4_03.Parsetree.class_signature]
-and class_type_field = [%import: All_ast.Ast_4_03.Parsetree.class_type_field
+and class_signature = [%import: All_ast.Ast_4_02.Parsetree.class_signature]
+and class_type_field = [%import: All_ast.Ast_4_02.Parsetree.class_type_field
     [@with Location.t := location_t]
 ]
-and class_type_field_desc = [%import: All_ast.Ast_4_03.Parsetree.class_type_field_desc
+and class_type_field_desc = [%import: All_ast.Ast_4_02.Parsetree.class_type_field_desc
     [@with
       Asttypes.private_flag := private_flag
     ; Asttypes.mutable_flag := mutable_flag
     ; Asttypes.virtual_flag := virtual_flag
     ]
 ]
-and 'a class_infos = [%import: 'a All_ast.Ast_4_03.Parsetree.class_infos
+and 'a class_infos = [%import: 'a All_ast.Ast_4_02.Parsetree.class_infos
     [@with Location.t := location_t
          ; Asttypes.loc := location_loc
          ; Asttypes.variance := variance
          ; Asttypes.virtual_flag := virtual_flag
     ]
 ]
-and class_description = [%import: All_ast.Ast_4_03.Parsetree.class_description]
-and class_type_declaration = [%import: All_ast.Ast_4_03.Parsetree.class_type_declaration]
-and class_expr = [%import: All_ast.Ast_4_03.Parsetree.class_expr
+and class_description = [%import: All_ast.Ast_4_02.Parsetree.class_description]
+and class_type_declaration = [%import: All_ast.Ast_4_02.Parsetree.class_type_declaration]
+and class_expr = [%import: All_ast.Ast_4_02.Parsetree.class_expr
     [@with Location.t := location_t]
 ]
-and class_expr_desc = [%import: All_ast.Ast_4_03.Parsetree.class_expr_desc
+and class_expr_desc = [%import: All_ast.Ast_4_02.Parsetree.class_expr_desc
     [@with Longident.t := longident_t
          ; Asttypes.loc := location_loc
          ; Asttypes.rec_flag := rec_flag
          ; Asttypes.label := label
-         ; Asttypes.arg_label := arg_label
     ]
 ]
-and class_structure = [%import: All_ast.Ast_4_03.Parsetree.class_structure]
-and class_field = [%import: All_ast.Ast_4_03.Parsetree.class_field
+and class_structure = [%import: All_ast.Ast_4_02.Parsetree.class_structure]
+and class_field = [%import: All_ast.Ast_4_02.Parsetree.class_field
     [@with Location.t := location_t]
 ]
-and class_field_desc = [%import: All_ast.Ast_4_03.Parsetree.class_field_desc
+and class_field_desc = [%import: All_ast.Ast_4_02.Parsetree.class_field_desc
     [@with Asttypes.loc := location_loc
          ; Asttypes.override_flag := override_flag
          ; Asttypes.mutable_flag := mutable_flag
          ; Asttypes.private_flag := private_flag
     ]
 ]
-and class_field_kind = [%import: All_ast.Ast_4_03.Parsetree.class_field_kind
+and class_field_kind = [%import: All_ast.Ast_4_02.Parsetree.class_field_kind
     [@with Asttypes.override_flag := override_flag
     ]
 ]
-and class_declaration = [%import: All_ast.Ast_4_03.Parsetree.class_declaration]
-and module_type = [%import: All_ast.Ast_4_03.Parsetree.module_type
+and class_declaration = [%import: All_ast.Ast_4_02.Parsetree.class_declaration]
+and module_type = [%import: All_ast.Ast_4_02.Parsetree.module_type
     [@with Location.t := location_t]
 ]
-and module_type_desc = [%import: All_ast.Ast_4_03.Parsetree.module_type_desc
+and module_type_desc = [%import: All_ast.Ast_4_02.Parsetree.module_type_desc
     [@with Longident.t := longident_t ;
            Asttypes.loc := location_loc
     ]
 ]
-and signature = [%import: All_ast.Ast_4_03.Parsetree.signature]
-and signature_item = [%import: All_ast.Ast_4_03.Parsetree.signature_item
+and signature = [%import: All_ast.Ast_4_02.Parsetree.signature]
+and signature_item = [%import: All_ast.Ast_4_02.Parsetree.signature_item
     [@with Location.t := location_t]
 ]
-and signature_item_desc = [%import: All_ast.Ast_4_03.Parsetree.signature_item_desc
-    [@with Asttypes.rec_flag := rec_flag]
-]
-and module_declaration = [%import: All_ast.Ast_4_03.Parsetree.module_declaration
+and signature_item_desc = [%import: All_ast.Ast_4_02.Parsetree.signature_item_desc]
+and module_declaration = [%import: All_ast.Ast_4_02.Parsetree.module_declaration
     [@with Location.t := location_t ;
            Asttypes.loc := location_loc
     ]
 ]
-and module_type_declaration = [%import: All_ast.Ast_4_03.Parsetree.module_type_declaration
+and module_type_declaration = [%import: All_ast.Ast_4_02.Parsetree.module_type_declaration
     [@with Location.t := location_t ;
            Asttypes.loc := location_loc
     ]
 ]
-and open_description = [%import: All_ast.Ast_4_03.Parsetree.open_description
+and open_description = [%import: All_ast.Ast_4_02.Parsetree.open_description
     [@with Location.t := location_t
           ; Longident.t := longident_t
           ; Asttypes.loc := location_loc
           ; Asttypes.override_flag := override_flag
     ]
 ]
-and 'a include_infos = [%import: 'a All_ast.Ast_4_03.Parsetree.include_infos
+and 'a include_infos = [%import: 'a All_ast.Ast_4_02.Parsetree.include_infos
     [@with Location.t := location_t]
 ]
-and include_description = [%import: All_ast.Ast_4_03.Parsetree.include_description]
-and include_declaration = [%import: All_ast.Ast_4_03.Parsetree.include_declaration]
-and with_constraint = [%import: All_ast.Ast_4_03.Parsetree.with_constraint
+and include_description = [%import: All_ast.Ast_4_02.Parsetree.include_description]
+and include_declaration = [%import: All_ast.Ast_4_02.Parsetree.include_declaration]
+and with_constraint = [%import: All_ast.Ast_4_02.Parsetree.with_constraint
     [@with Longident.t := longident_t
          ; Asttypes.loc := location_loc
     ]
 ]
-and module_expr = [%import: All_ast.Ast_4_03.Parsetree.module_expr
+and module_expr = [%import: All_ast.Ast_4_02.Parsetree.module_expr
     [@with Location.t := location_t]
 ]
-and module_expr_desc = [%import: All_ast.Ast_4_03.Parsetree.module_expr_desc
+and module_expr_desc = [%import: All_ast.Ast_4_02.Parsetree.module_expr_desc
     [@with Longident.t := longident_t ;
            Asttypes.loc := location_loc
     ]
 ]
-and structure = [%import: All_ast.Ast_4_03.Parsetree.structure]
-and structure_item = [%import: All_ast.Ast_4_03.Parsetree.structure_item
+and structure = [%import: All_ast.Ast_4_02.Parsetree.structure]
+and structure_item = [%import: All_ast.Ast_4_02.Parsetree.structure_item
     [@with Location.t := location_t]
 ]
-and structure_item_desc = [%import: All_ast.Ast_4_03.Parsetree.structure_item_desc
+and structure_item_desc = [%import: All_ast.Ast_4_02.Parsetree.structure_item_desc
     [@with Location.t := location_t
           ; Longident.t := longident_t
           ; Asttypes.loc := location_loc
           ; Asttypes.rec_flag := rec_flag
     ]
 ]
-and value_binding = [%import: All_ast.Ast_4_03.Parsetree.value_binding
+and value_binding = [%import: All_ast.Ast_4_02.Parsetree.value_binding
     [@with Location.t := location_t
          ; Asttypes.loc := location_loc
     ]
 ]
-and module_binding = [%import: All_ast.Ast_4_03.Parsetree.module_binding
+and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
     [@with Location.t := location_t
          ; Asttypes.loc := location_loc
     ]
 ]
-
+and out_ident = [%import: All_ast.Ast_4_02.Outcometree.out_ident]
+and out_value = [%import: All_ast.Ast_4_02.Outcometree.out_value]
+and out_type = [%import: All_ast.Ast_4_02.Outcometree.out_type]
+and out_variant = [%import: All_ast.Ast_4_02.Outcometree.out_variant]
+and out_class_type = [%import: All_ast.Ast_4_02.Outcometree.out_class_type]
+and out_class_sig_item = [%import: All_ast.Ast_4_02.Outcometree.out_class_sig_item]
+and out_module_type = [%import: All_ast.Ast_4_02.Outcometree.out_module_type]
+and out_sig_item = [%import: All_ast.Ast_4_02.Outcometree.out_sig_item]
+and out_type_decl = [%import: All_ast.Ast_4_02.Outcometree.out_type_decl
+    [@with Asttypes.private_flag := private_flag]
+]
+and out_extension_constructor = [%import: All_ast.Ast_4_02.Outcometree.out_extension_constructor
+    [@with Asttypes.private_flag := private_flag]
+]
+and out_type_extension = [%import: All_ast.Ast_4_02.Outcometree.out_type_extension
+    [@with Asttypes.private_flag := private_flag]
+]
+and out_rec_status = [%import: All_ast.Ast_4_02.Outcometree.out_rec_status]
+and out_ext_status = [%import: All_ast.Ast_4_02.Outcometree.out_ext_status]
+and out_phrase = [%import: All_ast.Ast_4_02.Outcometree.out_phrase]
 
 [@@deriving rewrite
     { inherit_type = [%typ: location_t option]
@@ -324,11 +328,6 @@ and module_binding = [%import: All_ast.Ast_4_03.Parsetree.module_binding
       ; rewrite_label = {
           srctype = [%typ: label]
         ; dsttype = [%typ: DST.Asttypes.label]
-        }
-      ; rewrite_arg_label = {
-          srctype = [%typ: arg_label]
-        ; dsttype = [%typ: DST.Asttypes.label]
-        ; code = rewrite_403_arg_label_402_label
         }
       ; rewrite_closed_flag = {
           srctype = [%typ: closed_flag]
@@ -364,8 +363,8 @@ and module_binding = [%import: All_ast.Ast_4_03.Parsetree.module_binding
         }
       ; rewrite_constant = {
           srctype = [%typ: constant]
-        ; dsttype = [%typ: DST.Asttypes.constant]
-        ; code = rewrite_403_constant_402_constant
+        ; dsttype = [%typ: DST.Parsetree.constant]
+        ; code = rewrite_402_constant_403_constant
         }
       ; rewrite_list = {
           srctype = [%typ: 'a list]
@@ -392,9 +391,6 @@ and module_binding = [%import: All_ast.Ast_4_03.Parsetree.module_binding
       ; rewrite_payload = {
           srctype = [%typ: payload]
         ; dsttype = [%typ: DST.Parsetree.payload]
-        ; custom_branches_code = function
-              PSig _x0 ->
-              migration_error __inh__ "PSig"
         }
       ; rewrite_core_type = {
           srctype = [%typ: core_type]
@@ -404,6 +400,13 @@ and module_binding = [%import: All_ast.Ast_4_03.Parsetree.module_binding
       ; rewrite_core_type_desc = {
           srctype = [%typ: core_type_desc]
         ; dsttype = [%typ: DST.Parsetree.core_type_desc]
+        ; custom_branches_code = function
+            Ptyp_arrow (v_0, v_1, v_2) ->
+            let open DST.Parsetree in
+            Ptyp_arrow
+              (rewrite_402_label_403_arg_label __dt__ __inh__ v_0,
+               __dt__.rewrite_core_type __dt__ __inh__ v_1,
+               __dt__.rewrite_core_type __dt__ __inh__ v_2)
         }
       ; rewrite_package_type = {
           srctype = [%typ: package_type]
@@ -431,8 +434,20 @@ and module_binding = [%import: All_ast.Ast_4_03.Parsetree.module_binding
           srctype = [%typ: expression_desc]
         ; dsttype = [%typ: DST.Parsetree.expression_desc]
         ; custom_branches_code = function
-              Pexp_unreachable  ->
-              migration_error __inh__ "Pexp_unreachable"
+              Pexp_fun (v_0, v_1, v_2, v_3) ->
+              let open DST.Parsetree in
+              Pexp_fun
+                (rewrite_402_label_403_arg_label __dt__ __inh__ v_0,
+                 __dt__.rewrite_option __dt__.rewrite_expression __dt__ __inh__ v_1,
+                 __dt__.rewrite_pattern __dt__ __inh__ v_2,
+                 __dt__.rewrite_expression __dt__ __inh__ v_3)
+            | Pexp_apply (v_0, v_1) ->
+              let open DST.Parsetree in
+              Pexp_apply
+                (__dt__.rewrite_expression __dt__ __inh__ v_0,
+                 List.map (fun (v_0, v_1) ->
+                     rewrite_402_label_403_arg_label __dt__ __inh__ v_0,
+                     __dt__.rewrite_expression __dt__ __inh__ v_1) v_1)
         }
       ; rewrite_case = {
           srctype = [%typ: case]
@@ -461,14 +476,11 @@ and module_binding = [%import: All_ast.Ast_4_03.Parsetree.module_binding
           srctype = [%typ: constructor_declaration]
         ; dsttype = [%typ: DST.Parsetree.constructor_declaration]
         ; inherit_code = Some pcd_loc
-        }
-      ; rewrite_constructor_arguments = {
-          srctype = [%typ: constructor_arguments]
-        ; dsttype = [%typ: DST.Parsetree.core_type list]
-        ; custom_branches_code = function
-              Pcstr_tuple pcd_args ->
-              List.map (__dt__.rewrite_core_type __dt__ __inh__) pcd_args
-            | Pcstr_record _ -> migration_error __inh__ "Pcstr_record"
+        ; skip_fields = [ pcd_args ]
+        ; custom_fields_code = {
+            pcd_args =
+              DST.Parsetree.Pcstr_tuple (List.map (__dt__.rewrite_core_type __dt__ __inh__) pcd_args)
+          }
         }
       ; rewrite_type_extension = {
           srctype = [%typ: type_extension]
@@ -482,6 +494,12 @@ and module_binding = [%import: All_ast.Ast_4_03.Parsetree.module_binding
       ; rewrite_extension_constructor_kind = {
           srctype = [%typ: extension_constructor_kind]
         ; dsttype = [%typ: DST.Parsetree.extension_constructor_kind]
+        ; custom_branches_code = function
+    Pext_decl (v_0, v_1) ->
+      let open DST.Parsetree in
+      Pext_decl
+        (DST.Parsetree.Pcstr_tuple (List.map (__dt__.rewrite_core_type __dt__ __inh__) v_0),
+         Option.map (__dt__.rewrite_core_type __dt__ __inh__) v_1)
         }
       ; rewrite_class_type = {
           srctype = [%typ: class_type]
@@ -491,6 +509,13 @@ and module_binding = [%import: All_ast.Ast_4_03.Parsetree.module_binding
       ; rewrite_class_type_desc = {
           srctype = [%typ: class_type_desc]
         ; dsttype = [%typ: DST.Parsetree.class_type_desc]
+        ; custom_branches_code = function
+Pcty_arrow (v_0, v_1, v_2) ->
+      let open DST.Parsetree in
+      Pcty_arrow
+        (rewrite_402_label_403_arg_label __dt__ __inh__ v_0,
+         __dt__.rewrite_core_type __dt__ __inh__ v_1,
+         __dt__.rewrite_class_type __dt__ __inh__ v_2)
         }
       ; rewrite_class_signature = {
           srctype = [%typ: class_signature]
@@ -527,6 +552,22 @@ and module_binding = [%import: All_ast.Ast_4_03.Parsetree.module_binding
       ; rewrite_class_expr_desc = {
           srctype = [%typ: class_expr_desc]
         ; dsttype = [%typ: DST.Parsetree.class_expr_desc]
+        ; custom_branches_code = function
+              Pcl_fun (v_0, v_1, v_2, v_3) ->
+              let open DST.Parsetree in
+              Pcl_fun
+                (rewrite_402_label_403_arg_label __dt__ __inh__ v_0,
+                 Option.map (__dt__.rewrite_expression __dt__ __inh__)  v_1,
+                 __dt__.rewrite_pattern __dt__ __inh__ v_2,
+                 __dt__.rewrite_class_expr __dt__ __inh__ v_3)
+            | Pcl_apply (v_0, v_1) ->
+              let open DST.Parsetree in
+              Pcl_apply
+                (__dt__.rewrite_class_expr __dt__ __inh__ v_0,
+                 List.map (fun (v_0, v_1) ->
+                     rewrite_402_label_403_arg_label __dt__ __inh__ v_0,
+                     __dt__.rewrite_expression __dt__ __inh__ v_1)
+                   v_1)
         }
       ; rewrite_class_structure = {
           srctype = [%typ: class_structure]
@@ -571,12 +612,15 @@ and module_binding = [%import: All_ast.Ast_4_03.Parsetree.module_binding
           srctype = [%typ: signature_item_desc]
         ; dsttype = [%typ: DST.Parsetree.signature_item_desc]
         ; custom_branches_code = function
-              Psig_type (Recursive, v_0) ->
-              Psig_type (List.map (__dt__.rewrite_type_declaration __dt__ __inh__) v_0)
-            | Psig_type (Nonrecursive, []) -> Psig_type []
-            | Psig_type (Nonrecursive, h::t) ->
-              let h = { h with ptype_attributes = ({txt="nonrec"; loc=loc_none}, PStr[]) :: h.ptype_attributes } in
-              Psig_type (List.map (__dt__.rewrite_type_declaration __dt__ __inh__) (h::t))
+              Psig_type v_0 ->
+              let is_nonrec (attr,_) = attr.txt = "nonrec" in
+              let rf = if (List.exists (fun td ->
+                  List.exists is_nonrec td.ptype_attributes) v_0) then
+                  DST.Asttypes.Nonrecursive
+                else DST.Asttypes.Recursive in
+              let open DST.Parsetree in
+              Psig_type
+                (rf, List.map (__dt__.rewrite_type_declaration __dt__ __inh__) v_0)
         }
       ; rewrite_module_declaration = {
           srctype = [%typ: module_declaration]
@@ -633,12 +677,15 @@ and module_binding = [%import: All_ast.Ast_4_03.Parsetree.module_binding
           srctype = [%typ: structure_item_desc]
         ; dsttype = [%typ: DST.Parsetree.structure_item_desc]
         ; custom_branches_code = function
-              Pstr_type (Recursive, v_0) ->
-              Pstr_type (List.map (__dt__.rewrite_type_declaration __dt__ __inh__) v_0)
-            | Pstr_type (Nonrecursive, []) -> Pstr_type []
-            | Pstr_type (Nonrecursive, h::t) ->
-              let h = { h with ptype_attributes = ({txt="nonrec"; loc=loc_none}, PStr[]) :: h.ptype_attributes } in
-              Pstr_type (List.map (__dt__.rewrite_type_declaration __dt__ __inh__) (h::t))
+              Pstr_type v_0 ->
+              let is_nonrec (attr,_) = attr.txt = "nonrec" in
+              let rf = if (List.exists (fun td ->
+                  List.exists is_nonrec td.ptype_attributes) v_0) then
+                  DST.Asttypes.Nonrecursive
+                else DST.Asttypes.Recursive in
+              let open DST.Parsetree in
+              Pstr_type
+                (rf, List.map (__dt__.rewrite_type_declaration __dt__ __inh__) v_0)
         }
       ; rewrite_value_binding = {
           srctype = [%typ: value_binding]
@@ -649,6 +696,83 @@ and module_binding = [%import: All_ast.Ast_4_03.Parsetree.module_binding
           srctype = [%typ: module_binding]
         ; dsttype = [%typ: DST.Parsetree.module_binding]
         ; inherit_code = Some pmb_loc
+        }
+      ; rewrite_out_ident = {
+          srctype = [%typ: out_ident]
+        ; dsttype = [%typ: DST.Outcometree.out_ident]
+        }
+      ; rewrite_printer = {
+          srctype = [%typ: (Format.formatter -> unit)]
+        ; dsttype = [%typ: (Format.formatter -> unit)]
+        ; code = fun _ _ x -> x
+        }
+      ; rewrite_exn = {
+          srctype = [%typ: exn]
+        ; dsttype = [%typ: exn]
+        ; code = fun _ _ x -> x
+        }
+      ; rewrite_out_value = {
+          srctype = [%typ: out_value]
+        ; dsttype = [%typ: DST.Outcometree.out_value]
+        }
+      ; rewrite_out_type = {
+          srctype = [%typ: out_type]
+        ; dsttype = [%typ: DST.Outcometree.out_type]
+        }
+      ; rewrite_out_variant = {
+          srctype = [%typ: out_variant]
+        ; dsttype = [%typ: DST.Outcometree.out_variant]
+        }
+      ; rewrite_out_class_type = {
+          srctype = [%typ: out_class_type]
+        ; dsttype = [%typ: DST.Outcometree.out_class_type]
+        }
+      ; rewrite_out_class_sig_item = {
+          srctype = [%typ: out_class_sig_item]
+        ; dsttype = [%typ: DST.Outcometree.out_class_sig_item]
+        }
+      ; rewrite_out_module_type = {
+          srctype = [%typ: out_module_type]
+        ; dsttype = [%typ: DST.Outcometree.out_module_type]
+        }
+      ; rewrite_out_sig_item = {
+          srctype = [%typ: out_sig_item]
+        ; dsttype = [%typ: DST.Outcometree.out_sig_item]
+        ; custom_branches_code = function
+              Osig_value (v_0, v_1, v_2) ->
+              let open DST.Outcometree in
+              Osig_value
+                {oval_name = v_0
+                ; oval_type = __dt__.rewrite_out_type __dt__ __inh__ v_1
+                ; oval_prims = v_2
+                ; oval_attributes = []}
+        }
+      ; rewrite_out_type_decl = {
+          srctype = [%typ: out_type_decl]
+        ; dsttype = [%typ: DST.Outcometree.out_type_decl]
+        ; custom_fields_code = {
+            otype_immediate = false
+          }
+        }
+      ; rewrite_out_extension_constructor = {
+          srctype = [%typ: out_extension_constructor]
+        ; dsttype = [%typ: DST.Outcometree.out_extension_constructor]
+        }
+      ; rewrite_out_type_extension = {
+          srctype = [%typ: out_type_extension]
+        ; dsttype = [%typ: DST.Outcometree.out_type_extension]
+        }
+      ; rewrite_out_rec_status = {
+          srctype = [%typ: out_rec_status]
+        ; dsttype = [%typ: DST.Outcometree.out_rec_status]
+        }
+      ; rewrite_out_ext_status = {
+          srctype = [%typ: out_ext_status]
+        ; dsttype = [%typ: DST.Outcometree.out_ext_status]
+        }
+      ; rewrite_out_phrase = {
+          srctype = [%typ: out_phrase]
+        ; dsttype = [%typ: DST.Outcometree.out_phrase]
         }
       }
     }

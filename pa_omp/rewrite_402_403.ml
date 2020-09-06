@@ -276,7 +276,26 @@ and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
          ; Asttypes.loc := location_loc
     ]
 ]
-
+and out_ident = [%import: All_ast.Ast_4_02.Outcometree.out_ident]
+and out_value = [%import: All_ast.Ast_4_02.Outcometree.out_value]
+and out_type = [%import: All_ast.Ast_4_02.Outcometree.out_type]
+and out_variant = [%import: All_ast.Ast_4_02.Outcometree.out_variant]
+and out_class_type = [%import: All_ast.Ast_4_02.Outcometree.out_class_type]
+and out_class_sig_item = [%import: All_ast.Ast_4_02.Outcometree.out_class_sig_item]
+and out_module_type = [%import: All_ast.Ast_4_02.Outcometree.out_module_type]
+and out_sig_item = [%import: All_ast.Ast_4_02.Outcometree.out_sig_item]
+and out_type_decl = [%import: All_ast.Ast_4_02.Outcometree.out_type_decl
+    [@with Asttypes.private_flag := private_flag]
+]
+and out_extension_constructor = [%import: All_ast.Ast_4_02.Outcometree.out_extension_constructor
+    [@with Asttypes.private_flag := private_flag]
+]
+and out_type_extension = [%import: All_ast.Ast_4_02.Outcometree.out_type_extension
+    [@with Asttypes.private_flag := private_flag]
+]
+and out_rec_status = [%import: All_ast.Ast_4_02.Outcometree.out_rec_status]
+and out_ext_status = [%import: All_ast.Ast_4_02.Outcometree.out_ext_status]
+and out_phrase = [%import: All_ast.Ast_4_02.Outcometree.out_phrase]
 
 [@@deriving rewrite
     { inherit_type = [%typ: location_t option]
@@ -677,6 +696,83 @@ Pcty_arrow (v_0, v_1, v_2) ->
           srctype = [%typ: module_binding]
         ; dsttype = [%typ: DST.Parsetree.module_binding]
         ; inherit_code = Some pmb_loc
+        }
+      ; rewrite_out_ident = {
+          srctype = [%typ: out_ident]
+        ; dsttype = [%typ: DST.Outcometree.out_ident]
+        }
+      ; rewrite_printer = {
+          srctype = [%typ: (Format.formatter -> unit)]
+        ; dsttype = [%typ: (Format.formatter -> unit)]
+        ; code = fun _ _ x -> x
+        }
+      ; rewrite_exn = {
+          srctype = [%typ: exn]
+        ; dsttype = [%typ: exn]
+        ; code = fun _ _ x -> x
+        }
+      ; rewrite_out_value = {
+          srctype = [%typ: out_value]
+        ; dsttype = [%typ: DST.Outcometree.out_value]
+        }
+      ; rewrite_out_type = {
+          srctype = [%typ: out_type]
+        ; dsttype = [%typ: DST.Outcometree.out_type]
+        }
+      ; rewrite_out_variant = {
+          srctype = [%typ: out_variant]
+        ; dsttype = [%typ: DST.Outcometree.out_variant]
+        }
+      ; rewrite_out_class_type = {
+          srctype = [%typ: out_class_type]
+        ; dsttype = [%typ: DST.Outcometree.out_class_type]
+        }
+      ; rewrite_out_class_sig_item = {
+          srctype = [%typ: out_class_sig_item]
+        ; dsttype = [%typ: DST.Outcometree.out_class_sig_item]
+        }
+      ; rewrite_out_module_type = {
+          srctype = [%typ: out_module_type]
+        ; dsttype = [%typ: DST.Outcometree.out_module_type]
+        }
+      ; rewrite_out_sig_item = {
+          srctype = [%typ: out_sig_item]
+        ; dsttype = [%typ: DST.Outcometree.out_sig_item]
+        ; custom_branches_code = function
+              Osig_value (v_0, v_1, v_2) ->
+              let open DST.Outcometree in
+              Osig_value
+                {oval_name = v_0
+                ; oval_type = __dt__.rewrite_out_type __dt__ __inh__ v_1
+                ; oval_prims = v_2
+                ; oval_attributes = []}
+        }
+      ; rewrite_out_type_decl = {
+          srctype = [%typ: out_type_decl]
+        ; dsttype = [%typ: DST.Outcometree.out_type_decl]
+        ; custom_fields_code = {
+            otype_immediate = false
+          }
+        }
+      ; rewrite_out_extension_constructor = {
+          srctype = [%typ: out_extension_constructor]
+        ; dsttype = [%typ: DST.Outcometree.out_extension_constructor]
+        }
+      ; rewrite_out_type_extension = {
+          srctype = [%typ: out_type_extension]
+        ; dsttype = [%typ: DST.Outcometree.out_type_extension]
+        }
+      ; rewrite_out_rec_status = {
+          srctype = [%typ: out_rec_status]
+        ; dsttype = [%typ: DST.Outcometree.out_rec_status]
+        }
+      ; rewrite_out_ext_status = {
+          srctype = [%typ: out_ext_status]
+        ; dsttype = [%typ: DST.Outcometree.out_ext_status]
+        }
+      ; rewrite_out_phrase = {
+          srctype = [%typ: out_phrase]
+        ; dsttype = [%typ: DST.Outcometree.out_phrase]
         }
       }
     }
