@@ -733,7 +733,7 @@ value str_item_gen_rewrite name arg = fun [
         let e = Rewrite.toplevel_generate_dispatcher rc (dname, d) in
         (<:patt< $lid:dname$ >>, e, <:vala< [] >>)
       ) rc.Rewrite.dispatchers in
-    let si0 = <:str_item< value rec $list:rewrite_dispatcher_decls$ >> in
+    let si0 = <:str_item< value $list:rewrite_dispatcher_decls$ >> in
     let si1 = <:str_item< value $lid:rc.Rewrite.dispatch_table_value$ = $dispatch_table_value$ >> in
   <:str_item< declare type $list:dispatch_type_decls$ ; $si0$ ; $si1$ ; end >>
 | _ -> assert False ]
