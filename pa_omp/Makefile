@@ -12,7 +12,8 @@ LAUNCH=$(TOP)/tools/LAUNCH
 OCAMLFIND=$(LAUNCH) ocamlfind
 NOT_OCAMLFIND=$(LAUNCH) not-ocamlfind
 MKCAMLP5=$(LAUNCH) mkcamlp5
-PACKAGES := $(PACKAGES),pa_ppx_base,fmt,bos,pa_ppx_import,pa_ppx_deriving_plugins.rewrite
+PACKAGES := $(PACKAGES),pa_ppx_base,fmt,bos,pa_ppx_import
+PACKAGES := $(PACKAGES),pa_ppx_deriving_plugins.rewrite
 SYNTAX = camlp5o
 OCAMLCFLAGS += -ppopt -pa_import-I -ppopt . -ppopt -pa_passthru-debug 
 

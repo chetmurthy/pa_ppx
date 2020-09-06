@@ -70,17 +70,22 @@ and core_type = [%import: All_ast.Ast_4_02.Parsetree.core_type
     [@with Location.t := location_t]
 ]
 and core_type_desc = [%import: All_ast.Ast_4_02.Parsetree.core_type_desc
-    [@with Longident.t := longident_t ;
-      Asttypes.loc := location_loc ;
-      Asttypes.closed_flag := closed_flag
+    [@with Longident.t := longident_t
+         ; Asttypes.loc := location_loc
+         ; Asttypes.closed_flag := closed_flag
+         ; Asttypes.label := label
     ]
 ]
 and package_type = [%import: All_ast.Ast_4_02.Parsetree.package_type
-    [@with Longident.t := longident_t ;
-      Asttypes.loc := location_loc
+    [@with Longident.t := longident_t
+          ; Asttypes.loc := location_loc
     ]
 ]
-and row_field = [%import: All_ast.Ast_4_02.Parsetree.row_field]
+and row_field = [%import: All_ast.Ast_4_02.Parsetree.row_field
+    [@with
+      Asttypes.label := label
+    ]
+]
 and pattern = [%import: All_ast.Ast_4_02.Parsetree.pattern
     [@with Location.t := location_t]
 ]
@@ -277,10 +282,11 @@ and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
     { dispatch_type = dispatch_table_t
     ; dispatch_table_value = dt
     ; dispatchers = {
-        rewrite_string_option = {
-          srctype = [%typ: string option]
-        ; dsttype = [%typ: string option]
-        ; code = (fun _ x -> x)
+        rewrite_option = {
+          srctype = [%typ: 'a option]
+        ; dsttype = [%typ: 'b option]
+        ; subs = [ ([%typ: 'a], [%typ: 'b]) ]
+        ; code = (fun subrw __dt__ x -> Option.map (subrw __dt__) x)
         }
       ; rewrite_Lexing_position = {
           srctype = [%typ: lexing_position]
@@ -301,12 +307,15 @@ and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
         }
       ; rewrite_label = {
           srctype = [%typ: label]
-        ; dsttype = [%typ: DST.Asttypes.arg_label]
-        ; code = rewrite_402_label_403_arg_label
+        ; dsttype = [%typ: DST.Asttypes.label]
         }
       ; rewrite_closed_flag = {
           srctype = [%typ: closed_flag]
         ; dsttype = [%typ: DST.Asttypes.closed_flag]
+        }
+      ; rewrite_rec_flag = {
+          srctype = [%typ: rec_flag]
+        ; dsttype = [%typ: DST.Asttypes.rec_flag]
         }
       ; rewrite_direction_flag = {
           srctype = [%typ: direction_flag]
@@ -442,6 +451,10 @@ and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
       ; rewrite_class_signature = {
           srctype = [%typ: class_signature]
         ; dsttype = [%typ: DST.Parsetree.class_signature]
+        }
+      ; rewrite_class_type_field = {
+          srctype = [%typ: class_type_field]
+        ; dsttype = [%typ: DST.Parsetree.class_type_field]
         }
       ; rewrite_class_type_field_desc = {
           srctype = [%typ: class_type_field_desc]

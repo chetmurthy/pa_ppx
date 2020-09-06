@@ -475,9 +475,9 @@ value rec match_or_head_reduce loc ~{except} t ty =
     let ty' = head_reduce1 t ty in
     if Reloc.eq_ctyp ty ty' then
       match ty with [
-        (<:ctyp< [ $list:_$ ] >> | <:ctyp< { $list:_$ } >> | <:ctyp< ' $_$ >> | <:ctyp< $lid:_$ >>) -> Right (dname, ty)
+        (<:ctyp< [ $list:_$ ] >> | <:ctyp< { $list:_$ } >> | <:ctyp< ( $list:_$ ) >> | <:ctyp< ' $_$ >> | <:ctyp< $lid:_$ >>) -> Right (dname, ty)
 
-      | _ -> Ploc.raise loc (Failure Printf.(sprintf "rewrite rule %s: cannot rewrite srctype" dname))
+      | _ -> Ploc.raise loc (Failure Fmt.(str "rewrite rule %s: cannot rewrite srctype %a" dname Pp_MLast.pp_ctyp ty))
       ]
     else
       match_or_head_reduce loc ~{except=except} t ty'
@@ -530,6 +530,20 @@ value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
         ) ltl in
       <:expr< { $list:lel$ } >> in
     <:expr< fun [ $patt$ -> $expr$ ] >>
+| <:ctyp:< ( $list:tyl$ ) >> ->
+    let patt =
+      let pl = List.mapi (fun i ty ->
+          let lid = Printf.sprintf "v_%d" i in
+          <:patt< $lid:lid$ >>) tyl in
+      <:patt< ( $list:pl$ ) >> in
+    let expr =
+      let el = List.mapi (fun i ty ->
+          let lid = Printf.sprintf "v_%d" i in
+          let sub_rw = generate_dispatcher_expression ~{except=None} t subs_rho ty in
+          <:expr< $fst sub_rw$ __dt__ $lid:lid$ >>
+        ) tyl in
+      <:expr< ( $list:el$ ) >> in
+    <:expr< fun [ $patt$ -> $expr$ ] >>
 ]
 
 and generate_dispatcher_expression ~{except} t subs_rho ty = 
@@ -540,7 +554,32 @@ and generate_dispatcher_expression ~{except} t subs_rho ty =
     let loc = loc_of_ctyp ty in
     (<:expr< $lid:f_sub$ >>, f_result_ty)
   else if List.mem (canon_ctyp ty) builtin_copy_types then
-    (id_expr, ty) else
+    (id_expr, ty)
+  else match ty with [
+    <:ctyp:< ( $list:tyl$ ) >> ->
+      let patt =
+        let pl = List.mapi (fun i ty ->
+            let lid = Printf.sprintf "v_%d" i in
+            <:patt< $lid:lid$ >>) tyl in
+        <:patt< ( $list:pl$ ) >> in
+      let exprs_types = List.mapi (fun i ty ->
+            let lid = Printf.sprintf "v_%d" i in
+            let sub_rw = generate_dispatcher_expression ~{except=None} t subs_rho ty in
+            (<:expr< $fst sub_rw$ __dt__ $lid:lid$ >>, snd sub_rw)
+          ) tyl in
+      let expr =
+        let el = List.map fst exprs_types in
+        <:expr< ( $list:el$ ) >> in
+      let rhsty =
+        let tyl = List.map snd exprs_types in
+        <:ctyp< ( $list:tyl$ ) >> in
+      (<:expr< fun __dt__ -> fun [ $patt$ -> $expr$ ] >>, rhsty)
+    | _ ->
+      generate_tycon_dispatcher_expression ~{except=except} t subs_rho ty
+  ]
+
+and generate_tycon_dispatcher_expression ~{except} t subs_rho ty = 
+  let loc = loc_of_ctyp ty in
   match match_or_head_reduce loc ~{except=except} t ty with [
     Left (rwd, lrho) ->
     (** [rwd] is the rewrite dispatcher that matched,
