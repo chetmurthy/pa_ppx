@@ -18,7 +18,10 @@ SYNTAX = camlp5o
 OCAMLCFLAGS += -ppopt -pa_import-I -ppopt . -ppopt -pa_passthru-debug 
 
 TARGET=pa_omp.cma
-ML=all_ast.ml rewrite_402_403.cmo rewrite_403_402.cmo rw1.cmo
+ML=all_ast.ml \
+	rewrite_402_403.cmo rewrite_403_402.cmo \
+	rewrite_403_404.cmo rewrite_404_403.cmo \
+	rw1.cmo
 CMO := $(ML:.ml=.cmo)
 CMI := $(ML:.ml=.cmi)
 CMX := $(ML:.ml=.cmx)
