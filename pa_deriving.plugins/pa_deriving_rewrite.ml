@@ -247,6 +247,8 @@ type tyarg_t = {
 ; dsttype : ctyp
 ; code : option expr
 ; custom_branches_code : list (string * MLast.case_branch)
+; custom_fields_code : list (string * MLast.expr)
+; skip_fields : list string
 ; type_vars : list string
 ; subs : list (ctyp * ctyp)
 ; subs_types : list ctyp
@@ -278,6 +280,16 @@ value convert_subs loc e =
   ] in
   crec [] e
 ;
+
+value convert_field_name_list loc e =
+  let rec crec acc = fun [
+    <:expr< [] >> -> List.rev acc
+  | <:expr< [ $lid:f$ :: $tl$ ] >> ->
+    crec [ f :: acc ] tl
+  ] in
+  crec [] e
+;
+
 value convert_tyarg loc name tyargs =
   let alist = List.map (fun [
       (<:patt< $lid:id$ >>, e) -> (id, e)
@@ -307,6 +319,20 @@ value convert_tyarg loc name tyargs =
   | _ -> Ploc.raise loc (Failure "custom_branches_code MUST be of the form fun [ ... ]")
   | exception Not_found -> []
   ] in
+  let custom_fields_code = match List.assoc "custom_fields_code" alist with [
+    <:expr:< { $list:lel$ } >> ->
+      List.map (fun [
+          (<:patt< $lid:f$ >>, e) -> (f, e)
+        | _ -> Ploc.raise loc (Failure "branches of a custom_branches_code must be constructor-patterns")
+        ]) lel
+  | _ -> Ploc.raise loc (Failure "custom_fields_code MUST be of the form { field = expr, ... }")
+  | exception Not_found -> []
+  ] in
+  let skip_fields = match List. assoc "skip_fields" alist with [
+    <:expr:< [ $_$ :: $_$ ] >> as z -> convert_field_name_list loc z
+  | _ -> Ploc.raise loc (Failure "bad skip_fields -- must be a list")
+  | exception Not_found -> []
+  ] in
   let subs = match List. assoc "subs" alist with [
     <:expr:< [ $_$ :: $_$ ] >> as z -> convert_subs loc z
   | _ -> Ploc.raise loc (Failure "bad tyarg rhs -- must be a list")
@@ -320,6 +346,8 @@ value convert_tyarg loc name tyargs =
   ; dsttype = dsttype
   ; code = code
   ; custom_branches_code = custom_branches_code
+  ; custom_fields_code = custom_fields_code
+  ; skip_fields = skip_fields
   ; subs = subs
   ; type_vars = type_vars
   ; subs_types = subs_types
@@ -534,16 +562,20 @@ value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
   <:expr< fun [ $list:l$ ] >>
 | <:ctyp:< { $list:ltl$ } >> ->
     let patt =
-      let lpl = List.mapi (fun i (_, lid, _, _, _) ->
+      let lpl = List.map (fun (_, lid, _, _, _) ->
           (<:patt< $lid:lid$ >>, <:patt< $lid:lid$ >>)
         ) ltl in
       <:patt< { $list:lpl$ } >> in
     let expr =
-      let lel = List.mapi (fun i (_, lid, _, ty, _) ->
+      let trimmed_ltl = Std.filter (fun (_, lid, _, _, _) -> not (List.mem lid d.Dispatch1.skip_fields)) ltl in 
+      let trimmed_lel = List.map (fun  (_, lid, _, ty, _) ->
           let sub_rw = generate_dispatcher_expression ~{except=None} t subs_rho ty in
           (Dispatch1.patt_wrap_dsttype_module d <:patt< $lid:lid$ >>, <:expr< $fst sub_rw$ __dt__ $lid:lid$ >>)
-        ) ltl in
-      <:expr< { $list:lel$ } >> in
+        ) trimmed_ltl in
+      let full_lel = trimmed_lel @ (
+          List.map (fun (lid, e) ->
+              (Dispatch1.patt_wrap_dsttype_module d <:patt< $lid:lid$ >>, e)) d.Dispatch1.custom_fields_code) in 
+      <:expr< { $list:full_lel$ } >> in
     <:expr< fun [ $patt$ -> $expr$ ] >>
 | <:ctyp:< ( $list:tyl$ ) >> ->
     let patt =

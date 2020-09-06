@@ -449,6 +449,11 @@ and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
       ; rewrite_constructor_declaration = {
           srctype = [%typ: constructor_declaration]
         ; dsttype = [%typ: DST.Parsetree.constructor_declaration]
+        ; skip_fields = [ pcd_args ]
+        ; custom_fields_code = {
+            pcd_args =
+              DST.Parsetree.Pcstr_tuple (List.map (__dt__.rewrite_core_type __dt__) pcd_args)
+          }
         }
       ; rewrite_type_extension = {
           srctype = [%typ: type_extension]
@@ -461,6 +466,12 @@ and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
       ; rewrite_extension_constructor_kind = {
           srctype = [%typ: extension_constructor_kind]
         ; dsttype = [%typ: DST.Parsetree.extension_constructor_kind]
+        ; custom_branches_code = function
+    Pext_decl (v_0, v_1) ->
+      let open DST.Parsetree in
+      Pext_decl
+        (DST.Parsetree.Pcstr_tuple (List.map (__dt__.rewrite_core_type __dt__) v_0),
+         Option.map (__dt__.rewrite_core_type __dt__) v_1)
         }
       ; rewrite_class_type = {
           srctype = [%typ: class_type]
@@ -469,6 +480,13 @@ and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
       ; rewrite_class_type_desc = {
           srctype = [%typ: class_type_desc]
         ; dsttype = [%typ: DST.Parsetree.class_type_desc]
+        ; custom_branches_code = function
+Pcty_arrow (v_0, v_1, v_2) ->
+      let open DST.Parsetree in
+      Pcty_arrow
+        (rewrite_402_label_403_arg_label __dt__ v_0,
+         __dt__.rewrite_core_type __dt__ v_1,
+         __dt__.rewrite_class_type __dt__ v_2)
         }
       ; rewrite_class_signature = {
           srctype = [%typ: class_signature]
@@ -502,6 +520,22 @@ and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
       ; rewrite_class_expr_desc = {
           srctype = [%typ: class_expr_desc]
         ; dsttype = [%typ: DST.Parsetree.class_expr_desc]
+        ; custom_branches_code = function
+              Pcl_fun (v_0, v_1, v_2, v_3) ->
+              let open DST.Parsetree in
+              Pcl_fun
+                (rewrite_402_label_403_arg_label __dt__ v_0,
+                 Option.map (__dt__.rewrite_expression __dt__)  v_1,
+                 __dt__.rewrite_pattern __dt__ v_2,
+                 __dt__.rewrite_class_expr __dt__ v_3)
+            | Pcl_apply (v_0, v_1) ->
+              let open DST.Parsetree in
+              Pcl_apply
+                (__dt__.rewrite_class_expr __dt__ v_0,
+                 List.map (fun (v_0, v_1) ->
+                     rewrite_402_label_403_arg_label __dt__ v_0,
+                     __dt__.rewrite_expression __dt__ v_1)
+                   v_1)
         }
       ; rewrite_class_structure = {
           srctype = [%typ: class_structure]
@@ -542,6 +576,16 @@ and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
       ; rewrite_signature_item_desc = {
           srctype = [%typ: signature_item_desc]
         ; dsttype = [%typ: DST.Parsetree.signature_item_desc]
+        ; custom_branches_code = function
+              Psig_type v_0 ->
+              let is_nonrec (attr,_) = attr.txt = "nonrec" in
+              let rf = if (List.exists (fun td ->
+                  List.exists is_nonrec td.ptype_attributes) v_0) then
+                  DST.Asttypes.Nonrecursive
+                else DST.Asttypes.Recursive in
+              let open DST.Parsetree in
+              Psig_type
+                (rf, List.map (__dt__.rewrite_type_declaration __dt__) v_0)
         }
       ; rewrite_module_declaration = {
           srctype = [%typ: module_declaration]
@@ -591,6 +635,16 @@ and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
       ; rewrite_structure_item_desc = {
           srctype = [%typ: structure_item_desc]
         ; dsttype = [%typ: DST.Parsetree.structure_item_desc]
+        ; custom_branches_code = function
+              Pstr_type v_0 ->
+              let is_nonrec (attr,_) = attr.txt = "nonrec" in
+              let rf = if (List.exists (fun td ->
+                  List.exists is_nonrec td.ptype_attributes) v_0) then
+                  DST.Asttypes.Nonrecursive
+                else DST.Asttypes.Recursive in
+              let open DST.Parsetree in
+              Pstr_type
+                (rf, List.map (__dt__.rewrite_type_declaration __dt__) v_0)
         }
       ; rewrite_value_binding = {
           srctype = [%typ: value_binding]
