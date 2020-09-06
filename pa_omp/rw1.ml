@@ -379,6 +379,13 @@ and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
       ; rewrite_core_type_desc = {
           srctype = [%typ: core_type_desc]
         ; dsttype = [%typ: DST.Parsetree.core_type_desc]
+        ; custom_branches_code = function
+            Ptyp_arrow (v_0, v_1, v_2) ->
+            let open DST.Parsetree in
+            Ptyp_arrow
+              (rewrite_402_label_403_arg_label __dt__ v_0,
+               __dt__.rewrite_core_type __dt__ v_1,
+               __dt__.rewrite_core_type __dt__ v_2)
         }
       ; rewrite_package_type = {
           srctype = [%typ: package_type]
@@ -403,6 +410,21 @@ and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
       ; rewrite_expression_desc = {
           srctype = [%typ: expression_desc]
         ; dsttype = [%typ: DST.Parsetree.expression_desc]
+        ; custom_branches_code = function
+              Pexp_fun (v_0, v_1, v_2, v_3) ->
+              let open DST.Parsetree in
+              Pexp_fun
+                (rewrite_402_label_403_arg_label __dt__ v_0,
+                 __dt__.rewrite_option __dt__.rewrite_expression __dt__ v_1,
+                 __dt__.rewrite_pattern __dt__ v_2,
+                 __dt__.rewrite_expression __dt__ v_3)
+            | Pexp_apply (v_0, v_1) ->
+              let open DST.Parsetree in
+              Pexp_apply
+                (__dt__.rewrite_expression __dt__ v_0,
+                 List.map (fun (v_0, v_1) ->
+                     rewrite_402_label_403_arg_label __dt__ v_0,
+                     __dt__.rewrite_expression __dt__ v_1) v_1)
         }
       ; rewrite_case = {
           srctype = [%typ: case]

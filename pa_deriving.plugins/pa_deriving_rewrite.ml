@@ -246,6 +246,7 @@ type tyarg_t = {
 ; srctype : ctyp
 ; dsttype : ctyp
 ; code : option expr
+; custom_branches_code : list (string * MLast.case_branch)
 ; type_vars : list string
 ; subs : list (ctyp * ctyp)
 ; subs_types : list ctyp
@@ -296,6 +297,16 @@ value convert_tyarg loc name tyargs =
     e -> Some e
   | exception Not_found -> None
   ] in
+  let custom_branches_code = match List.assoc "custom_branches_code" alist with [
+    <:expr:< fun [ $list:l$ ] >> ->
+      List.map (fun ((p, _, _) as branch) ->
+          match Patt.unapplist p with [
+            (<:patt< $uid:cid$ >>, _) -> (cid, branch)
+          | _ -> Ploc.raise (loc_of_patt p) (Failure "branches of a custom_branches_code must be constructor-patterns")
+          ]) l
+  | _ -> Ploc.raise loc (Failure "custom_branches_code MUST be of the form fun [ ... ]")
+  | exception Not_found -> []
+  ] in
   let subs = match List. assoc "subs" alist with [
     <:expr:< [ $_$ :: $_$ ] >> as z -> convert_subs loc z
   | _ -> Ploc.raise loc (Failure "bad tyarg rhs -- must be a list")
@@ -308,6 +319,7 @@ value convert_tyarg loc name tyargs =
   ; srctype = srctype
   ; dsttype = dsttype
   ; code = code
+  ; custom_branches_code = custom_branches_code
   ; subs = subs
   ; type_vars = type_vars
   ; subs_types = subs_types
@@ -508,6 +520,9 @@ value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
   <:ctyp:< [ $list:branches$ ] >> ->
   let l = List.map (fun [
       <:constructor< $uid:uid$ of $list:tyl$ >> ->
+      if List.mem_assoc uid d.Dispatch1.custom_branches_code then
+        List.assoc uid d.Dispatch1.custom_branches_code
+      else
       let argvars = List.mapi (fun i ty -> (Printf.sprintf "v_%d" i,ty)) tyl in
       let patt = List.fold_left (fun p (v,_) -> <:patt< $p$ $lid:v$ >>) <:patt< $uid:uid$ >> argvars in
       let expr = List.fold_left (fun e (v,ty) ->
