@@ -34,8 +34,9 @@ META: META.pl
 all_ast.ml: all_ast.ORIG.ml $(wildcard gen/ast_*.ml) 
 	cppo all_ast.ORIG.ml > all_ast.ml.NEW && mv all_ast.ml.NEW all_ast.ml
 
-rw1.ppo: rw1.ml all_ast.cmo
-	$(NOT_OCAMLFIND) preprocess $(OCAMLCFLAGS) -package $(PACKAGES),camlp5.pr_o -syntax $(SYNTAX) $< > $@.NEW && mv $@.NEW $@
+rw1_ppo.cmo : rw1.ml all_ast.cmo
+	$(NOT_OCAMLFIND) preprocess $(OCAMLCFLAGS) -package $(PACKAGES),camlp5.pr_o -syntax $(SYNTAX) $< > rw1.ppo.NEW && mv rw1.ppo.NEW rw1_ppo.ml
+	$(OCAMLFIND) ocamlc $(OCAMLCFLAGS) -package $(PACKAGES) -syntax $(SYNTAX) -c -impl rw1_ppo.ml
 
 install::
 	./META.pl $(DESTDIR)/lib > META

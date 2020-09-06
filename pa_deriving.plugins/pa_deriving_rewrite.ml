@@ -482,7 +482,7 @@ value rec match_or_head_reduce loc ~{except} t ty =
     else
       match_or_head_reduce loc ~{except=except} t ty'
   | (None, None) ->
-    Ploc.raise loc (Failure "match_or_head_reduce: cannot head-reduce except at toplevel of a dispatcher's srctype")
+    Ploc.raise loc (Failure Fmt.(str "match_or_head_reduce: cannot head-reduce except at toplevel of a dispatcher's srctype: %a" Pp_MLast.pp_ctyp ty))
   ]
 ;
 
@@ -492,12 +492,16 @@ value builtin_copy_types =
   List.map canon_ctyp [
     <:ctyp< string >>
   ; <:ctyp< int >>
+  ; <:ctyp< int32 >>
+  ; <:ctyp< int64 >>
+  ; <:ctyp< nativeint >>
   ; <:ctyp< bool >>
+  ; <:ctyp< char >>
   ]
 ;
 value id_expr =
   let loc = Ploc.dummy in
-  <:expr< (fun x -> x) >>
+  <:expr< (fun __dt__ x -> x) >>
 ;
 
 value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
@@ -508,7 +512,7 @@ value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
       let patt = List.fold_left (fun p (v,_) -> <:patt< $p$ $lid:v$ >>) <:patt< $uid:uid$ >> argvars in
       let expr = List.fold_left (fun e (v,ty) ->
           let sub_rw = generate_dispatcher_expression ~{except=None} t subs_rho ty in
-          <:expr< $e$ ($fst sub_rw$ $lid:v$) >>
+          <:expr< $e$ ($fst sub_rw$ __dt__ $lid:v$) >>
         ) <:expr< $uid:uid$ >> argvars in
       (patt, <:vala< None >>, Dispatch1.expr_wrap_dsttype_module d expr)
     ]) branches in
@@ -522,7 +526,7 @@ value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
     let expr =
       let lel = List.mapi (fun i (_, lid, _, ty, _) ->
           let sub_rw = generate_dispatcher_expression ~{except=None} t subs_rho ty in
-          (Dispatch1.patt_wrap_dsttype_module d <:patt< $lid:lid$ >>, <:expr< $fst sub_rw$ $lid:lid$ >>)
+          (Dispatch1.patt_wrap_dsttype_module d <:patt< $lid:lid$ >>, <:expr< $fst sub_rw$ __dt__ $lid:lid$ >>)
         ) ltl in
       <:expr< { $list:lel$ } >> in
     <:expr< fun [ $patt$ -> $expr$ ] >>
@@ -534,7 +538,7 @@ and generate_dispatcher_expression ~{except} t subs_rho ty =
   if List.mem_assoc ct subs_rho then
     let (f_sub, f_result_ty) = List.assoc ct subs_rho in
     let loc = loc_of_ctyp ty in
-    (<:expr< $lid:f_sub$ __dt__ >>, f_result_ty)
+    (<:expr< $lid:f_sub$ >>, f_result_ty)
   else if List.mem (canon_ctyp ty) builtin_copy_types then
     (id_expr, ty) else
   match match_or_head_reduce loc ~{except=except} t ty with [
@@ -552,7 +556,8 @@ and generate_dispatcher_expression ~{except} t subs_rho ty =
       ) ([], []) rwd.Dispatch1.subs in
     let dname = rwd.Dispatch1.name in
     let loc = loc_of_ctyp ty in
-    let e = Expr.applist <:expr< __dt__ . $lid:dname$ __dt__ >> (List.rev revsubs) in
+    let e = Expr.applist <:expr< __dt__ . $lid:dname$ >> (List.rev revsubs) in
+    let e = <:expr< fun __dt__ -> ($e$ __dt__) >> in
     (e, Ctyp.subst rrho rwd.Dispatch1.dsttype)
 
   | Right (dname, headredty) ->
@@ -561,7 +566,9 @@ and generate_dispatcher_expression ~{except} t subs_rho ty =
     if List.mem (canon_ctyp headredty) builtin_copy_types then
       (id_expr, d.Dispatch1.dsttype)
     else
-      (generate_leaf_dispatcher_expression t d subs_rho headredty, d.Dispatch1.dsttype)
+      let e = generate_leaf_dispatcher_expression t d subs_rho headredty in
+      let e = <:expr< fun __dt__ -> $e$ >> in
+      (e, d.Dispatch1.dsttype)
   ]
 ;
 
@@ -575,7 +582,7 @@ value toplevel_generate_dispatcher t (dname,d) =
     let subs_binders = List.map2 (fun (_,(v, _)) ty -> <:patt< ( $lid:v$ : $ty$ ) >>) subs_rho d.Dispatch1.subs_types in
     let (e, t) = generate_dispatcher_expression ~{except=Some dname} t subs_rho srctype in
     let loc = loc_of_expr e in
-    List.fold_right (fun p rhs -> <:expr< fun $p$ -> $rhs$ >>) subs_binders <:expr< (fun __dt__ -> $e$) >>
+    List.fold_right (fun p rhs -> <:expr< fun $p$ -> $rhs$ >>) subs_binders e
   ]
 ;
 end ;
