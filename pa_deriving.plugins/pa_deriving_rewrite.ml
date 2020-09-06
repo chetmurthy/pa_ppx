@@ -245,6 +245,7 @@ type tyarg_t = {
   name: string
 ; srctype : ctyp
 ; dsttype : ctyp
+; inherit_code : option expr
 ; code : option expr
 ; custom_branches_code : list (string * MLast.case_branch)
 ; custom_fields_code : list (string * MLast.expr)
@@ -309,6 +310,10 @@ value convert_tyarg loc name tyargs =
     e -> Some e
   | exception Not_found -> None
   ] in
+  let inherit_code = match List.assoc "inherit_code" alist with [
+    e -> Some e
+  | exception Not_found -> None
+  ] in
   let custom_branches_code = match List.assoc "custom_branches_code" alist with [
     <:expr:< fun [ $list:l$ ] >> ->
       List.map (fun ((p, _, _) as branch) ->
@@ -345,6 +350,7 @@ value convert_tyarg loc name tyargs =
   ; srctype = srctype
   ; dsttype = dsttype
   ; code = code
+  ; inherit_code = inherit_code
   ; custom_branches_code = custom_branches_code
   ; custom_fields_code = custom_fields_code
   ; skip_fields = skip_fields
@@ -380,7 +386,8 @@ end
 module Rewrite = struct
 
 type t = {
-  dispatch_type_name : string
+  inherit_type : option MLast.ctyp
+; dispatch_type_name : string
 ; dispatch_table_value : string
 ; dispatchers : list Dispatch1.t
 ; type_decls : list (string * MLast.type_decl)
@@ -392,8 +399,12 @@ value dispatch_table_type_decls loc t =
     (loc_of_ctyp ty, dispatcher_name, False, ty, <:vala< [] >>)
   ) t.dispatchers in
   let dispatch_table_type = <:ctyp< { $list:ltl$ } >> in
+  let rewriter_type = match t.inherit_type with [
+    None -> <:ctyp< $lid:t.dispatch_type_name$ -> 'a -> 'b >>
+  | Some inhty -> <:ctyp< $lid:t.dispatch_type_name$ -> $inhty$ -> 'a -> 'b >>
+  ] in
   [ <:type_decl< $lid:t.dispatch_type_name$ = $dispatch_table_type$ >> ;
-    <:type_decl< rewriter_t 'a 'b = $lid:t.dispatch_type_name$ -> 'a -> 'b >> ]
+    <:type_decl< rewriter_t 'a 'b = $rewriter_type$ >> ]
 ;
 
 value dispatch_table_expr loc t =
@@ -406,6 +417,11 @@ value dispatch_table_expr loc t =
 
 value build_context loc ctxt tdl =
   let open Ctxt in
+  let inherit_type = match option ctxt "inherit_type" with [
+      <:expr< [%typ: $type:t$] >> -> Some t
+    | _ -> Ploc.raise loc (Failure "pa_deriving.rewrite: option inherit_type must be of the form [%typ: t]")
+    | exception Failure _ -> None
+  ] in
   let dispatch_type_name = match option ctxt "dispatch_type" with [
       <:expr< $lid:id$ >> -> id
     | _ -> Ploc.raise loc (Failure "pa_deriving.rewrite: must specify option dispatch_type")
@@ -426,6 +442,7 @@ value build_context loc ctxt tdl =
       (tdNam |> uv |> snd |> uv, td)
     ) tdl in
   {
+    inherit_type = inherit_type ;
     dispatch_type_name = dispatch_type_name;
     dispatch_table_value = dispatch_table_value;
     dispatchers = dispatchers ;
@@ -539,9 +556,28 @@ value builtin_copy_types =
   ; <:ctyp< char >>
   ]
 ;
-value id_expr =
+value id_expr t =
   let loc = Ploc.dummy in
-  <:expr< (fun __dt__ x -> x) >>
+  match t.inherit_type with [
+    None -> <:expr< (fun __dt__ x -> x) >>
+  | Some _ -> <:expr< (fun __dt__ __inh__ x -> x) >>
+  ]
+;
+
+value app_dt t e =
+  let loc = loc_of_expr e in
+  match t.inherit_type with [
+    None -> <:expr< $e$ __dt__ >>
+  | Some _ -> <:expr< $e$ __dt__ __inh__ >>
+  ]
+;
+
+value abs_dt t e =
+  let loc = loc_of_expr e in
+  match t.inherit_type with [
+    None -> <:expr< fun __dt__ -> $e$ >>
+  | Some _ -> <:expr< fun __dt__ __inh__ -> $e$ >>
+  ]
 ;
 
 value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
@@ -555,7 +591,7 @@ value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
       let patt = List.fold_left (fun p (v,_) -> <:patt< $p$ $lid:v$ >>) <:patt< $uid:uid$ >> argvars in
       let expr = List.fold_left (fun e (v,ty) ->
           let sub_rw = generate_dispatcher_expression ~{except=None} t subs_rho ty in
-          <:expr< $e$ ($fst sub_rw$ __dt__ $lid:v$) >>
+          <:expr< $e$ ($app_dt t (fst sub_rw)$ $lid:v$) >>
         ) <:expr< $uid:uid$ >> argvars in
       (patt, <:vala< None >>, Dispatch1.expr_wrap_dsttype_module d expr)
     ]) branches in
@@ -570,12 +606,16 @@ value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
       let trimmed_ltl = Std.filter (fun (_, lid, _, _, _) -> not (List.mem lid d.Dispatch1.skip_fields)) ltl in 
       let trimmed_lel = List.map (fun  (_, lid, _, ty, _) ->
           let sub_rw = generate_dispatcher_expression ~{except=None} t subs_rho ty in
-          (Dispatch1.patt_wrap_dsttype_module d <:patt< $lid:lid$ >>, <:expr< $fst sub_rw$ __dt__ $lid:lid$ >>)
+          (Dispatch1.patt_wrap_dsttype_module d <:patt< $lid:lid$ >>, <:expr< $app_dt t (fst sub_rw)$ $lid:lid$ >>)
         ) trimmed_ltl in
       let full_lel = trimmed_lel @ (
           List.map (fun (lid, e) ->
               (Dispatch1.patt_wrap_dsttype_module d <:patt< $lid:lid$ >>, e)) d.Dispatch1.custom_fields_code) in 
       <:expr< { $list:full_lel$ } >> in
+    let expr = match d.Dispatch1.inherit_code with [
+      None -> expr
+    | Some inhexp -> <:expr< let __inh__ = $inhexp$ in $expr$ >>
+    ] in
     <:expr< fun [ $patt$ -> $expr$ ] >>
 | <:ctyp:< ( $list:tyl$ ) >> ->
     let patt =
@@ -587,7 +627,7 @@ value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
       let el = List.mapi (fun i ty ->
           let lid = Printf.sprintf "v_%d" i in
           let sub_rw = generate_dispatcher_expression ~{except=None} t subs_rho ty in
-          <:expr< $fst sub_rw$ __dt__ $lid:lid$ >>
+          <:expr< $app_dt t (fst sub_rw)$ $lid:lid$ >>
         ) tyl in
       <:expr< ( $list:el$ ) >> in
     <:expr< fun [ $patt$ -> $expr$ ] >>
@@ -601,7 +641,7 @@ and generate_dispatcher_expression ~{except} t subs_rho ty =
     let loc = loc_of_ctyp ty in
     (<:expr< $lid:f_sub$ >>, f_result_ty)
   else if List.mem (canon_ctyp ty) builtin_copy_types then
-    (id_expr, ty)
+    (id_expr t, ty)
   else match ty with [
     <:ctyp:< ( $list:tyl$ ) >> ->
       let patt =
@@ -612,7 +652,7 @@ and generate_dispatcher_expression ~{except} t subs_rho ty =
       let exprs_types = List.mapi (fun i ty ->
             let lid = Printf.sprintf "v_%d" i in
             let sub_rw = generate_dispatcher_expression ~{except=None} t subs_rho ty in
-            (<:expr< $fst sub_rw$ __dt__ $lid:lid$ >>, snd sub_rw)
+            (<:expr< $app_dt t (fst sub_rw)$ $lid:lid$ >>, snd sub_rw)
           ) tyl in
       let expr =
         let el = List.map fst exprs_types in
@@ -620,7 +660,7 @@ and generate_dispatcher_expression ~{except} t subs_rho ty =
       let rhsty =
         let tyl = List.map snd exprs_types in
         <:ctyp< ( $list:tyl$ ) >> in
-      (<:expr< fun __dt__ -> fun [ $patt$ -> $expr$ ] >>, rhsty)
+      (abs_dt t <:expr< fun [ $patt$ -> $expr$ ] >>, rhsty)
     | _ ->
       generate_tycon_dispatcher_expression ~{except=except} t subs_rho ty
   ]
@@ -643,17 +683,17 @@ and generate_tycon_dispatcher_expression ~{except} t subs_rho ty =
     let dname = rwd.Dispatch1.name in
     let loc = loc_of_ctyp ty in
     let e = Expr.applist <:expr< __dt__ . $lid:dname$ >> (List.rev revsubs) in
-    let e = <:expr< fun __dt__ -> ($e$ __dt__) >> in
+    let e = abs_dt t (app_dt t e) in
     (e, Ctyp.subst rrho rwd.Dispatch1.dsttype)
 
   | Right (dname, headredty) ->
     let d = List.assoc dname t.dispatchers in
 
     if List.mem (canon_ctyp headredty) builtin_copy_types then
-      (id_expr, d.Dispatch1.dsttype)
+      (id_expr t, d.Dispatch1.dsttype)
     else
       let e = generate_leaf_dispatcher_expression t d subs_rho headredty in
-      let e = <:expr< fun __dt__ -> $e$ >> in
+      let e = abs_dt t e in
       (e, d.Dispatch1.dsttype)
   ]
 ;
@@ -710,7 +750,7 @@ value sig_item_gen_rewrite name arg = fun [
 Pa_deriving.(Registry.add PI.{
   name = "rewrite"
 ; alternates = []
-; options = ["optional"; "dispatchers"; "dispatch_type"; "dispatch_table_value"]
+; options = ["optional"; "dispatchers"; "dispatch_type"; "dispatch_table_value"; "inherit_type"]
 ; default_options = let loc = Ploc.dummy in [ ("optional", <:expr< False >>) ]
 ; alg_attributes = ["nobuiltin"]
 ; expr_extensions = []
