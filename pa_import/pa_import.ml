@@ -156,18 +156,32 @@ value find_module_type modpath sil =
 ;
 
 value logged_parse f fname =
-  let rv = f fname in do {
-    Fmt.(pf stderr "[parse %s]\n%!" fname) ;
+  let st = Unix.gettimeofday () in
+  let rv = f fname in
+  let et = Unix.gettimeofday () in do {
+    Fmt.(pf stderr "[parse %s in %f secs]\n%!" fname (et -. st)) ;
     rv
   }
 ;
-value lookup_interf fmod =
+value do_lookup_interf fmod =
   try
     if not mli_only.val then
       logged_parse reparse_cmi (lookup_file "cmi" fmod)
     else failwith "caught"
   with Failure _ ->
     logged_parse parse_mli (lookup_file "mli" fmod)
+;
+
+value interface_cache = ref [] ;
+value lookup_interf fmod =
+  match List.assoc fmod interface_cache.val with [
+    x -> x
+  | exception Not_found ->
+    let rv = do_lookup_interf fmod in do {
+      Std.push interface_cache (fmod,rv) ;
+      rv
+    }
+  ]
 ;
 
 value lookup_typedecl (fmod, modpath, lid) = do {
