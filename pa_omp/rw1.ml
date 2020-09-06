@@ -347,6 +347,224 @@ and module_binding = [%import: All_ast.Ast_4_02.Parsetree.module_binding
           srctype = [%typ: location_stack]
         ; dsttype = [%typ: DST.Parsetree.location_stack]
         }
+      ; rewrite_attribute = {
+          srctype = [%typ: attribute]
+        ; dsttype = [%typ: DST.Parsetree.attribute]
+        }
+      ; rewrite_extension = {
+          srctype = [%typ: extension]
+        ; dsttype = [%typ: DST.Parsetree.extension]
+        }
+      ; rewrite_attributes = {
+          srctype = [%typ: attributes]
+        ; dsttype = [%typ: DST.Parsetree.attributes]
+        }
+      ; rewrite_payload = {
+          srctype = [%typ: payload]
+        ; dsttype = [%typ: DST.Parsetree.payload]
+        }
+      ; rewrite_core_type = {
+          srctype = [%typ: core_type]
+        ; dsttype = [%typ: DST.Parsetree.core_type]
+        }
+      ; rewrite_core_type_desc = {
+          srctype = [%typ: core_type_desc]
+        ; dsttype = [%typ: DST.Parsetree.core_type_desc]
+        }
+      ; rewrite_package_type = {
+          srctype = [%typ: package_type]
+        ; dsttype = [%typ: DST.Parsetree.package_type]
+        }
+      ; rewrite_row_field = {
+          srctype = [%typ: row_field]
+        ; dsttype = [%typ: DST.Parsetree.row_field]
+        }
+      ; rewrite_pattern = {
+          srctype = [%typ: pattern]
+        ; dsttype = [%typ: DST.Parsetree.pattern]
+        }
+      ; rewrite_pattern_desc = {
+          srctype = [%typ: pattern_desc]
+        ; dsttype = [%typ: DST.Parsetree.pattern_desc]
+        }
+      ; rewrite_expression = {
+          srctype = [%typ: expression]
+        ; dsttype = [%typ: DST.Parsetree.expression]
+        }
+      ; rewrite_expression_desc = {
+          srctype = [%typ: expression_desc]
+        ; dsttype = [%typ: DST.Parsetree.expression_desc]
+        }
+      ; rewrite_case = {
+          srctype = [%typ: case]
+        ; dsttype = [%typ: DST.Parsetree.case]
+        }
+      ; rewrite_value_description = {
+          srctype = [%typ: value_description]
+        ; dsttype = [%typ: DST.Parsetree.value_description]
+        }
+      ; rewrite_type_declaration = {
+          srctype = [%typ: type_declaration]
+        ; dsttype = [%typ: DST.Parsetree.type_declaration]
+        }
+      ; rewrite_type_kind = {
+          srctype = [%typ: type_kind]
+        ; dsttype = [%typ: DST.Parsetree.type_kind]
+        }
+      ; rewrite_label_declaration = {
+          srctype = [%typ: label_declaration]
+        ; dsttype = [%typ: DST.Parsetree.label_declaration]
+        }
+      ; rewrite_constructor_declaration = {
+          srctype = [%typ: constructor_declaration]
+        ; dsttype = [%typ: DST.Parsetree.constructor_declaration]
+        }
+      ; rewrite_type_extension = {
+          srctype = [%typ: type_extension]
+        ; dsttype = [%typ: DST.Parsetree.type_extension]
+        }
+      ; rewrite_extension_constructor = {
+          srctype = [%typ: extension_constructor]
+        ; dsttype = [%typ: DST.Parsetree.extension_constructor]
+        }
+      ; rewrite_extension_constructor_kind = {
+          srctype = [%typ: extension_constructor_kind]
+        ; dsttype = [%typ: DST.Parsetree.extension_constructor_kind]
+        }
+      ; rewrite_class_type = {
+          srctype = [%typ: class_type]
+        ; dsttype = [%typ: DST.Parsetree.class_type]
+        }
+      ; rewrite_class_type_desc = {
+          srctype = [%typ: class_type_desc]
+        ; dsttype = [%typ: DST.Parsetree.class_type_desc]
+        }
+      ; rewrite_class_signature = {
+          srctype = [%typ: class_signature]
+        ; dsttype = [%typ: DST.Parsetree.class_signature]
+        }
+      ; rewrite_class_type_field_desc = {
+          srctype = [%typ: class_type_field_desc]
+        ; dsttype = [%typ: DST.Parsetree.class_type_field_desc]
+        }
+      ; rewrite_class_infos = {
+          srctype = [%typ: 'a class_infos]
+        ; dsttype = [%typ: 'b DST.Parsetree.class_infos]
+        ; subs = [ ([%typ: 'a], [%typ: 'b]) ]
+        }
+      ; rewrite_class_description = {
+          srctype = [%typ: class_description]
+        ; dsttype = [%typ: DST.Parsetree.class_description]
+        }
+      ; rewrite_class_type_declaration = {
+          srctype = [%typ: class_type_declaration]
+        ; dsttype = [%typ: DST.Parsetree.class_type_declaration]
+        }
+      ; rewrite_class_expr = {
+          srctype = [%typ: class_expr]
+        ; dsttype = [%typ: DST.Parsetree.class_expr]
+        }
+      ; rewrite_class_expr_desc = {
+          srctype = [%typ: class_expr_desc]
+        ; dsttype = [%typ: DST.Parsetree.class_expr_desc]
+        }
+      ; rewrite_class_structure = {
+          srctype = [%typ: class_structure]
+        ; dsttype = [%typ: DST.Parsetree.class_structure]
+        }
+      ; rewrite_class_field = {
+          srctype = [%typ: class_field]
+        ; dsttype = [%typ: DST.Parsetree.class_field]
+        }
+      ; rewrite_class_field_desc = {
+          srctype = [%typ: class_field_desc]
+        ; dsttype = [%typ: DST.Parsetree.class_field_desc]
+        }
+      ; rewrite_class_field_kind = {
+          srctype = [%typ: class_field_kind]
+        ; dsttype = [%typ: DST.Parsetree.class_field_kind]
+        }
+      ; rewrite_class_declaration = {
+          srctype = [%typ: class_declaration]
+        ; dsttype = [%typ: DST.Parsetree.class_declaration]
+        }
+      ; rewrite_module_type = {
+          srctype = [%typ: module_type]
+        ; dsttype = [%typ: DST.Parsetree.module_type]
+        }
+      ; rewrite_module_type_desc = {
+          srctype = [%typ: module_type_desc]
+        ; dsttype = [%typ: DST.Parsetree.module_type_desc]
+        }
+      ; rewrite_signature = {
+          srctype = [%typ: signature]
+        ; dsttype = [%typ: DST.Parsetree.signature]
+        }
+      ; rewrite_signature_item = {
+          srctype = [%typ: signature_item]
+        ; dsttype = [%typ: DST.Parsetree.signature_item]
+        }
+      ; rewrite_signature_item_desc = {
+          srctype = [%typ: signature_item_desc]
+        ; dsttype = [%typ: DST.Parsetree.signature_item_desc]
+        }
+      ; rewrite_module_declaration = {
+          srctype = [%typ: module_declaration]
+        ; dsttype = [%typ: DST.Parsetree.module_declaration]
+        }
+      ; rewrite_module_type_declaration = {
+          srctype = [%typ: module_type_declaration]
+        ; dsttype = [%typ: DST.Parsetree.module_type_declaration]
+        }
+      ; rewrite_open_description = {
+          srctype = [%typ: open_description]
+        ; dsttype = [%typ: DST.Parsetree.open_description]
+        }
+      ; rewrite_include_infos = {
+          srctype = [%typ: 'a include_infos]
+        ; dsttype = [%typ: 'b DST.Parsetree.include_infos]
+        ; subs = [ ([%typ: 'a], [%typ: 'b]) ]
+        }
+      ; rewrite_include_description = {
+          srctype = [%typ: include_description]
+        ; dsttype = [%typ: DST.Parsetree.include_description]
+        }
+      ; rewrite_include_declaration = {
+          srctype = [%typ: include_declaration]
+        ; dsttype = [%typ: DST.Parsetree.include_declaration]
+        }
+      ; rewrite_with_constraint = {
+          srctype = [%typ: with_constraint]
+        ; dsttype = [%typ: DST.Parsetree.with_constraint]
+        }
+      ; rewrite_module_expr = {
+          srctype = [%typ: module_expr]
+        ; dsttype = [%typ: DST.Parsetree.module_expr]
+        }
+      ; rewrite_module_expr_desc = {
+          srctype = [%typ: module_expr_desc]
+        ; dsttype = [%typ: DST.Parsetree.module_expr_desc]
+        }
+      ; rewrite_structure = {
+          srctype = [%typ: structure]
+        ; dsttype = [%typ: DST.Parsetree.structure]
+        }
+      ; rewrite_structure_item = {
+          srctype = [%typ: structure_item]
+        ; dsttype = [%typ: DST.Parsetree.structure_item]
+        }
+      ; rewrite_structure_item_desc = {
+          srctype = [%typ: structure_item_desc]
+        ; dsttype = [%typ: DST.Parsetree.structure_item_desc]
+        }
+      ; rewrite_value_binding = {
+          srctype = [%typ: value_binding]
+        ; dsttype = [%typ: DST.Parsetree.value_binding]
+        }
+      ; rewrite_module_binding = {
+          srctype = [%typ: module_binding]
+        ; dsttype = [%typ: DST.Parsetree.module_binding]
+        }
       }
     }
 ]
