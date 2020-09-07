@@ -455,8 +455,6 @@ and out_phrase = [%import: All_ast.Ast_4_04.Outcometree.out_phrase]
       ; rewrite_pattern_desc = {
           srctype = [%typ: pattern_desc]
         ; dsttype = [%typ: DST.Parsetree.pattern_desc]
-        ; custom_branches_code = function
-              Ppat_open _ -> migration_error __inh__ "Ppat_open"
         }
       ; rewrite_expression = {
           srctype = [%typ: expression]
@@ -728,8 +726,6 @@ and out_phrase = [%import: All_ast.Ast_4_04.Outcometree.out_phrase]
       ; rewrite_out_type = {
           srctype = [%typ: out_type]
         ; dsttype = [%typ: DST.Outcometree.out_type]
-        ; custom_branches_code = function
-              Otyp_attribute _ -> migration_error __inh__ "Otyp_attribute"
         }
       ; rewrite_out_variant = {
           srctype = [%typ: out_variant]

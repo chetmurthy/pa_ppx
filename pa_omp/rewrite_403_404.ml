@@ -661,8 +661,6 @@ and out_phrase = [%import: All_ast.Ast_4_03.Outcometree.out_phrase]
       ; rewrite_out_type = {
           srctype = [%typ: out_type]
         ; dsttype = [%typ: DST.Outcometree.out_type]
-        ; custom_branches_code = function
-              Otyp_attribute _ -> migration_error __inh__ "Otyp_attribute"
         }
       ; rewrite_out_variant = {
           srctype = [%typ: out_variant]
