@@ -25,6 +25,7 @@ ML=all_ast.ml \
 	rewrite_405_406.cmo rewrite_406_405.cmo \
 	rewrite_406_407.cmo rewrite_407_406.cmo \
 	rewrite_407_408.cmo rewrite_408_407.cmo \
+	rewrite_408_409.cmo rewrite_409_408.cmo \
 	rw1.cmo
 CMO := $(ML:.ml=.cmo)
 CMI := $(ML:.ml=.cmi)
