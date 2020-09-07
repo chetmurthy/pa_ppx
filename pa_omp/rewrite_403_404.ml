@@ -2,6 +2,28 @@
 module SRC = All_ast.Ast_4_03
 module DST = All_ast.Ast_4_04
 
+let src_loc_none =
+  let open SRC.Lexing in
+  let open SRC.Location in
+  let loc = {
+    pos_fname = "";
+    pos_lnum = 1;
+    pos_bol = 0;
+    pos_cnum = -1;
+  } in
+  { loc_start = loc; loc_end = loc; loc_ghost = true }
+
+let dst_loc_none =
+  let open DST.Lexing in
+  let open DST.Location in
+  let loc = {
+    pos_fname = "";
+    pos_lnum = 1;
+    pos_bol = 0;
+    pos_cnum = -1;
+  } in
+  { loc_start = loc; loc_end = loc; loc_ghost = true }
+
 exception Migration_error of string * SRC.Location.t option
 
 let migration_error location feature =

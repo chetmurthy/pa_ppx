@@ -586,10 +586,11 @@ value abs_dt t e =
 
 value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
   <:ctyp:< [ $list:branches$ ] >> ->
-  let l = List.map (fun [
+  let ll = List.map (fun [
       <:constructor< $uid:uid$ of $list:tyl$ >> ->
-      if List.mem_assoc uid d.Dispatch1.custom_branches_code then
-        List.assoc uid d.Dispatch1.custom_branches_code
+      let custom_branches = Std.filter (fun (n, _) -> uid = n) d.Dispatch1.custom_branches_code in
+      if custom_branches <> [] then
+        List.map snd custom_branches
       else
       let argvars = List.mapi (fun i ty -> (Printf.sprintf "v_%d" i,ty)) tyl in
       let patt = List.fold_left (fun p (v,_) -> <:patt< $p$ $lid:v$ >>) <:patt< $uid:uid$ >> argvars in
@@ -597,8 +598,9 @@ value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
           let sub_rw = generate_dispatcher_expression ~{except=None} t subs_rho ty in
           <:expr< $e$ ($app_dt t (fst sub_rw)$ $lid:v$) >>
         ) <:expr< $uid:uid$ >> argvars in
-      (patt, <:vala< None >>, Dispatch1.expr_wrap_dsttype_module d expr)
+      [(patt, <:vala< None >>, Dispatch1.expr_wrap_dsttype_module d expr)]
     ]) branches in
+  let l = List.concat ll in
   <:expr< fun [ $list:l$ ] >>
 | <:ctyp:< { $list:ltl$ } >> ->
     let patt =
