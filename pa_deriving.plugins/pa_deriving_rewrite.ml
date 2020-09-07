@@ -245,6 +245,7 @@ type tyarg_t = {
   name: string
 ; srctype : ctyp
 ; dsttype : ctyp
+; dstmodule : option longid
 ; inherit_code : option expr
 ; code : option expr
 ; custom_branches_code : list (string * MLast.case_branch)
@@ -282,6 +283,19 @@ value convert_subs loc e =
   crec [] e
 ;
 
+value string_list_of_expr e =
+  let rec lrec = fun [
+    <:expr< $uid:uid$ >> -> [uid]
+  | <:expr< $e1$ . $e2$ >> -> (lrec e1)@(lrec e2)
+  | e -> Ploc.raise (loc_of_expr e) (Failure "string_list_of_expr: unexpected expr")
+  ] in
+  lrec e
+;
+value longid_of_expr e =
+  let l = string_list_of_expr e in
+  Asttools.longident_of_string_list (loc_of_expr e) l
+;
+
 value convert_field_name_list loc e =
   let rec crec acc = fun [
     <:expr< [] >> -> List.rev acc
@@ -305,6 +319,14 @@ value convert_tyarg loc name tyargs =
     <:expr< [%typ: $type:t$] >> -> t
   | _ -> Ploc.raise loc (Failure "bad dsttype tyarg rhs -- must be [%typ: type]")
   | exception Not_found -> Ploc.raise loc (Failure "missing dsttype tyarg")
+  ] in
+  let dstmodule = match List.assoc "dstmodule" alist with [
+    e -> Some (longid_of_expr e)
+  | exception Not_found ->
+    match Ctyp.unapplist dsttype with [
+      (<:ctyp:< $longid:li$ . $lid:_$ >>, _) -> Some li
+    | _ -> None
+    ]
   ] in
   let code = match List.assoc "code" alist with [
     e -> Some e
@@ -349,6 +371,7 @@ value convert_tyarg loc name tyargs =
   { name = name
   ; srctype = srctype
   ; dsttype = dsttype
+  ; dstmodule = dstmodule
   ; code = code
   ; inherit_code = inherit_code
   ; custom_branches_code = custom_branches_code
@@ -365,18 +388,20 @@ value convert loc (fname, tyargs) =
 ;
 
 value expr_wrap_dsttype_module d e =
-  match Ctyp.unapplist d.dsttype with [
-    (<:ctyp< $lid:_$ >>, _) -> e
-  | (<:ctyp:< $longid:li$ . $lid:_$ >>, _) -> <:expr< let open $module_expr_of_longident li$ in $e$ >>
-  | _ -> Ploc.raise (loc_of_ctyp d.dsttype) (Failure "expr_wrap_dsttype_module: malformed dsttype")
+  match d.dstmodule with [
+    None -> e
+  | Some li ->
+    let loc = loc_of_expr e in
+    <:expr< let open $module_expr_of_longident li$ in $e$ >>
   ]
 ;
 
 value patt_wrap_dsttype_module d p =
-  match Ctyp.unapplist d.dsttype with [
-    (<:ctyp< $lid:_$ >>, _) -> p
-  | (<:ctyp:< $longid:li$ . $lid:_$ >>, _) -> <:patt< $longid:li$ . $p$ >>
-  | _ -> Ploc.raise (loc_of_ctyp d.dsttype) (Failure "patt_wrap_dsttype_module: malformed dsttype")
+  match d.dstmodule with [
+    None -> p
+  | Some li ->
+    let loc = loc_of_patt p in
+    <:patt< $longid:li$ . $p$ >>
   ]
 ;
 
@@ -409,7 +434,6 @@ value dispatch_table_type_decls loc t =
 
 value dispatch_table_expr loc t =
   let lel = List.map (fun (dispatcher_name, t) ->
-      let ty = Dispatch1.to_type (dispatcher_name, t) in
       (<:patt< $lid:dispatcher_name$ >>, <:expr< $lid:dispatcher_name$ >>)
     ) t.dispatchers in
   <:expr< { $list:lel$ } >>
@@ -640,7 +664,6 @@ value rec generate_leaf_dispatcher_expression t d subs_rho = fun [
 ]
 
 and generate_dispatcher_expression ~{except} t subs_rho ty = 
-  let loc = loc_of_ctyp ty in
   let ct = canon_ctyp ty in
   if List.mem_assoc ct subs_rho then
     let (f_sub, f_result_ty) = List.assoc ct subs_rho in

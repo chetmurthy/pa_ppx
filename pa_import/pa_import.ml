@@ -360,8 +360,12 @@ value import_type arg (newtname,new_formals) t =
     let renmap = if oldtname = newtname then
         renmap
       else [ (<:ctyp< $lid:oldtname$ >>, <:ctyp< $lid:newtname$ >>) :: renmap ] in
-    let ct = if renmap = [] then td.tdDef
-    else Ctyp.wrap_attrs (substitute_ctyp renmap td.tdDef) unp.attrs in
+    let tk = match td.tdDef with [
+      <:ctyp< $_$ == $t$ >> -> t
+    | t -> t
+    ] in
+    let ct = if renmap = [] then tk
+    else Ctyp.wrap_attrs (substitute_ctyp renmap tk) unp.attrs in
     if is_generative_type ct && not redeclare.val then
       <:ctyp< $unp.bare_t$ == $ct$ >>
     else ct
