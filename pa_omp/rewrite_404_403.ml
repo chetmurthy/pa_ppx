@@ -29,8 +29,8 @@ exception Migration_error of string * SRC.Location.t option
 let migration_error location feature =
   raise (Migration_error (feature, location))
 
-let _rewrite_list subrw0 __dst__ __inh__ l =
-  List.map (subrw0 __dst__ __inh__) l
+let _rewrite_list subrw0 __dt__ __inh__ l =
+  List.map (subrw0 __dt__ __inh__) l
 
 type lexing_position = [%import: All_ast.Ast_4_04.Lexing.position]
 and location_t = [%import: All_ast.Ast_4_04.Location.t

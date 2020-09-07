@@ -42,8 +42,8 @@ exception Migration_error of string * SRC.Location.t option
 let migration_error location feature =
   raise (Migration_error (feature, location))
 
-let _rewrite_list subrw0 __dst__ __inh__ l =
-  List.map (subrw0 __dst__ __inh__) l
+let _rewrite_list subrw0 __dt__ __inh__ l =
+  List.map (subrw0 __dt__ __inh__) l
 
 type lexing_position = [%import: All_ast.Ast_4_06.Lexing.position]
 and location_t = [%import: All_ast.Ast_4_06.Location.t
@@ -470,12 +470,12 @@ and out_phrase = [%import: All_ast.Ast_4_06.Outcometree.out_phrase]
           srctype = [%typ: object_field]
         ; dsttype = [%typ: (string DST.Asttypes.loc * DST.Parsetree.attributes * DST.Parsetree.core_type)]
         ; dstmodule = DST.Parsetree
-        ; code = fun __dst__ __inh__ -> function
+        ; code = fun __dt__ __inh__ -> function
             Otag (ll, al, ct) ->
               let open DST.Parsetree in
-              (__dst__.rewrite_label_Location_loc __dst__ __inh__ ll,
-               __dst__.rewrite_attributes __dst__ __inh__ al,
-               __dst__.rewrite_core_type __dst__ __inh__ ct)
+              (__dt__.rewrite_label_Location_loc __dt__ __inh__ ll,
+               __dt__.rewrite_attributes __dt__ __inh__ al,
+               __dt__.rewrite_core_type __dt__ __inh__ ct)
             | Oinherit _ -> migration_error __inh__ "Oinherit"
         }
       ; rewrite_pattern = {

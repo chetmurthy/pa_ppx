@@ -29,20 +29,20 @@ exception Migration_error of string * SRC.Location.t option
 let migration_error location feature =
   raise (Migration_error (feature, location))
 
-let _rewrite_list subrw0 __dst__ __inh__ l =
-  List.map (subrw0 __dst__ __inh__) l
+let _rewrite_list subrw0 __dt__ __inh__ l =
+  List.map (subrw0 __dt__ __inh__) l
 
 let rewrite_403_arg_label_402_label :
   'a -> 'b -> SRC.Asttypes.arg_label -> DST.Asttypes.label
   =
-  fun __dst__ __inh__ -> function
+  fun __dt__ __inh__ -> function
   | SRC.Asttypes.Nolabel  -> ""
   | SRC.Asttypes.Labelled x0 -> x0
   | SRC.Asttypes.Optional x0 -> "?" ^ x0
 
 let rewrite_403_constant_402_constant :
   'a -> SRC.Location.t option -> SRC.Parsetree.constant -> DST.Asttypes.constant =
-  fun __dst__ __inh__ -> function
+  fun __dt__ __inh__ -> function
   | SRC.Parsetree.Pconst_integer (x0,x1) ->
      begin match x1 with
      | None -> DST.Asttypes.Const_int (int_of_string x0)

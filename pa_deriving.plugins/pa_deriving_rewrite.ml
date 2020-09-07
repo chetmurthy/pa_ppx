@@ -17,6 +17,8 @@ open Surveil ;
 open Pa_deriving_base ;
 open Pa_ppx_utils ;
 
+value debug = Pa_passthru.debug ;
+
 value rewrite_fname arg tyname =
   if tyname = "t" then "rewrite"
   else "rewrite_"^tyname
@@ -727,7 +729,10 @@ and generate_tycon_dispatcher_expression ~{except} t subs_rho ty =
   ]
 ;
 
-value toplevel_generate_dispatcher t (dname,d) = 
+value toplevel_generate_dispatcher t (dname,d) = do {
+  if debug.val then
+    Fmt.(pf stderr "[toplevel_generate_dispatcher: %s]\n%!" dname)
+  else () ;
   match d.Dispatch1.code with [
     Some e -> e
   | None ->
@@ -739,6 +744,7 @@ value toplevel_generate_dispatcher t (dname,d) =
     let loc = loc_of_expr e in
     List.fold_right (fun p rhs -> <:expr< fun $p$ -> $rhs$ >>) subs_binders e
   ]
+}
 ;
 end ;
 

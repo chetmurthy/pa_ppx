@@ -24,11 +24,11 @@ let dst_loc_none =
   } in
   { loc_start = loc; loc_end = loc; loc_ghost = true }
 
-let _rewrite_list subrw0 __dst__ __inh__ l =
-  List.map (subrw0 __dst__ __inh__) l
+let _rewrite_list subrw0 __dt__ __inh__ l =
+  List.map (subrw0 __dt__ __inh__) l
 
 let rewrite_402_label_403_arg_label : 'a -> 'b -> SRC.Asttypes.label -> DST.Asttypes.arg_label =
-  fun __dst__ __inh__ x ->
+  fun __dt__ __inh__ x ->
     if x <> "" then
       if x.[0] = '?' then DST.Asttypes.Optional (String.sub x 1 (String.length x - 1))
       else DST.Asttypes.Labelled x
@@ -37,7 +37,7 @@ let rewrite_402_label_403_arg_label : 'a -> 'b -> SRC.Asttypes.label -> DST.Astt
 
 let rewrite_402_constant_403_constant :
   'a -> 'b -> SRC.Asttypes.constant -> DST.Parsetree.constant =
-  fun __dst__ __inh__ -> function
+  fun __dt__ __inh__ -> function
   | SRC.Asttypes.Const_int x0 ->
       DST.Parsetree.Pconst_integer (string_of_int x0, None)
   | SRC.Asttypes.Const_char x0 ->
