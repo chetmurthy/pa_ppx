@@ -21,7 +21,7 @@ ML=\
 	pa_deriving_enum.ml \
 	pa_deriving_iter.ml \
 	pa_deriving_map.ml \
-	pa_deriving_rewrite.ml \
+	pa_deriving_migrate.ml \
 	pa_deriving_fold.ml \
 	pa_deriving_make.ml \
 	pa_deriving_yojson.ml \

@@ -377,7 +377,7 @@ and out_ext_status = [%import: All_ast.Ast_4_11.Outcometree.out_ext_status]
 and out_phrase = [%import: All_ast.Ast_4_11.Outcometree.out_phrase]
 
 
-[@@deriving rewrite
+[@@deriving migrate
     { inherit_type = [%typ: location_t option]
     ; dispatch_type = dispatch_table_t
     ; dispatch_table_value = dt
