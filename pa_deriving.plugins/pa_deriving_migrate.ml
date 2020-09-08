@@ -187,6 +187,79 @@ value patt_wrap_dsttype_module d p =
 end
 ;
 
+value pmatch pat ty =
+  let rec pmrec acc = fun [
+    (<:ctyp< $lid:id$ >>, <:ctyp< $lid:id2$ >>) when id = id2 -> acc
+  | (<:ctyp< $p1$ $p2$ >>, <:ctyp< $t1$ $t2$ >>) ->
+    pmrec (pmrec acc (p1, t1)) (p2, t2)
+  | (<:ctyp< ' $id$ >>, ty) ->
+    if List.mem_assoc id acc then
+      Ploc.raise (loc_of_ctyp pat) (Failure "polymorphic type-variables in patterns must not be repeated")
+    else
+      [ (id, ty) :: acc ]
+  | _ -> failwith "caught"
+  ]
+  in
+  if Reloc.eq_ctyp pat ty then Some []
+  else
+    match pmrec [] (pat, ty) with [
+      rho -> Some rho
+    | exception Failure _ -> None
+    ]
+;
+
+module Prettify = struct
+
+type t = {
+  lhs : MLast.ctyp
+; rhs : MLast.ctyp
+}
+;
+
+value mk1 (_, td) =
+    let loc = loc_of_type_decl td in
+  let name = td.tdNam |> uv |> snd |> uv in
+  let vars = List.map (fun [
+      (<:vala< Some v >>, _) -> v
+    | _ -> Ploc.raise loc (Failure Fmt.(str "Prettify.mk1: cannot make prettify rule from type_decl %s: unnamed polymorphic type variables" name))
+    ]) (uv td.tdPrm) in
+  let lhs =
+    Ctyp.applist <:ctyp< $lid:name$ >> (List.map (fun s -> <:ctyp< ' $s$ >>) vars) in
+  match td.tdDef with [
+    <:ctyp:< $rhs$ == $_$ >> ->
+    (name, { lhs = lhs ; rhs = rhs })
+  | rhs when not (is_generative_type rhs) ->
+    (name, { lhs = lhs ; rhs = rhs })
+  | _ -> Ploc.raise loc (Failure Fmt.(str "Prettify.mk1: cannot make prettify rule from type_decl %s: not a manifest type_decl" name))
+  ]
+;
+
+value mk_from_type_decls tdl =
+  List.fold_right (fun td acc ->
+      match mk1 td with [
+        p -> [p::acc]
+      | exception Ploc.Exc _ _ -> acc
+      ]) tdl []
+;
+
+value prettify rules t =
+  let rec prec t =
+    match (t, List.find_map (fun (_, r) -> t |> pmatch r.lhs |> Std.map_option (fun rho -> (r, rho))) rules) with [
+      (_, Some (r, rho)) ->
+      let rho = List.map (fun (v, subt) -> (v, prec subt)) rho in
+      prec (Ctyp.subst rho r.rhs)
+    | (<:ctyp:< $t1$ $t2$ >>, None) ->
+      <:ctyp< $prec t1$ $prec t2$ >>
+    | (<:ctyp:< $t1$ -> $t2$ >>, None) ->
+      <:ctyp< $prec t1$ -> $prec t2$ >>
+    | (<:ctyp:< ( $list:l$ ) >>, None) ->
+      <:ctyp:< ( $list:List.map prec l$ ) >>
+    | (t, _) -> t
+    ]
+  in prec t
+;
+end
+;
 module Migrate = struct
 
 type t = {
@@ -195,13 +268,15 @@ type t = {
 ; dispatch_table_value : string
 ; dispatchers : list Dispatch1.t
 ; type_decls : list (string * MLast.type_decl)
+; pretty_rewrites : list (string * Prettify.t)
 } ;
 
 value dispatch_table_type_decls loc t =
-  let ltl = List.map (fun (dispatcher_name, t) ->
-    let ty = Dispatch1.to_type (dispatcher_name, t) in
-    (loc_of_ctyp ty, dispatcher_name, False, ty, <:vala< [] >>)
-  ) t.dispatchers in
+  let ltl = List.map (fun (dispatcher_name, d) ->
+      let ty = Dispatch1.to_type (dispatcher_name, d) in
+      let ty = Prettify.prettify t.pretty_rewrites ty in
+      (loc_of_ctyp ty, dispatcher_name, False, ty, <:vala< [] >>)
+    ) t.dispatchers in
   let dispatch_table_type = <:ctyp< { $list:ltl$ } >> in
   let migrater_type = match t.inherit_type with [
     None -> <:ctyp< $lid:t.dispatch_type_name$ -> 'a -> 'b >>
@@ -244,12 +319,14 @@ value build_context loc ctxt tdl =
         | _ -> Ploc.raise loc (Failure "pa_deriving.migrate: malformed dispatcher args")
       ]) lel
   ] in
+  let pretty_rewrites = Prettify.mk_from_type_decls type_decls in
   {
     inherit_type = inherit_type ;
     dispatch_type_name = dispatch_type_name;
     dispatch_table_value = dispatch_table_value;
     dispatchers = dispatchers ;
-    type_decls = type_decls
+    type_decls = type_decls ;
+    pretty_rewrites = pretty_rewrites
   }
 ;
 
@@ -283,27 +360,6 @@ value head_reduce1 t ty =
     reduce1 (id, tyargs) td
   | _ -> ty
   ]
-;
-
-value pmatch pat ty =
-  let rec pmrec acc = fun [
-    (<:ctyp< $lid:id$ >>, <:ctyp< $lid:id2$ >>) when id = id2 -> acc
-  | (<:ctyp< $p1$ $p2$ >>, <:ctyp< $t1$ $t2$ >>) ->
-    pmrec (pmrec acc (p1, t1)) (p2, t2)
-  | (<:ctyp< ' $id$ >>, ty) ->
-    if List.mem_assoc id acc then
-      Ploc.raise (loc_of_ctyp pat) (Failure "polymorphic type-variables in patterns must not be repeated")
-    else
-      [ (id, ty) :: acc ]
-  | _ -> failwith "caught"
-  ]
-  in
-  if Reloc.eq_ctyp pat ty then Some []
-  else
-    match pmrec [] (pat, ty) with [
-      rho -> Some rho
-    | exception Failure _ -> None
-    ]
 ;
 
 value match_migrate_rule ~{except} t ctyp =
