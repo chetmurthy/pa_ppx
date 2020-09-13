@@ -5,6 +5,12 @@ value filter_split : (α → bool) → list α → (list α * list α);
 value count : (α → bool) → list α → int;
 value attr_id : Ploc.vala (Ploc.vala (α * β) * γ) → β;
 value module_expr_of_longident : MLast.longid → MLast.module_expr;
+module Env : sig
+  type t 'a = list (string * 'a) ;
+  value add : Ploc.t -> t 'a -> string -> 'a -> t 'a ;
+  value append : Ploc.t -> t 'a -> t 'a -> t 'a ;
+end
+;
 module Expr :
   sig
     value print : MLast.expr → string;
@@ -31,6 +37,9 @@ module Ctyp :
     value unwrap_attrs : MLast.ctyp → (MLast.ctyp * list MLast.attribute);
     value applist : MLast.ctyp → list MLast.ctyp → MLast.ctyp;
     value unapplist : MLast.ctyp → (MLast.ctyp * list MLast.ctyp);
+
+    type rho = Env.t MLast.ctyp ;
+    value subst : rho -> MLast.ctyp -> MLast.ctyp;
   end
 ;
 module Longid : sig value to_string_list : MLast.longid → list string; end;

@@ -178,15 +178,16 @@ stuff.cmo: stuff.ml
 clean::
 	rm -f *.corrected *.pappx.ml *.ppx.ml
 
-EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(ALL_PACKAGES))
-$(CMO): $(EXTERNAL)
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte -format '%m' $(ALL_PACKAGES))
+$(CMO) $(TESTS): $(EXTERNAL)
 
 depend::
+	echo "$(CMO) $(TESTS): $(EXTERNAL)" > .depend.NEW
 	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o \
 	testutil2.ml stuff.ml \
 	test_*.ppx.ml \
 	test_*.pappx.ml \
-	> .depend.NEW
+	>> .depend.NEW
 	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5r \
 	testutil.ml \
 	>> .depend.NEW

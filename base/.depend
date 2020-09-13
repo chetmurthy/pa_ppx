@@ -1,3 +1,4 @@
+base.cmo pp_MLast.cmo pp_parsetree.cmo ppxutil.cmo pa_passthru.cmo pa_normalize.cmo base.cmi pp_MLast.cmi pp_parsetree.cmi ppxutil.cmi pa_passthru.cmi pa_normalize.cmi base.cmx pp_MLast.cmx pp_parsetree.cmx ppxutil.cmx pa_passthru.cmx pa_normalize.cmx: /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/unix/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/compiler-libs/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/rresult/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/fmt/META ../local-install/lib/pa_ppx_utils/META ../local-install/lib/pa_ppx_runtime/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/compiler-libs/META
 pa_normalize.cmo : \
     ppxutil.cmi \
     pa_passthru.cmi

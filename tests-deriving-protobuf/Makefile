@@ -75,14 +75,15 @@ test_%.ppx.byte: test_%.ml
 clean::
 	rm -f *.corrected *.pappx.ml *.ppx.ml *.ppo.*
 
-EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(ALL_PACKAGES))
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte -format '%m' $(ALL_PACKAGES))
 $(CMO): $(EXTERNAL)
 
 depend::
+	echo "$(CMO): $(EXTERNAL)" > .depend.NEW
 	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o \
 	test_*.ppx.ml \
 	test_*.pappx.ml \
-	> .depend.NEW
+	>> .depend.NEW
 	mv .depend.NEW .depend
 
 -include .depend

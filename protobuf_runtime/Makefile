@@ -57,11 +57,12 @@ $(TARGET:.cma=.cmxa): pa_ppx_protobuf.cmx
 $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
-EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates  -format '%m'byte $(PACKAGES))
 $(CMO) $(CMI) $(CMX): $(EXTERNAL)
 
 depend::
-	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r runtime.ml > .depend.NEW \
+	echo "$(CMO) $(CMI) $(CMX): $(EXTERNAL)" > .depend.NEW
+	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r runtime.ml >> .depend.NEW \
 		&& mv .depend.NEW .depend
 
 -include .depend

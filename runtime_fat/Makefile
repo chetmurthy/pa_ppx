@@ -116,11 +116,12 @@ exceptions.ORIG.mli: ../runtime/exceptions.ORIG.mli
 	cp $^ .
 	perl -p -i -e 's|show\]|show, sexp, yojson, eq\]|' $@
 
-EXTERNAL = $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
+EXTERNAL = $(shell $(OCAMLFIND) query -predicates byte -format '%m' $(PACKAGES))
 $(CMO) $(CMI) $(CMX): $(EXTERNAL)
 
 depend::
-	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r runtime.ml exceptions.ml exceptions.mli > .depend.NEW \
+	echo "$(CMO) $(CMI) $(CMX): $(EXTERNAL)" > .depend.NEW
+	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r runtime.ml exceptions.ml exceptions.mli >> .depend.NEW \
 		&& mv .depend.NEW .depend
 
 -include .depend

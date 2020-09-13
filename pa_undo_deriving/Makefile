@@ -56,11 +56,12 @@ $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 $(TARGET): $(CMO)
 $(TARGET:.cma=.cmxa): $(CMO:.cmo=.cmx)
 
-EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte $(PACKAGES))
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte -format '%m' $(PACKAGES))
 $(CMO) $(CMI) $(CMX): $(EXTERNAL)
 
 depend::
-	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli > .depend.NEW \
+	echo "$(CMO) $(CMI) $(CMX): $(EXTERNAL)" > .depend.NEW
+	$(OCAMLFIND) ocamldep $(DEBUG) -package $(PACKAGES) -syntax camlp5r *.ml *.mli >> .depend.NEW \
 		&& mv .depend.NEW .depend
 
 -include .depend

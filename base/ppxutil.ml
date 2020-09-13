@@ -51,6 +51,20 @@ value module_expr_of_longident li =
   ] in
   crec li
 ;
+module Env = struct
+type t 'a = list (string * 'a) ;
+
+value add loc rho id ty =
+  if List.mem_assoc id rho then
+    Ploc.raise loc (Failure "Ctyp.add_rho: adding same type-variable more than once")
+  else [ (id, ty) :: rho ]
+;
+
+value append loc rho1 rho2 =
+  List.fold_left (fun rho (id, ty) -> (add loc) rho id ty) rho1 rho2 ;
+end
+;
+
 module Expr = struct
 
 value print e =
@@ -155,6 +169,30 @@ value unapplist e =
   | t -> (t,acc)
   ] in unrec [] e
 ;
+
+type rho = Env.t MLast.ctyp ;
+value rec subst rho = fun [
+  <:ctyp< ' $id$ >> when List.mem_assoc id rho -> List.assoc id rho
+| <:ctyp:< $t1$ $t2$ >> -> <:ctyp< $subst rho t1$ $subst rho t2$ >>
+| <:ctyp:< ( $list:l$ ) >> -> <:ctyp< ( $list:List.map (subst rho) l$ ) >>
+| <:ctyp:< [ $list:l$ ] >> ->
+  let l = List.map (fun [
+      <:constructor:< $uid:s$ of $list:lt$ $rto:ot$ $_algattrs:x$ >> ->
+      <:constructor< $uid:s$ of $list:List.map (subst rho) lt$
+                     $rto:option_map (subst rho) ot$ $_algattrs:x$ >>
+    ]) l in
+  <:ctyp< [ $list:l$ ] >>
+| <:ctyp:< { $list:l$ } >> ->
+  let l = List.map (fun (a,b,c,ty,e) -> (a,b,c, subst rho ty,e)) l in
+  <:ctyp< { $list:l$ } >>
+| ( <:ctyp< $longid:_$ . $lid:_$ >>
+  | <:ctyp< $lid:_$ >>
+  ) as z -> z
+| <:ctyp:< $t1$ -> $t2$ >> -> <:ctyp< $subst rho t1$ -> $subst rho t2$ >>
+| z -> Ploc.raise (loc_of_ctyp z) (Failure Fmt.(str "Ctyp.subst: unhandled type: %a\n%!" Pp_MLast.pp_ctyp z))
+]
+;
+
 end ;
 
 module Longid = struct
