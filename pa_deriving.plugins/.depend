@@ -1,4 +1,4 @@
-pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo pa_deriving_rewrite.cmo pa_deriving_fold.cmo pa_deriving_make.cmo pa_deriving_yojson.cmo pa_deriving_sexp.cmo pa_deriving_protobuf.cmo pa_deriving_show.cmi pa_deriving_eq.cmi pa_deriving_ord.cmi pa_deriving_enum.cmi pa_deriving_iter.cmi pa_deriving_map.cmi pa_deriving_rewrite.cmi pa_deriving_fold.cmi pa_deriving_make.cmi pa_deriving_yojson.cmi pa_deriving_sexp.cmi pa_deriving_protobuf.cmi pa_deriving_show.cmx pa_deriving_eq.cmx pa_deriving_ord.cmx pa_deriving_enum.cmx pa_deriving_iter.cmx pa_deriving_map.cmx pa_deriving_rewrite.cmx pa_deriving_fold.cmx pa_deriving_make.cmx pa_deriving_yojson.cmx pa_deriving_sexp.cmx pa_deriving_protobuf.cmx: /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/unix/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/compiler-libs/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META ../local-install/lib/pa_ppx_deriving/META ../local-install/lib/pa_ppx_base/META ../local-install/lib/pa_ppx_unmatched_vala/META
+pa_deriving_show.cmo pa_deriving_eq.cmo pa_deriving_ord.cmo pa_deriving_enum.cmo pa_deriving_iter.cmo pa_deriving_map.cmo pa_deriving_fold.cmo pa_deriving_make.cmo pa_deriving_yojson.cmo pa_deriving_sexp.cmo pa_deriving_protobuf.cmo pa_deriving_show.cmi pa_deriving_eq.cmi pa_deriving_ord.cmi pa_deriving_enum.cmi pa_deriving_iter.cmi pa_deriving_map.cmi pa_deriving_fold.cmi pa_deriving_make.cmi pa_deriving_yojson.cmi pa_deriving_sexp.cmi pa_deriving_protobuf.cmi pa_deriving_show.cmx pa_deriving_eq.cmx pa_deriving_ord.cmx pa_deriving_enum.cmx pa_deriving_iter.cmx pa_deriving_map.cmx pa_deriving_fold.cmx pa_deriving_make.cmx pa_deriving_yojson.cmx pa_deriving_sexp.cmx pa_deriving_protobuf.cmx: /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/unix/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/compiler-libs/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META ../local-install/lib/pa_ppx_deriving/META ../local-install/lib/pa_ppx_base/META ../local-install/lib/pa_ppx_unmatched_vala/META
 pa_deriving_enum.cmo :
 pa_deriving_enum.cmx :
 pa_deriving_eq.cmo :
@@ -15,8 +15,6 @@ pa_deriving_ord.cmo :
 pa_deriving_ord.cmx :
 pa_deriving_protobuf.cmo :
 pa_deriving_protobuf.cmx :
-pa_deriving_rewrite.cmo :
-pa_deriving_rewrite.cmx :
 pa_deriving_sexp.cmo :
 pa_deriving_sexp.cmx :
 pa_deriving_show.cmo :

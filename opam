@@ -74,6 +74,7 @@ depexts: [
 ]
 
 build: [
+  [make "get-generated"]
   [make "sys"]
 ]
 install: [make "install"]
