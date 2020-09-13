@@ -66,7 +66,7 @@ $rtfmeta
 package "base" (
 $basemeta
 )
-package "unmateched_vala" (
+package "unmatched_vala" (
 $uvmeta
 )
 package "hashrecons" (
