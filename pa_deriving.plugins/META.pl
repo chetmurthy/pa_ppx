@@ -122,22 +122,6 @@ package "map" (
   requires = "pa_ppx_runtime"
 )
 
-package "migrate" (
-  requires(toploop) = "camlp5,pa_ppx_deriving"
-  archive(toploop) = "pa_deriving_migrate.cmo"
-
-    requires(syntax,preprocessor) = "camlp5,pa_ppx_deriving"
-    archive(syntax,preprocessor,-native) = "pa_deriving_migrate.cmo"
-    archive(syntax,preprocessor,native) = "pa_deriving_migrate.cmx"
-
-  package "link" (
-  requires(byte) = "camlp5,pa_ppx_deriving.link"
-  archive(byte) = "pa_deriving_migrate.cmo"
-  )
-  requires = "pa_ppx_runtime"
-)
-
-
 package "fold" (
   requires(toploop) = "camlp5,pa_ppx_deriving"
   archive(toploop) = "pa_deriving_fold.cmo"
