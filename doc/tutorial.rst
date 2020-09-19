@@ -25,6 +25,8 @@ reasoning there -- it could be a source of hard-to-understand bugs).
 Using ``pa_ppx`` PPX Rewriters
 ==============================
 
+This example can be found in `tutorial/simple_show`.
+
 Batch compilation with Make
 ---------------------------
 

@@ -180,7 +180,7 @@ value option ctxt name =
   match List.assoc name ctxt.options with [
     e -> e
   | exception Not_found ->
-    failwith (Printf.sprintf "Pa_deriving_show.Ctxt.option: option %s not found" name)
+    failwith (Printf.sprintf "Pa_passthru.Ctxt.option: option %s not found" name)
   ]
 ;
 
