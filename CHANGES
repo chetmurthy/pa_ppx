@@ -2,6 +2,22 @@
 pa_ppx Version 0.03
 -------------------
 
+* [24 Sep 2020] new way of selecting generated-src versions.
+  hopefully this will make pa_ppx immune to "new camlp5 release, we
+  can't build" problems.
+
+  pa_ppx.import now support "mli-only" and "redeclare" options:
+
+  "-pa_import-mli-only": to ensure that only MLI files are consulting during import
+  (e.g. to pull in OCaml AST from an older OCaml version, and avoid
+  doing so from the stdlib)
+
+  "-pa_import-redeclare": to import types and *not* add the type-equation that
+  binds them to the existing type.  For instance, to combine with
+  mli-only (since there isn't any existing type that matches).
+
+  cache files as they're read in pa_import, so we don't need to reread them.
+
 * [12 Sep 2020] added a bunch of support for matching & substitution over types,
   to support pa_ppx_migrate (which is now in a separate project).
 

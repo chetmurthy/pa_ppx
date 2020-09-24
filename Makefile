@@ -78,15 +78,18 @@ camlp5GENERATED=base/pp_MLast.ml base/pp_MLast.mli
 ocamlVERSION=$(shell ocamlc --version)
 camlp5VERSION=$(shell camlp5 -version)
 
+genocamlVERSION=$(shell config/find_gensrc.pl ocaml 4. $(ocamlVERSION))
+gencamlp5VERSION=$(shell config/find_gensrc.pl camlp5 8. $(camlp5VERSION))
+
 save-generated:
 	mkdir -p generated_src/$(ocamlVERSION)
 	tar -cf - $(ocamlGENERATED) | tar -C generated_src/$(ocamlVERSION) -xvBf -
 	mkdir -p generated_src/$(camlp5VERSION)
 	tar -cf - $(camlp5GENERATED) | tar -C generated_src/$(camlp5VERSION) -xvBf -
 
-get-generated: generated_src/$(ocamlVERSION) generated_src/$(camlp5VERSION)
-	tar -C generated_src/$(ocamlVERSION) -cf - . | tar -xvBf -
-	tar -C generated_src/$(camlp5VERSION) -cf - . | tar -xvBf -
+get-generated: generated_src/$(genocamlVERSION) generated_src/$(gencamlp5VERSION)
+	tar -C generated_src/$(genocamlVERSION) -cf - . | tar -xvBf -
+	tar -C generated_src/$(gencamlp5VERSION) -cf - . | tar -xvBf -
 
 camlp5r.pa_ppx:
 	tools/LAUNCH $(MKCAMLP5) -verbose -package camlp5.pa_r,camlp5.pr_r,$(PACKAGES) -o $@
