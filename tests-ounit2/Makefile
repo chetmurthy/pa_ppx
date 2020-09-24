@@ -40,7 +40,7 @@ PAPACKAGES:=$(PAPACKAGES),$(PACKAGEPREFIX)testutils
 
 ALL_PACKAGES := $(PACKAGES),$(PAPACKAGES),$(PPXPACKAGES)
 
-CMO=papr_util.cmo
+CMO=papr_util.cmo hCPassthru.cmo
 CMI := $(CMO:.cmo=.cmi)
 CMX := $(CMO:.cmo=.cmx)
 
@@ -189,7 +189,7 @@ depend::
 	test_*.pappx.ml \
 	>> .depend.NEW
 	$(OCAMLFIND) ocamldep $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5r \
-	testutil.ml \
+	testutil.ml hCPassthru.ml \
 	>> .depend.NEW
 	mv .depend.NEW .depend
 

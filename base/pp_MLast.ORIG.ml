@@ -19,5 +19,6 @@ ELSE
 let show_longid _ = "<longid>"
 let show_longid_lident _ = "<longid_lident>"
 let show_ctyp _ = "<ctyp>"
+let pp_ctyp pps x = Fmt.(pf pps "<ctyp>")
 
 END
