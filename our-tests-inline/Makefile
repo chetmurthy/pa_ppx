@@ -2,7 +2,7 @@
 # Copyright (c) INRIA 2007-2017
 
 WD=$(shell pwd)
-TOP=$(WD)/..
+TOP=..
 include $(TOP)/config/Makefile
 
 PACKAGEPREFIX=pa_ppx_
@@ -88,7 +88,7 @@ bigass_doc_comments_pa_dock_original.ml: bigass_doc_comments_original.ML
 clean::
 	rm -f *.corrected *.ppo *_doc_comments_official.ml *_doc_comments_pa_dock.ml
 
-EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte -format '%m' $(PACKAGES),$(PAINLINEPACKAGES))
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte -format '%m' $(PACKAGES),$(PAINLINEPACKAGES) | grep local-install)
 $(TEST_EXECUTABLES): $(EXTERNAL)
 
 depend::

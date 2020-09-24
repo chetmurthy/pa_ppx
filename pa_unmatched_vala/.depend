@@ -1,3 +1,3 @@
-pa_unmatched_vala.cmo pa_unmatched_vala.cmi pa_unmatched_vala.cmx: /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/unix/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/compiler-libs/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/fmt/META ../local-install/lib/pa_ppx_base/META
+pa_unmatched_vala.cmo pa_unmatched_vala.cmi pa_unmatched_vala.cmx: ../local-install/lib/pa_ppx_base/META
 pa_unmatched_vala.cmo :
 pa_unmatched_vala.cmx :

@@ -2,7 +2,7 @@
 # Copyright (c) INRIA 2007-2017
 
 WD=$(shell pwd)
-TOP=$(WD)/..
+TOP=..
 include $(TOP)/config/Makefile
 
 PACKAGEPREFIX=pa_ppx_
@@ -75,7 +75,7 @@ test_%.ppx.byte: test_%.ml
 clean::
 	rm -f *.corrected *.pappx.ml *.ppx.ml *.ppo.*
 
-EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte -format '%m' $(ALL_PACKAGES))
+EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte -format '%m' $(ALL_PACKAGES) | grep local-install)
 $(CMO): $(EXTERNAL)
 
 depend::

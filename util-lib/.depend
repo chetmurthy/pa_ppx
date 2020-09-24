@@ -1,4 +1,4 @@
-std.cmo coll.cmo std2.cmo uf.cmo tsort0.cmo tsort.cmo pack.cmo hash.cmo std.cmi coll.cmi std2.cmi uf.cmi tsort0.cmi tsort.cmi pack.cmi hash.cmi std.cmx coll.cmx std2.cmx uf.cmx tsort0.cmx tsort.cmx pack.cmx hash.cmx: /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/unix/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/compiler-libs/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/pcre/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/base/META
+std.cmo coll.cmo std2.cmo uf.cmo tsort0.cmo tsort.cmo pack.cmo hash.cmo std.cmi coll.cmi std2.cmi uf.cmi tsort0.cmi tsort.cmi pack.cmi hash.cmi std.cmx coll.cmx std2.cmx uf.cmx tsort0.cmx tsort.cmx pack.cmx hash.cmx: 
 coll.cmo : \
     std.cmi
 coll.cmx : \

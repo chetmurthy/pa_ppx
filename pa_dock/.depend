@@ -1,4 +1,4 @@
-comment_lexer.cmo pa_dock.cmo comment_lexer.cmi pa_dock.cmi comment_lexer.cmx pa_dock.cmx: /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/unix/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/compiler-libs/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/fmt/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/bos/META ../local-install/lib/pa_ppx_base/META ../local-install/lib/pa_ppx_utils/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META /home/chet/Hack/Ocaml/GENERIC/4.10.0/lib/camlp5/META ../local-install/lib/pa_ppx_unmatched_vala/META
+comment_lexer.cmo pa_dock.cmo comment_lexer.cmi pa_dock.cmi comment_lexer.cmx pa_dock.cmx: ../local-install/lib/pa_ppx_base/META ../local-install/lib/pa_ppx_utils/META ../local-install/lib/pa_ppx_unmatched_vala/META
 comment_lexer.cmo :
 comment_lexer.cmx :
 pa_dock.cmo : \
