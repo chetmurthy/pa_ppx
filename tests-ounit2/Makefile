@@ -176,7 +176,7 @@ stuff.cmo: stuff.ml
 	$(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES) -syntax camlp5o -c $<
 
 clean::
-	rm -f *.corrected *.pappx.ml *.ppx.ml
+	rm -f *.corrected *.pappx.ml *.ppx.ml *.ppo.ml
 
 EXTERNAL := $(shell $(OCAMLFIND) query -predicates byte -format '%m' $(ALL_PACKAGES) | grep local-install)
 $(CMO) $(TESTS): $(EXTERNAL)

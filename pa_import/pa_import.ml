@@ -305,8 +305,11 @@ value extend_renmap attr renmap =
 ;
 
 value extract_with_attributes attrs =
-  (List.filter (fun a -> "with" = (attr_id a)) attrs,
-   List.filter (fun a -> "with" <> (attr_id a)) attrs)
+  filter_split (fun a -> "with" = (attr_id a)) attrs
+;
+
+value extract_add_attributes attrs =
+  filter_split (fun a -> "add" = (attr_id a)) attrs
 ;
 
 type unpacked_t =
@@ -371,13 +374,34 @@ value import_type arg (newtname,new_formals) t =
     else ct
 ;
 
-value import_typedecl_group arg t item_attrs =
+value rec expand_add_attribute arg attr =
+  let si = match uv attr with [
+    <:attribute_body< "add" $stri:si$ ; >> -> si
+  | _ -> Ploc.raise (attr |> uv |> fst |> uv |> fst)
+      (Failure Fmt.(str "expand_add_attribute: malformed add attribute:@ %a"
+                      Pp_MLast.pp_attribute attr))
+  ] in
+  let expanded_si = match si with [
+    <:str_item:<  type $flag:_$ $list:_$ >>
+  | <:str_item:< [%% import: $type:_$ ] $itemattrs:_$ >> as z ->
+      registered_str_item_extension arg si
+
+  ] in
+  match expanded_si with [
+    <:str_item< type $flag:_$ $list:l$ >> -> l
+  | _ -> assert False
+  ]
+
+and import_typedecl_group arg t item_attrs =
   let unp = unpack_imported_type t in
   let (with_attrs, rest_attrs) = extract_with_attributes unp.attrs in
+  let (add_attrs, rest_attrs) = extract_add_attributes rest_attrs in
+  let added_typedecls = List.concat (List.map (expand_add_attribute arg) add_attrs) in
   let unp = { (unp) with attrs = rest_attrs } in
   let renmap = List.fold_right extend_renmap with_attrs [] in
   let loc = unp.loc in
   let (rd, (nrfl, tdl)) = import_typedecl arg unp.unapp_t in
+  let tdl = tdl @ added_typedecls in
   let tdl = List.map (fun td ->
       let imported_tycon =
         let tyna = uv (snd (uv td.tdNam)) in
@@ -404,9 +428,9 @@ value import_typedecl_group arg t item_attrs =
     { (last) with tdAttributes = <:vala< new_attrs >> } in
   let tdl = tdl @ [last] in
   (nrfl, tdl)
-;
 
-value rec import_module_type arg t =
+
+and import_module_type arg t =
   match t with [
     <:ctyp< $t$ [@ $attribute:attr$ ] >> ->
       import_module_type arg t
@@ -417,9 +441,8 @@ value rec import_module_type arg t =
       let sl = Longid.to_string_list li in
       lookup_module_type sl
   ]
-;
 
-value registered_str_item_extension arg = fun [
+and registered_str_item_extension arg = fun [
   <:str_item:< type $flag:nrfl$ $list:tdl$ >> ->
     let tdl = List.map (fun td ->
         match td.tdDef with [

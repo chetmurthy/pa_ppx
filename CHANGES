@@ -18,6 +18,35 @@ pa_ppx Version 0.03
 
   cache files as they're read in pa_import, so we don't need to reread them.
 
+  the [%%import ...] item-extension (for str-items and sig-items) now takes a
+  [@add ...] attribute, viz.
+
+  [%%import: MLast.expr
+    [@add type loc = [%import: MLast.loc]
+          and type_var = [%import: MLast.type_var]
+          and 'a vala = [%import: 'a Ploc.vala]
+    ]
+  ]
+
+  This says to import the entire typedecl-group in which MLast.expr is
+  declared, and to add to that the types MLast.type_var and Ploc.vala,
+  all in a single grouped typedef (which will be recursive, if the
+  initial typedef is).  The "@add" attribute payload is a str-item, so
+  it can itself have a payload that is an item-extension ("[%%import
+  ...]") in order to import-and-add entire typedecl groups, thus:
+
+  [%%import: MLast.expr
+    [@add [%%import: MLast.loc]]
+    [@add [%%import: MLast.type_var]]
+    [@add [%%import: 'a Ploc.vala]]
+    [@with Ploc.vala := vala]
+  ] [@@deriving show]
+
+  The "@with" directive applies to all types imported.  If we wanted
+  to apply it to one of the types in "@add" directives (say, for
+  "MLast.type_var"), we'd just put it in that "%%import" attribute in
+  the normal way.
+
 * [12 Sep 2020] added a bunch of support for matching & substitution over types,
   to support pa_ppx_migrate (which is now in a separate project).
 

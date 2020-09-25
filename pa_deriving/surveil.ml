@@ -381,5 +381,5 @@ let ef = EF.{ (ef) with
         if debug.val then Fmt.(DC.dump stderr (DC.get arg)) else () ;
         rv }
   ] } in
-  Pa_passthru.(install { name = "surveil" ; ef = ef ; pass = None ; before = [] ; after = [] })
+  Pa_passthru.(install { name = "surveil" ; ef = ef ; pass = None ; before = [] ; after = ["pa_import"] })
 ;

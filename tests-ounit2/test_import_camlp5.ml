@@ -9,10 +9,13 @@ val pp : t Fmt.t
 type 'a vala = [%import: 'a Ploc.vala] [@@deriving show]
 end
 
-type loc = [%import: MLast.loc] [@@deriving show]
-type type_var = [%import: MLast.type_var] [@@deriving show]
+[%%import: MLast.expr
+    [@add type loc = [%import: MLast.loc]
+          and type_var = [%import: MLast.type_var]
+          and 'a vala = [%import: 'a Ploc.vala]
+    ]
+] [@@deriving show]
 
-[%%import: MLast.expr] [@@deriving show]
   end = struct
 module Ploc= struct
 include Ploc
@@ -22,10 +25,28 @@ let pp ppf x = Fmt.(const string "<loc>" ppf ())
 type 'a vala = [%import: 'a Ploc.vala] [@@deriving show]
 end
 
-type loc = [%import: MLast.loc] [@@deriving show]
-type type_var = [%import: MLast.type_var] [@@deriving show]
+[%%import: MLast.expr
+    [@add type loc = [%import: MLast.loc]
+          and type_var = [%import: MLast.type_var]
+          and 'a vala = [%import: 'a Ploc.vala]
+    ]
+] [@@deriving show]
+end
 
-[%%import: MLast.expr] [@@deriving show]
+module T2 = struct
+module Ploc= struct
+include Ploc
+
+let pp ppf x = Fmt.(const string "<loc>" ppf ())
+end
+
+[%%import: MLast.expr
+    [@add [%%import: MLast.loc]]
+    [@add [%%import: MLast.type_var]]
+    [@add [%%import: 'a Ploc.vala]]
+    [@with Ploc.vala := vala]
+] [@@deriving show]
+
 end
 
 let test_simplest ctxt =
