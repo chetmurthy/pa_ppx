@@ -369,7 +369,8 @@ value rec extend_str_items arg si = match si with [
     ] in
     let gcl = List.concat (List.map ec2gc ecs) in
     let ty = <:ctyp< [ $list:gcl$ ] >> in
-    let e = to_expression arg ~{msg=String.escaped (Pp_MLast.show_longid_lident t)} param_map ty in
+    let msg = Fmt.(str "Extending type %a" Pp_MLast.pp_longid_lident t) in
+    let e = to_expression arg ~{msg=String.escaped msg} param_map ty in
     let branches = match e with [
       <:expr< fun [ $list:branches$ ] >> -> branches
     | _ -> assert False
@@ -797,7 +798,8 @@ value rec extend_str_items arg si = match si with [
     ] in
     let gcl = List.concat (List.map ec2gc ecs) in
     let ty = <:ctyp< [ $list:gcl$ ] >> in
-    let e = of_expression arg ~{msg=String.escaped (Pp_MLast.show_longid_lident t)} param_map ty in
+    let msg = Fmt.(str "Extending type %a" Pp_MLast.pp_longid_lident t) in
+    let e = of_expression arg ~{msg=String.escaped msg} param_map ty in
     let branches = match e with [
       <:expr< fun [ $list:branches$ ] >> -> branches
     | _ -> assert False

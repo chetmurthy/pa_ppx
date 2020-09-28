@@ -116,7 +116,7 @@ type constant =
   Parsetree.constant ==
     [ Pconst_integer of string and option char
     | Pconst_char of char
-    | Pconst_string of string and option string
+    | Pconst_string of string and Location.t and option string
     | Pconst_float of string and option char ][@@"deriving_inline" show;]
 ;
 value pp_constant : Fmt.t constant;

@@ -320,7 +320,7 @@ type constant =
   Parsetree.constant ==
     [ Pconst_integer of string and option char
     | Pconst_char of char
-    | Pconst_string of string and option string
+    | Pconst_string of string and Location.t and option string
     | Pconst_float of string and option char ][@@"deriving_inline" show;]
 ;
 value rec pp_constant : Fmt.t constant =
@@ -352,12 +352,12 @@ value rec pp_constant : Fmt.t constant =
              (fun ofmt arg →
                 let open Pa_ppx_runtime.Runtime.Fmt in pf ofmt "%C" arg)
              v0
-       | Pconst_string v0 v1 →
+       | Pconst_string v0 v1 v2 →
            let open Pa_ppx_runtime.Runtime.Fmt in
-           pf ofmt "(@[<2>Parsetree.Pconst_string@ (@,%a,@ %a@,))@]"
+           pf ofmt "(@[<2>Parsetree.Pconst_string@ (@,%a,@ %a,@ %a@,))@]"
              (fun ofmt arg →
                 let open Pa_ppx_runtime.Runtime.Fmt in pf ofmt "%S" arg)
-             v0
+             v0 Location.pp v1
              (fun ofmt →
                 fun
                 [ None →
@@ -370,7 +370,7 @@ value rec pp_constant : Fmt.t constant =
                          let open Pa_ppx_runtime.Runtime.Fmt in
                          pf ofmt "%S" arg)
                       arg ])
-             v1
+             v2
        | Pconst_float v0 v1 →
            let open Pa_ppx_runtime.Runtime.Fmt in
            pf ofmt "(@[<2>Parsetree.Pconst_float@ (@,%a,@ %a@,))@]"

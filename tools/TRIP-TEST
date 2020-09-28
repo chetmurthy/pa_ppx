@@ -1,0 +1,54 @@
+#!/bin/bash
+
+function noisy_error {
+    echo "FAILED FAILED FAILED FAILED FAILED"
+    exit 1
+}
+
+set -e
+trap noisy_error ERR
+
+VERS=$1
+
+ENABLE_LOG=${ENABLE_LOG:-1}
+LOG=~/tmp/TRIP-TEST-pa_ppx-$VERS.log
+
+if (( $ENABLE_LOG ))
+then
+  rm -f $LOG && touch $LOG
+fi
+
+echo "================ $VERS ================" 2>&1
+opam switch $VERS
+. $OPAMROOT/dot.bashrc
+
+#uncomment these when testing a new camlp5 release
+#opam remove -y camlp5 || true
+#opam install -y camlp5
+
+{
+  ( \
+   make clean && \
+   make initialize && \
+   make sys && \
+   make bootstrap && \
+   make clean && \
+   make sys && \
+   make save-generated \
+   true ) 2>&1
+  echo "build OK" 1>&2
+} | if (( $ENABLE_LOG ))
+then
+  tee 1>>$LOG
+else
+  cat
+fi
+{
+  make test 2>&1 
+  echo "test OK" 1>&2
+} | if (( $ENABLE_LOG ))
+then
+  tee 1>>$LOG
+else
+  cat
+fi

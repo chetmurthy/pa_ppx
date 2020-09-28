@@ -218,10 +218,12 @@ let fallback = f.f in
 f.f :=
   fun
   [ `List [`String "Arg.Help"; v0] →
-      Rresult.R.bind (Runtime.Yojson.string_of_yojson "<longid_lident>" v0)
+      Rresult.R.bind
+        (Runtime.Yojson.string_of_yojson "Extending type <longid_lident>" v0)
         (fun v0 → Result.Ok (Help v0))
   | `List [`String "Arg.Bad"; v0] →
-      Rresult.R.bind (Runtime.Yojson.string_of_yojson "<longid_lident>" v0)
+      Rresult.R.bind
+        (Runtime.Yojson.string_of_yojson "Extending type <longid_lident>" v0)
         (fun v0 → Result.Ok (Bad v0))
   | `List [`String "Fun.Finally_raised"; v0] →
       Rresult.R.bind (of_yojson v0) (fun v0 → Result.Ok (Finally_raised v0))
@@ -229,7 +231,8 @@ f.f :=
   | `List [`String "Parsing.Parse_error"] → Result.Ok Parse_error
   | `List [`String "Queue.Empty"] → Result.Ok QueueEmpty
   | `List [`String "Scanf.Scan_failure"; v0] →
-      Rresult.R.bind (Runtime.Yojson.string_of_yojson "<longid_lident>" v0)
+      Rresult.R.bind
+        (Runtime.Yojson.string_of_yojson "Extending type <longid_lident>" v0)
         (fun v0 → Result.Ok (Scan_failure v0))
   | `List [`String "Stack.Empty"] → Result.Ok StackEmpty
   | `List [`String "Stdlib.Exit"] → Result.Ok Exit
@@ -238,15 +241,18 @@ f.f :=
         ((fun
           [ `List [v0; v1; v2] →
               Rresult.R.bind
-                (Runtime.Yojson.string_of_yojson "<longid_lident>" v0)
+                (Runtime.Yojson.string_of_yojson
+                   "Extending type <longid_lident>" v0)
                 (fun v0 →
                    Rresult.R.bind
-                     (Runtime.Yojson.int_of_yojson "<longid_lident>" v1)
+                     (Runtime.Yojson.int_of_yojson
+                        "Extending type <longid_lident>" v1)
                      (fun v1 →
                         Rresult.R.bind
-                          (Runtime.Yojson.int_of_yojson "<longid_lident>" v2)
+                          (Runtime.Yojson.int_of_yojson
+                             "Extending type <longid_lident>" v2)
                           (fun v2 → Result.Ok (v0, v1, v2))))
-          | _ → Result.Error "<longid_lident>" ])
+          | _ → Result.Error "Extending type <longid_lident>" ])
            v0)
         (fun v0 → Result.Ok (Match_failure v0))
   | `List [`String "Stdlib.Assert_failure"; v0] →
@@ -254,28 +260,34 @@ f.f :=
         ((fun
           [ `List [v0; v1; v2] →
               Rresult.R.bind
-                (Runtime.Yojson.string_of_yojson "<longid_lident>" v0)
+                (Runtime.Yojson.string_of_yojson
+                   "Extending type <longid_lident>" v0)
                 (fun v0 →
                    Rresult.R.bind
-                     (Runtime.Yojson.int_of_yojson "<longid_lident>" v1)
+                     (Runtime.Yojson.int_of_yojson
+                        "Extending type <longid_lident>" v1)
                      (fun v1 →
                         Rresult.R.bind
-                          (Runtime.Yojson.int_of_yojson "<longid_lident>" v2)
+                          (Runtime.Yojson.int_of_yojson
+                             "Extending type <longid_lident>" v2)
                           (fun v2 → Result.Ok (v0, v1, v2))))
-          | _ → Result.Error "<longid_lident>" ])
+          | _ → Result.Error "Extending type <longid_lident>" ])
            v0)
         (fun v0 → Result.Ok (Assert_failure v0))
   | `List [`String "Stdlib.Invalid_argument"; v0] →
-      Rresult.R.bind (Runtime.Yojson.string_of_yojson "<longid_lident>" v0)
+      Rresult.R.bind
+        (Runtime.Yojson.string_of_yojson "Extending type <longid_lident>" v0)
         (fun v0 → Result.Ok (Invalid_argument v0))
   | `List [`String "Stdlib.Failure"; v0] →
-      Rresult.R.bind (Runtime.Yojson.string_of_yojson "<longid_lident>" v0)
+      Rresult.R.bind
+        (Runtime.Yojson.string_of_yojson "Extending type <longid_lident>" v0)
         (fun v0 → Result.Ok (Failure v0))
   | `List [`String "Stdlib.Not_found"] → Result.Ok Not_found
   | `List [`String "Stdlib.Out_of_memory"] → Result.Ok Out_of_memory
   | `List [`String "Stdlib.Stack_overflow"] → Result.Ok Stack_overflow
   | `List [`String "Stdlib.Sys_error"; v0] →
-      Rresult.R.bind (Runtime.Yojson.string_of_yojson "<longid_lident>" v0)
+      Rresult.R.bind
+        (Runtime.Yojson.string_of_yojson "Extending type <longid_lident>" v0)
         (fun v0 → Result.Ok (Sys_error v0))
   | `List [`String "Stdlib.End_of_file"] → Result.Ok End_of_file
   | `List [`String "Stdlib.Division_by_zero"] → Result.Ok Division_by_zero
@@ -285,20 +297,24 @@ f.f :=
         ((fun
           [ `List [v0; v1; v2] →
               Rresult.R.bind
-                (Runtime.Yojson.string_of_yojson "<longid_lident>" v0)
+                (Runtime.Yojson.string_of_yojson
+                   "Extending type <longid_lident>" v0)
                 (fun v0 →
                    Rresult.R.bind
-                     (Runtime.Yojson.int_of_yojson "<longid_lident>" v1)
+                     (Runtime.Yojson.int_of_yojson
+                        "Extending type <longid_lident>" v1)
                      (fun v1 →
                         Rresult.R.bind
-                          (Runtime.Yojson.int_of_yojson "<longid_lident>" v2)
+                          (Runtime.Yojson.int_of_yojson
+                             "Extending type <longid_lident>" v2)
                           (fun v2 → Result.Ok (v0, v1, v2))))
-          | _ → Result.Error "<longid_lident>" ])
+          | _ → Result.Error "Extending type <longid_lident>" ])
            v0)
         (fun v0 → Result.Ok (Undefined_recursive_module v0))
   | `List [`String "Stream.Failure"] → Result.Ok StreamFailure
   | `List [`String "Stream.Error"; v0] →
-      Rresult.R.bind (Runtime.Yojson.string_of_yojson "<longid_lident>" v0)
+      Rresult.R.bind
+        (Runtime.Yojson.string_of_yojson "Extending type <longid_lident>" v0)
         (fun v0 → Result.Ok (Error v0))
   | `List [`String "Sys.Break"] → Result.Ok Break
   | z → fallback z ];
