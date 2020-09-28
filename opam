@@ -72,7 +72,7 @@ depexts: [
     "perl-IPC-System-Simple"
   ] {os-family = "fedora"}
 ]
-
+available: [ os != "macos" ]
 build: [
   [make "get-generated"]
   [make "sys"]

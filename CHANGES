@@ -2,6 +2,12 @@
 pa_ppx Version 0.03
 -------------------
 
+* [28 Sep 2020] conditionalized opam on "os != macos" until we find
+  somebody who can help us test builds on macos.
+
+* [27 Sep 2020] added TRIP-TEST-ALL to generate and save
+  generated-files (and run tests) for all supported ocaml versions.
+
 * [24 Sep 2020] new way of selecting generated-src versions.
   hopefully this will make pa_ppx immune to "new camlp5 release, we
   can't build" problems.

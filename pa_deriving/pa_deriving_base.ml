@@ -95,7 +95,17 @@ value monomorphize_ctyp cty =
         | PvInh loc ty -> PvInh loc (mrec ty)
             ]) l in
     <:ctyp:< [= $list:l$ ] >>
+  | <:ctyp:< [ $list:l$ ] >> ->
+    let l = List.map (fun [
+          (loc, na, tl, rto, al) ->
+          (loc, na, vala_map (List.map mrec) tl, vala_map (Option.map mrec) rto, al)
+            ]) l in
+    <:ctyp:< [ $list:l$ ] >>
   | <:ctyp:< ( $list:l$ ) >> -> <:ctyp:< ( $list:List.map mrec l$ ) >>
+  | <:ctyp:< { $list:ltl$ } >> ->
+      let ltl = List.map (fun (loc, na, b, ty, al) -> (loc, na, b, mrec ty, al)) ltl in
+      <:ctyp:< { $list:ltl$ } >>
+  | <:ctyp:< $t1$ == $t2$ >> -> <:ctyp:< $mrec t1$ == $mrec t2$ >>
   | ty -> ty
   ]
   in mrec cty

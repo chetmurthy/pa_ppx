@@ -54,3 +54,11 @@ unmodified; anything else is a bug with these packages**.
 All the documentation for ``pa_ppx`` is in Sphinx/RST format, and can
 be found [in this distribution](./doc/_build/index.html) and also [at
 readthedocs](https://pa-ppx.readthedocs.io/en/latest/index.html).
+
+# For OSX/MacOS Users
+
+This release should work on MacOS, but I haven't been able to figure
+out how to convince OPAM to install the right pre-reqs.  If a Mac user
+wants to help out with this, can explain to them what the gap is, and
+maybe they could help fill it.  It's not a big deal -- just some Perl
+packages -- but I cant' figure out how to get OPAM to install them.
